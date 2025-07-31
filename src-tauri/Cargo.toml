@@ -22,7 +22,9 @@ tauri = { version = "2.7.0", features = ["test"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.141"
 tokio = { version = "1.46.1", features = ["full"] }
+sqlx = { version = "0.8.6", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "uuid", "chrono" ] }
 sea-orm = { version = "1.1.14", features = [ "sqlx-sqlite", "runtime-tokio-native-tls", "macros" ] }
+uuid = { version = "1.17.0", features = [ "v4" ] }
 chrono = "0.4.41"
 tauri-plugin-dialog = "2.3.0"
 dirs = "6.0.0"
@@ -32,6 +34,10 @@ rand = "0.9.2"
 tauri-plugin-opener = "2.4.0"
 tauri-plugin-process = "2.3.0"
 lol_html = "2.6.0"
+thiserror = "2.0.12"
+async-trait = "0.1.88"
+# TODO: log errors!
+log = "0.4.27"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2.3.1"
