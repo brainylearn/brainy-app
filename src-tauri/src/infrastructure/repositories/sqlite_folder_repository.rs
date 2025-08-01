@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
-use sqlx::sqlite::SqlitePool;
+use sqlx::{sqlite::SqlitePool, Sqlite, Transaction};
 
 use crate::domain::{
     entities::folder::{Folder, FolderError},
@@ -27,16 +27,17 @@ impl From<&FolderRow> for Folder {
     }
 }
 
-pub struct SQLiteFolderRepository {
-    pub pool: SqlitePool,
+pub struct SqliteFolderRepository {
+    pub pool: Arc<SqlitePool>,
+    pub tx: Arc<Option<Transaction<'static, Sqlite>>>,
 }
 
 #[async_trait]
-impl FolderRepository for SQLiteFolderRepository {
+impl FolderRepository for SqliteFolderRepository {
     async fn get_by_path(&self, path: &Path) -> Result<Option<Folder>, RepositoryError> {
         let rows = sqlx::query_as::<_, FolderRow>("SELECT * FROM folders WHERE path LIKE $1")
             .bind(path.val() + "%")
-            .fetch_all(&self.pool)
+            .fetch_all(&*self.pool)
             .await;
 
         if let Err(err) = rows {
@@ -50,7 +51,7 @@ impl FolderRepository for SQLiteFolderRepository {
         let row =
             sqlx::query_as::<_, (bool,)>("SELECT EXISTS (SELECT * FROM folders WHERE path = $1)")
                 .bind(path.val())
-                .fetch_one(&self.pool)
+                .fetch_one(&*self.pool)
                 .await;
 
         match row {

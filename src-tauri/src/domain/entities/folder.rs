@@ -1,7 +1,8 @@
+use async_trait::async_trait;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::domain::value_objects::path::Path;
+use crate::domain::{events::{Event, EventHandler}, value_objects::path::Path};
 
 #[derive(Debug, Clone)]
 pub struct Folder {
@@ -43,5 +44,22 @@ impl Folder {
         self.subfolders.push(folder);
 
         Ok(())
+    }
+}
+
+
+pub enum FolderEvent {
+    FolderDeleted,
+}
+
+impl Event for FolderEvent { }
+
+// TODO: move it
+pub struct FolderEventHandler;
+
+#[async_trait]
+impl EventHandler<FolderEvent> for FolderEventHandler {
+    async fn handle(&self, e: &FolderEvent) {
+        println!("deleted folder");
     }
 }

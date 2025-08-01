@@ -1,4 +1,4 @@
-use crate::{dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
+use crate::{domain::{repositories::repositories_context::RepositoriesContext, value_objects::path::Path}, dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
 use sea_orm::DbConn;
 use tauri::State;
 use tokio::sync::Mutex;
@@ -6,7 +6,11 @@ use tokio::sync::Mutex;
 #[tauri::command]
 pub async fn get_files(
     db_conn: State<'_, Mutex<DbConn>>,
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
 ) -> Result<Vec<FileWithRepetitionsCount>, String> {
+    let mut context = context.lock().await;
+    println!("{:#?}", context.folder_repository().get_by_path(&Path::new("")).await.unwrap().unwrap());
+
     let db_conn = db_conn.lock().await;
     file_service::get_files(&db_conn).await
 }
