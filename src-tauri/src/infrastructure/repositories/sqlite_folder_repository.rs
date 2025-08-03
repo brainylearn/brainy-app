@@ -1,7 +1,10 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, VecDeque}, sync::Arc
+};
 
 use async_trait::async_trait;
 use sqlx::{sqlite::SqlitePool, Sqlite, Transaction};
+use tokio::sync::Mutex;
 
 use crate::domain::{
     entities::folder::{Folder, FolderError},
@@ -29,9 +32,10 @@ impl From<&FolderRow> for Folder {
 
 pub struct SqliteFolderRepository {
     pub pool: Arc<SqlitePool>,
-    pub tx: Arc<Option<Transaction<'static, Sqlite>>>,
+    pub tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
 }
 
+// TODO: use query!
 #[async_trait]
 impl FolderRepository for SqliteFolderRepository {
     async fn get_by_path(&self, path: &Path) -> Result<Option<Folder>, RepositoryError> {
@@ -56,17 +60,47 @@ impl FolderRepository for SqliteFolderRepository {
 
         match row {
             Ok(row) => Ok(row.0),
-            Err(err) => {
-                Err(RepositoryError::UnknownError(err.to_string()))
-            }
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
+    }
+
+    async fn upsert(&mut self, folder: &Folder) -> Result<(), RepositoryError> {
+        let mut guard = self.tx.lock().await;
+        let tx = guard.as_mut().unwrap();
+
+        let mut queue = VecDeque::new();
+        queue.push_back(folder);
+
+        while !queue.is_empty() {
+            let curr = queue.pop_front().unwrap();
+
+            sqlx::query(
+                "
+                INSERT INTO folders (id, path)
+                VALUES ($1, $2)
+                ON CONFLICT(id) DO UPDATE SET
+                path = $2;
+                ",
+            )
+            .bind(curr.id())
+            .bind(curr.path().val())
+            .execute(tx.as_mut())
+            .await
+            // TODO: error handling
+            .unwrap();
+
+            queue.extend(curr.subfolders());
+        }
+
+        Ok(())
     }
 }
 
-fn parse_rows_into_folder(rows: Vec<FolderRow>, path: &Path) -> Result<Option<Folder>, FolderError> {
-    let folder = rows
-        .iter()
-        .find(|row| row.path == path.val());
+fn parse_rows_into_folder(
+    rows: Vec<FolderRow>,
+    path: &Path,
+) -> Result<Option<Folder>, FolderError> {
+    let folder = rows.iter().find(|row| row.path == path.val());
 
     if let None = folder {
         return Ok(None);

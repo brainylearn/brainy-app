@@ -7,6 +7,7 @@ use crate::domain::{
 
 #[async_trait]
 pub trait FolderRepository: Send + Sync {
+    async fn upsert(&mut self, folder: &Folder) -> Result<(), RepositoryError>;
     async fn get_by_path(&self, path: &Path) -> Result<Option<Folder>, RepositoryError>;
     async fn folder_exists(&self, path: &Path) -> Result<bool, RepositoryError>;
 }

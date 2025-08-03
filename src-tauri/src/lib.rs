@@ -21,6 +21,8 @@ use crate::{domain::{entities::folder::{FolderEvent, FolderEventHandler}, events
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
+    simple_logger::init_with_level(log::Level::Info).unwrap();
+
     // TODO:
     // let mut bus = EventBus::new();
     // bus.subscribe(FolderEventHandler);

@@ -2,50 +2,52 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use sqlx::{Sqlite, SqlitePool, Transaction};
+use tokio::sync::Mutex;
 
 use crate::{domain::repositories::{folder_repository::FolderRepository, repositories_context::RepositoriesContext}, infrastructure::repositories::sqlite_folder_repository::SqliteFolderRepository};
 
 pub struct SqliteRepositoriesContext {
     pool: Arc<SqlitePool>,
     folder_repository: SqliteFolderRepository,
-    tx: Arc<Option<Transaction<'static, Sqlite>>>,
+    tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
 }
 
 impl SqliteRepositoriesContext {
     pub fn new(pool: SqlitePool) -> Self {
         let arc_pool = Arc::new(pool);
+        let tx = Arc::new(Mutex::new(None));
         Self {
             pool: arc_pool.clone(),
-            folder_repository: SqliteFolderRepository { pool: arc_pool.clone(), tx: Arc::new(None) },
-            tx: Arc::new(None),
+            folder_repository: SqliteFolderRepository { pool: arc_pool.clone(), tx: tx.clone() },
+            tx,
         }
     }
 }
 
 #[async_trait]
 impl RepositoriesContext for SqliteRepositoriesContext {
-    fn folder_repository(&self) -> Box<&dyn FolderRepository> {
-        Box::new(&self.folder_repository)
+    fn folder_repository(&mut self) -> Box<&mut dyn FolderRepository> {
+        Box::new(&mut self.folder_repository)
     }
 
     async fn start(&mut self) {
-        // TODO: error handling
-        if let Some(tx) = Arc::get_mut(&mut self.tx).unwrap().take() {
+        if let Some(tx) = self.tx.lock().await.take() {
+            // TODO: error handling
             tx.rollback().await.unwrap();
         }
 
-        let tx = Arc::new(Some(self.pool.begin().await.unwrap()));
-        // NOTE: update all repsitories
-        self.folder_repository.tx = tx.clone();
-        self.tx = tx.clone();
+        *self.tx.lock().await = Some(self.pool.begin().await.unwrap());
     }
 
     async fn commit(&mut self) {
-        if let Some(tx) = Arc::get_mut(&mut self.tx).unwrap().take() {
+        println!("Commiting");
+        if let Some(tx) = self.tx.lock().await.take() {
+            // TODO: error handling
+            println!("Saving changes");
             tx.commit().await.unwrap();
-        } 
-        // NOTE: update all repsitories
-        self.folder_repository.tx = Arc::new(None);
+        }
+
+        *self.tx.lock().await = None;
 
         // TODO: throw error when not started
     }

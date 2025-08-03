@@ -36,7 +36,7 @@ tauri-plugin-process = "2.3.0"
 lol_html = "2.6.0"
 thiserror = "2.0.12"
 async-trait = "0.1.88"
-# TODO: log errors!
+simple_logger = "5.0.0"
 log = "0.4.27"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

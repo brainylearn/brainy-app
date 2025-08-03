@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::value_objects::file_repetitions_count::FileRepetitionCounts;
+use crate::{domain::entities::folder::Folder, value_objects::file_repetitions_count::FileRepetitionCounts};
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,5 +24,12 @@ impl FileWithRepetitionsCount {
             is_folder,
             repetition_counts,
         }
+    }
+}
+
+impl From<&Folder> for FileWithRepetitionsCount {
+    fn from(value: &Folder) -> Self {
+        // TODO: fix id
+        FileWithRepetitionsCount::new(21, value.path().val(), true, None)
     }
 }

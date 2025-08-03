@@ -1,24 +1,73 @@
-use crate::{domain::{repositories::repositories_context::RepositoriesContext, value_objects::path::Path}, dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
+use std::error::Error;
+
+use crate::{
+    domain::{
+        entities::folder::Folder, repositories::repositories_context::RepositoriesContext,
+        value_objects::path::Path,
+    },
+    dto::file_with_repetitions_count::FileWithRepetitionsCount,
+    service::file_service,
+};
 use sea_orm::DbConn;
+use serde::Serialize;
 use tauri::State;
 use tokio::sync::Mutex;
 
-#[tauri::command]
-pub async fn get_files(
-    db_conn: State<'_, Mutex<DbConn>>,
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-) -> Result<Vec<FileWithRepetitionsCount>, String> {
-    let mut context = context.lock().await;
-    println!("{:#?}", context.folder_repository().get_by_path(&Path::new("")).await.unwrap().unwrap());
+// TODO: move
+#[derive(Serialize)]
+pub struct ApiError(String);
 
-    let db_conn = db_conn.lock().await;
-    file_service::get_files(&db_conn).await
+impl<T> From<T> for ApiError
+where
+    T: Error,
+{
+    fn from(value: T) -> Self {
+        log::error!("An error occured: {:#?}", value);
+        ApiError(value.to_string())
+    }
 }
 
 #[tauri::command]
-pub async fn create_folder(db_conn: State<'_, Mutex<DbConn>>, path: String) -> Result<i32, String> {
-    let db_conn = db_conn.lock().await;
-    file_service::create_folder(&*db_conn, path).await
+pub async fn get_files(
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+) -> Result<Vec<FileWithRepetitionsCount>, ApiError> {
+    let mut context = context.lock().await;
+    let folder = context
+        .folder_repository()
+        .get_by_path(&Path::new(""))
+        .await?;
+
+    Ok(folder
+        .unwrap()
+        .flatten_foldertree()
+        .into_iter()
+        .map(|f| f.into())
+        .collect())
+}
+
+#[tauri::command]
+pub async fn create_folder(
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    path: String,
+) -> Result<uuid::fmt::Hyphenated, ApiError> {
+    let mut context = context.lock().await;
+    let path = Path::new(&path);
+    let mut parent = context
+        .folder_repository()
+        .get_by_path(&path.parent_directory().unwrap())
+        .await?
+        // TODO: check if parent exists
+        .unwrap();
+
+    let subfolder = Folder::new(None, path);
+    let id = subfolder.id();
+    parent.add_subfolder(subfolder)?;
+
+    context.start().await;
+    context.folder_repository().upsert(&parent).await.unwrap();
+    context.commit().await;
+
+    Ok(id)
 }
 
 #[tauri::command]
