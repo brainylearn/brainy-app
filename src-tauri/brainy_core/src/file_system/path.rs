@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use thiserror::Error;
 
 /// Represents the path of a file.
@@ -17,10 +19,6 @@ impl Path {
         Path(non_empty_segments)
     }
 
-    pub fn val(&self) -> String {
-        self.0.join("/")
-    }
-
     pub fn parent_directory(&self) -> Result<Path, Error> {
         if self.0.is_empty() {
             return Err(Error::RootDoesNotHaveParent);
@@ -35,8 +33,14 @@ impl Path {
         Ok(Self::new(&parent_segments.join("/")))
     }
 
-    /// Return the name of the folder/file represented by the path
+    /// Return the name of the folder/file represented by the path.
     pub fn name(&self) -> String {
         self.0.last().unwrap().into()
+    }
+}
+
+impl Display for Path {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.join("/"))
     }
 }

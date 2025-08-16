@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_core::file_system::folder_repository::FolderRepository;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
-use crate::{domain::repositories::{folder_repository::FolderRepository, repositories_context::RepositoriesContext}, infrastructure::repositories::sqlite_folder_repository::SqliteFolderRepository};
+use crate::{file_system::sqlite_folder_repository::SqliteFolderRepository, repositories_context::RepositoriesContext};
 
 pub struct SqliteRepositoriesContext {
     pool: Arc<SqlitePool>,

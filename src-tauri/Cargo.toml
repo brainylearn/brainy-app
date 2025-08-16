@@ -38,8 +38,15 @@ thiserror = "2.0.12"
 async-trait = "0.1.88"
 simple_logger = "5.0.0"
 log = "0.4.27"
+brainy_core = { path = "./brainy_core" }
+brainy_infrastructure = { path = "./brainy_infrastructure" }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2.3.1"
 tauri-plugin-updater = "2.9.0"
 tauri-plugin-window-state = "2.4.0"
+
+[workspace]
+members = [
+    "brainy_core", "brainy_infrastructure",
+]

@@ -1,6 +1,7 @@
+use brainy_core::file_system::folder::Folder;
 use serde::{Deserialize, Serialize};
 
-use crate::{domain::entities::folder::Folder, value_objects::file_repetitions_count::FileRepetitionCounts};
+use crate::value_objects::file_repetitions_count::FileRepetitionCounts;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,9 +28,9 @@ impl FileWithRepetitionsCount {
     }
 }
 
-impl From<&Folder> for FileWithRepetitionsCount {
-    fn from(value: &Folder) -> Self {
+impl From<Folder> for FileWithRepetitionsCount {
+    fn from(value: Folder) -> Self {
         // TODO: fix id
-        FileWithRepetitionsCount::new(21, value.path().val(), true, None)
+        FileWithRepetitionsCount::new(21, value.path().to_string(), true, None)
     }
 }

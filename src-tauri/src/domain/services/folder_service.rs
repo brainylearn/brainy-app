@@ -1,8 +1,6 @@
+use brainy_core::{common::repository_error::RepositoryError, file_system::{folder_repository::FolderRepository, path::Path}};
 use thiserror::Error;
 
-use crate::domain::{
-    repositories::{folder_repository::FolderRepository, repository_error::RepositoryError}, value_objects::path::Path
-};
 
 pub struct FolderService<FR: FolderRepository> {
     folder_repository: FR,

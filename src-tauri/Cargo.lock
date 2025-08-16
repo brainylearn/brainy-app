@@ -7,6 +7,8 @@ name = "Brainy"
 version = "1.1.0"
 dependencies = [
  "async-trait",
+ "brainy_core",
+ "brainy_infrastructure",
  "chrono",
  "dirs",
  "log",
@@ -484,6 +486,26 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.99",
+]
+
+[[package]]
+name = "brainy_core"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "thiserror 2.0.12",
+ "uuid",
+]
+
+[[package]]
+name = "brainy_infrastructure"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "brainy_core",
+ "sqlx",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

@@ -1,6 +1,5 @@
 use async_trait::async_trait;
-
-use crate::domain::repositories::folder_repository::FolderRepository;
+use brainy_core::file_system::folder_repository::FolderRepository;
 
 #[async_trait]
 pub trait RepositoriesContext: Send + Sync {
@@ -8,3 +7,4 @@ pub trait RepositoriesContext: Send + Sync {
     async fn start(&mut self);
     async fn commit(&mut self);
 }
+

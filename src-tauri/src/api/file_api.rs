@@ -1,17 +1,13 @@
+// TODO: rename file to file_system api
 use std::error::Error;
 
-use crate::{
-    domain::{
-        entities::folder::Folder, repositories::repositories_context::RepositoriesContext,
-        value_objects::path::Path,
-    },
-    dto::file_with_repetitions_count::FileWithRepetitionsCount,
-    service::file_service,
-};
+use brainy_infrastructure::repositories_context::RepositoriesContext;
 use sea_orm::DbConn;
 use serde::Serialize;
 use tauri::State;
 use tokio::sync::Mutex;
+
+use crate::{dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
 
 // TODO: move
 #[derive(Serialize)]
@@ -32,17 +28,12 @@ pub async fn get_files(
     context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
 ) -> Result<Vec<FileWithRepetitionsCount>, ApiError> {
     let mut context = context.lock().await;
-    let folder = context
+    let folders = context
         .folder_repository()
-        .get_by_path(&Path::new(""))
+        .get_all_files()
         .await?;
 
-    Ok(folder
-        .unwrap()
-        .flatten_foldertree()
-        .into_iter()
-        .map(|f| f.into())
-        .collect())
+    Ok(folders.into_iter().map(|folder| folder.into()).collect())
 }
 
 #[tauri::command]
@@ -50,24 +41,9 @@ pub async fn create_folder(
     context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
     path: String,
 ) -> Result<uuid::fmt::Hyphenated, ApiError> {
-    let mut context = context.lock().await;
-    let path = Path::new(&path);
-    let mut parent = context
-        .folder_repository()
-        .get_by_path(&path.parent_directory().unwrap())
-        .await?
-        // TODO: check if parent exists
-        .unwrap();
+    // TODO: move to service
 
-    let subfolder = Folder::new(None, path);
-    let id = subfolder.id();
-    parent.add_subfolder(subfolder)?;
-
-    context.start().await;
-    context.folder_repository().upsert(&parent).await.unwrap();
-    context.commit().await;
-
-    Ok(id)
+    Ok(uuid::Uuid::new_v4().into())
 }
 
 #[tauri::command]

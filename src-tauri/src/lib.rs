@@ -2,14 +2,16 @@ mod api;
 mod domain;
 mod dto;
 mod entity;
-mod infrastructure;
 mod migration;
 mod service;
 mod util;
 mod value_objects;
 
+use std::str::FromStr;
+
+use brainy_infrastructure::{file_system::sqlite_repositories_context::SqliteRepositoriesContext, repositories_context::RepositoriesContext};
 use service::settings_service;
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tauri::Manager;
 
 use api::*;
@@ -17,21 +19,22 @@ use tauri_plugin_window_state::StateFlags;
 use tokio::sync::Mutex;
 use util::database_util::load_database;
 
-use crate::{domain::{entities::folder::{FolderEvent, FolderEventHandler}, events::{EventBus, EventHandler}, repositories::{folder_repository::FolderRepository, repositories_context::RepositoriesContext}, value_objects::path::Path}, infrastructure::repositories::{sqlite_folder_repository::SqliteFolderRepository, sqlite_repositories_context::SqliteRepositoriesContext}};
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
-    // TODO:
-    // let mut bus = EventBus::new();
-    // bus.subscribe(FolderEventHandler);
-    // bus.publish(FolderEvent::FolderDeleted).await;
-
     settings_service::init_settings();
+
     // TODO: fix path
+    // TODO: error handling
+    let options =
+        SqliteConnectOptions::from_str("sqlite:////home/ramikw/Downloads/test.db?mode=rwc")
+            .unwrap();
+
     let pool = SqlitePoolOptions::new()
-        .connect("sqlite:////home/ramikw/Downloads/test.db?mode=rwc").await.unwrap();
+        .connect_with(options)
+        .await
+        .unwrap();
     let context = SqliteRepositoriesContext::new(pool);
 
     let db_conn = load_database(&settings_service::get_settings().database_location).await;

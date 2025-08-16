@@ -1,6 +1,5 @@
+use brainy_core::common::repository_error::RepositoryError;
 use thiserror::Error;
-
-use crate::domain::repositories::repository_error::RepositoryError;
 
 #[derive(Debug, Error)]
 pub enum ServiceError {
