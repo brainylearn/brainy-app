@@ -1,31 +1,14 @@
-// TODO: rename file to file_system api
-use std::error::Error;
-
+// TODO: move logging to services and file
 use brainy_core::{
     Guid, common::domain_services::DomainServices,
     file_system::value_objects::file_system_item_name::FileSystemItemName,
 };
 use brainy_infrastructure::repositories_context::RepositoriesContext;
 use sea_orm::DbConn;
-use serde::Serialize;
 use tauri::State;
 use tokio::sync::Mutex;
 
-use crate::{dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
-
-// TODO: move
-#[derive(Serialize)]
-pub struct ApiError(String);
-
-impl<T> From<T> for ApiError
-where
-    T: Error,
-{
-    fn from(value: T) -> Self {
-        log::error!("An error occured: {:#?}", value);
-        ApiError(value.to_string())
-    }
-}
+use crate::{api::ApiError, dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
 
 #[tauri::command]
 pub async fn get_files(
@@ -84,18 +67,29 @@ pub async fn create_file(
 }
 
 #[tauri::command]
-pub async fn delete_file(db_conn: State<'_, Mutex<DbConn>>, file_id: i32) -> Result<(), String> {
-    let db_conn = db_conn.lock().await;
-    file_service::delete_file(&db_conn, file_id).await
+pub async fn delete_file(
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    file_id: Guid,
+) ->Result<(), ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+    context.file_repository().delete_by_id(file_id).await?;
+    context.commit().await;
+    log::info!("Deleted file with id {file_id}");
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn delete_folder(
-    db_conn: State<'_, Mutex<DbConn>>,
-    folder_id: i32,
-) -> Result<(), String> {
-    let db_conn = db_conn.lock().await;
-    file_service::delete_folder(&db_conn, folder_id).await
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    folder_id: Guid,
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+    context.folder_repository().delete_by_id(folder_id).await?;
+    context.commit().await;
+    log::info!("Deleted folder with id {folder_id}");
+    Ok(())
 }
 
 #[tauri::command]
@@ -104,6 +98,7 @@ pub async fn move_file(
     file_id: i32,
     destination_folder_id: i32,
 ) -> Result<(), String> {
+    // TODO:
     let db_conn = db_conn.lock().await;
     file_service::move_file(&db_conn, file_id, destination_folder_id).await
 }
@@ -114,26 +109,41 @@ pub async fn move_folder(
     folder_id: i32,
     destination_folder_id: i32,
 ) -> Result<(), String> {
+    // TODO:
     let db_conn = db_conn.lock().await;
     file_service::move_folder(&db_conn, folder_id, destination_folder_id).await
 }
 
 #[tauri::command]
 pub async fn rename_file(
-    db_conn: State<'_, Mutex<DbConn>>,
-    file_id: i32,
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    services: State<'_, DomainServices>,
+    file_id: Guid,
     new_name: String,
-) -> Result<(), String> {
-    let db_conn = db_conn.lock().await;
-    file_service::rename_file(&db_conn, file_id, new_name).await
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+    services
+        .file_system_service
+        .rename_file(file_id, FileSystemItemName::new(new_name)?)
+        .await?;
+    context.commit().await;
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn rename_folder(
-    db_conn: State<'_, Mutex<DbConn>>,
-    folder_id: i32,
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    services: State<'_, DomainServices>,
+    folder_id: Guid,
     new_name: String,
-) -> Result<(), String> {
-    let db_conn = db_conn.lock().await;
-    file_service::rename_folder(&db_conn, folder_id, new_name).await
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+    services
+        .file_system_service
+        .rename_folder(folder_id, FileSystemItemName::new(new_name)?)
+        .await?;
+    context.commit().await;
+    Ok(())
 }

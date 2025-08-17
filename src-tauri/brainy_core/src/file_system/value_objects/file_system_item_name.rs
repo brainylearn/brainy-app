@@ -21,7 +21,7 @@ impl FileSystemItemName {
         if name.is_empty() {
             return Err(Error::EmptyName);
         } else if name.contains('/') {
-            return Err(Error::InvalidName("The name cannot contain '/'!"));
+            return Err(Error::InvalidName("The name cannot contain forward slash!"));
         }
         Ok(FileSystemItemName(name))
     }

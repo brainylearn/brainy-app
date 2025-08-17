@@ -1,6 +1,5 @@
 use prelude::Expr;
 use sea_orm::{DbConn, entity::*, query::*};
-use uuid::Uuid;
 
 use crate::{dto::file_with_repetitions_count::FileWithRepetitionsCount, entity::file};
 

@@ -493,6 +493,7 @@ name = "brainy_core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "log",
  "serde",
  "thiserror 2.0.12",
  "uuid",

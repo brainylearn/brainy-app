@@ -47,4 +47,8 @@ impl Folder {
     pub fn name(&self) -> FileSystemItemName {
         self.name.clone()
     }
+
+    pub(in crate::file_system) fn set_name(&mut self, new_name: FileSystemItemName) {
+        self.name = new_name;
+    }
 }

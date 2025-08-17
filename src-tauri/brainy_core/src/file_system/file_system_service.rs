@@ -13,16 +13,10 @@ use crate::{
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("The file with the name '{name}' could not be found!")]
-    FileNotFound { name: String },
     #[error("The file with the name '{name}' already exists!")]
     FileExists { name: String },
-
-    #[error("The folder with the name '{name}' could not be found!")]
-    FolderNotFound { name: String },
     #[error("The folder with the name '{name}' already exists!")]
     FolderExists { name: String },
-
     #[error("{0}")]
     UnknownRepositoryError(#[from] RepositoryError),
 }
@@ -35,15 +29,18 @@ pub trait FileSystemService: Send + Sync {
         name: FileSystemItemName,
     ) -> Result<Guid, Error>;
 
+    async fn rename_folder(&self, folder_id: Guid, new_name: FileSystemItemName) -> Result<(), Error>;
+
     async fn create_file(
         &self,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> Result<Guid, Error>;
+
+    async fn rename_file(&self, file_id: Guid, new_name: FileSystemItemName) -> Result<(), Error>;
 }
 
 pub struct DefaultFileSystemService {
-    // TODO: not pub
     pub folder_repository: Box<dyn FolderRepository>,
     pub file_repository: Box<dyn FileRepository>,
 }
@@ -67,6 +64,30 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(folder.id())
     }
 
+    async fn rename_folder(&self, folder_id: Guid, new_name: FileSystemItemName) -> Result<(), Error> {
+        let mut folder = self.folder_repository.get_by_id(folder_id).await?;
+
+        if folder.name() == new_name {
+            log::info!("Skip renaming since the name is the same!");
+            return Ok(());
+        }
+
+        if self
+            .folder_repository
+            .exists(folder.parent_id(), &new_name)
+            .await?
+        {
+            return Err(Error::FolderExists {
+                name: new_name.to_string(),
+            });
+        }
+
+        folder.set_name(new_name.clone());
+        self.folder_repository.update(&folder).await?;
+        log::info!("Renamed folder with id {folder_id} to {new_name}");
+        Ok(())
+    }
+
     async fn create_file(
         &self,
         parent_id: Option<Guid>,
@@ -82,5 +103,29 @@ impl FileSystemService for DefaultFileSystemService {
         self.file_repository.create(&file).await?;
 
         Ok(file.id())
+    }
+
+    async fn rename_file(&self, file_id: Guid, new_name: FileSystemItemName) -> Result<(), Error> {
+        let mut file = self.file_repository.get_by_id(file_id).await?;
+
+        if file.name() == new_name {
+            log::info!("Skip renaming since the name is the same!");
+            return Ok(());
+        }
+
+        if self
+            .file_repository
+            .exists(file.parent_id(), &new_name)
+            .await?
+        {
+            return Err(Error::FileExists {
+                name: new_name.to_string(),
+            });
+        }
+
+        file.set_name(new_name.clone());
+        self.file_repository.update(&file).await?;
+        log::info!("Renamed file with id {file_id} to {new_name}");
+        Ok(())
     }
 }
