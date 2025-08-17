@@ -1,5 +1,4 @@
 mod api;
-mod domain;
 mod dto;
 mod entity;
 mod migration;
@@ -9,7 +8,14 @@ mod value_objects;
 
 use std::str::FromStr;
 
-use brainy_infrastructure::{file_system::sqlite_repositories_context::SqliteRepositoriesContext, repositories_context::RepositoriesContext};
+use brainy_core::{
+    common::domain_services::DomainServices,
+    file_system::file_system_service::DefaultFileSystemService,
+};
+use brainy_infrastructure::{
+    repositories_context::RepositoriesContext,
+    sqlite_repositories_context::SqliteRepositoriesContext,
+};
 use service::settings_service;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tauri::Manager;
@@ -35,7 +41,14 @@ pub async fn run() -> Result<(), String> {
         .connect_with(options)
         .await
         .unwrap();
-    let context = SqliteRepositoriesContext::new(pool);
+    let repositoriies_context = SqliteRepositoriesContext::new(pool);
+
+    let domain_services = DomainServices {
+        file_system_service: Box::new(DefaultFileSystemService {
+            folder_repository: repositoriies_context.folder_repository(),
+            file_repository: repositoriies_context.file_repository(),
+        }),
+    };
 
     let db_conn = load_database(&settings_service::get_settings().database_location).await;
 
@@ -62,9 +75,11 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let context_box: Box<dyn RepositoriesContext> = Box::new(context);
+            let repositories_context_box: Box<dyn RepositoriesContext> =
+                Box::new(repositoriies_context);
             app.manage(Mutex::new(db_conn));
-            app.manage(Mutex::new(context_box));
+            app.manage(Mutex::new(repositories_context_box));
+            app.manage(domain_services);
             #[cfg(dev)]
             {
                 let _ = app

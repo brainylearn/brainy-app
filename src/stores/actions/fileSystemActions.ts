@@ -24,12 +24,12 @@ export function fetchFiles() {
 	return executeRequest(() => Promise.resolve());
 }
 
-export function createFile(path: string) {
-	return executeRequest(() => createFileApi(path));
+export function createFile(name: string, parentId: string | null) {
+	return executeRequest(() => createFileApi(name, parentId));
 }
 
-export function createFolder(path: string) {
-	return executeRequest(() => createFolderApi(path));
+export function createFolder(name: string, parentId: string | null) {
+	return executeRequest(() => createFolderApi(name, parentId));
 }
 
 export function deleteFile(fileId: number) {

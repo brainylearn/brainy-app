@@ -1,9 +1,10 @@
 use std::fmt::Display;
 
+use serde::{Serialize, Serializer};
 use thiserror::Error;
 
 /// Represents the path of a file.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Default)]
 pub struct Path(Vec<String>);
 
 #[derive(Error, Debug, PartialEq, Eq)]
@@ -37,10 +38,24 @@ impl Path {
     pub fn name(&self) -> String {
         self.0.last().unwrap().into()
     }
+
+    // TODO: accept file system item name
+    pub fn navigate(&self, name: &str) -> Self {
+        Path::new(&format!("{}/{}", self.to_string(), name))
+    }
 }
 
 impl Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.join("/"))
+    }
+}
+
+impl Serialize for Path {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }

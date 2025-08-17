@@ -1,15 +1,22 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use brainy_core::file_system::folder_repository::FolderRepository;
+use brainy_core::file_system::repositories::{
+    file_repository::FileRepository, folder_repository::FolderRepository,
+};
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
-use crate::{file_system::sqlite_folder_repository::SqliteFolderRepository, repositories_context::RepositoriesContext};
+use crate::{
+    file_system::repositories::{
+        sqlite_file_repository::SqliteFileRepository,
+        sqlite_folder_repository::SqliteFolderRepository,
+    },
+    repositories_context::RepositoriesContext,
+};
 
 pub struct SqliteRepositoriesContext {
     pool: Arc<SqlitePool>,
-    folder_repository: SqliteFolderRepository,
     tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
 }
 
@@ -19,7 +26,6 @@ impl SqliteRepositoriesContext {
         let tx = Arc::new(Mutex::new(None));
         Self {
             pool: arc_pool.clone(),
-            folder_repository: SqliteFolderRepository { pool: arc_pool.clone(), tx: tx.clone() },
             tx,
         }
     }
@@ -27,8 +33,18 @@ impl SqliteRepositoriesContext {
 
 #[async_trait]
 impl RepositoriesContext for SqliteRepositoriesContext {
-    fn folder_repository(&mut self) -> Box<&mut dyn FolderRepository> {
-        Box::new(&mut self.folder_repository)
+    fn folder_repository(&self) -> Box<dyn FolderRepository> {
+        Box::new(SqliteFolderRepository {
+            pool: self.pool.clone(),
+            tx: self.tx.clone(),
+        })
+    }
+
+    fn file_repository(&self) -> Box<dyn FileRepository> {
+        Box::new(SqliteFileRepository {
+            pool: self.pool.clone(),
+            tx: self.tx.clone(),
+        })
     }
 
     async fn start(&mut self) {

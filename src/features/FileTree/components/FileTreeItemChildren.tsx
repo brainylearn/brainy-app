@@ -45,11 +45,11 @@ function FileTreeItemChildren({
 		e: React.FormEvent<HTMLFormElement>,
 	) => {
 		e.preventDefault();
-		const newItemPath = isRoot ? newItemName : fullPath + "/" + newItemName;
 		if (creatingNewFolder) {
-			await dispatch(createFolder(newItemPath));
+            // TODO: fix id and refactor
+			await dispatch(createFolder(newItemName, folder.id ? folder.id.toString() : null));
 		} else if (creatingNewFile) {
-			await dispatch(createFile(newItemPath));
+			await dispatch(createFile(newItemName, folder.id ? folder.id.toString() : null));
 		}
 		setNewItemName("");
 		onCreatingNewItemEnd();

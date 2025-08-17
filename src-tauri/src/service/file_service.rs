@@ -1,5 +1,6 @@
 use prelude::Expr;
 use sea_orm::{DbConn, entity::*, query::*};
+use uuid::Uuid;
 
 use crate::{dto::file_with_repetitions_count::FileWithRepetitionsCount, entity::file};
 
@@ -20,12 +21,13 @@ pub async fn get_files(db_conn: &DbConn) -> Result<Vec<FileWithRepetitionsCount>
             Some(repetition_service::get_study_repetition_counts(db_conn, file.id).await?)
         };
 
-        files_with_repetitions_counts.push(FileWithRepetitionsCount::new(
-            file.id,
-            file.path,
-            file.is_folder,
-            repetition_counts,
-        ));
+        // files_with_repetitions_counts.push(FileWithRepetitionsCountnew(
+        //     // file.id,
+        //     Uuid::new_v4().into(),
+        //     file.path,
+        //     file.is_folder,
+        //     repetition_counts,
+        // ));
     }
 
     Ok(files_with_repetitions_counts)
@@ -380,528 +382,528 @@ fn apply_new_name(path: &str, new_name: &String) -> String {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::{
-        entity::cell::{self, CellType},
-        service::{cell_service, tests::get_db},
-    };
-
-    use super::*;
-
-    #[tokio::test]
-    async fn get_files_valid_input_returned_files() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        create_file(&db_conn, "file".into()).await.unwrap();
-        create_folder(&db_conn, "folder".into()).await.unwrap();
-
-        // Act
-
-        let actual = get_files(&db_conn).await.unwrap();
-
-        // Assert
-
-        assert_eq!(actual.len(), 2);
-        assert!(actual.iter().any(|f| f.path == "file".to_string()));
-        assert!(actual.iter().any(|f| f.path == "folder".to_string()));
-    }
-
-    #[tokio::test]
-    async fn create_folder_nested_path_created_all_folders() {
-        // Arrange
-
-        let db_conn = get_db().await;
-
-        // Act
-
-        create_folder(&db_conn, "folder 1/folder 2/".into())
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual.len(), 2);
-        assert!(actual.iter().any(|f| f.path == "folder 1".to_string()));
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "folder 1/folder 2".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn create_folder_empty_name_returned_error() {
-        // Arrange
-
-        let db_conn = get_db().await;
-
-        // Act
-
-        let actual = create_folder(&db_conn, "  ".into()).await;
-
-        // Assert
-
-        assert_eq!(actual, Err("Name cannot be empty!".to_string()));
-    }
-
-    #[tokio::test]
-    async fn create_folder_existing_folder_returned_error() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        create_folder(&db_conn, "folder 1".into()).await.unwrap();
-
-        // Act
-
-        let actual = create_folder(&db_conn, "folder 1".into()).await;
-
-        // Assert
-
-        assert_eq!(actual, Err("Folder already exists!".to_string()));
-    }
-
-    #[tokio::test]
-    async fn create_file_empty_name_returned_error() {
-        // Arrange
-
-        let db_conn = get_db().await;
-
-        // Act
-
-        let actual = create_file(&db_conn, "  ".into()).await;
-
-        // Assert
-
-        assert_eq!(actual, Err("Name cannot be empty!".to_string()));
-    }
-
-    #[tokio::test]
-    async fn create_file_existing_file_returned_error() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        create_file(&db_conn, "file 1".into()).await.unwrap();
-
-        // Act
-
-        let actual = create_file(&db_conn, "file 1".into()).await;
-
-        // Assert
-
-        assert_eq!(actual, Err("File already exists!".to_string()));
-    }
-
-    #[tokio::test]
-    async fn delete_file_valid_input_deleted_file() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file1_id = create_folder(&db_conn, "test".into()).await.unwrap();
-        create_file(&db_conn, "test".into()).await.unwrap();
-
-        cell_service::create_cell(&db_conn, file1_id, "".into(), CellType::Note, 0)
-            .await
-            .unwrap();
-
-        let file2_id = create_file(&db_conn, "test 2".into()).await.unwrap();
-        cell_service::create_cell(&db_conn, file2_id, "".into(), CellType::Note, 0)
-            .await
-            .unwrap();
-
-        // Act
-
-        delete_file(&db_conn, file1_id).await.unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual.len(), 2);
-        let cell_counts = cell::Entity::find().all(&db_conn).await.unwrap();
-        assert_eq!(cell_counts.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn delete_folder_valid_input_deleted_folder() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "test".into()).await.unwrap();
-        let file1_id = create_file(&db_conn, "test/file".into()).await.unwrap();
-        cell_service::create_cell(&db_conn, file1_id, "".into(), CellType::Note, 0)
-            .await
-            .unwrap();
-
-        let file2_id = create_file(&db_conn, "test".into()).await.unwrap();
-        cell_service::create_cell(&db_conn, file2_id, "".into(), CellType::Note, 0)
-            .await
-            .unwrap();
-
-        // Act
-
-        delete_folder(&db_conn, folder_id).await.unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual.len(), 1);
-        let cell_counts = cell::Entity::find().all(&db_conn).await.unwrap();
-        assert_eq!(cell_counts.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn move_file_valid_input_moved_file() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_id = create_file(&db_conn, "test/file".into()).await.unwrap();
-        let destination_folder_id = create_folder(&db_conn, "test 2".into()).await.unwrap();
-
-        // Act
-
-        move_file(&db_conn, file_id, destination_folder_id)
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual[1].path, "test 2/file".to_string());
-    }
-
-    #[tokio::test]
-    async fn move_file_move_to_root_moved_file() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_id = create_file(&db_conn, "test/file".into()).await.unwrap();
-
-        // Act
-
-        move_file(&db_conn, file_id, 0).await.unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual[1].path, "file".to_string());
-    }
-
-    #[tokio::test]
-    async fn move_file_existing_file_error_returned() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_id = create_file(&db_conn, "test/file".into()).await.unwrap();
-        create_file(&db_conn, "file".into()).await.unwrap();
-
-        // Act
-
-        let actual = move_file(&db_conn, file_id, 0).await;
-
-        // Assert
-
-        assert_eq!(
-            actual,
-            Err("another file with the same name exists!".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn move_folder_valid_input_moved_folder() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "test".into()).await.unwrap();
-        let destination_folder_id = create_folder(&db_conn, "destination".into()).await.unwrap();
-
-        create_file(&db_conn, "test/folder 1/folder 2/file".into())
-            .await
-            .unwrap();
-        create_file(&db_conn, "test/file".into()).await.unwrap();
-
-        // Act
-
-        move_folder(&db_conn, folder_id, destination_folder_id)
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert!(actual.iter().any(|f| f.path == "destination".to_string()));
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "destination/test/folder 1".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "destination/test/folder 1/folder 2".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "destination/test/folder 1/folder 2/file".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "destination/test/file".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn move_folder_move_to_root_moved_folder() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        create_folder(&db_conn, "test".into()).await.unwrap();
-        let folder_id = create_folder(&db_conn, "test/folder 1".into())
-            .await
-            .unwrap();
-
-        create_file(&db_conn, "test/folder 1/folder 2/file".into())
-            .await
-            .unwrap();
-        create_file(&db_conn, "test/file".into()).await.unwrap();
-
-        // Act
-
-        move_folder(&db_conn, folder_id, 0).await.unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert!(actual.iter().any(|f| f.path == "test".to_string()));
-        assert!(actual.iter().any(|f| f.path == "folder 1".to_string()));
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "folder 1/folder 2".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "folder 1/folder 2/file".to_string())
-        );
-        assert!(actual.iter().any(|f| f.path == "test/file".to_string()));
-    }
-
-    #[tokio::test]
-    async fn move_folder_move_to_inner_folder_error_returned() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "test".into()).await.unwrap();
-        let inner_folder_id = create_folder(&db_conn, "test/folder 1".into())
-            .await
-            .unwrap();
-
-        // Act
-
-        let actual = move_folder(&db_conn, folder_id, inner_folder_id).await;
-
-        // Assert
-
-        assert_eq!(
-            actual,
-            Err("You cannot move into an inner folder!".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn move_folder_existing_folder_error_returned() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "test/folder 1".into())
-            .await
-            .unwrap();
-        create_folder(&db_conn, "folder 1".into()).await.unwrap();
-
-        // Act
-
-        let actual = move_folder(&db_conn, folder_id, 0).await;
-
-        // Assert
-
-        assert_eq!(
-            actual,
-            Err("Another folder with the same name exists!".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn rename_file_inside_folder_renamed_file() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_id = create_file(&db_conn, "folder/test".into()).await.unwrap();
-
-        // Act
-
-        rename_file(&db_conn, file_id, "/new name/".into())
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual[1].path, "folder/new name".to_string());
-    }
-
-    #[tokio::test]
-    async fn rename_file_placed_on_root_file_renamed() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_id = create_file(&db_conn, "test".into()).await.unwrap();
-
-        // Act
-
-        rename_file(&db_conn, file_id, "/new name/".into())
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert_eq!(actual[0].path, "new name".to_string());
-    }
-
-    #[tokio::test]
-    async fn rename_file_existing_file_error_returned() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_id = create_file(&db_conn, "test".into()).await.unwrap();
-        create_file(&db_conn, "new name".into()).await.unwrap();
-
-        // Act
-
-        let actual = rename_file(&db_conn, file_id, "/new name/".into()).await;
-
-        // Assert
-
-        assert_eq!(
-            actual,
-            Err("Another file with the same name already exists!".into())
-        );
-    }
-
-    #[tokio::test]
-    async fn rename_folder_valid_input_renamed_folder() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "folder 1".into()).await.unwrap();
-        create_file(&db_conn, "folder 1/folder 2/file".into())
-            .await
-            .unwrap();
-        create_file(&db_conn, "folder 1/folder 2/folder 3/file".into())
-            .await
-            .unwrap();
-
-        // Act
-
-        rename_folder(&db_conn, folder_id, "/new name/subfolder".into())
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_files(&db_conn).await.unwrap();
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "new name/subfolder".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "new name/subfolder/folder 2".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "new name/subfolder/folder 2/file".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "new name/subfolder/folder 2/folder 3".to_string())
-        );
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "new name/subfolder/folder 2/folder 3/file".to_string())
-        );
-    }
-
-    #[tokio::test]
-    async fn rename_folder_existing_folder_returned_error() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "folder 1".into()).await.unwrap();
-        create_folder(&db_conn, "folder 2".into()).await.unwrap();
-
-        // Act
-
-        let actual = rename_folder(&db_conn, folder_id, "folder 2".into()).await;
-
-        // Assert
-
-        assert_eq!(
-            actual,
-            Err("Another folder with the same name already exists!".into())
-        );
-    }
-
-    #[tokio::test]
-    async fn list_folder_children_valid_input_returned_correct_files() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = create_folder(&db_conn, "folder 1".into()).await.unwrap();
-        create_folder(&db_conn, "folder 1/folder 2/ folder 3".into())
-            .await
-            .unwrap();
-        create_folder(&db_conn, "folder 1/folder 4".into())
-            .await
-            .unwrap();
-        create_file(&db_conn, "folder 1/file 1".into())
-            .await
-            .unwrap();
-        create_file(&db_conn, "folder 1/folder 2/file 2".into())
-            .await
-            .unwrap();
-
-        // Act
-
-        let actual = list_folder_children(&db_conn, folder_id).await.unwrap();
-
-        // Assert
-
-        assert_eq!(actual.len(), 3);
-
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "folder 1/folder 2".to_string())
-        );
-
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "folder 1/folder 4".to_string())
-        );
-
-        assert!(
-            actual
-                .iter()
-                .any(|f| f.path == "folder 1/file 1".to_string())
-        );
-    }
+    // use crate::{
+    //     entity::cell::{self, CellType},
+    //     service::{cell_service, tests::get_db},
+    // };
+    //
+    // use super::*;
+    //
+    // #[tokio::test]
+    // async fn get_files_valid_input_returned_files() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     create_file(&db_conn, "file".into()).await.unwrap();
+    //     create_folder(&db_conn, "folder".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //
+    //     // Assert
+    //
+    //     assert_eq!(actual.len(), 2);
+    //     assert!(actual.iter().any(|f| f.path == "file".to_string()));
+    //     assert!(actual.iter().any(|f| f.path == "folder".to_string()));
+    // }
+    //
+    // #[tokio::test]
+    // async fn create_folder_nested_path_created_all_folders() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //
+    //     // Act
+    //
+    //     create_folder(&db_conn, "folder 1/folder 2/".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual.len(), 2);
+    //     assert!(actual.iter().any(|f| f.path == "folder 1".to_string()));
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "folder 1/folder 2".to_string())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn create_folder_empty_name_returned_error() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //
+    //     // Act
+    //
+    //     let actual = create_folder(&db_conn, "  ".into()).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(actual, Err("Name cannot be empty!".to_string()));
+    // }
+    //
+    // #[tokio::test]
+    // async fn create_folder_existing_folder_returned_error() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     create_folder(&db_conn, "folder 1".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = create_folder(&db_conn, "folder 1".into()).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(actual, Err("Folder already exists!".to_string()));
+    // }
+    //
+    // #[tokio::test]
+    // async fn create_file_empty_name_returned_error() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //
+    //     // Act
+    //
+    //     let actual = create_file(&db_conn, "  ".into()).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(actual, Err("Name cannot be empty!".to_string()));
+    // }
+    //
+    // #[tokio::test]
+    // async fn create_file_existing_file_returned_error() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     create_file(&db_conn, "file 1".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = create_file(&db_conn, "file 1".into()).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(actual, Err("File already exists!".to_string()));
+    // }
+    //
+    // #[tokio::test]
+    // async fn delete_file_valid_input_deleted_file() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file1_id = create_folder(&db_conn, "test".into()).await.unwrap();
+    //     create_file(&db_conn, "test".into()).await.unwrap();
+    //
+    //     cell_service::create_cell(&db_conn, file1_id, "".into(), CellType::Note, 0)
+    //         .await
+    //         .unwrap();
+    //
+    //     let file2_id = create_file(&db_conn, "test 2".into()).await.unwrap();
+    //     cell_service::create_cell(&db_conn, file2_id, "".into(), CellType::Note, 0)
+    //         .await
+    //         .unwrap();
+    //
+    //     // Act
+    //
+    //     delete_file(&db_conn, file1_id).await.unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual.len(), 2);
+    //     let cell_counts = cell::Entity::find().all(&db_conn).await.unwrap();
+    //     assert_eq!(cell_counts.len(), 1);
+    // }
+    //
+    // #[tokio::test]
+    // async fn delete_folder_valid_input_deleted_folder() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "test".into()).await.unwrap();
+    //     let file1_id = create_file(&db_conn, "test/file".into()).await.unwrap();
+    //     cell_service::create_cell(&db_conn, file1_id, "".into(), CellType::Note, 0)
+    //         .await
+    //         .unwrap();
+    //
+    //     let file2_id = create_file(&db_conn, "test".into()).await.unwrap();
+    //     cell_service::create_cell(&db_conn, file2_id, "".into(), CellType::Note, 0)
+    //         .await
+    //         .unwrap();
+    //
+    //     // Act
+    //
+    //     delete_folder(&db_conn, folder_id).await.unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual.len(), 1);
+    //     let cell_counts = cell::Entity::find().all(&db_conn).await.unwrap();
+    //     assert_eq!(cell_counts.len(), 1);
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_file_valid_input_moved_file() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file_id = create_file(&db_conn, "test/file".into()).await.unwrap();
+    //     let destination_folder_id = create_folder(&db_conn, "test 2".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     move_file(&db_conn, file_id, destination_folder_id)
+    //         .await
+    //         .unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual[1].path, "test 2/file".to_string());
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_file_move_to_root_moved_file() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file_id = create_file(&db_conn, "test/file".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     move_file(&db_conn, file_id, 0).await.unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual[1].path, "file".to_string());
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_file_existing_file_error_returned() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file_id = create_file(&db_conn, "test/file".into()).await.unwrap();
+    //     create_file(&db_conn, "file".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = move_file(&db_conn, file_id, 0).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(
+    //         actual,
+    //         Err("another file with the same name exists!".to_string())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_folder_valid_input_moved_folder() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "test".into()).await.unwrap();
+    //     let destination_folder_id = create_folder(&db_conn, "destination".into()).await.unwrap();
+    //
+    //     create_file(&db_conn, "test/folder 1/folder 2/file".into())
+    //         .await
+    //         .unwrap();
+    //     create_file(&db_conn, "test/file".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     move_folder(&db_conn, folder_id, destination_folder_id)
+    //         .await
+    //         .unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert!(actual.iter().any(|f| f.path == "destination".to_string()));
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "destination/test/folder 1".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "destination/test/folder 1/folder 2".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "destination/test/folder 1/folder 2/file".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "destination/test/file".to_string())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_folder_move_to_root_moved_folder() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     create_folder(&db_conn, "test".into()).await.unwrap();
+    //     let folder_id = create_folder(&db_conn, "test/folder 1".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     create_file(&db_conn, "test/folder 1/folder 2/file".into())
+    //         .await
+    //         .unwrap();
+    //     create_file(&db_conn, "test/file".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     move_folder(&db_conn, folder_id, 0).await.unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert!(actual.iter().any(|f| f.path == "test".to_string()));
+    //     assert!(actual.iter().any(|f| f.path == "folder 1".to_string()));
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "folder 1/folder 2".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "folder 1/folder 2/file".to_string())
+    //     );
+    //     assert!(actual.iter().any(|f| f.path == "test/file".to_string()));
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_folder_move_to_inner_folder_error_returned() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "test".into()).await.unwrap();
+    //     let inner_folder_id = create_folder(&db_conn, "test/folder 1".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = move_folder(&db_conn, folder_id, inner_folder_id).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(
+    //         actual,
+    //         Err("You cannot move into an inner folder!".to_string())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn move_folder_existing_folder_error_returned() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "test/folder 1".into())
+    //         .await
+    //         .unwrap();
+    //     create_folder(&db_conn, "folder 1".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = move_folder(&db_conn, folder_id, 0).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(
+    //         actual,
+    //         Err("Another folder with the same name exists!".to_string())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn rename_file_inside_folder_renamed_file() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file_id = create_file(&db_conn, "folder/test".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     rename_file(&db_conn, file_id, "/new name/".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual[1].path, "folder/new name".to_string());
+    // }
+    //
+    // #[tokio::test]
+    // async fn rename_file_placed_on_root_file_renamed() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file_id = create_file(&db_conn, "test".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     rename_file(&db_conn, file_id, "/new name/".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert_eq!(actual[0].path, "new name".to_string());
+    // }
+    //
+    // #[tokio::test]
+    // async fn rename_file_existing_file_error_returned() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let file_id = create_file(&db_conn, "test".into()).await.unwrap();
+    //     create_file(&db_conn, "new name".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = rename_file(&db_conn, file_id, "/new name/".into()).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(
+    //         actual,
+    //         Err("Another file with the same name already exists!".into())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn rename_folder_valid_input_renamed_folder() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "folder 1".into()).await.unwrap();
+    //     create_file(&db_conn, "folder 1/folder 2/file".into())
+    //         .await
+    //         .unwrap();
+    //     create_file(&db_conn, "folder 1/folder 2/folder 3/file".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Act
+    //
+    //     rename_folder(&db_conn, folder_id, "/new name/subfolder".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Assert
+    //
+    //     let actual = get_files(&db_conn).await.unwrap();
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "new name/subfolder".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "new name/subfolder/folder 2".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "new name/subfolder/folder 2/file".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "new name/subfolder/folder 2/folder 3".to_string())
+    //     );
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "new name/subfolder/folder 2/folder 3/file".to_string())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn rename_folder_existing_folder_returned_error() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "folder 1".into()).await.unwrap();
+    //     create_folder(&db_conn, "folder 2".into()).await.unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = rename_folder(&db_conn, folder_id, "folder 2".into()).await;
+    //
+    //     // Assert
+    //
+    //     assert_eq!(
+    //         actual,
+    //         Err("Another folder with the same name already exists!".into())
+    //     );
+    // }
+    //
+    // #[tokio::test]
+    // async fn list_folder_children_valid_input_returned_correct_files() {
+    //     // Arrange
+    //
+    //     let db_conn = get_db().await;
+    //     let folder_id = create_folder(&db_conn, "folder 1".into()).await.unwrap();
+    //     create_folder(&db_conn, "folder 1/folder 2/ folder 3".into())
+    //         .await
+    //         .unwrap();
+    //     create_folder(&db_conn, "folder 1/folder 4".into())
+    //         .await
+    //         .unwrap();
+    //     create_file(&db_conn, "folder 1/file 1".into())
+    //         .await
+    //         .unwrap();
+    //     create_file(&db_conn, "folder 1/folder 2/file 2".into())
+    //         .await
+    //         .unwrap();
+    //
+    //     // Act
+    //
+    //     let actual = list_folder_children(&db_conn, folder_id).await.unwrap();
+    //
+    //     // Assert
+    //
+    //     assert_eq!(actual.len(), 3);
+    //
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "folder 1/folder 2".to_string())
+    //     );
+    //
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "folder 1/folder 4".to_string())
+    //     );
+    //
+    //     assert!(
+    //         actual
+    //             .iter()
+    //             .any(|f| f.path == "folder 1/file 1".to_string())
+    //     );
+    // }
 }

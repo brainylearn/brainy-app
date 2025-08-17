@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import FileWithRepetitionCounts from "../types/backend/dto/fileWithRepetitionCounts";
 
-export function createFolder(path: string) {
-	return invoke("create_folder", { path });
+export function createFolder(name: string, parentId: string | null) {
+	return invoke("create_folder", { name, parentId });
 }
 
 export function deleteFolder(folderId: number) {
@@ -35,8 +35,8 @@ export function renameFile(fileId: number, newName: string) {
 	return invoke("rename_file", { fileId, newName });
 }
 
-export function createFile(path: string) {
-	return invoke("create_file", { path });
+export function createFile(name: string, parentId: string | null) {
+	return invoke("create_file", { name, parentId });
 }
 
 export function getFiles(): Promise<FileWithRepetitionCounts[]> {

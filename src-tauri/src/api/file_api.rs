@@ -1,6 +1,10 @@
 // TODO: rename file to file_system api
 use std::error::Error;
 
+use brainy_core::{
+    Guid, common::domain_services::DomainServices,
+    file_system::value_objects::file_system_item_name::FileSystemItemName,
+};
 use brainy_infrastructure::repositories_context::RepositoriesContext;
 use sea_orm::DbConn;
 use serde::Serialize;
@@ -27,29 +31,56 @@ where
 pub async fn get_files(
     context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
 ) -> Result<Vec<FileWithRepetitionsCount>, ApiError> {
-    let mut context = context.lock().await;
-    let folders = context
-        .folder_repository()
-        .get_all_files()
-        .await?;
+    let context = context.lock().await;
+    let folders = context.folder_repository().get_all_folders().await?;
+    let files = context.file_repository().get_all_files().await?;
 
-    Ok(folders.into_iter().map(|folder| folder.into()).collect())
+    // TODO: repetitions!
+    let result = FileWithRepetitionsCount::parse_file_system(folders, files);
+
+    Ok(result)
 }
 
 #[tauri::command]
 pub async fn create_folder(
     context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    path: String,
-) -> Result<uuid::fmt::Hyphenated, ApiError> {
-    // TODO: move to service
+    services: State<'_, DomainServices>,
+    parent_id: Option<Guid>,
+    name: String,
+) -> Result<Guid, ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
 
-    Ok(uuid::Uuid::new_v4().into())
+    let folder_id = services
+        .file_system_service
+        .create_folder(parent_id.into(), FileSystemItemName::new(name)?)
+        .await?;
+
+    context.commit().await;
+
+    log::info!("Created folder with id {folder_id}");
+    Ok(folder_id)
 }
 
 #[tauri::command]
-pub async fn create_file(db_conn: State<'_, Mutex<DbConn>>, path: String) -> Result<i32, String> {
-    let db_conn = db_conn.lock().await;
-    file_service::create_file(&*db_conn, path).await
+pub async fn create_file(
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    services: State<'_, DomainServices>,
+    parent_id: Option<Guid>,
+    name: String,
+) -> Result<Guid, ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+
+    let file_id = services
+        .file_system_service
+        .create_file(parent_id.into(), FileSystemItemName::new(name)?)
+        .await?;
+
+    context.commit().await;
+
+    log::info!("Created file with id {file_id}");
+    Ok(file_id)
 }
 
 #[tauri::command]

@@ -39,4 +39,3 @@ impl Related<super::repetition::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
-
