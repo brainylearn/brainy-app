@@ -1,3 +1,4 @@
+import { ROOT_FOLDER_ID } from "../config/constants";
 import FileWithRepetitionCounts from "../types/backend/dto/fileWithRepetitionCounts";
 import FileRepetitionCounts from "../types/backend/model/fileRepetitionCounts";
 import ParsedFolder from "../types/parsedFolder";
@@ -5,19 +6,23 @@ import ParsedFolder from "../types/parsedFolder";
 function parseGetFilesResponse(
 	files: FileWithRepetitionCounts[],
 ): ParsedFolder {
-	return parseGetFilesResponseHelper(files, "", 0);
+    const rootFolder = files.find(f => f.id === ROOT_FOLDER_ID)!;
+    const filesWithoutRootFolder = files
+        .filter(f => f.id !== ROOT_FOLDER_ID)
+        .map(f => ({...f, path: f.path.substring("/root/".length)}));
+	return parseGetFilesResponseHelper(filesWithoutRootFolder, rootFolder.path, rootFolder.id);
 }
 
 function parseGetFilesResponseHelper(
 	dtos: FileWithRepetitionCounts[],
 	folderName: string,
-	id: number,
+	id: string,
 ) {
 	/* Contains sub folder names as keys, and a list of
 	 * their files as values.
 	 */
 	const subFolders: Record<string, FileWithRepetitionCounts[]> = {};
-	const subFoldersIds: Record<string, number> = {};
+	const subFoldersIds: Record<string, string> = {};
 	const folder: ParsedFolder = {
 		id,
 		name: folderName,

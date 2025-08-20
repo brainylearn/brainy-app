@@ -21,18 +21,18 @@ interface Props {
 
 function FileTree({ folder }: Props) {
 	const [fileMarkedForDeletionId, setFileMarkedForDeletionId] = useState<
-		number | null
+		string | null
 	>(null);
 	const [folderMarkedForDeletionId, setFolderMarkedForDeletionId] = useState<
-		number | null
+		string | null
 	>(null);
 	const [isAnyItemDragged, setIsAnyItemDragged] = useState(false);
 	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
-	const selectedFileId = Number(searchParams.get(fileIdQueryParameter));
+	const selectedFileId = searchParams.get(fileIdQueryParameter);
 	const folderMarkedForDeletion = useAppSelector(state =>
-		selectFolderById(state, folderMarkedForDeletionId ?? 0),
+		selectFolderById(state, folderMarkedForDeletionId!),
 	);
 
 	const handleDelete = async () => {
@@ -60,7 +60,7 @@ function FileTree({ folder }: Props) {
 		setFolderMarkedForDeletionId(null);
 	};
 
-	const handleMarkForDeletion = (id: number, isFolder: boolean) => {
+	const handleMarkForDeletion = (id: string, isFolder: boolean) => {
 		if (isFolder) setFolderMarkedForDeletionId(id);
 		else setFileMarkedForDeletionId(id);
 	};
@@ -84,7 +84,7 @@ function FileTree({ folder }: Props) {
 					fullPath=""
 					folder={folder}
 					onMarkForDeletion={handleMarkForDeletion}
-					id={0}
+					id={folder.id}
 					isAnyItemDragged={isAnyItemDragged}
 					onDragStart={() => setIsAnyItemDragged(true)}
 					onDragEnd={() => setIsAnyItemDragged(false)}

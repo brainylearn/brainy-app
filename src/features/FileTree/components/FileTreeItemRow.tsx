@@ -22,7 +22,7 @@ import useOutsideClick from "../../../hooks/useOutsideClick";
 
 interface Props {
 	isRoot: boolean;
-	id: number;
+	id: string;
 	isFolder: boolean;
 	isRenaming: boolean;
 	isExpanded: boolean;
@@ -57,7 +57,7 @@ function FileTreeItemRow({
 }: Props) {
 	const [newName, setNewName] = useState(getFileName(fullPath));
 	const [searchParams] = useSearchParams();
-	const selectedFileId = Number(searchParams.get(fileIdQueryParameter));
+	const selectedFileId = searchParams.get(fileIdQueryParameter);
 	const dispatch = useAppDispatch();
 	const isSelected = selectedFileId === id && !isRoot;
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -80,6 +80,7 @@ function FileTreeItemRow({
 		onRenameEnd();
 	};
 
+    // TODO: on ESC on input call stop renaming and creating
 	return (
 		<>
 			<div

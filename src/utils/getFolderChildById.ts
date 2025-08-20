@@ -3,7 +3,7 @@ import ParsedFolder from "../types/parsedFolder";
 
 function getFolderChildById(
 	folder: ParsedFolder,
-	id: number,
+	id: string,
 ): ParsedFile | ParsedFolder | null {
 	let queue = [folder];
 

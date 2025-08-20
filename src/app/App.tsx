@@ -79,9 +79,9 @@ function App() {
 		}
 	}, "keydown");
 
-	const handleEditButtonClick = (fileId: number, cellId: number) => {
+	const handleEditButtonClick = (fileId: string, cellId: number) => {
 		editCellId.current = cellId;
-		searchParams.set(fileIdQueryParameter, fileId.toString());
+		searchParams.set(fileIdQueryParameter, fileId);
 		void navigate({
 			pathname: "editor",
 			search: searchParams.toString(),

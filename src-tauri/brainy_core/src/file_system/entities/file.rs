@@ -50,4 +50,8 @@ impl File {
     pub(in crate::file_system) fn set_name(&mut self, new_name: FileSystemItemName) {
         self.name = new_name;
     }
+
+    pub(in crate::file_system) fn set_parent_id(&mut self, parent_id: Option<Guid>) {
+        self.parent_id = parent_id;
+    }
 }

@@ -1,7 +1,7 @@
 import FileRepetitionCounts from "../model/fileRepetitionCounts";
 
 export default interface FileWithRepetitionCounts {
-	id: number;
+	id: string;
 	path: string;
 	isFolder: boolean;
 	repetitionCounts?: FileRepetitionCounts;

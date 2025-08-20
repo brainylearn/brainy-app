@@ -30,7 +30,7 @@ interface Props {
 	onError: (error: string) => void;
 	onCellDeleteConfirm: () => void;
 	onDeleteDialogHide: () => void;
-	onEditButtonClick?: (fileId: number, cellId: number) => void;
+	onEditButtonClick?: (fileId: string, cellId: number) => void;
 }
 
 function FocusTools({

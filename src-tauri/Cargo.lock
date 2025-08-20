@@ -507,7 +507,6 @@ dependencies = [
  "brainy_core",
  "sqlx",
  "tokio",
- "uuid",
 ]
 
 [[package]]

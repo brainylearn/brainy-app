@@ -17,7 +17,7 @@ interface Props {
 	fullPath: string;
 	isRoot: boolean;
 	isAnyItemDragged: boolean;
-	onMarkForDeletion: (id: number, isFolder: boolean) => void;
+	onMarkForDeletion: (id: string, isFolder: boolean) => void;
 	onCreatingNewItemEnd: () => void;
 	onCreateNewFileClick: () => void;
 	onDragStart: () => void;
@@ -47,9 +47,10 @@ function FileTreeItemChildren({
 		e.preventDefault();
 		if (creatingNewFolder) {
             // TODO: fix id and refactor
-			await dispatch(createFolder(newItemName, folder.id ? folder.id.toString() : null));
+			await dispatch(createFolder(newItemName, folder.id));
 		} else if (creatingNewFile) {
-			await dispatch(createFile(newItemName, folder.id ? folder.id.toString() : null));
+            console.log(folder.id);
+			await dispatch(createFile(newItemName, folder.id));
 		}
 		setNewItemName("");
 		onCreatingNewItemEnd();

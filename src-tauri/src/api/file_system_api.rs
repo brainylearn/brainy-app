@@ -1,14 +1,12 @@
 // TODO: move logging to services and file
 use brainy_core::{
-    Guid, common::domain_services::DomainServices,
-    file_system::value_objects::file_system_item_name::FileSystemItemName,
+    common::domain_services::DomainServices, file_system::{value_objects::file_system_item_name::FileSystemItemName}, Guid
 };
 use brainy_infrastructure::repositories_context::RepositoriesContext;
-use sea_orm::DbConn;
 use tauri::State;
 use tokio::sync::Mutex;
 
-use crate::{api::ApiError, dto::file_with_repetitions_count::FileWithRepetitionsCount, service::file_service};
+use crate::{api::ApiError, dto::file_with_repetitions_count::FileWithRepetitionsCount};
 
 #[tauri::command]
 pub async fn get_files(
@@ -36,7 +34,7 @@ pub async fn create_folder(
 
     let folder_id = services
         .file_system_service
-        .create_folder(parent_id.into(), FileSystemItemName::new(name)?)
+        .create_folder(parent_id, FileSystemItemName::new(name)?)
         .await?;
 
     context.commit().await;
@@ -57,7 +55,7 @@ pub async fn create_file(
 
     let file_id = services
         .file_system_service
-        .create_file(parent_id.into(), FileSystemItemName::new(name)?)
+        .create_file(parent_id, FileSystemItemName::new(name)?)
         .await?;
 
     context.commit().await;
@@ -94,24 +92,36 @@ pub async fn delete_folder(
 
 #[tauri::command]
 pub async fn move_file(
-    db_conn: State<'_, Mutex<DbConn>>,
-    file_id: i32,
-    destination_folder_id: i32,
-) -> Result<(), String> {
-    // TODO:
-    let db_conn = db_conn.lock().await;
-    file_service::move_file(&db_conn, file_id, destination_folder_id).await
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    services: State<'_, DomainServices>,
+    file_id: Guid,
+    destination_folder_id: Option<Guid>,
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+    services
+        .file_system_service
+        .move_file(file_id, destination_folder_id)
+        .await?;
+    context.commit().await;
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn move_folder(
-    db_conn: State<'_, Mutex<DbConn>>,
-    folder_id: i32,
-    destination_folder_id: i32,
-) -> Result<(), String> {
-    // TODO:
-    let db_conn = db_conn.lock().await;
-    file_service::move_folder(&db_conn, folder_id, destination_folder_id).await
+    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    services: State<'_, DomainServices>,
+    folder_id: Guid,
+    destination_folder_id: Option<Guid>,
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+    context.start().await;
+    services
+        .file_system_service
+        .move_folder(folder_id, destination_folder_id)
+        .await?;
+    context.commit().await;
+    Ok(())
 }
 
 #[tauri::command]
@@ -121,6 +131,8 @@ pub async fn rename_file(
     file_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {
+    log::info!("Renaming file with id: {file_id}, and new name: {new_name}");
+
     let mut context = context.lock().await;
     context.start().await;
     services

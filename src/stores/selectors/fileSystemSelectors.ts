@@ -10,12 +10,12 @@ export const selectRootFolder = (state: RootState) =>
 	state.fileSystem.rootFolder;
 
 export const selectFileById = createSelector(
-	[selectRootFolder, (_, id: number) => id],
+	[selectRootFolder, (_, id: string) => id],
 	(rootFolder, id) => getFolderChildById(rootFolder, id) as ParsedFile | null,
 );
 
 export const selectFolderById = createSelector(
-	[selectRootFolder, (_, id: number) => id],
+	[selectRootFolder, (_, id: string) => id],
 	(rootFolder, id) =>
 		getFolderChildById(rootFolder, id) as ParsedFolder | null,
 );

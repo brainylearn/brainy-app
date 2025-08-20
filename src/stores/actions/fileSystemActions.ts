@@ -32,31 +32,31 @@ export function createFolder(name: string, parentId: string | null) {
 	return executeRequest(() => createFolderApi(name, parentId));
 }
 
-export function deleteFile(fileId: number) {
+export function deleteFile(fileId: string) {
 	return executeRequest(() => deleteFileApi(fileId));
 }
 
-export function deleteFolder(folderId: number) {
+export function deleteFolder(folderId: string) {
 	return executeRequest(() => deleteFolderApi(folderId));
 }
 
-export function renameFile(fileId: number, newName: string) {
+export function renameFile(fileId: string, newName: string) {
 	return executeRequest(() => renameFileApi(fileId, newName));
 }
 
-export function renameFolder(folderId: number, newName: string) {
+export function renameFolder(folderId: string, newName: string) {
 	return executeRequest(() => renameFolderApi(folderId, newName));
 }
 
-export function moveFile(fileId: number, destinationFolderId: number) {
+export function moveFile(fileId: string, destinationFolderId: string) {
 	return executeRequest(() => moveFileApi(fileId, destinationFolderId));
 }
 
-export function moveFolder(folderId: number, destinationFolderId: number) {
+export function moveFolder(folderId: string, destinationFolderId: string) {
 	return executeRequest(() => moveFolderApi(folderId, destinationFolderId));
 }
 
-export function importFile(importItemPath: string, importIntoFolderId: number) {
+export function importFile(importItemPath: string, importIntoFolderId: string) {
 	return executeRequest(() =>
 		importFileApi(importItemPath, importIntoFolderId),
 	);
@@ -70,7 +70,9 @@ function executeRequest<T>(
 			dispatch(requestStart());
 			await cb(dispatch, getState());
 			const files = await getFilesApi();
+            console.log(files);
 			const rootFolder = parseGetFilesResponse(files);
+            console.log("parsed", rootFolder);
 			dispatch(requestSuccess(rootFolder));
 		} catch (e) {
 			console.error(e);

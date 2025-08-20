@@ -29,7 +29,17 @@ pub trait FileSystemService: Send + Sync {
         name: FileSystemItemName,
     ) -> Result<Guid, Error>;
 
-    async fn rename_folder(&self, folder_id: Guid, new_name: FileSystemItemName) -> Result<(), Error>;
+    async fn rename_folder(
+        &self,
+        folder_id: Guid,
+        new_name: FileSystemItemName,
+    ) -> Result<(), Error>;
+
+    async fn move_folder(
+        &self,
+        folder_id: Guid,
+        destination_folder_id: Option<Guid>,
+    ) -> Result<(), Error>;
 
     async fn create_file(
         &self,
@@ -38,6 +48,12 @@ pub trait FileSystemService: Send + Sync {
     ) -> Result<Guid, Error>;
 
     async fn rename_file(&self, file_id: Guid, new_name: FileSystemItemName) -> Result<(), Error>;
+
+    async fn move_file(
+        &self,
+        file_id: Guid,
+        destination_folder_id: Option<Guid>,
+    ) -> Result<(), Error>;
 }
 
 pub struct DefaultFileSystemService {
@@ -64,7 +80,11 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(folder.id())
     }
 
-    async fn rename_folder(&self, folder_id: Guid, new_name: FileSystemItemName) -> Result<(), Error> {
+    async fn rename_folder(
+        &self,
+        folder_id: Guid,
+        new_name: FileSystemItemName,
+    ) -> Result<(), Error> {
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
 
         if folder.name() == new_name {
@@ -85,6 +105,40 @@ impl FileSystemService for DefaultFileSystemService {
         folder.set_name(new_name.clone());
         self.folder_repository.update(&folder).await?;
         log::info!("Renamed folder with id {folder_id} to {new_name}");
+        Ok(())
+    }
+
+    async fn move_folder(
+        &self,
+        folder_id: Guid,
+        destination_folder_id: Option<Guid>,
+    ) -> Result<(), Error> {
+        let mut folder = self.folder_repository.get_by_id(folder_id).await?;
+
+        if Some(folder_id) == destination_folder_id  || folder.parent_id() == destination_folder_id {
+            log::info!("Skip moving the folder into the same folder!");
+            return Ok(());
+        }
+
+        if self
+            .folder_repository
+            .exists(destination_folder_id, &folder.name())
+            .await?
+        {
+            return Err(Error::FolderExists {
+                name: folder.name().to_string(),
+            });
+        }
+
+        folder.set_parent_id(destination_folder_id);
+        self.folder_repository.update(&folder).await?;
+        log::info!(
+            "Moved folder with name {}, and id {:?} from folder with id {:?} to folder with id {:?}",
+            folder.name(),
+            folder_id,
+            folder.parent_id(),
+            destination_folder_id
+        );
         Ok(())
     }
 
@@ -126,6 +180,40 @@ impl FileSystemService for DefaultFileSystemService {
         file.set_name(new_name.clone());
         self.file_repository.update(&file).await?;
         log::info!("Renamed file with id {file_id} to {new_name}");
+        Ok(())
+    }
+
+    async fn move_file(
+        &self,
+        file_id: Guid,
+        destination_folder_id: Option<Guid>,
+    ) -> Result<(), Error> {
+        let mut file = self.file_repository.get_by_id(file_id).await?;
+
+        if file.parent_id() == destination_folder_id {
+            log::info!("Skip moving the file into the same folder!");
+            return Ok(());
+        }
+
+        if self
+            .file_repository
+            .exists(destination_folder_id, &file.name())
+            .await?
+        {
+            return Err(Error::FileExists {
+                name: file.name().to_string(),
+            });
+        }
+
+        file.set_parent_id(destination_folder_id);
+        self.file_repository.update(&file).await?;
+        log::info!(
+            "Moved file with name {}, and id {:?} from folder with id {:?} to folder with id {:?}",
+            file.name(),
+            file_id,
+            file.parent_id(),
+            destination_folder_id
+        );
         Ok(())
     }
 }

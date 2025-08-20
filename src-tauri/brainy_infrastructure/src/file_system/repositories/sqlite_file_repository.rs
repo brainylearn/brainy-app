@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 #[derive(sqlx::FromRow)]
 struct FileRow {
     id: Guid,
-    parent_id: Option<uuid::Uuid>,
+    parent_id: Option<Guid>,
     name: String,
 }
 

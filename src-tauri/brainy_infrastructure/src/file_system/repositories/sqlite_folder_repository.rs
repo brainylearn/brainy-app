@@ -29,16 +29,6 @@ impl From<FolderRow> for Folder {
     }
 }
 
-impl From<&FolderRow> for Folder {
-    fn from(value: &FolderRow) -> Self {
-        Folder::new_unchecked(
-            Some(value.id.into()),
-            value.parent_id,
-            FileSystemItemName::new_unchecked(value.name.clone()),
-        )
-    }
-}
-
 pub struct SqliteFolderRepository {
     pub pool: Arc<SqlitePool>,
     pub tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,

@@ -14,7 +14,7 @@ export const cellTypesDisplayNames: Record<CellType, string> = {
 
 export default interface Cell {
 	id: number;
-	fileId: number;
+	fileId: string;
 	content: string;
 	searchableContent: string;
 	cellType: CellType;

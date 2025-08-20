@@ -1,5 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import ParsedFolder from "../../types/parsedFolder";
+import { ROOT_FOLDER_ID } from "../../config/constants";
 
 interface FileSystemState {
 	error: string | null;
@@ -9,7 +10,7 @@ interface FileSystemState {
 const initialState: FileSystemState = {
 	error: null,
 	rootFolder: {
-		id: 0,
+		id: ROOT_FOLDER_ID,
 		files: [],
 		name: "",
 		subFolders: [],

@@ -28,7 +28,7 @@ interface Props {
 	onDelete: () => void;
 	onInsertNewCell: (cellType: CellType) => void;
 	onResetRepetitions: () => void;
-	onEditButtonClick?: (fileId: number, cellId: number) => void;
+	onEditButtonClick?: (fileId: string, cellId: number) => void;
 }
 
 function CellBlock(

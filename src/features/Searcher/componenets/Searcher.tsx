@@ -11,7 +11,7 @@ import { useSearchParams } from "react-router";
 
 interface Props {
 	onError: (error: string) => void;
-	onEditButtonClick: (fileId: number, cellId: number) => void;
+	onEditButtonClick: (fileId: string, cellId: number) => void;
 }
 
 const searchTextQueryParameter = "searchText";

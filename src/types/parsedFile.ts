@@ -1,7 +1,7 @@
 import FileRepetitionCounts from "./backend/model/fileRepetitionCounts";
 
 export default interface ParsedFile {
-	id: number;
+	id: string;
 	name: string;
 	repetitionCounts: FileRepetitionCounts;
 }

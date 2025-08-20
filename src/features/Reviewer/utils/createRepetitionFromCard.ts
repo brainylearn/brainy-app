@@ -5,8 +5,8 @@ import Repetition, {
 
 function createRepetitionFromCard(
 	card: Card,
-	id: number,
-	fileId: number,
+	id: string,
+	fileId: string,
 	cellId: number,
 	additionalContent?: string,
 ): Repetition {
