@@ -9,12 +9,7 @@ mod value_objects;
 use std::str::FromStr;
 
 use brainy_core::{
-    common::domain_services::DomainServices,
-    file_system::file_system_service::DefaultFileSystemService,
-};
-use brainy_infrastructure::{
-    repositories_context::RepositoriesContext,
-    sqlite_repositories_context::SqliteRepositoriesContext,
+    file_system::file_system_service::FileSystemService, repositories_context::RepositoriesContext,
 };
 use service::settings_service;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
@@ -41,14 +36,7 @@ pub async fn run() -> Result<(), String> {
         .connect_with(options)
         .await
         .unwrap();
-    let repositoriies_context = SqliteRepositoriesContext::new(pool);
-
-    let domain_services = DomainServices {
-        file_system_service: Box::new(DefaultFileSystemService {
-            folder_repository: repositoriies_context.folder_repository(),
-            file_repository: repositoriies_context.file_repository(),
-        }),
-    };
+    let repositories_context = RepositoriesContext::new(pool);
 
     let db_conn = load_database(&settings_service::get_settings().database_location).await;
 
@@ -74,12 +62,13 @@ pub async fn run() -> Result<(), String> {
         )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .setup(|app| {
-            let repositories_context_box: Box<dyn RepositoriesContext> =
-                Box::new(repositoriies_context);
+        .setup(move |app| {
             app.manage(Mutex::new(db_conn));
-            app.manage(Mutex::new(repositories_context_box));
-            app.manage(domain_services);
+            app.manage(FileSystemService::new(
+                repositories_context.folder_repository(),
+                repositories_context.file_repository(),
+            ));
+            app.manage(Mutex::new(repositories_context));
             #[cfg(dev)]
             {
                 let _ = app
@@ -99,7 +88,7 @@ pub async fn run() -> Result<(), String> {
             update_cells_contents,
             // Search
             search_cells,
-            // Files & Folders
+            // File System
             create_file,
             create_folder,
             delete_file,

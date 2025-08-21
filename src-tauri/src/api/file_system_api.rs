@@ -1,8 +1,12 @@
 // TODO: move logging to services and file
 use brainy_core::{
-    common::domain_services::DomainServices, file_system::{value_objects::file_system_item_name::FileSystemItemName}, Guid
+    Guid,
+    file_system::{
+        file_system_service::FileSystemService,
+        value_objects::file_system_item_name::FileSystemItemName,
+    },
+    repositories_context::RepositoriesContext,
 };
-use brainy_infrastructure::repositories_context::RepositoriesContext;
 use tauri::State;
 use tokio::sync::Mutex;
 
@@ -10,7 +14,7 @@ use crate::{api::ApiError, dto::file_with_repetitions_count::FileWithRepetitions
 
 #[tauri::command]
 pub async fn get_files(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    context: State<'_, Mutex<RepositoriesContext>>,
 ) -> Result<Vec<FileWithRepetitionsCount>, ApiError> {
     let context = context.lock().await;
     let folders = context.folder_repository().get_all_folders().await?;
@@ -24,16 +28,15 @@ pub async fn get_files(
 
 #[tauri::command]
 pub async fn create_folder(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    services: State<'_, DomainServices>,
+    context: State<'_, Mutex<RepositoriesContext>>,
+    file_system_service: State<'_, FileSystemService>,
     parent_id: Option<Guid>,
     name: String,
 ) -> Result<Guid, ApiError> {
     let mut context = context.lock().await;
     context.start().await;
 
-    let folder_id = services
-        .file_system_service
+    let folder_id = file_system_service
         .create_folder(parent_id, FileSystemItemName::new(name)?)
         .await?;
 
@@ -45,16 +48,15 @@ pub async fn create_folder(
 
 #[tauri::command]
 pub async fn create_file(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    services: State<'_, DomainServices>,
+    context: State<'_, Mutex<RepositoriesContext>>,
+    file_system_service: State<'_, FileSystemService>,
     parent_id: Option<Guid>,
     name: String,
 ) -> Result<Guid, ApiError> {
     let mut context = context.lock().await;
     context.start().await;
 
-    let file_id = services
-        .file_system_service
+    let file_id = file_system_service
         .create_file(parent_id, FileSystemItemName::new(name)?)
         .await?;
 
@@ -66,9 +68,9 @@ pub async fn create_file(
 
 #[tauri::command]
 pub async fn delete_file(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    context: State<'_, Mutex<RepositoriesContext>>,
     file_id: Guid,
-) ->Result<(), ApiError> {
+) -> Result<(), ApiError> {
     let mut context = context.lock().await;
     context.start().await;
     context.file_repository().delete_by_id(file_id).await?;
@@ -79,7 +81,7 @@ pub async fn delete_file(
 
 #[tauri::command]
 pub async fn delete_folder(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
+    context: State<'_, Mutex<RepositoriesContext>>,
     folder_id: Guid,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
@@ -92,15 +94,14 @@ pub async fn delete_folder(
 
 #[tauri::command]
 pub async fn move_file(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    services: State<'_, DomainServices>,
+    context: State<'_, Mutex<RepositoriesContext>>,
+    file_system_service: State<'_, FileSystemService>,
     file_id: Guid,
     destination_folder_id: Option<Guid>,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
     context.start().await;
-    services
-        .file_system_service
+    file_system_service
         .move_file(file_id, destination_folder_id)
         .await?;
     context.commit().await;
@@ -109,15 +110,14 @@ pub async fn move_file(
 
 #[tauri::command]
 pub async fn move_folder(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    services: State<'_, DomainServices>,
+    context: State<'_, Mutex<RepositoriesContext>>,
+    file_system_service: State<'_, FileSystemService>,
     folder_id: Guid,
     destination_folder_id: Option<Guid>,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
     context.start().await;
-    services
-        .file_system_service
+    file_system_service
         .move_folder(folder_id, destination_folder_id)
         .await?;
     context.commit().await;
@@ -126,8 +126,8 @@ pub async fn move_folder(
 
 #[tauri::command]
 pub async fn rename_file(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    services: State<'_, DomainServices>,
+    context: State<'_, Mutex<RepositoriesContext>>,
+    file_system_service: State<'_, FileSystemService>,
     file_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {
@@ -135,8 +135,7 @@ pub async fn rename_file(
 
     let mut context = context.lock().await;
     context.start().await;
-    services
-        .file_system_service
+    file_system_service
         .rename_file(file_id, FileSystemItemName::new(new_name)?)
         .await?;
     context.commit().await;
@@ -145,15 +144,14 @@ pub async fn rename_file(
 
 #[tauri::command]
 pub async fn rename_folder(
-    context: State<'_, Mutex<Box<dyn RepositoriesContext>>>,
-    services: State<'_, DomainServices>,
+    context: State<'_, Mutex<RepositoriesContext>>,
+    file_system_service: State<'_, FileSystemService>,
     folder_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
     context.start().await;
-    services
-        .file_system_service
+    file_system_service
         .rename_folder(folder_id, FileSystemItemName::new(new_name)?)
         .await?;
     context.commit().await;

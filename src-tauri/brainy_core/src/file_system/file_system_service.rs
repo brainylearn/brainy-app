@@ -1,4 +1,6 @@
-use async_trait::async_trait;
+use std::sync::Arc;
+
+// TODO: unit test
 use thiserror::Error;
 
 use crate::{
@@ -21,49 +23,23 @@ pub enum Error {
     UnknownRepositoryError(#[from] RepositoryError),
 }
 
-#[async_trait]
-pub trait FileSystemService: Send + Sync {
-    async fn create_folder(
-        &self,
-        parent_id: Option<Guid>,
-        name: FileSystemItemName,
-    ) -> Result<Guid, Error>;
-
-    async fn rename_folder(
-        &self,
-        folder_id: Guid,
-        new_name: FileSystemItemName,
-    ) -> Result<(), Error>;
-
-    async fn move_folder(
-        &self,
-        folder_id: Guid,
-        destination_folder_id: Option<Guid>,
-    ) -> Result<(), Error>;
-
-    async fn create_file(
-        &self,
-        parent_id: Option<Guid>,
-        name: FileSystemItemName,
-    ) -> Result<Guid, Error>;
-
-    async fn rename_file(&self, file_id: Guid, new_name: FileSystemItemName) -> Result<(), Error>;
-
-    async fn move_file(
-        &self,
-        file_id: Guid,
-        destination_folder_id: Option<Guid>,
-    ) -> Result<(), Error>;
+pub struct FileSystemService {
+    folder_repository: Arc<FolderRepository>,
+    file_repository: Arc<FileRepository>,
 }
 
-pub struct DefaultFileSystemService {
-    pub folder_repository: Box<dyn FolderRepository>,
-    pub file_repository: Box<dyn FileRepository>,
-}
+impl FileSystemService {
+    pub fn new(
+        folder_repository: Arc<FolderRepository>,
+        file_repository: Arc<FileRepository>,
+    ) -> Self {
+        Self {
+            folder_repository,
+            file_repository,
+        }
+    }
 
-#[async_trait]
-impl FileSystemService for DefaultFileSystemService {
-    async fn create_folder(
+    pub async fn create_folder(
         &self,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
@@ -80,7 +56,7 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(folder.id())
     }
 
-    async fn rename_folder(
+    pub async fn rename_folder(
         &self,
         folder_id: Guid,
         new_name: FileSystemItemName,
@@ -108,14 +84,14 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(())
     }
 
-    async fn move_folder(
+    pub async fn move_folder(
         &self,
         folder_id: Guid,
         destination_folder_id: Option<Guid>,
     ) -> Result<(), Error> {
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
 
-        if Some(folder_id) == destination_folder_id  || folder.parent_id() == destination_folder_id {
+        if Some(folder_id) == destination_folder_id || folder.parent_id() == destination_folder_id {
             log::info!("Skip moving the folder into the same folder!");
             return Ok(());
         }
@@ -142,7 +118,7 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(())
     }
 
-    async fn create_file(
+    pub async fn create_file(
         &self,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
@@ -159,7 +135,11 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(file.id())
     }
 
-    async fn rename_file(&self, file_id: Guid, new_name: FileSystemItemName) -> Result<(), Error> {
+    pub async fn rename_file(
+        &self,
+        file_id: Guid,
+        new_name: FileSystemItemName,
+    ) -> Result<(), Error> {
         let mut file = self.file_repository.get_by_id(file_id).await?;
 
         if file.name() == new_name {
@@ -183,7 +163,7 @@ impl FileSystemService for DefaultFileSystemService {
         Ok(())
     }
 
-    async fn move_file(
+    pub async fn move_file(
         &self,
         file_id: Guid,
         destination_folder_id: Option<Guid>,

@@ -55,3 +55,48 @@ impl File {
         self.parent_id = parent_id;
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    #[test]
+    fn new_with_id_created_file_correctly() {
+        // Arrange
+
+        let id = Guid::new_v4();
+
+        // Act
+
+        let actual = File::new(
+            Some(id),
+            None,
+            FileSystemItemName::new("test".to_string()).unwrap(),
+        );
+
+        // Assert
+
+        assert_eq!(id, actual.id());
+        assert_eq!(None, actual.parent_id());
+        assert_eq!(
+            FileSystemItemName::new("test".to_string()).unwrap(),
+            actual.name()
+        );
+    }
+
+    #[test]
+    fn new_without_id_created_file_correctly() {
+        // Act
+
+        let actual = File::new(
+            None,
+            Some(Guid::new_v4()),
+            FileSystemItemName::new("test".to_string()).unwrap(),
+        );
+
+        // Assert
+
+        assert_ne!(Guid::nil(), actual.id());
+        assert_ne!(None, actual.parent_id());
+    }
+}

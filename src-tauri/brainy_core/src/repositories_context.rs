@@ -1,53 +1,39 @@
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use brainy_core::file_system::repositories::{
+use crate::file_system::repositories::{
     file_repository::FileRepository, folder_repository::FolderRepository,
 };
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
-use crate::{
-    file_system::repositories::{
-        sqlite_file_repository::SqliteFileRepository,
-        sqlite_folder_repository::SqliteFolderRepository,
-    },
-    repositories_context::RepositoriesContext,
-};
-
-pub struct SqliteRepositoriesContext {
+pub struct RepositoriesContext {
     pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
+    folder_repository: Arc<FolderRepository>,
+    file_repository: Arc<FileRepository>,
 }
 
-impl SqliteRepositoriesContext {
+impl RepositoriesContext {
     pub fn new(pool: SqlitePool) -> Self {
         let arc_pool = Arc::new(pool);
         let tx = Arc::new(Mutex::new(None));
         Self {
             pool: arc_pool.clone(),
-            tx,
+            tx: tx.clone(),
+            file_repository: Arc::new(FileRepository::new(arc_pool.clone(), tx.clone())),
+            folder_repository: Arc::new(FolderRepository::new(arc_pool.clone(), tx.clone())),
         }
     }
-}
 
-#[async_trait]
-impl RepositoriesContext for SqliteRepositoriesContext {
-    fn folder_repository(&self) -> Box<dyn FolderRepository> {
-        Box::new(SqliteFolderRepository {
-            pool: self.pool.clone(),
-            tx: self.tx.clone(),
-        })
+    pub fn folder_repository(&self) -> Arc<FolderRepository> {
+        self.folder_repository.clone()
     }
 
-    fn file_repository(&self) -> Box<dyn FileRepository> {
-        Box::new(SqliteFileRepository {
-            pool: self.pool.clone(),
-            tx: self.tx.clone(),
-        })
+    pub fn file_repository(&self) -> Arc<FileRepository> {
+        self.file_repository.clone()
     }
 
-    async fn start(&mut self) {
+    pub async fn start(&mut self) {
         if let Some(tx) = self.tx.lock().await.take() {
             // TODO: error handling
             tx.rollback().await.unwrap();
@@ -56,7 +42,7 @@ impl RepositoriesContext for SqliteRepositoriesContext {
         *self.tx.lock().await = Some(self.pool.begin().await.unwrap());
     }
 
-    async fn commit(&mut self) {
+    pub async fn commit(&mut self) {
         println!("Commiting");
         if let Some(tx) = self.tx.lock().await.take() {
             // TODO: error handling

@@ -1,23 +1,37 @@
+// TODO: unit test
 use std::fmt::Display;
 
 use serde::{Serialize, Serializer};
 use thiserror::Error;
 
+use crate::file_system::value_objects::file_system_item_name::{
+    Error as FileSystemItemNameError, FileSystemItemName,
+};
+
 /// Represents the path of a file.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Default)]
-pub struct Path(Vec<String>);
+pub struct Path(Vec<FileSystemItemName>);
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum Error {
     #[error("Root does not have a parent!")]
     RootDoesNotHaveParent,
+
+    #[error("{0}")]
+    FileSystemItemNameError(#[from] FileSystemItemNameError),
 }
 
 impl Path {
-    pub fn new(path: &str) -> Self {
+    pub fn new(path: &str) -> Result<Self, Error> {
         let segments = path.split('/').map(|segment| segment.trim().to_string());
-        let non_empty_segments: Vec<_> = segments.filter(|segment| !segment.is_empty()).collect();
-        Path(non_empty_segments)
+
+        let mut non_empty_segments = Vec::new();
+        for segment in segments {
+            if !segment.is_empty() {
+                non_empty_segments.push(FileSystemItemName::new(segment)?);
+            }
+        }
+        Ok(Path(non_empty_segments))
     }
 
     pub fn parent_directory(&self) -> Result<Path, Error> {
@@ -31,23 +45,33 @@ impl Path {
             .into_iter()
             .take(self.0.len() - 1)
             .collect::<Vec<_>>();
-        Ok(Self::new(&parent_segments.join("/")))
+        Ok(Self(parent_segments))
     }
 
     /// Return the name of the folder/file represented by the path.
-    pub fn name(&self) -> String {
-        self.0.last().unwrap().into()
+    pub fn name(&self) -> FileSystemItemName {
+        self.0.last().unwrap().clone()
     }
 
     // TODO: accept file system item name
-    pub fn navigate(&self, name: &str) -> Self {
-        Path::new(&format!("{}/{}", self.to_string(), name))
+    pub fn navigate(&self, name: FileSystemItemName) -> Self {
+        let mut segments = self.0.clone();
+        segments.push(name);
+        Self(segments)
     }
 }
 
 impl Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "/{}", self.0.join("/"))
+        write!(
+            f,
+            "/{}",
+            self.0
+                .iter()
+                .map(|item| item.to_string())
+                .collect::<Vec<_>>()
+                .join("/")
+        )
     }
 }
 

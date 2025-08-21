@@ -8,7 +8,6 @@ version = "1.1.0"
 dependencies = [
  "async-trait",
  "brainy_core",
- "brainy_infrastructure",
  "chrono",
  "dirs",
  "log",
@@ -495,18 +494,10 @@ dependencies = [
  "async-trait",
  "log",
  "serde",
- "thiserror 2.0.12",
- "uuid",
-]
-
-[[package]]
-name = "brainy_infrastructure"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "brainy_core",
  "sqlx",
+ "thiserror 2.0.12",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
