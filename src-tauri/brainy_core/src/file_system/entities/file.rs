@@ -15,21 +15,7 @@ impl File {
         name: FileSystemItemName,
     ) -> File {
         File {
-            id: id.unwrap_or(Guid::new_v4().into()),
-            parent_id: parent_id,
-            name,
-        }
-    }
-
-    /// A method to create a folder, this should only be used be repositories when
-    /// reconstructing a folder. Otherwise use `FileSystemService` for creating files.
-    pub fn new_unchecked(
-        id: Option<Guid>,
-        parent_id: Option<Guid>,
-        name: FileSystemItemName,
-    ) -> File {
-        File {
-            id: id.unwrap_or(Guid::new_v4().into()),
+            id: id.unwrap_or(Guid::new_v4()),
             parent_id: parent_id,
             name,
         }
@@ -68,30 +54,26 @@ pub mod tests {
 
         // Act
 
-        let actual = File::new(
-            Some(id),
-            None,
-            FileSystemItemName::new("test".to_string()).unwrap(),
-        );
+        let actual = File::new(Some(id), None, "test".try_into().unwrap());
 
         // Assert
 
         assert_eq!(id, actual.id());
         assert_eq!(None, actual.parent_id());
         assert_eq!(
-            FileSystemItemName::new("test".to_string()).unwrap(),
+            FileSystemItemName::new_unchecked("test".to_string()),
             actual.name()
         );
     }
 
     #[test]
-    fn new_without_id_created_file_correctly() {
+    fn new_without_id_generated_id_automatically() {
         // Act
 
         let actual = File::new(
             None,
             Some(Guid::new_v4()),
-            FileSystemItemName::new("test".to_string()).unwrap(),
+            FileSystemItemName::new_unchecked("test".to_string()),
         );
 
         // Assert

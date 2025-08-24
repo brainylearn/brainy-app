@@ -22,8 +22,8 @@ struct FolderRow {
 
 impl From<FolderRow> for Folder {
     fn from(value: FolderRow) -> Self {
-        Folder::new_unchecked(
-            Some(value.id.into()),
+        Folder::new(
+            Some(value.id),
             value.parent_id,
             FileSystemItemName::new_unchecked(value.name),
         )

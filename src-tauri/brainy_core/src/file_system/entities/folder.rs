@@ -3,8 +3,6 @@ use crate::{Guid, file_system::value_objects::file_system_item_name::FileSystemI
 #[derive(Debug, Clone)]
 pub struct Folder {
     id: Guid,
-    // TODO: Maybe use an enum?
-    /// If the parent is None, then the parent is the root.
     parent_id: Option<Guid>,
     name: FileSystemItemName,
 }
@@ -16,21 +14,7 @@ impl Folder {
         name: FileSystemItemName,
     ) -> Folder {
         Folder {
-            id: id.unwrap_or(Guid::new_v4().into()),
-            parent_id: parent_id,
-            name,
-        }
-    }
-
-    /// A method to create a folder, this should only be used be repositories when
-    /// reconstructing a folder. Otherwise use `FileSystemService` for creating folders.
-    pub fn new_unchecked(
-        id: Option<Guid>,
-        parent_id: Option<Guid>,
-        name: FileSystemItemName,
-    ) -> Folder {
-        Folder {
-            id: id.unwrap_or(Guid::new_v4().into()),
+            id: id.unwrap_or(Guid::new_v4()),
             parent_id: parent_id,
             name,
         }
@@ -69,30 +53,26 @@ pub mod tests {
 
         // Act
 
-        let actual = Folder::new(
-            Some(id),
-            None,
-            FileSystemItemName::new("test".to_string()).unwrap(),
-        );
+        let actual = Folder::new(Some(id), None, "test".try_into().unwrap());
 
         // Assert
 
         assert_eq!(id, actual.id());
         assert_eq!(None, actual.parent_id());
         assert_eq!(
-            FileSystemItemName::new("test".to_string()).unwrap(),
+            FileSystemItemName::new_unchecked("test".to_string()),
             actual.name()
         );
     }
 
     #[test]
-    fn new_without_id_created_folder_correctly() {
+    fn new_without_id_generated_id_automatically() {
         // Act
 
         let actual = Folder::new(
             None,
             Some(Guid::new_v4()),
-            FileSystemItemName::new("test".to_string()).unwrap(),
+            FileSystemItemName::new_unchecked("test".to_string()),
         );
 
         // Assert

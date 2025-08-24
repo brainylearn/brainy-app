@@ -46,6 +46,11 @@ impl FileSystemService {
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> Result<Guid, FileServiceError> {
+        log::info!(
+            "Creating folder with name {name} and inside parent folder {:?}",
+            parent_id
+        );
+
         if self.folder_repository.exists(parent_id, &name).await? {
             return Err(FileServiceError::FolderExists {
                 name: name.to_string(),
@@ -55,6 +60,7 @@ impl FileSystemService {
         let folder = Folder::new(None, parent_id, name);
         self.folder_repository.create(&folder).await?;
 
+        log::info!("Created folder with id {}", folder.id());
         Ok(folder.id())
     }
 
@@ -63,6 +69,8 @@ impl FileSystemService {
         folder_id: Guid,
         new_name: FileSystemItemName,
     ) -> Result<(), FileServiceError> {
+        log::info!("Renaming folder with id {folder_id} into name {new_name}");
+
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
 
         if folder.name() == new_name {
@@ -91,6 +99,11 @@ impl FileSystemService {
         folder_id: Guid,
         destination_folder_id: Option<Guid>,
     ) -> Result<(), FileServiceError> {
+        log::info!(
+            "Moving folder with id {folder_id} into folder with id {:?}",
+            destination_folder_id
+        );
+
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
 
         if Some(folder_id) == destination_folder_id || folder.parent_id() == destination_folder_id {
@@ -108,6 +121,7 @@ impl FileSystemService {
             });
         }
 
+        // TODO: stop a folder from being moved into a folder inside it
         folder.set_parent_id(destination_folder_id);
         self.folder_repository.update(&folder).await?;
         log::info!(
@@ -125,6 +139,11 @@ impl FileSystemService {
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> Result<Guid, FileServiceError> {
+        log::info!(
+            "Creating file with name {name} and inside parent folder {:?}",
+            parent_id
+        );
+
         if self.file_repository.exists(parent_id, &name).await? {
             return Err(FileServiceError::FileExists {
                 name: name.to_string(),
@@ -133,6 +152,7 @@ impl FileSystemService {
 
         let file = File::new(None, parent_id, name);
         self.file_repository.create(&file).await?;
+        log::info!("Created file with id {}", file.id());
 
         Ok(file.id())
     }
@@ -142,6 +162,8 @@ impl FileSystemService {
         file_id: Guid,
         new_name: FileSystemItemName,
     ) -> Result<(), FileServiceError> {
+        log::info!("Renaming file with id {file_id} into name {new_name}");
+
         let mut file = self.file_repository.get_by_id(file_id).await?;
 
         if file.name() == new_name {
@@ -170,6 +192,11 @@ impl FileSystemService {
         file_id: Guid,
         destination_folder_id: Option<Guid>,
     ) -> Result<(), FileServiceError> {
+        log::info!(
+            "Moving file with id {file_id} into folder with id {:?}",
+            destination_folder_id
+        );
+
         let mut file = self.file_repository.get_by_id(file_id).await?;
 
         if file.parent_id() == destination_folder_id {

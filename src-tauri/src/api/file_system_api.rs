@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-// TODO: move logging to services and file
+// TODO: rename TS into file system api too
 use brainy_core::{
-    Guid,
-    common::traits::repositories_context::RepositoriesContext,
-    file_system::{
-        file_system_service::FileSystemService,
-    },
+    Guid, common::traits::repositories_context::RepositoriesContext,
+    file_system::file_system_service::FileSystemService,
 };
 use tauri::State;
 use tokio::sync::Mutex;
@@ -43,7 +40,6 @@ pub async fn create_folder(
 
     context.commit().await?;
 
-    log::info!("Created folder with id {folder_id}");
     Ok(folder_id)
 }
 
@@ -63,7 +59,6 @@ pub async fn create_file(
 
     context.commit().await?;
 
-    log::info!("Created file with id {file_id}");
     Ok(file_id)
 }
 
@@ -76,7 +71,6 @@ pub async fn delete_file(
     context.start().await?;
     context.file_repository().delete_by_id(file_id).await?;
     context.commit().await?;
-    log::info!("Deleted file with id {file_id}");
     Ok(())
 }
 
@@ -89,7 +83,6 @@ pub async fn delete_folder(
     context.start().await?;
     context.folder_repository().delete_by_id(folder_id).await?;
     context.commit().await?;
-    log::info!("Deleted folder with id {folder_id}");
     Ok(())
 }
 
@@ -132,8 +125,6 @@ pub async fn rename_file(
     file_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {
-    log::info!("Renaming file with id: {file_id}, and new name: {new_name}");
-
     let mut context = context.lock().await;
     context.start().await?;
     file_system_service

@@ -13,7 +13,6 @@ use crate::{
     },
 };
 
-// TODO: move
 #[derive(sqlx::FromRow)]
 struct FileRow {
     id: Guid,
@@ -23,17 +22,7 @@ struct FileRow {
 
 impl From<FileRow> for File {
     fn from(value: FileRow) -> Self {
-        File::new_unchecked(
-            Some(value.id.into()),
-            value.parent_id,
-            FileSystemItemName::new_unchecked(value.name),
-        )
-    }
-}
-
-impl From<&FileRow> for File {
-    fn from(value: &FileRow) -> Self {
-        File::new_unchecked(
+        File::new(
             Some(value.id.into()),
             value.parent_id,
             FileSystemItemName::new_unchecked(value.name.clone()),
@@ -55,6 +44,7 @@ impl SqliteFileRepository {
     }
 }
 
+// TODO: use query! macro
 #[async_trait]
 impl FileRepository for SqliteFileRepository {
     async fn get_by_id(&self, id: Guid) -> Result<File, RepositoryError> {

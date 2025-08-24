@@ -36,7 +36,9 @@ impl TryFrom<String> for FileSystemItemName {
         if name.is_empty() {
             return Err(FileSystemItemNameError::EmptyName);
         } else if name.contains('/') {
-            return Err(FileSystemItemNameError::InvalidName("The name cannot contain forward slash!"));
+            return Err(FileSystemItemNameError::InvalidName(
+                "The name cannot contain forward slash!",
+            ));
         }
         Ok(FileSystemItemName(name))
     }
@@ -53,7 +55,7 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn new_empty_name_returned_error() {
+    fn try_from_empty_name_returned_error() {
         // Act
 
         let actual = FileSystemItemName::try_from("  ");
@@ -64,7 +66,7 @@ pub mod tests {
     }
 
     #[test]
-    fn new_containing_slash_in_name_returned_error() {
+    fn try_from_containing_slash_in_name_returned_error() {
         // Act
 
         let actual = FileSystemItemName::try_from("file 1/file2");
@@ -72,13 +74,15 @@ pub mod tests {
         // Assert
 
         assert_eq!(
-            Err(FileSystemItemNameError::InvalidName("The name cannot contain forward slash!")),
+            Err(FileSystemItemNameError::InvalidName(
+                "The name cannot contain forward slash!"
+            )),
             actual
         );
     }
 
     #[test]
-    fn new_valid_name_returned_result() {
+    fn try_from_valid_name_returned_result() {
         // Act
 
         let actual = FileSystemItemName::try_from("file 1");

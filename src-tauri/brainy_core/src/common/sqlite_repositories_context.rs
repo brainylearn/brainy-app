@@ -16,8 +16,8 @@ use crate::{
 pub struct SqliteRepositoriesContext {
     pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
-    folder_repository: Arc<dyn FolderRepository>,
-    file_repository: Arc<dyn FileRepository>,
+    folder_repository: Arc<SqliteFolderRepository>,
+    file_repository: Arc<SqliteFileRepository>,
 }
 
 impl SqliteRepositoriesContext {

@@ -18,7 +18,8 @@ pub trait FolderRepository: Send + Sync {
     ) -> Result<bool, RepositoryError>;
     async fn create(&self, folder: &Folder) -> Result<(), RepositoryError>;
     async fn update(&self, folder: &Folder) -> Result<(), RepositoryError>;
-    /// Note that deleting the folders deletes all subfolders and files, including
-    /// the cells and all repetitions associated with the files.
+    /// Note that deleting the folders deletes all subfolders and files inside
+    /// it recursively, including the cells and all repetitions associated
+    /// with the files.
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;
 }

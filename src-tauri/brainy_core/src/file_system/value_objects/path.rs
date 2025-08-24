@@ -5,7 +5,7 @@ use serde::{Serialize, Serializer};
 use thiserror::Error;
 
 use crate::file_system::value_objects::file_system_item_name::{
-    FileSystemItemNameError as FileSystemItemNameError, FileSystemItemName,
+    FileSystemItemName, FileSystemItemNameError,
 };
 
 /// Represents the path of a file.
@@ -35,18 +35,15 @@ impl Path {
         Ok(Self(parent_segments))
     }
 
-    /// Return the name of the folder/file represented by the path.
-    pub fn name(&self) -> FileSystemItemName {
-        self.0.last().unwrap().clone()
-    }
-
     pub fn navigate(&self, name: FileSystemItemName) -> Self {
         let mut segments = self.0.clone();
         segments.push(name);
-        Self(segments)
+        segments.into()
     }
 }
 
+/// Creates a path from a string, the string may contain forward slashes that
+/// will be used for splitting into segments.
 impl TryFrom<&str> for Path {
     type Error = PathError;
 
