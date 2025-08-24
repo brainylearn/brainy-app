@@ -8,13 +8,15 @@ use crate::{
     common::repository_error::RepositoryError,
     file_system::{
         entities::{file::File, folder::Folder},
-        repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
+        repositories::traits::{
+            file_repository::FileRepository, folder_repository::FolderRepository,
+        },
         value_objects::file_system_item_name::FileSystemItemName,
     },
 };
 
 #[derive(Error, Debug)]
-pub enum Error {
+pub enum FileServiceError {
     #[error("The file with the name '{name}' already exists!")]
     FileExists { name: String },
     #[error("The folder with the name '{name}' already exists!")]
@@ -24,14 +26,14 @@ pub enum Error {
 }
 
 pub struct FileSystemService {
-    folder_repository: Arc<FolderRepository>,
-    file_repository: Arc<FileRepository>,
+    folder_repository: Arc<dyn FolderRepository>,
+    file_repository: Arc<dyn FileRepository>,
 }
 
 impl FileSystemService {
     pub fn new(
-        folder_repository: Arc<FolderRepository>,
-        file_repository: Arc<FileRepository>,
+        folder_repository: Arc<dyn FolderRepository>,
+        file_repository: Arc<dyn FileRepository>,
     ) -> Self {
         Self {
             folder_repository,
@@ -43,9 +45,9 @@ impl FileSystemService {
         &self,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
-    ) -> Result<Guid, Error> {
+    ) -> Result<Guid, FileServiceError> {
         if self.folder_repository.exists(parent_id, &name).await? {
-            return Err(Error::FolderExists {
+            return Err(FileServiceError::FolderExists {
                 name: name.to_string(),
             });
         }
@@ -60,7 +62,7 @@ impl FileSystemService {
         &self,
         folder_id: Guid,
         new_name: FileSystemItemName,
-    ) -> Result<(), Error> {
+    ) -> Result<(), FileServiceError> {
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
 
         if folder.name() == new_name {
@@ -73,7 +75,7 @@ impl FileSystemService {
             .exists(folder.parent_id(), &new_name)
             .await?
         {
-            return Err(Error::FolderExists {
+            return Err(FileServiceError::FolderExists {
                 name: new_name.to_string(),
             });
         }
@@ -88,7 +90,7 @@ impl FileSystemService {
         &self,
         folder_id: Guid,
         destination_folder_id: Option<Guid>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), FileServiceError> {
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
 
         if Some(folder_id) == destination_folder_id || folder.parent_id() == destination_folder_id {
@@ -101,7 +103,7 @@ impl FileSystemService {
             .exists(destination_folder_id, &folder.name())
             .await?
         {
-            return Err(Error::FolderExists {
+            return Err(FileServiceError::FolderExists {
                 name: folder.name().to_string(),
             });
         }
@@ -122,9 +124,9 @@ impl FileSystemService {
         &self,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
-    ) -> Result<Guid, Error> {
+    ) -> Result<Guid, FileServiceError> {
         if self.file_repository.exists(parent_id, &name).await? {
-            return Err(Error::FileExists {
+            return Err(FileServiceError::FileExists {
                 name: name.to_string(),
             });
         }
@@ -139,7 +141,7 @@ impl FileSystemService {
         &self,
         file_id: Guid,
         new_name: FileSystemItemName,
-    ) -> Result<(), Error> {
+    ) -> Result<(), FileServiceError> {
         let mut file = self.file_repository.get_by_id(file_id).await?;
 
         if file.name() == new_name {
@@ -152,7 +154,7 @@ impl FileSystemService {
             .exists(file.parent_id(), &new_name)
             .await?
         {
-            return Err(Error::FileExists {
+            return Err(FileServiceError::FileExists {
                 name: new_name.to_string(),
             });
         }
@@ -167,7 +169,7 @@ impl FileSystemService {
         &self,
         file_id: Guid,
         destination_folder_id: Option<Guid>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), FileServiceError> {
         let mut file = self.file_repository.get_by_id(file_id).await?;
 
         if file.parent_id() == destination_folder_id {
@@ -180,7 +182,7 @@ impl FileSystemService {
             .exists(destination_folder_id, &file.name())
             .await?
         {
-            return Err(Error::FileExists {
+            return Err(FileServiceError::FileExists {
                 name: file.name().to_string(),
             });
         }

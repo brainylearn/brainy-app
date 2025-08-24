@@ -5,7 +5,7 @@ use serde::{Serialize, Serializer};
 use thiserror::Error;
 
 use crate::file_system::value_objects::file_system_item_name::{
-    Error as FileSystemItemNameError, FileSystemItemName,
+    FileSystemItemNameError as FileSystemItemNameError, FileSystemItemName,
 };
 
 /// Represents the path of a file.
@@ -13,7 +13,7 @@ use crate::file_system::value_objects::file_system_item_name::{
 pub struct Path(Vec<FileSystemItemName>);
 
 #[derive(Error, Debug, PartialEq, Eq)]
-pub enum Error {
+pub enum PathError {
     #[error("Root does not have a parent!")]
     RootDoesNotHaveParent,
 
@@ -22,7 +22,7 @@ pub enum Error {
 }
 
 impl Path {
-    pub fn new(path: &str) -> Result<Self, Error> {
+    pub fn new(path: &str) -> Result<Self, PathError> {
         let segments = path.split('/').map(|segment| segment.trim().to_string());
 
         let mut non_empty_segments = Vec::new();
@@ -34,9 +34,9 @@ impl Path {
         Ok(Path(non_empty_segments))
     }
 
-    pub fn parent_directory(&self) -> Result<Path, Error> {
+    pub fn parent_directory(&self) -> Result<Path, PathError> {
         if self.0.is_empty() {
-            return Err(Error::RootDoesNotHaveParent);
+            return Err(PathError::RootDoesNotHaveParent);
         }
 
         let parent_segments = self

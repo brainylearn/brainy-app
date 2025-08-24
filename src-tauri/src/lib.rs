@@ -6,10 +6,14 @@ mod service;
 mod util;
 mod value_objects;
 
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 
 use brainy_core::{
-    file_system::file_system_service::FileSystemService, repositories_context::RepositoriesContext,
+    common::{
+        sqlite_repositories_context::SqliteRepositoriesContext,
+        traits::repositories_context::RepositoriesContext,
+    },
+    file_system::file_system_service::FileSystemService,
 };
 use service::settings_service;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
@@ -36,7 +40,6 @@ pub async fn run() -> Result<(), String> {
         .connect_with(options)
         .await
         .unwrap();
-    let repositories_context = RepositoriesContext::new(pool);
 
     let db_conn = load_database(&settings_service::get_settings().database_location).await;
 
@@ -63,12 +66,15 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
+            let repositories_context = SqliteRepositoriesContext::new(pool);
             app.manage(Mutex::new(db_conn));
             app.manage(FileSystemService::new(
                 repositories_context.folder_repository(),
                 repositories_context.file_repository(),
             ));
-            app.manage(Mutex::new(repositories_context));
+            app.manage(
+                Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
+            );
             #[cfg(dev)]
             {
                 let _ = app

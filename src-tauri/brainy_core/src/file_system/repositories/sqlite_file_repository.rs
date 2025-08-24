@@ -1,13 +1,19 @@
 use std::sync::Arc;
 
-use crate::{
-    Guid,
-    common::repository_error::RepositoryError,
-    file_system::{entities::file::File, value_objects::file_system_item_name::FileSystemItemName},
-};
+use async_trait::async_trait;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
+use crate::{
+    Guid,
+    common::repository_error::RepositoryError,
+    file_system::{
+        entities::file::File, repositories::traits::file_repository::FileRepository,
+        value_objects::file_system_item_name::FileSystemItemName,
+    },
+};
+
+// TODO: move
 #[derive(sqlx::FromRow)]
 struct FileRow {
     id: Guid,
@@ -35,20 +41,23 @@ impl From<&FileRow> for File {
     }
 }
 
-pub struct FileRepository {
+pub struct SqliteFileRepository {
     pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
 }
 
-impl FileRepository {
+impl SqliteFileRepository {
     pub fn new(
         pool: Arc<SqlitePool>,
         tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
     ) -> Self {
         Self { pool, tx }
     }
+}
 
-    pub async fn get_by_id(&self, id: Guid) -> Result<File, RepositoryError> {
+#[async_trait]
+impl FileRepository for SqliteFileRepository {
+    async fn get_by_id(&self, id: Guid) -> Result<File, RepositoryError> {
         let row = sqlx::query_as::<_, FileRow>("SELECT * FROM files WHERE id = $1")
             .bind(id)
             .fetch_one(&*self.pool)
@@ -60,7 +69,7 @@ impl FileRepository {
         }
     }
 
-    pub async fn get_all_files(&self) -> Result<Vec<File>, RepositoryError> {
+    async fn get_all_files(&self) -> Result<Vec<File>, RepositoryError> {
         let rows = sqlx::query_as::<_, FileRow>("SELECT * FROM files")
             .fetch_all(&*self.pool)
             .await;
@@ -71,7 +80,7 @@ impl FileRepository {
         }
     }
 
-    pub async fn exists(
+    async fn exists(
         &self,
         parent_id: Option<Guid>,
         name: &FileSystemItemName,
@@ -90,7 +99,7 @@ impl FileRepository {
         }
     }
 
-    pub async fn create(&self, file: &File) -> Result<(), RepositoryError> {
+    async fn create(&self, file: &File) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut().unwrap();
 
@@ -107,7 +116,7 @@ impl FileRepository {
         }
     }
 
-    pub async fn update(&self, file: &File) -> Result<(), RepositoryError> {
+    async fn update(&self, file: &File) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut().unwrap();
 
@@ -125,7 +134,7 @@ impl FileRepository {
         }
     }
 
-    pub async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
+    async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut().unwrap();
 

@@ -7,7 +7,7 @@ use thiserror::Error;
 pub struct FileSystemItemName(String);
 
 #[derive(Error, Debug, PartialEq, Eq)]
-pub enum Error {
+pub enum FileSystemItemNameError {
     #[error("Name cannot be empty!")]
     EmptyName,
 
@@ -16,12 +16,12 @@ pub enum Error {
 }
 
 impl FileSystemItemName {
-    pub fn new(name: String) -> Result<FileSystemItemName, Error> {
+    pub fn new(name: String) -> Result<FileSystemItemName, FileSystemItemNameError> {
         let name = name.trim().to_string();
         if name.is_empty() {
-            return Err(Error::EmptyName);
+            return Err(FileSystemItemNameError::EmptyName);
         } else if name.contains('/') {
-            return Err(Error::InvalidName("The name cannot contain forward slash!"));
+            return Err(FileSystemItemNameError::InvalidName("The name cannot contain forward slash!"));
         }
         Ok(FileSystemItemName(name))
     }
@@ -49,7 +49,7 @@ pub mod tests {
 
         // Assert
 
-        assert_eq!(Err(Error::EmptyName), actual);
+        assert_eq!(Err(FileSystemItemNameError::EmptyName), actual);
     }
 
     #[test]
@@ -61,7 +61,7 @@ pub mod tests {
         // Assert
 
         assert_eq!(
-            Err(Error::InvalidName("The name cannot contain forward slash!")),
+            Err(FileSystemItemNameError::InvalidName("The name cannot contain forward slash!")),
             actual
         );
     }
