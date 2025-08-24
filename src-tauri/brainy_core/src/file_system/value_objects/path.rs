@@ -16,24 +16,11 @@ pub struct Path(Vec<FileSystemItemName>);
 pub enum PathError {
     #[error("Root does not have a parent!")]
     RootDoesNotHaveParent,
-
     #[error("{0}")]
     FileSystemItemNameError(#[from] FileSystemItemNameError),
 }
 
 impl Path {
-    pub fn new(path: &str) -> Result<Self, PathError> {
-        let segments = path.split('/').map(|segment| segment.trim().to_string());
-
-        let mut non_empty_segments = Vec::new();
-        for segment in segments {
-            if !segment.is_empty() {
-                non_empty_segments.push(FileSystemItemName::new(segment)?);
-            }
-        }
-        Ok(Path(non_empty_segments))
-    }
-
     pub fn parent_directory(&self) -> Result<Path, PathError> {
         if self.0.is_empty() {
             return Err(PathError::RootDoesNotHaveParent);
@@ -53,11 +40,38 @@ impl Path {
         self.0.last().unwrap().clone()
     }
 
-    // TODO: accept file system item name
     pub fn navigate(&self, name: FileSystemItemName) -> Self {
         let mut segments = self.0.clone();
         segments.push(name);
         Self(segments)
+    }
+}
+
+impl TryFrom<&str> for Path {
+    type Error = PathError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let segments = value.split('/').map(|segment| segment.trim());
+
+        let mut non_empty_segments = Vec::new();
+        for segment in segments {
+            if !segment.is_empty() {
+                non_empty_segments.push(FileSystemItemName::try_from(segment)?);
+            }
+        }
+        Ok(non_empty_segments.into())
+    }
+}
+
+impl From<Vec<FileSystemItemName>> for Path {
+    fn from(value: Vec<FileSystemItemName>) -> Self {
+        Path(value)
+    }
+}
+
+impl From<FileSystemItemName> for Path {
+    fn from(value: FileSystemItemName) -> Self {
+        Path(vec![value])
     }
 }
 

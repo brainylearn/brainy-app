@@ -10,24 +10,35 @@ pub struct FileSystemItemName(String);
 pub enum FileSystemItemNameError {
     #[error("Name cannot be empty!")]
     EmptyName,
-
     #[error("{0}")]
     InvalidName(&'static str),
 }
 
 impl FileSystemItemName {
-    pub fn new(name: String) -> Result<FileSystemItemName, FileSystemItemNameError> {
-        let name = name.trim().to_string();
+    pub fn new_unchecked(name: String) -> FileSystemItemName {
+        FileSystemItemName(name)
+    }
+}
+
+impl TryFrom<&str> for FileSystemItemName {
+    type Error = FileSystemItemNameError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::try_from(value.to_string())
+    }
+}
+
+impl TryFrom<String> for FileSystemItemName {
+    type Error = FileSystemItemNameError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let name = value.trim().to_string();
         if name.is_empty() {
             return Err(FileSystemItemNameError::EmptyName);
         } else if name.contains('/') {
             return Err(FileSystemItemNameError::InvalidName("The name cannot contain forward slash!"));
         }
         Ok(FileSystemItemName(name))
-    }
-
-    pub fn new_unchecked(name: String) -> FileSystemItemName {
-        FileSystemItemName(name)
     }
 }
 
@@ -45,7 +56,7 @@ pub mod tests {
     fn new_empty_name_returned_error() {
         // Act
 
-        let actual = FileSystemItemName::new("  ".to_string());
+        let actual = FileSystemItemName::try_from("  ");
 
         // Assert
 
@@ -56,7 +67,7 @@ pub mod tests {
     fn new_containing_slash_in_name_returned_error() {
         // Act
 
-        let actual = FileSystemItemName::new("file 1/file2".to_string());
+        let actual = FileSystemItemName::try_from("file 1/file2");
 
         // Assert
 
@@ -70,7 +81,7 @@ pub mod tests {
     fn new_valid_name_returned_result() {
         // Act
 
-        let actual = FileSystemItemName::new("file 1".to_string());
+        let actual = FileSystemItemName::try_from("file 1");
 
         // Assert
 

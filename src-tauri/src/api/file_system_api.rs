@@ -6,7 +6,6 @@ use brainy_core::{
     common::traits::repositories_context::RepositoriesContext,
     file_system::{
         file_system_service::FileSystemService,
-        value_objects::file_system_item_name::FileSystemItemName,
     },
 };
 use tauri::State;
@@ -39,7 +38,7 @@ pub async fn create_folder(
     context.start().await?;
 
     let folder_id = file_system_service
-        .create_folder(parent_id, FileSystemItemName::new(name)?)
+        .create_folder(parent_id, name.try_into()?)
         .await?;
 
     context.commit().await?;
@@ -59,7 +58,7 @@ pub async fn create_file(
     context.start().await?;
 
     let file_id = file_system_service
-        .create_file(parent_id, FileSystemItemName::new(name)?)
+        .create_file(parent_id, name.try_into()?)
         .await?;
 
     context.commit().await?;
@@ -138,7 +137,7 @@ pub async fn rename_file(
     let mut context = context.lock().await;
     context.start().await?;
     file_system_service
-        .rename_file(file_id, FileSystemItemName::new(new_name)?)
+        .rename_file(file_id, new_name.try_into()?)
         .await?;
     context.commit().await?;
     Ok(())
@@ -154,7 +153,7 @@ pub async fn rename_folder(
     let mut context = context.lock().await;
     context.start().await?;
     file_system_service
-        .rename_folder(folder_id, FileSystemItemName::new(new_name)?)
+        .rename_folder(folder_id, new_name.try_into()?)
         .await?;
     context.commit().await?;
     Ok(())

@@ -39,7 +39,7 @@ impl FileWithRepetitionsCount {
             map.get(&None)
                 .unwrap_or(&Vec::new())
                 .iter()
-                .map(|value| (value.id(), Path::new(&value.name().to_string()).unwrap())),
+                .map(|value| (value.id(), Path::from(value.name()))),
         );
 
         while !queue.is_empty() {
@@ -69,7 +69,7 @@ impl FileWithRepetitionsCount {
             result.push(FileWithRepetitionsCount {
                 id: file.id(),
                 path: match file.parent_id() {
-                    None => Path::new(&file.name().to_string()).unwrap(),
+                    None => Path::from(file.name()),
                     Some(parent_id) => folder_names.get(&parent_id).unwrap().navigate(file.name()),
                 },
                 is_folder: false,
