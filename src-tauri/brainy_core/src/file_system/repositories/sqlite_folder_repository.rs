@@ -35,7 +35,6 @@ pub struct SqliteFolderRepository {
     tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
 }
 
-// TODO: use query! macro
 impl SqliteFolderRepository {
     pub fn new(
         pool: Arc<SqlitePool>,
@@ -48,10 +47,13 @@ impl SqliteFolderRepository {
 #[async_trait]
 impl FolderRepository for SqliteFolderRepository {
     async fn get_by_id(&self, id: Guid) -> Result<Folder, RepositoryError> {
-        let row = sqlx::query_as::<_, FolderRow>("SELECT * FROM folders WHERE id = $1")
-            .bind(id)
-            .fetch_one(&*self.pool)
-            .await;
+        let row = sqlx::query_as!(
+            FolderRow,
+            r#"SELECT id as "id: _", parent_id as "parent_id: _", name FROM folders WHERE id = $1"#,
+            id
+        )
+        .fetch_one(&*self.pool)
+        .await;
 
         match row {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
@@ -60,9 +62,12 @@ impl FolderRepository for SqliteFolderRepository {
     }
 
     async fn get_all_folders(&self) -> Result<Vec<Folder>, RepositoryError> {
-        let rows = sqlx::query_as::<_, FolderRow>("SELECT * FROM folders")
-            .fetch_all(&*self.pool)
-            .await;
+        let rows = sqlx::query_as!(
+            FolderRow,
+            r#"SELECT id as "id: _", parent_id as "parent_id: _", name FROM folders"#,
+        )
+        .fetch_all(&*self.pool)
+        .await;
 
         match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
@@ -75,16 +80,17 @@ impl FolderRepository for SqliteFolderRepository {
         parent_id: Option<Guid>,
         name: &FileSystemItemName,
     ) -> Result<bool, RepositoryError> {
-        let row = sqlx::query_as::<_, (bool,)>(
-            "SELECT EXISTS (SELECT * FROM folders WHERE parent_id = $1 AND name = $2)",
+        let name_string = name.to_string();
+        let row = sqlx::query_scalar!(
+            r#"SELECT COUNT(*) FROM folders WHERE parent_id = $1 AND name = $2"#,
+            parent_id,
+            name_string
         )
-        .bind(parent_id)
-        .bind(name.to_string())
         .fetch_one(&*self.pool)
         .await;
 
         match row {
-            Ok(row) => Ok(row.0),
+            Ok(cnt) => Ok(cnt > 0),
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
     }
@@ -93,12 +99,17 @@ impl FolderRepository for SqliteFolderRepository {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut().unwrap();
 
-        let result = sqlx::query("INSERT INTO folders(id, name, parent_id) VALUES ($1, $2, $3)")
-            .bind(folder.id())
-            .bind(folder.name().to_string())
-            .bind(folder.parent_id())
-            .execute(&mut *tx.as_mut())
-            .await;
+        let folder_id = folder.id();
+        let folder_name = folder.name().to_string();
+        let parent_id = folder.parent_id();
+        let result = sqlx::query!(
+            "INSERT INTO folders(id, name, parent_id) VALUES ($1, $2, $3)",
+            folder_id,
+            folder_name,
+            parent_id
+        )
+        .execute(&mut *tx.as_mut())
+        .await;
 
         match result {
             Ok(_) => Ok(()),
@@ -110,13 +121,17 @@ impl FolderRepository for SqliteFolderRepository {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut().unwrap();
 
-        let result =
-            sqlx::query("UPDATE folders SET id = $1, name = $2, parent_id = $3 WHERE id = $1")
-                .bind(folder.id())
-                .bind(folder.name().to_string())
-                .bind(folder.parent_id())
-                .execute(&mut *tx.as_mut())
-                .await;
+        let folder_id = folder.id();
+        let folder_name = folder.name().to_string();
+        let parent_id = folder.parent_id();
+        let result = sqlx::query!(
+            "UPDATE folders SET id = $1, name = $2, parent_id = $3 WHERE id = $1",
+            folder_id,
+            folder_name,
+            parent_id
+        )
+        .execute(&mut *tx.as_mut())
+        .await;
 
         match result {
             Ok(_) => Ok(()),
@@ -128,8 +143,7 @@ impl FolderRepository for SqliteFolderRepository {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut().unwrap();
 
-        let result = sqlx::query("DELETE FROM folders WHERE id = $1")
-            .bind(id)
+        let result = sqlx::query!("DELETE FROM folders WHERE id = $1", id)
             .execute(&mut *tx.as_mut())
             .await;
 

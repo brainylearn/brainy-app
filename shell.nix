@@ -9,10 +9,11 @@ pkgs.mkShell {
     cargo-tauri
     clippy
     gobject-introspection
-    vscode-extensions.vadimcn.vscode-lldb
     nodejs
     pkg-config
     rustc
+    sqlx-cli
+    vscode-extensions.vadimcn.vscode-lldb
   ];
 
   buildInputs = with pkgs; [

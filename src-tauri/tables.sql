@@ -1,7 +1,7 @@
 -- TODO: initiate the database at start
 CREATE TABLE folders(
-    id                          TEXT        PRIMARY KEY,
-    name                        TEXT,
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    name                        TEXT        NOT NULL,
     parent_id                   TEXT,
     FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
     UNIQUE (name, parent_id)
@@ -11,8 +11,8 @@ CREATE TABLE folders(
 INSERT INTO folders(id, name, parent_id) VALUES (X'00000000000000000000000000000001', 'root', NULL);
 
 CREATE TABLE files(
-    id                          TEXT        PRIMARY KEY,
-    name                        TEXT,
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    name                        TEXT        NOT NULL,
     parent_id                   TEXT        NOT NULL,
     FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
     UNIQUE (name, parent_id)

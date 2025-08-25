@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sqlx = { version = "0.8.6", features = [ "runtime-tokio", "tls-native-tls", "sqlite", "chrono", "uuid" ] }
+sqlx = { version = "0.8.6", features = [ "runtime-tokio", "tls-native-tls", "macros", "sqlite", "chrono", "uuid" ] }
 tokio = { version = "1.46.1", features = ["full"] }
 async-trait = "0.1.88"
 log = "0.4.27"
