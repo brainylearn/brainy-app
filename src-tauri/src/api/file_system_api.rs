@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-// TODO: rename TS into file system api too
+// TODO: rename TS into file system api too, and keep TS up to date
 use brainy_core::{
     Guid, common::traits::repositories_context::RepositoriesContext,
     file_system::file_system_service::FileSystemService,

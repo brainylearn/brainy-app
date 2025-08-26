@@ -11,8 +11,6 @@ use crate::file_system::repositories::traits::{
 pub enum RepositoriesContextError {
     #[error("An unknown error has happened!")]
     UnknownError(String),
-    #[error("Transaction is already started!")]
-    TransactionAlreadyStarted,
     #[error("Transaction is not started!")]
     TransactionNotStarted,
 }

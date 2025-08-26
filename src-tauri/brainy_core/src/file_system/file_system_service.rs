@@ -21,6 +21,8 @@ pub enum FileServiceError {
     FileExists { name: String },
     #[error("The folder with the name '{name}' already exists!")]
     FolderExists { name: String },
+    #[error("Cannot move folder to a nested folder within the current folder")]
+    CannotMoveChildIntoInnerFolder,
     #[error("{0}")]
     UnknownRepositoryError(#[from] RepositoryError),
 }
@@ -94,6 +96,7 @@ impl FileSystemService {
         Ok(())
     }
 
+    // TODO: test on multiple levels
     pub async fn move_folder(
         &self,
         folder_id: Guid,
@@ -121,7 +124,12 @@ impl FileSystemService {
             });
         }
 
-        // TODO: stop a folder from being moved into a folder inside it
+        if let Some(destination_folder_id) = destination_folder_id {
+            if self.is_subfolder_of(folder_id, destination_folder_id).await? {
+                return Err(FileServiceError::CannotMoveChildIntoInnerFolder);
+            }
+        }
+
         folder.set_parent_id(destination_folder_id);
         self.folder_repository.update(&folder).await?;
         log::info!(
@@ -132,6 +140,26 @@ impl FileSystemService {
             destination_folder_id
         );
         Ok(())
+    }
+
+    /// Checks whether the child folder is inside the parent folder.
+    async fn is_subfolder_of(
+        &self,
+        parent_folder_id: Guid,
+        child_folder_id: Guid,
+    ) -> Result<bool, FileServiceError> {
+
+        let mut curr_parent_id = Some(child_folder_id);
+
+        while curr_parent_id != Some(parent_folder_id) && curr_parent_id != None {
+            let curr_folder = self
+                .folder_repository
+                .get_by_id(curr_parent_id.unwrap())
+                .await?;
+            curr_parent_id = curr_folder.parent_id();
+        }
+
+        Ok(curr_parent_id == Some(parent_folder_id))
     }
 
     pub async fn create_file(

@@ -44,8 +44,11 @@ impl RepositoriesContext for SqliteRepositoriesContext {
     }
 
     async fn start(&mut self) -> Result<(), RepositoriesContextError> {
-        if self.tx.lock().await.is_some() {
-            return Err(RepositoriesContextError::TransactionAlreadyStarted);
+        if let Some(tx) = self.tx.lock().await.take() {
+            match tx.rollback().await {
+                Err(err) => return Err(RepositoriesContextError::UnknownError(err.to_string())),
+                _ => (),
+            };
         }
 
         log::info!("Starting new transaction");
