@@ -5,13 +5,13 @@ import styles from "./styles.module.css";
 import {
 	deleteFile,
 	deleteFolder,
-} from "../../../stores/actions/fileSystemActions.ts";
+} from "../../../stores/fileSystem/fileSystemActions.ts";
 import FileTreeItem from "./FileTreeItem.tsx";
 import UiFolder from "../../../types/ui/uiFolder.ts";
 import { useNavigate, useSearchParams } from "react-router";
 import { fileIdQueryParameter } from "../../../config/constants.ts";
 import useAppSelector from "../../../hooks/useAppSelector.ts";
-import { selectFolderById } from "../../../stores/selectors/fileSystemSelectors.ts";
+import { selectFolderById } from "../../../stores/fileSystem/fileSystemSelectors.ts";
 import getFolderChildById from "../../../utils/getFolderChildById.ts";
 import { mdiDeleteOutline } from "@mdi/js";
 

@@ -21,7 +21,7 @@ describe(createCardFromRepetition, () => {
 			const repetition: Repetition = {
 				due: "2000/12/12",
 				state: statePair[0] as RepetitionState,
-				id: 1,
+				id: "1",
 				lastReview: "2005/5/5",
 				reps: 1,
 				lapses: 2,
@@ -30,7 +30,7 @@ describe(createCardFromRepetition, () => {
 				elapsedDays: 5,
 				scheduledDays: 6,
 				cellId: 99,
-				fileId: 99,
+				fileId: "99",
 			};
 			const expected: Card = {
 				due: new Date("2000/12/12"),

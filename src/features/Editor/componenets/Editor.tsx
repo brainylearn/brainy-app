@@ -35,7 +35,7 @@ function Editor({ editCellId, onError, onStudyStart }: Props) {
 	const [searchParams] = useSearchParams();
 	const isCellsLoaded = useRef(false);
 	const searchInputRef = useRef<HTMLInputElement>(null);
-	const selectedFileId = Number(searchParams.get(fileIdQueryParameter));
+	const selectedFileId = searchParams.get(fileIdQueryParameter)!;
 
 	useGlobalKey(e => {
 		if (e.code === "F5") {

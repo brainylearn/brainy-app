@@ -18,9 +18,9 @@ import {
 	importFile,
 	moveFile,
 	moveFolder,
-} from "../../../stores/actions/fileSystemActions";
+} from "../../../stores/fileSystem/fileSystemActions.ts";
 import getFileName from "../utils/getFileName.ts";
-import { requestFailure } from "../../../stores/reducers/fileSystemReducers";
+import { requestFailure } from "../../../stores/fileSystem/fileSystemReducers.ts";
 import UiFolder from "../../../types/ui/uiFolder.ts";
 import { exportItem } from "../../../api/exportImportApi";
 import FileTreeItemRow from "./FileTreeItemRow";

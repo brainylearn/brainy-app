@@ -14,28 +14,28 @@ describe(searchFolder, () => {
 		};
 
 		const folder: ParsedFolder = {
-			id: 0,
+			id: "0",
 			name: "",
 			files: [
 				{
-					id: 1,
+					id: "1",
 					name: "search",
 					repetitionCounts,
 				},
 				{
-					id: 2,
+					id: "2",
 					name: "not visible",
 					repetitionCounts,
 				},
 			],
 			subFolders: [
 				{
-					id: 3,
+					id: "3",
 					name: "test",
 					subFolders: [],
 					files: [
 						{
-							id: 4,
+							id: "4",
 							name: "search file",
 							repetitionCounts,
 						},
@@ -44,7 +44,7 @@ describe(searchFolder, () => {
 					repetitionCounts,
 				},
 				{
-					id: 4,
+					id: "4",
 					// Should not be visible since none of its files include "search".
 					name: "search",
 					subFolders: [],
@@ -55,18 +55,18 @@ describe(searchFolder, () => {
 			repetitionCounts,
 		};
 		const expected: UiFolder = {
-			id: 0,
+			id: "0",
 			name: "",
 			isVisible: true,
 			files: [
 				{
-					id: 1,
+					id: "1",
 					name: "search",
 					isVisible: true,
 					repetitionCounts,
 				},
 				{
-					id: 2,
+					id: "2",
 					name: "not visible",
 					isVisible: false,
 					repetitionCounts,
@@ -74,13 +74,13 @@ describe(searchFolder, () => {
 			],
 			subFolders: [
 				{
-					id: 3,
+					id: "3",
 					name: "test",
 					subFolders: [],
 					isVisible: true,
 					files: [
 						{
-							id: 4,
+							id: "4",
 							name: "search file",
 							isVisible: true,
 							repetitionCounts,
@@ -89,7 +89,7 @@ describe(searchFolder, () => {
 					repetitionCounts,
 				},
 				{
-					id: 4,
+					id: "4",
 					// Should not be visible since none of its files include "search".
 					name: "search",
 					subFolders: [],

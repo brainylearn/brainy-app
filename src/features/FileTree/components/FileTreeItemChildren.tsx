@@ -8,7 +8,7 @@ import useAppDispatch from "../../../hooks/useAppDispatch";
 import {
 	createFile,
 	createFolder,
-} from "../../../stores/actions/fileSystemActions";
+} from "../../../stores/fileSystem/fileSystemActions";
 
 interface Props {
 	creatingNewFolder: boolean;
@@ -46,7 +46,6 @@ function FileTreeItemChildren({
 	) => {
 		e.preventDefault();
 		if (creatingNewFolder) {
-            // TODO: fix id and refactor
 			await dispatch(createFolder(newItemName, folder.id));
 		} else if (creatingNewFile) {
             console.log(folder.id);

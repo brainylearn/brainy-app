@@ -20,8 +20,8 @@ describe(createRepetitionFromCard, () => {
 			elapsed_days: 5,
 			scheduled_days: 7,
 		};
-		const id = 8;
-		const fileId = 9;
+		const id = "8";
+		const fileId = "9";
 		const cellId = 10;
 		const expected: Repetition = {
 			cellId,

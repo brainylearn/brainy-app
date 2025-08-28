@@ -5,7 +5,7 @@ import ErrorBox from "../components/ErrorBox/ErrorBox";
 import Reviewer from "../features/Reviewer/components/Reviewer";
 import Home from "../features/Home/componenets/Home";
 import useAppDispatch from "../hooks/useAppDispatch";
-import { fetchFiles } from "../stores/actions/fileSystemActions";
+import { fetchFiles } from "../stores/fileSystem/fileSystemActions";
 import SideBar from "../features/SideBar/componenets/SideBar";
 import SettingsPopup from "../features/SettingsPopup/componenets/SettingsPopup";
 import { getSettings } from "../api/settingsApi";
@@ -27,15 +27,15 @@ function App() {
 	const [showSettings, setShowSettings] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [searchParams] = useSearchParams();
-	const studyFileIds = useRef<number[]>([]);
+	const studyFileIds = useRef<string[]>([]);
 	const editCellId = useRef<number | null>(null);
-	const selectedFileId = Number(searchParams.get(fileIdQueryParameter));
+	const selectedFileId = searchParams.get(fileIdQueryParameter);
 	const location = useLocation();
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
 	const handleEditorStudyClick = () => {
-		studyFileIds.current = [selectedFileId];
+		studyFileIds.current = [selectedFileId!];
 		void navigate("/reviewer", {
 			state: {
 				from: location.pathname,
@@ -44,7 +44,7 @@ function App() {
 		});
 	};
 
-	const handleHomeStudyClick = (fileIds: number[]) => {
+	const handleHomeStudyClick = (fileIds: string[]) => {
 		studyFileIds.current = fileIds;
 		void navigate("/reviewer");
 	};

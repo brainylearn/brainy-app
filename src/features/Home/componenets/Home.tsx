@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import useAppDispatch from "../../../hooks/useAppDispatch";
 import useAppSelector from "../../../hooks/useAppSelector";
-import { fetchFiles } from "../../../stores/actions/fileSystemActions";
-import { selectRootFolder } from "../../../stores/selectors/fileSystemSelectors";
+import { fetchFiles } from "../../../stores/fileSystem/fileSystemActions";
+import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
 import ReviewTree from "./ReviewTree";
 import styles from "./styles.module.css";
 import ParsedFolder from "../../../types/parsedFolder";
@@ -14,7 +14,7 @@ import { getHomeStatistics } from "../../../api/reviewApi";
 import ParsedFile from "../../../types/parsedFile";
 
 interface Props {
-	onStudyClick: (fileIds: number[]) => void;
+	onStudyClick: (fileIds: string[]) => void;
 	onError: (message: string) => void;
 }
 
@@ -41,7 +41,7 @@ function Home({ onStudyClick, onError }: Props) {
 	}, [onError]);
 
 	const handleStudyClick = (
-		fileIds: number[],
+		fileIds: string[],
 		item: ParsedFolder | ParsedFile,
 	) => {
 		if (

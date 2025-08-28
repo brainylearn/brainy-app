@@ -1,3 +1,4 @@
+import { ROOT_FOLDER_ID } from "../../config/constants";
 import FileWithRepetitionCounts from "../../types/backend/dto/fileWithRepetitionCounts";
 import ParsedFolder from "../../types/parsedFolder";
 import parseGetFilesResponse from "../../utils/parseGetFilesResponse";
@@ -7,9 +8,14 @@ describe(parseGetFilesResponse, () => {
 		// Arrange
 
 		const response: FileWithRepetitionCounts[] = [
+            {
+                id: ROOT_FOLDER_ID,
+                path: "/root/",
+                isFolder: true,
+            },
 			{
-				id: 1,
-				path: "file 1",
+				id: "1",
+				path: "/root/file 1",
 				repetitionCounts: {
 					new: 1,
 					review: 2,
@@ -19,23 +25,23 @@ describe(parseGetFilesResponse, () => {
 				isFolder: false,
 			},
 			{
-				id: 2,
-				path: "folder 1",
+				id: "2",
+				path: "/root/folder 1",
 				isFolder: true,
 			},
 			{
-				id: 3,
-				path: "folder 1/folder 2",
+				id: "3",
+				path: "/root/folder 1/folder 2",
 				isFolder: true,
 			},
 			{
-				id: 4,
-				path: "folder 3",
+				id: "4",
+				path: "/root/folder 3",
 				isFolder: true,
 			},
 			{
-				id: 5,
-				path: "folder 1/file 1",
+				id: "5",
+				path: "/root/folder 1/file 1",
 				isFolder: false,
 				repetitionCounts: {
 					new: 0,
@@ -45,8 +51,8 @@ describe(parseGetFilesResponse, () => {
 				},
 			},
 			{
-				id: 6,
-				path: "folder 1/file 2",
+				id: "6",
+				path: "/root/folder 1/file 2",
 				isFolder: false,
 				repetitionCounts: {
 					new: 5,
@@ -56,8 +62,8 @@ describe(parseGetFilesResponse, () => {
 				},
 			},
 			{
-				id: 7,
-				path: "folder 1/folder 2/file 1",
+				id: "7",
+				path: "/root/folder 1/folder 2/file 1",
 				isFolder: false,
 				repetitionCounts: {
 					new: 1,
@@ -67,8 +73,8 @@ describe(parseGetFilesResponse, () => {
 				},
 			},
 			{
-				id: 8,
-				path: "folder 1/folder 2/file 2",
+				id: "8",
+				path: "/root/folder 1/folder 2/file 2",
 				isFolder: false,
 				repetitionCounts: {
 					new: 0,
@@ -78,8 +84,8 @@ describe(parseGetFilesResponse, () => {
 				},
 			},
 			{
-				id: 9,
-				path: "folder 3/file 1",
+				id: "9",
+				path: "/root/folder 3/file 1",
 				isFolder: false,
 				repetitionCounts: {
 					new: 0,
@@ -91,7 +97,7 @@ describe(parseGetFilesResponse, () => {
 		];
 
 		const folder2: ParsedFolder = {
-			id: 3,
+			id: "3",
 			name: "folder 2",
 			repetitionCounts: {
 				new: 1,
@@ -102,7 +108,7 @@ describe(parseGetFilesResponse, () => {
 			subFolders: [],
 			files: [
 				{
-					id: 7,
+					id: "7",
 					name: "file 1",
 					repetitionCounts: {
 						new: 1,
@@ -112,7 +118,7 @@ describe(parseGetFilesResponse, () => {
 					},
 				},
 				{
-					id: 8,
+					id: "8",
 					name: "file 2",
 					repetitionCounts: {
 						new: 0,
@@ -124,7 +130,7 @@ describe(parseGetFilesResponse, () => {
 			],
 		};
 		const folder1: ParsedFolder = {
-			id: 2,
+			id: "2",
 			name: "folder 1",
 			repetitionCounts: {
 				new: 6,
@@ -134,7 +140,7 @@ describe(parseGetFilesResponse, () => {
 			},
 			files: [
 				{
-					id: 5,
+					id: "5",
 					name: "file 1",
 					repetitionCounts: {
 						new: 0,
@@ -144,7 +150,7 @@ describe(parseGetFilesResponse, () => {
 					},
 				},
 				{
-					id: 6,
+					id: "6",
 					name: "file 2",
 					repetitionCounts: {
 						new: 5,
@@ -157,7 +163,7 @@ describe(parseGetFilesResponse, () => {
 			subFolders: [folder2],
 		};
 		const folder3: ParsedFolder = {
-			id: 4,
+			id: "4",
 			name: "folder 3",
 			repetitionCounts: {
 				new: 0,
@@ -167,7 +173,7 @@ describe(parseGetFilesResponse, () => {
 			},
 			files: [
 				{
-					id: 9,
+					id: "9",
 					name: "file 1",
 					repetitionCounts: {
 						new: 0,
@@ -180,8 +186,8 @@ describe(parseGetFilesResponse, () => {
 			subFolders: [],
 		};
 		const expected: ParsedFolder = {
-			id: 0,
-			name: "",
+			id: ROOT_FOLDER_ID,
+			name: "/root/",
 			repetitionCounts: {
 				new: 7,
 				review: 12,
@@ -190,7 +196,7 @@ describe(parseGetFilesResponse, () => {
 			},
 			files: [
 				{
-					id: 1,
+					id: "1",
 					name: "file 1",
 					repetitionCounts: {
 						new: 1,

@@ -7,7 +7,7 @@ describe(getFolderChildById, () => {
 		// Arrange
 
 		const expectedFile: ParsedFile = {
-			id: 2,
+			id: "2",
 			name: "test",
 			repetitionCounts: {
 				new: 0,
@@ -17,7 +17,7 @@ describe(getFolderChildById, () => {
 			},
 		};
 		const folder: ParsedFolder = {
-			id: 1,
+			id: "1",
 			name: "",
 			files: [expectedFile],
 			subFolders: [],
@@ -42,7 +42,7 @@ describe(getFolderChildById, () => {
 		// Arrange
 
 		const expectedFolder: ParsedFolder = {
-			id: 2,
+			id: "2",
 			name: "test",
 			subFolders: [],
 			files: [],
@@ -54,7 +54,7 @@ describe(getFolderChildById, () => {
 			},
 		};
 		const folder: ParsedFolder = {
-			id: 1,
+			id: "1",
 			name: "",
 			files: [],
 			subFolders: [expectedFolder],
@@ -79,7 +79,7 @@ describe(getFolderChildById, () => {
 		// Arrange
 
 		const folder: ParsedFolder = {
-			id: 1,
+			id: "1",
 			name: "",
 			files: [],
 			subFolders: [],
@@ -93,7 +93,7 @@ describe(getFolderChildById, () => {
 
 		// Act
 
-		const actual = getFolderChildById(folder, 4);
+		const actual = getFolderChildById(folder, "4");
 
 		// Assert
 

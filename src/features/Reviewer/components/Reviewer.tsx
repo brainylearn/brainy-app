@@ -22,7 +22,7 @@ import ButtonRow from "./ButtonRow";
 import accumulateRepetitionsCounts from "../utils/accumulateRepetitionsCounts";
 
 interface Props {
-	fileIds: number[];
+	fileIds: string[];
 	onEditButtonClick: (fileId: string, cellId: number) => void;
 	onError: (message: string) => void;
 }

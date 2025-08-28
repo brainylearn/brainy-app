@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import {
 	renameFile,
 	renameFolder,
-} from "../../../stores/actions/fileSystemActions";
+} from "../../../stores/fileSystem/fileSystemActions";
 import useAppDispatch from "../../../hooks/useAppDispatch";
 import { useSearchParams } from "react-router";
 import { fileIdQueryParameter } from "../../../config/constants";

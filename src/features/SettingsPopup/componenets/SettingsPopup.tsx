@@ -8,7 +8,7 @@ import { getSettings, updateSettings } from "../../../api/settingsApi";
 import useOutsideClick from "../../../hooks/useOutsideClick";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import useAppDispatch from "../../../hooks/useAppDispatch";
-import { fetchFiles } from "../../../stores/actions/fileSystemActions";
+import { fetchFiles } from "../../../stores/fileSystem/fileSystemActions";
 import errorToString from "../../../utils/errorToString";
 import applySettings from "../../../utils/applySettings";
 import { useNavigate } from "react-router";

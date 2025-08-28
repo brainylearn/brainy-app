@@ -18,7 +18,7 @@ interface Props {
 	searchText?: string;
 	repetitions: Repetition[];
 	editCellId: number | null;
-	fileId?: number;
+	fileId?: string;
 	autoFocusEditor?: boolean;
 	enableFileSpecificFunctionality?: boolean;
 	className?: string;

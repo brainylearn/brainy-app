@@ -3,7 +3,7 @@ import {
 	requestFailure,
 	requestStart,
 	requestSuccess,
-} from "../reducers/fileSystemReducers";
+} from "./fileSystemReducers";
 
 import {
 	createFolder as createFolderApi,
@@ -15,7 +15,7 @@ import {
 	createFile as createFileApi,
 	getFiles as getFilesApi,
 	renameFolder as renameFolderApi,
-} from "../../api/fileApi";
+} from "../../api/fileSystemApi";
 import { importFile as importFileApi } from "../../api/exportImportApi";
 import { AppDispatch, RootState } from "../store";
 import errorToString from "../../utils/errorToString";
@@ -70,9 +70,7 @@ function executeRequest<T>(
 			dispatch(requestStart());
 			await cb(dispatch, getState());
 			const files = await getFilesApi();
-            console.log(files);
 			const rootFolder = parseGetFilesResponse(files);
-            console.log("parsed", rootFolder);
 			dispatch(requestSuccess(rootFolder));
 		} catch (e) {
 			console.error(e);
