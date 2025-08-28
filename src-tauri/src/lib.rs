@@ -6,7 +6,7 @@ mod service;
 mod util;
 mod value_objects;
 
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use brainy_core::{
     common::{
@@ -16,7 +16,6 @@ use brainy_core::{
     file_system::file_system_service::FileSystemService,
 };
 use service::settings_service;
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tauri::Manager;
 
 use api::*;
@@ -31,17 +30,13 @@ pub async fn run() -> Result<(), String> {
     settings_service::init_settings();
 
     // TODO: fix path
-    // TODO: error handling
-    let options =
-        SqliteConnectOptions::from_str("sqlite:////home/ramikw/Downloads/test.db?mode=rwc")
-            .unwrap();
+    let repositories_context = SqliteRepositoriesContext::new_with_migration(
+        "sqlite:////home/ramikw/Downloads/test.db?mode=rwc",
+    )
+    .await.unwrap();
 
-    let pool = SqlitePoolOptions::new()
-        .connect_with(options)
-        .await
-        .unwrap();
-
-    let db_conn = load_database(&settings_service::get_settings().database_location).await;
+    let db_conn = load_database(&settings_service::get_settings().database_location)
+        .await;
 
     let mut tauri_builder = tauri::Builder::default();
 
@@ -66,7 +61,6 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
-            let repositories_context = SqliteRepositoriesContext::new(pool);
             app.manage(Mutex::new(db_conn));
             app.manage(FileSystemService::new(
                 repositories_context.folder_repository(),

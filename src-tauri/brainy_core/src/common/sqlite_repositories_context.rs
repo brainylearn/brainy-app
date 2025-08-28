@@ -1,7 +1,10 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use async_trait::async_trait;
-use sqlx::{Sqlite, SqlitePool, Transaction};
+use sqlx::{
+    Sqlite, SqlitePool, Transaction,
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -21,15 +24,21 @@ pub struct SqliteRepositoriesContext {
 }
 
 impl SqliteRepositoriesContext {
-    pub fn new(pool: SqlitePool) -> Self {
+    /// Creates a new instance with the url provided, be aware the the migrations
+    /// are automatically applied!
+    pub async fn new_with_migration(url: &str) -> Result<Self, sqlx::Error> {
+        let options = SqliteConnectOptions::from_str(url)?;
+        let pool = SqlitePoolOptions::new().connect_with(options).await?;
+        sqlx::migrate!("./db/").run(&pool).await?;
+
         let arc_pool = Arc::new(pool);
         let tx = Arc::new(Mutex::new(None));
-        Self {
+        Ok(Self {
             pool: arc_pool.clone(),
             tx: tx.clone(),
             file_repository: Arc::new(SqliteFileRepository::new(arc_pool.clone(), tx.clone())),
             folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
-        }
+        })
     }
 }
 

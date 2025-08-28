@@ -125,7 +125,10 @@ impl FileSystemService {
         }
 
         if let Some(destination_folder_id) = destination_folder_id {
-            if self.is_subfolder_of(folder_id, destination_folder_id).await? {
+            if self
+                .is_subfolder_of(folder_id, destination_folder_id)
+                .await?
+            {
                 return Err(FileServiceError::CannotMoveChildIntoInnerFolder);
             }
         }
@@ -148,7 +151,6 @@ impl FileSystemService {
         parent_folder_id: Guid,
         child_folder_id: Guid,
     ) -> Result<bool, FileServiceError> {
-
         let mut curr_parent_id = Some(child_folder_id);
 
         while curr_parent_id != Some(parent_folder_id) && curr_parent_id != None {
@@ -252,5 +254,44 @@ impl FileSystemService {
             destination_folder_id
         );
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use crate::common::{
+        sqlite_repositories_context::SqliteRepositoriesContext,
+        traits::repositories_context::RepositoriesContext,
+    };
+
+    async fn create_test_dependencies() -> (SqliteRepositoriesContext, FileSystemService) {
+        let context = SqliteRepositoriesContext::new_with_migration("sqlite::memory:")
+            .await
+            .unwrap();
+        let service =
+            FileSystemService::new(context.folder_repository(), context.file_repository());
+
+        (context, service)
+    }
+
+    #[tokio::test]
+    pub async fn create_folder_existing_folder_returned_error() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        context.start().await.unwrap();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(None, None, "test".try_into().unwrap()))
+            .await.unwrap();
+
+        context.commit().await.unwrap();
+        // TODO:
+
+        // Act
+        // Assert
     }
 }
