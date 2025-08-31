@@ -11,14 +11,13 @@ use crate::file_system::repositories::traits::{
 pub enum RepositoriesContextError {
     #[error("An unknown error has happened!")]
     UnknownError(String),
-    #[error("Transaction is not started!")]
-    TransactionNotStarted,
 }
 
 #[async_trait]
 pub trait RepositoriesContext: Send + Sync {
     fn folder_repository(&self) -> Arc<dyn FolderRepository>;
     fn file_repository(&self) -> Arc<dyn FileRepository>;
-    async fn start(&mut self) -> Result<(), RepositoriesContextError>;
-    async fn commit(&mut self) -> Result<(), RepositoriesContextError>;
+    /// All changes are put automatically inside a transaction, this this
+    /// method commit the transactio.
+    async fn save_changes(&mut self) -> Result<(), RepositoriesContextError>;
 }

@@ -15,7 +15,7 @@ use crate::{
     },
 };
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum FileServiceError {
     #[error("The file with the name '{name}' already exists!")]
     FileExists { name: String },
@@ -49,8 +49,7 @@ impl FileSystemService {
         name: FileSystemItemName,
     ) -> Result<Guid, FileServiceError> {
         log::info!(
-            "Creating folder with name {name} and inside parent folder {:?}",
-            parent_id
+            "Creating folder with name {name} and inside parent folder {parent_id:?}"
         );
 
         if self.folder_repository.exists(parent_id, &name).await? {
@@ -103,8 +102,7 @@ impl FileSystemService {
         destination_folder_id: Option<Guid>,
     ) -> Result<(), FileServiceError> {
         log::info!(
-            "Moving folder with id {folder_id} into folder with id {:?}",
-            destination_folder_id
+            "Moving folder with id {folder_id} into folder with id {destination_folder_id:?}"
         );
 
         let mut folder = self.folder_repository.get_by_id(folder_id).await?;
@@ -153,7 +151,7 @@ impl FileSystemService {
     ) -> Result<bool, FileServiceError> {
         let mut curr_parent_id = Some(child_folder_id);
 
-        while curr_parent_id != Some(parent_folder_id) && curr_parent_id != None {
+        while curr_parent_id != Some(parent_folder_id) && curr_parent_id.is_some() {
             let curr_folder = self
                 .folder_repository
                 .get_by_id(curr_parent_id.unwrap())
@@ -170,8 +168,7 @@ impl FileSystemService {
         name: FileSystemItemName,
     ) -> Result<Guid, FileServiceError> {
         log::info!(
-            "Creating file with name {name} and inside parent folder {:?}",
-            parent_id
+            "Creating file with name {name} and inside parent folder {parent_id:?}"
         );
 
         if self.file_repository.exists(parent_id, &name).await? {
@@ -223,8 +220,7 @@ impl FileSystemService {
         destination_folder_id: Option<Guid>,
     ) -> Result<(), FileServiceError> {
         log::info!(
-            "Moving file with id {file_id} into folder with id {:?}",
-            destination_folder_id
+            "Moving file with id {file_id} into folder with id {destination_folder_id:?}"
         );
 
         let mut file = self.file_repository.get_by_id(file_id).await?;
@@ -260,12 +256,13 @@ impl FileSystemService {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::common::{
+    use crate::{common::{
         sqlite_repositories_context::SqliteRepositoriesContext,
         traits::repositories_context::RepositoriesContext,
-    };
+    }, ROOT_FOLDER_ID};
 
     async fn create_test_dependencies() -> (SqliteRepositoriesContext, FileSystemService) {
+        // TODO: move this to test cfg in the repositories context
         let context = SqliteRepositoriesContext::new_with_migration("sqlite::memory:")
             .await
             .unwrap();
@@ -281,17 +278,27 @@ pub mod tests {
 
         let (mut context, service) = create_test_dependencies().await;
 
-        context.start().await.unwrap();
-
         context
             .folder_repository()
-            .create(&Folder::new(None, None, "test".try_into().unwrap()))
-            .await.unwrap();
-
-        context.commit().await.unwrap();
-        // TODO:
+            .create(&Folder::new(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap()))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
 
         // Act
+
+        let actual = service
+            .create_folder(Some(ROOT_FOLDER_ID), "test".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
         // Assert
+
+        assert_eq!(
+            FileServiceError::FolderExists {
+                name: "test".into()
+            },
+            actual.unwrap_err()
+        );
     }
 }

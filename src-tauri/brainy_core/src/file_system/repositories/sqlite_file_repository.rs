@@ -32,13 +32,13 @@ impl From<FileRow> for File {
 
 pub struct SqliteFileRepository {
     pool: Arc<SqlitePool>,
-    tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
+    tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
 }
 
 impl SqliteFileRepository {
     pub fn new(
         pool: Arc<SqlitePool>,
-        tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
+        tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
     ) -> Self {
         Self { pool, tx }
     }
@@ -98,7 +98,7 @@ impl FileRepository for SqliteFileRepository {
 
     async fn create(&self, file: &File) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut().unwrap();
+        let tx = tx.as_mut();
 
         let file_id = file.id();
         let file_name = file.name().to_string();
@@ -110,7 +110,7 @@ impl FileRepository for SqliteFileRepository {
             file_name,
             parent_id
         )
-        .execute(&mut *tx.as_mut())
+        .execute(&mut *tx)
         .await;
 
         match result {
@@ -121,7 +121,7 @@ impl FileRepository for SqliteFileRepository {
 
     async fn update(&self, file: &File) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut().unwrap();
+        let tx = tx.as_mut();
 
         let file_id = file.id();
         let file_name = file.name().to_string();
@@ -133,7 +133,7 @@ impl FileRepository for SqliteFileRepository {
             file_name,
             parent_id
         )
-        .execute(&mut *tx.as_mut())
+        .execute(&mut *tx)
         .await;
 
         match result {
@@ -144,10 +144,10 @@ impl FileRepository for SqliteFileRepository {
 
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut().unwrap();
+        let tx = tx.as_mut();
 
         let result = sqlx::query!("DELETE FROM files WHERE id = $1", id)
-            .execute(&mut *tx.as_mut())
+            .execute(&mut *tx)
             .await;
 
         match result {

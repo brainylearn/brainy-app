@@ -32,13 +32,13 @@ impl From<FolderRow> for Folder {
 
 pub struct SqliteFolderRepository {
     pool: Arc<SqlitePool>,
-    tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
+    tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
 }
 
 impl SqliteFolderRepository {
     pub fn new(
         pool: Arc<SqlitePool>,
-        tx: Arc<Mutex<Option<Transaction<'static, Sqlite>>>>,
+        tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
     ) -> Self {
         Self { pool, tx }
     }
@@ -97,7 +97,7 @@ impl FolderRepository for SqliteFolderRepository {
 
     async fn create(&self, folder: &Folder) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut().unwrap();
+        let tx = tx.as_mut();
 
         let folder_id = folder.id();
         let folder_name = folder.name().to_string();
@@ -108,7 +108,7 @@ impl FolderRepository for SqliteFolderRepository {
             folder_name,
             parent_id
         )
-        .execute(&mut *tx.as_mut())
+        .execute(&mut *tx)
         .await;
 
         match result {
@@ -119,7 +119,7 @@ impl FolderRepository for SqliteFolderRepository {
 
     async fn update(&self, folder: &Folder) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut().unwrap();
+        let tx = tx.as_mut();
 
         let folder_id = folder.id();
         let folder_name = folder.name().to_string();
@@ -130,7 +130,7 @@ impl FolderRepository for SqliteFolderRepository {
             folder_name,
             parent_id
         )
-        .execute(&mut *tx.as_mut())
+        .execute(&mut *tx)
         .await;
 
         match result {
@@ -141,10 +141,10 @@ impl FolderRepository for SqliteFolderRepository {
 
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut().unwrap();
+        let tx = tx.as_mut();
 
         let result = sqlx::query!("DELETE FROM folders WHERE id = $1", id)
-            .execute(&mut *tx.as_mut())
+            .execute(&mut *tx)
             .await;
 
         match result {
