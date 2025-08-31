@@ -21,11 +21,10 @@ pub struct FileWithRepetitionsCount {
     pub repetition_counts: Option<FileRepetitionCounts>,
 }
 
-// TODO: test
 impl FileWithRepetitionsCount {
     pub fn parse_file_system(
-        folders: Vec<Folder>,
-        files: Vec<File>,
+        folders: &[Folder],
+        files: &[File],
     ) -> Vec<FileWithRepetitionsCount> {
         let mut result = Vec::new();
 
@@ -82,5 +81,49 @@ impl FileWithRepetitionsCount {
         }
 
         result
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use brainy_core::ROOT_FOLDER_ID;
+
+    use super::*;
+
+    #[test]
+    pub fn parse_file_system_valid_input_parsed_correctly() {
+        // Arrange
+
+        let parent_folder_id = Guid::new_v4();
+        let folders: Vec<Folder> = vec![
+            Folder::new_unchecked(
+                Some(ROOT_FOLDER_ID),
+                None,
+                "root".try_into().unwrap(),
+            ),
+            Folder::new_unchecked(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ),
+        ];
+
+        let files: Vec<File> = vec![
+            File::new_unchecked(
+                None,
+                Some(parent_folder_id),
+                "file".try_into().unwrap(),
+            ),
+        ];
+
+        // Act
+
+        let actual = FileWithRepetitionsCount::parse_file_system(&folders, &files);
+
+        // Assert
+
+        assert!(actual.iter().any(|f| f.path.to_string() == "/root"));
+        assert!(actual.iter().any(|f| f.path.to_string() == "/root/parent folder"));
+        assert!(actual.iter().any(|f| f.path.to_string() == "/root/parent folder/file"));
     }
 }

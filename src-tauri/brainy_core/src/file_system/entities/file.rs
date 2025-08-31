@@ -21,6 +21,19 @@ impl File {
         }
     }
 
+    /// Used for unit testing, or repositories when reconsturcting a file.
+    pub fn new_unchecked(
+        id: Option<Guid>,
+        parent_id: Option<Guid>,
+        name: FileSystemItemName,
+    ) -> File {
+        File {
+            id: id.unwrap_or(Guid::new_v4()),
+            parent_id,
+            name,
+        }
+    }
+
     pub fn id(&self) -> Guid {
         self.id
     }
