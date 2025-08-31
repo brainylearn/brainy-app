@@ -16,7 +16,7 @@ impl File {
     ) -> File {
         File {
             id: id.unwrap_or(Guid::new_v4()),
-            parent_id: parent_id,
+            parent_id,
             name,
         }
     }

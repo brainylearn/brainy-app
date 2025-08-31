@@ -36,10 +36,7 @@ pub struct SqliteFolderRepository {
 }
 
 impl SqliteFolderRepository {
-    pub fn new(
-        pool: Arc<SqlitePool>,
-        tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
-    ) -> Self {
+    pub fn new(pool: Arc<SqlitePool>, tx: Arc<Mutex<Transaction<'static, Sqlite>>>) -> Self {
         Self { pool, tx }
     }
 }

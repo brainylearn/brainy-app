@@ -52,6 +52,13 @@ impl SqliteRepositoriesContext {
             folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
         })
     }
+
+    #[cfg(test)]
+    pub async fn create_in_memory_context() -> Self {
+        SqliteRepositoriesContext::new_with_migration("sqlite::memory:")
+            .await
+            .unwrap()
+    }
 }
 
 #[async_trait]
@@ -78,9 +85,7 @@ impl RepositoriesContext for SqliteRepositoriesContext {
     }
 }
 
-async fn create_transactoin(
-    pool: Arc<SqlitePool>,
-) -> Transaction<'static, Sqlite> {
+async fn create_transactoin(pool: Arc<SqlitePool>) -> Transaction<'static, Sqlite> {
     log::info!("Starting new transaction");
     pool.begin().await.expect("Cannot create a new transaction")
 }

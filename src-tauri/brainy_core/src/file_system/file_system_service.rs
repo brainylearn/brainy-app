@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-// TODO: unit test
 use thiserror::Error;
 
 use crate::{
@@ -48,9 +47,7 @@ impl FileSystemService {
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> Result<Guid, FileServiceError> {
-        log::info!(
-            "Creating folder with name {name} and inside parent folder {parent_id:?}"
-        );
+        log::info!("Creating folder with name {name} and inside parent folder {parent_id:?}");
 
         if self.folder_repository.exists(parent_id, &name).await? {
             return Err(FileServiceError::FolderExists {
@@ -95,7 +92,6 @@ impl FileSystemService {
         Ok(())
     }
 
-    // TODO: test on multiple levels
     pub async fn move_folder(
         &self,
         folder_id: Guid,
@@ -167,9 +163,7 @@ impl FileSystemService {
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> Result<Guid, FileServiceError> {
-        log::info!(
-            "Creating file with name {name} and inside parent folder {parent_id:?}"
-        );
+        log::info!("Creating file with name {name} and inside parent folder {parent_id:?}");
 
         if self.file_repository.exists(parent_id, &name).await? {
             return Err(FileServiceError::FileExists {
@@ -214,14 +208,13 @@ impl FileSystemService {
         Ok(())
     }
 
+    // TODO: unit test: copy
     pub async fn move_file(
         &self,
         file_id: Guid,
         destination_folder_id: Option<Guid>,
     ) -> Result<(), FileServiceError> {
-        log::info!(
-            "Moving file with id {file_id} into folder with id {destination_folder_id:?}"
-        );
+        log::info!("Moving file with id {file_id} into folder with id {destination_folder_id:?}");
 
         let mut file = self.file_repository.get_by_id(file_id).await?;
 
@@ -253,19 +246,20 @@ impl FileSystemService {
     }
 }
 
+// TODO: test deletion
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::{common::{
-        sqlite_repositories_context::SqliteRepositoriesContext,
-        traits::repositories_context::RepositoriesContext,
-    }, ROOT_FOLDER_ID};
+    use crate::{
+        ROOT_FOLDER_ID,
+        common::{
+            sqlite_repositories_context::SqliteRepositoriesContext,
+            traits::repositories_context::RepositoriesContext,
+        },
+    };
 
     async fn create_test_dependencies() -> (SqliteRepositoriesContext, FileSystemService) {
-        // TODO: move this to test cfg in the repositories context
-        let context = SqliteRepositoriesContext::new_with_migration("sqlite::memory:")
-            .await
-            .unwrap();
+        let context = SqliteRepositoriesContext::create_in_memory_context().await;
         let service =
             FileSystemService::new(context.folder_repository(), context.file_repository());
 
@@ -280,7 +274,11 @@ pub mod tests {
 
         context
             .folder_repository()
-            .create(&Folder::new(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap()))
+            .create(&Folder::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+            ))
             .await
             .unwrap();
         context.save_changes().await.unwrap();
@@ -288,7 +286,7 @@ pub mod tests {
         // Act
 
         let actual = service
-            .create_folder(Some(ROOT_FOLDER_ID), "test".try_into().unwrap())
+            .create_folder(Some(ROOT_FOLDER_ID), "folder".try_into().unwrap())
             .await;
         context.save_changes().await.unwrap();
 
@@ -296,9 +294,643 @@ pub mod tests {
 
         assert_eq!(
             FileServiceError::FolderExists {
-                name: "test".into()
+                name: "folder".into()
             },
             actual.unwrap_err()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn create_folder_valid_input_created_folder() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        // Act
+
+        let actual = service
+            .create_folder(Some(ROOT_FOLDER_ID), "folder".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_ne!(Guid::nil(), actual.unwrap());
+    }
+
+    #[tokio::test]
+    pub async fn rename_folder_existing_folder_returned_error() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let folder_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(folder_id),
+                Some(ROOT_FOLDER_ID),
+                "folder 1".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "folder 2".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .rename_folder(folder_id, "folder 2".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            FileServiceError::FolderExists {
+                name: "folder 2".into()
+            },
+            actual.unwrap_err()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn rename_folder_same_name_folder_not_changed() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let folder_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(folder_id),
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .rename_folder(folder_id, "folder".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(Ok(()), actual);
+        let folder = context
+            .folder_repository()
+            .get_by_id(folder_id)
+            .await
+            .unwrap();
+        assert_eq!(
+            FileSystemItemName::new_unchecked("folder".to_string()),
+            folder.name()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn rename_folder_valid_input_renamed_folder() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let folder_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(folder_id),
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .rename_folder(folder_id, "folder 2".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(Ok(()), actual);
+        let folder = context
+            .folder_repository()
+            .get_by_id(folder_id)
+            .await
+            .unwrap();
+        assert_eq!(
+            FileSystemItemName::new_unchecked("folder 2".to_string()),
+            folder.name()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn move_folder_to_nested_folder_error_returned() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id = Guid::new_v4();
+        let child_folder_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(child_folder_id),
+                Some(parent_folder_id),
+                "nested folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .move_folder(parent_folder_id, Some(child_folder_id))
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            Err(FileServiceError::CannotMoveChildIntoInnerFolder),
+            actual
+        );
+    }
+
+    #[tokio::test]
+    pub async fn move_folder_two_level_down_nested_folder_error_returned() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id = Guid::new_v4();
+        let child_folder_id1 = Guid::new_v4();
+        let child_folder_id2 = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(child_folder_id1),
+                Some(parent_folder_id),
+                "nested folder 1".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(child_folder_id2),
+                Some(child_folder_id1),
+                "nested folder 2".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .move_folder(parent_folder_id, Some(child_folder_id2))
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            Err(FileServiceError::CannotMoveChildIntoInnerFolder),
+            actual
+        );
+    }
+
+    #[tokio::test]
+    pub async fn move_folder_existing_folder_error_returned() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id = Guid::new_v4();
+        let child_folder_id1 = Guid::new_v4();
+        let child_folder_id2 = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(child_folder_id1),
+                Some(parent_folder_id),
+                "child folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(child_folder_id2),
+                Some(ROOT_FOLDER_ID),
+                "child folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .move_folder(child_folder_id2, Some(parent_folder_id))
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            Err(FileServiceError::FolderExists { name: "child folder".to_string() }),
+            actual
+        );
+    }
+
+    #[tokio::test]
+    pub async fn move_folder_valid_input_moved_folder() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id1 = Guid::new_v4();
+        let parent_folder_id2 = Guid::new_v4();
+        let child_folder_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id1),
+                Some(ROOT_FOLDER_ID),
+                "parent folder 1".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id2),
+                Some(ROOT_FOLDER_ID),
+                "parent folder 2".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(child_folder_id),
+                Some(parent_folder_id1),
+                "child folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .move_folder(child_folder_id, Some(parent_folder_id2))
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            Ok(()),
+            actual
+        );
+        let folder = context
+            .folder_repository()
+            .get_by_id(child_folder_id)
+            .await
+            .unwrap();
+        assert_eq!(
+            Some(parent_folder_id2),
+            folder.parent_id()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn create_file_existing_file_returned_error() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        context
+            .file_repository()
+            .create(&File::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .create_file(Some(ROOT_FOLDER_ID), "file".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            FileServiceError::FileExists {
+                name: "file".into()
+            },
+            actual.unwrap_err()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn rename_file_existing_file_returned_error() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file_id = Guid::new_v4();
+
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(file_id),
+                Some(ROOT_FOLDER_ID),
+                "file 1".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "file 2".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .rename_file(file_id, "file 2".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            FileServiceError::FileExists {
+                name: "file 2".into()
+            },
+            actual.unwrap_err()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn rename_file_same_name_file_not_changed() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file_id = Guid::new_v4();
+
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(file_id),
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .rename_file(file_id, "file".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(Ok(()), actual);
+        let file = context
+            .file_repository()
+            .get_by_id(file_id)
+            .await
+            .unwrap();
+        assert_eq!(
+            FileSystemItemName::new_unchecked("file".to_string()),
+            file.name()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn rename_file_valid_input_renamed_file() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file_id = Guid::new_v4();
+
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(file_id),
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .rename_file(file_id, "file 2".try_into().unwrap())
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(Ok(()), actual);
+        let file = context
+            .file_repository()
+            .get_by_id(file_id)
+            .await
+            .unwrap();
+        assert_eq!(
+            FileSystemItemName::new_unchecked("file 2".to_string()),
+            file.name()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn move_file_existing_file_error_returned() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id = Guid::new_v4();
+        let child_file_id1 = Guid::new_v4();
+        let child_file_id2 = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(child_file_id1),
+                Some(parent_folder_id),
+                "child file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(child_file_id2),
+                Some(ROOT_FOLDER_ID),
+                "child file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .move_file(child_file_id2, Some(parent_folder_id))
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            Err(FileServiceError::FileExists { name: "child file".to_string() }),
+            actual
+        );
+    }
+
+    #[tokio::test]
+    pub async fn move_file_valid_input_moved_file() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id1 = Guid::new_v4();
+        let parent_folder_id2 = Guid::new_v4();
+        let child_file_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id1),
+                Some(ROOT_FOLDER_ID),
+                "parent file 1".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id2),
+                Some(ROOT_FOLDER_ID),
+                "parent file 2".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(child_file_id),
+                Some(parent_folder_id1),
+                "child file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .move_file(child_file_id, Some(parent_folder_id2))
+            .await;
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        assert_eq!(
+            Ok(()),
+            actual
+        );
+        let file = context
+            .file_repository()
+            .get_by_id(child_file_id)
+            .await
+            .unwrap();
+        assert_eq!(
+            Some(parent_folder_id2),
+            file.parent_id()
         );
     }
 }

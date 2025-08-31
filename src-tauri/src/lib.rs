@@ -33,10 +33,10 @@ pub async fn run() -> Result<(), String> {
     let repositories_context = SqliteRepositoriesContext::new_with_migration(
         "sqlite:////home/ramikw/Downloads/test.db?mode=rwc",
     )
-    .await.unwrap();
+    .await
+    .unwrap();
 
-    let db_conn = load_database(&settings_service::get_settings().database_location)
-        .await;
+    let db_conn = load_database(&settings_service::get_settings().database_location).await;
 
     let mut tauri_builder = tauri::Builder::default();
 
