@@ -208,7 +208,6 @@ impl FileSystemService {
         Ok(())
     }
 
-    // TODO: unit test: copy
     pub async fn move_file(
         &self,
         file_id: Guid,
