@@ -245,7 +245,6 @@ impl FileSystemService {
     }
 }
 
-// TODO: test deletion
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -258,7 +257,7 @@ pub mod tests {
     };
 
     async fn create_test_dependencies() -> (SqliteRepositoriesContext, FileSystemService) {
-        let context = SqliteRepositoriesContext::create_in_memory_context().await;
+        let context = SqliteRepositoriesContext::create_testing_context().await;
         let service =
             FileSystemService::new(context.folder_repository(), context.file_repository());
 
@@ -589,7 +588,9 @@ pub mod tests {
         // Assert
 
         assert_eq!(
-            Err(FileServiceError::FolderExists { name: "child folder".to_string() }),
+            Err(FileServiceError::FolderExists {
+                name: "child folder".to_string()
+            }),
             actual
         );
     }
@@ -642,19 +643,13 @@ pub mod tests {
 
         // Assert
 
-        assert_eq!(
-            Ok(()),
-            actual
-        );
+        assert_eq!(Ok(()), actual);
         let folder = context
             .folder_repository()
             .get_by_id(child_folder_id)
             .await
             .unwrap();
-        assert_eq!(
-            Some(parent_folder_id2),
-            folder.parent_id()
-        );
+        assert_eq!(Some(parent_folder_id2), folder.parent_id());
     }
 
     #[tokio::test]
@@ -765,11 +760,7 @@ pub mod tests {
         // Assert
 
         assert_eq!(Ok(()), actual);
-        let file = context
-            .file_repository()
-            .get_by_id(file_id)
-            .await
-            .unwrap();
+        let file = context.file_repository().get_by_id(file_id).await.unwrap();
         assert_eq!(
             FileSystemItemName::new_unchecked("file".to_string()),
             file.name()
@@ -805,11 +796,7 @@ pub mod tests {
         // Assert
 
         assert_eq!(Ok(()), actual);
-        let file = context
-            .file_repository()
-            .get_by_id(file_id)
-            .await
-            .unwrap();
+        let file = context.file_repository().get_by_id(file_id).await.unwrap();
         assert_eq!(
             FileSystemItemName::new_unchecked("file 2".to_string()),
             file.name()
@@ -865,7 +852,9 @@ pub mod tests {
         // Assert
 
         assert_eq!(
-            Err(FileServiceError::FileExists { name: "child file".to_string() }),
+            Err(FileServiceError::FileExists {
+                name: "child file".to_string()
+            }),
             actual
         );
     }
@@ -918,18 +907,12 @@ pub mod tests {
 
         // Assert
 
-        assert_eq!(
-            Ok(()),
-            actual
-        );
+        assert_eq!(Ok(()), actual);
         let file = context
             .file_repository()
             .get_by_id(child_file_id)
             .await
             .unwrap();
-        assert_eq!(
-            Some(parent_folder_id2),
-            file.parent_id()
-        );
+        assert_eq!(Some(parent_folder_id2), file.parent_id());
     }
 }

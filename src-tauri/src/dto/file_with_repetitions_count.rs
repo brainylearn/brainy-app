@@ -11,6 +11,7 @@ use serde::Serialize;
 
 use crate::value_objects::file_repetitions_count::FileRepetitionCounts;
 
+// TODO: better name
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileWithRepetitionsCount {
@@ -20,6 +21,7 @@ pub struct FileWithRepetitionsCount {
     pub repetition_counts: Option<FileRepetitionCounts>,
 }
 
+// TODO: test
 impl FileWithRepetitionsCount {
     pub fn parse_file_system(
         folders: Vec<Folder>,

@@ -150,3 +150,101 @@ impl FolderRepository for SqliteFolderRepository {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    use crate::{
+        ROOT_FOLDER_ID,
+        common::{
+            sqlite_repositories_context::SqliteRepositoriesContext,
+            traits::repositories_context::RepositoriesContext,
+        },
+        file_system::entities::file::File,
+    };
+
+    use super::*;
+
+    #[tokio::test]
+    pub async fn get_all_folders_valid_input_returned_all_files() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context.folder_repository().get_all_folders().await.unwrap();
+
+        // Assert
+
+        assert_eq!(2, actual.len());
+        assert!(
+            actual
+                .iter()
+                .any(|f| f.name() == FileSystemItemName::new_unchecked("folder".to_string()))
+        );
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_valid_input_deleted_recursively() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let parent_id = Guid::new_v4();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_id),
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                None,
+                Some(parent_id),
+                "sub folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                None,
+                Some(parent_id),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        context
+            .folder_repository()
+            .delete_by_id(parent_id)
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = context.folder_repository().get_all_folders().await.unwrap();
+        // Only root should exist!
+        assert_eq!(1, actual.len());
+    }
+}

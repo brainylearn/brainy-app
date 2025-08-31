@@ -23,7 +23,7 @@ struct FileRow {
 impl From<FileRow> for File {
     fn from(value: FileRow) -> Self {
         File::new(
-            Some(value.id.into()),
+            Some(value.id),
             value.parent_id,
             FileSystemItemName::new_unchecked(value.name.clone()),
         )
@@ -151,5 +151,82 @@ impl FileRepository for SqliteFileRepository {
             Ok(_) => Ok(()),
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::{
+        ROOT_FOLDER_ID,
+        common::{
+            sqlite_repositories_context::SqliteRepositoriesContext,
+            traits::repositories_context::RepositoriesContext,
+        },
+        file_system::entities::file::File,
+    };
+
+    use super::*;
+
+    #[tokio::test]
+    pub async fn get_all_files_valid_input_returned_all_files() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        context
+            .file_repository()
+            .create(&File::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context.file_repository().get_all_files().await.unwrap();
+
+        // Assert
+
+        assert_eq!(1, actual.len());
+        assert_eq!(
+            FileSystemItemName::new_unchecked("file".to_string()),
+            actual[0].name()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_valid_input_deleted_file() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file_id = Guid::new_v4();
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(file_id),
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        context
+            .file_repository()
+            .delete_by_id(file_id)
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = context.file_repository().get_all_files().await.unwrap();
+        assert_eq!(0, actual.len());
     }
 }

@@ -1,4 +1,3 @@
-// TODO: unit test
 use std::fmt::Display;
 
 use serde::{Serialize, Serializer};
@@ -92,5 +91,66 @@ impl Serialize for Path {
         S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    #[test]
+    pub fn try_from_valid_input_parsed_correctly() {
+        // Act
+
+        let actual = Path::try_from("/root/folder 1");
+
+        // Assert
+
+        assert_eq!("/root/folder 1", actual.unwrap().to_string());
+    }
+
+    #[test]
+    pub fn parent_directory_on_root_returned_error() {
+        // Arrange
+
+        let path = Path::try_from("").unwrap();
+
+        // Act
+
+        let actual = path.parent_directory();
+
+        // Assert
+
+        assert_eq!(Err(PathError::RootDoesNotHaveParent), actual);
+    }
+
+    #[test]
+    pub fn parent_directory_on_valid_path_returned_error() {
+        // Arrange
+
+        let path = Path::try_from("/folder 1/folder 2").unwrap();
+
+        // Act
+
+        let actual = path.parent_directory();
+
+        // Assert
+
+        assert_eq!("/folder 1", actual.unwrap().to_string());
+    }
+
+    #[test]
+    pub fn navigate_valid_input_navigated_correctly() {
+        // Arrange
+
+        let path = Path::try_from("/folder 1").unwrap();
+
+        // Act
+
+        let actual = path.navigate(FileSystemItemName::new_unchecked("folder 2".to_string()));
+
+        // Assert
+
+        assert_eq!("/folder 1/folder 2", actual.to_string());
     }
 }

@@ -54,7 +54,8 @@ impl SqliteRepositoriesContext {
     }
 
     #[cfg(test)]
-    pub async fn create_in_memory_context() -> Self {
+    /// Creates an in-memory context with migration for testing.
+    pub async fn create_testing_context() -> Self {
         SqliteRepositoriesContext::new_with_migration("sqlite::memory:")
             .await
             .unwrap()
