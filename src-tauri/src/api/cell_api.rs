@@ -1,19 +1,21 @@
+use std::sync::Arc;
+
 use crate::{
-    dto::update_cell_request::UpdateCellRequest,
-    entity::cell::{self, CellType},
-    service::cell_service,
+    api::ApiError, dto::update_cell_request::UpdateCellRequest, entity::cell::{self, CellType}, service::cell_service
 };
+use brainy_core::{cells::entities::cell::Cell, common::traits::repositories_context::RepositoriesContext, Guid};
 use sea_orm::DbConn;
 use tauri::State;
 use tokio::sync::Mutex;
 
 #[tauri::command]
 pub async fn get_file_cells_ordered_by_index(
-    db_conn: State<'_, Mutex<DbConn>>,
-    file_id: i32,
-) -> Result<Vec<cell::Model>, String> {
-    let db_conn = db_conn.lock().await;
-    cell_service::get_file_cells_ordered_by_index(&db_conn, file_id).await
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    file_id: Guid,
+) -> Result<Vec<Cell>, ApiError> {
+    let context = context.lock().await;
+    let result = context.cell_repository().get_file_cells_ordered_by_index(file_id).await?;
+    Ok(result)
 }
 
 #[tauri::command]

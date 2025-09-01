@@ -16,3 +16,13 @@ CREATE TABLE files(
     FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
     UNIQUE (name, parent_id)
 );
+
+CREATE TABLE cells(
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    content                     TEXT        NOT NULL        DEFAULT "",
+    cell_type                   TEXT        NOT NULL,
+    cell_index                  INTEGER     NOT NULL,
+    file_id                     TEXT        NOT NULL,
+    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE,
+    UNIQUE (file_id, cell_index)
+);

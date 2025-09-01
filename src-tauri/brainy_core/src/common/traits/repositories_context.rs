@@ -3,9 +3,9 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use thiserror::Error;
 
-use crate::file_system::repositories::traits::{
+use crate::{cells::repositories::traits::cell_repository::CellRepository, file_system::repositories::traits::{
     file_repository::FileRepository, folder_repository::FolderRepository,
-};
+}};
 
 #[derive(Debug, Error)]
 pub enum RepositoriesContextError {
@@ -17,6 +17,7 @@ pub enum RepositoriesContextError {
 pub trait RepositoriesContext: Send + Sync {
     fn folder_repository(&self) -> Arc<dyn FolderRepository>;
     fn file_repository(&self) -> Arc<dyn FileRepository>;
+    fn cell_repository(&self) -> Arc<dyn CellRepository>;
     /// All changes are put automatically inside a transaction, this this
     /// method commit the transactio.
     async fn save_changes(&mut self) -> Result<(), RepositoriesContextError>;

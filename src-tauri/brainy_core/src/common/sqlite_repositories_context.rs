@@ -9,12 +9,11 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 
 use crate::{
-    common::traits::repositories_context::{RepositoriesContext, RepositoriesContextError},
-    file_system::repositories::{
+    cells::repositories::{sqlite_cell_repository::SqliteCellRepository, traits::cell_repository::CellRepository}, common::traits::repositories_context::{RepositoriesContext, RepositoriesContextError}, file_system::repositories::{
         sqlite_file_repository::SqliteFileRepository,
         sqlite_folder_repository::SqliteFolderRepository,
         traits::{file_repository::FileRepository, folder_repository::FolderRepository},
-    },
+    }
 };
 
 pub struct SqliteRepositoriesContext {
@@ -22,6 +21,7 @@ pub struct SqliteRepositoriesContext {
     tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
     folder_repository: Arc<SqliteFolderRepository>,
     file_repository: Arc<SqliteFileRepository>,
+    cell_repository: Arc<SqliteCellRepository>,
 }
 
 #[derive(Debug, Error)]
@@ -50,6 +50,7 @@ impl SqliteRepositoriesContext {
             tx: tx.clone(),
             file_repository: Arc::new(SqliteFileRepository::new(arc_pool.clone(), tx.clone())),
             folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
+            cell_repository: Arc::new(SqliteCellRepository::new(arc_pool.clone(), tx.clone())),
         })
     }
 
@@ -70,6 +71,10 @@ impl RepositoriesContext for SqliteRepositoriesContext {
 
     fn file_repository(&self) -> Arc<dyn FileRepository> {
         self.file_repository.clone()
+    }
+
+    fn cell_repository(&self) -> Arc<dyn CellRepository> {
+        self.cell_repository.clone()
     }
 
     async fn save_changes(&mut self) -> Result<(), RepositoriesContextError> {
