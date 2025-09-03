@@ -5,30 +5,11 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
-    common::repository_error::RepositoryError,
-    file_system::{
-        entities::folder::Folder, repositories::traits::folder_repository::FolderRepository,
+    common::repository_error::RepositoryError, file_system::{
+        entities::folder::Folder, repositories::{sqlite_folder_repository::folder_row::FolderRow, traits::folder_repository::FolderRepository},
         value_objects::file_system_item_name::FileSystemItemName,
-    },
+    }, Guid
 };
-
-#[derive(sqlx::FromRow)]
-struct FolderRow {
-    id: Guid,
-    parent_id: Option<Guid>,
-    name: String,
-}
-
-impl From<FolderRow> for Folder {
-    fn from(value: FolderRow) -> Self {
-        Folder::new(
-            Some(value.id),
-            value.parent_id,
-            FileSystemItemName::new_unchecked(value.name),
-        )
-    }
-}
 
 pub struct SqliteFolderRepository {
     pool: Arc<SqlitePool>,
@@ -147,6 +128,27 @@ impl FolderRepository for SqliteFolderRepository {
         match result {
             Ok(_) => Ok(()),
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+}
+
+mod folder_row {
+    use super::*;
+
+    #[derive(sqlx::FromRow)]
+    pub(super) struct FolderRow {
+        pub id: Guid,
+        pub parent_id: Option<Guid>,
+        pub name: String,
+    }
+
+    impl From<FolderRow> for Folder {
+        fn from(value: FolderRow) -> Self {
+            Folder::new(
+                Some(value.id),
+                value.parent_id,
+                FileSystemItemName::new_unchecked(value.name),
+            )
         }
     }
 }

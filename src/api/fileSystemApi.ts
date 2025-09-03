@@ -1,8 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import FileWithRepetitionCounts from "../types/backend/dto/fileWithRepetitionCounts";
 
-// TODO: parent id always empty string
-export function createFolder(name: string, parentId: string | null) {
+export function createFolder(name: string, parentId: string) {
 	return invoke("create_folder", { name, parentId });
 }
 
@@ -36,7 +35,7 @@ export function renameFile(fileId: string, newName: string) {
 	return invoke("rename_file", { fileId, newName });
 }
 
-export function createFile(name: string, parentId: string | null) {
+export function createFile(name: string, parentId: string) {
 	return invoke("create_file", { name, parentId });
 }
 

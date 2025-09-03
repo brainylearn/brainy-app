@@ -5,30 +5,11 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
-    common::repository_error::RepositoryError,
-    file_system::{
-        entities::file::File, repositories::traits::file_repository::FileRepository,
+    common::repository_error::RepositoryError, file_system::{
+        entities::file::File, repositories::{sqlite_file_repository::file_row::FileRow, traits::file_repository::FileRepository},
         value_objects::file_system_item_name::FileSystemItemName,
-    },
+    }, Guid
 };
-
-#[derive(sqlx::FromRow)]
-struct FileRow {
-    id: Guid,
-    parent_id: Option<Guid>,
-    name: String,
-}
-
-impl From<FileRow> for File {
-    fn from(value: FileRow) -> Self {
-        File::new(
-            Some(value.id),
-            value.parent_id,
-            FileSystemItemName::new_unchecked(value.name.clone()),
-        )
-    }
-}
 
 pub struct SqliteFileRepository {
     pool: Arc<SqlitePool>,
@@ -228,5 +209,26 @@ pub mod tests {
 
         let actual = context.file_repository().get_all_files().await.unwrap();
         assert_eq!(0, actual.len());
+    }
+}
+
+mod file_row {
+    use super::*;
+
+    #[derive(sqlx::FromRow)]
+    pub(super) struct FileRow {
+        pub id: Guid,
+        pub parent_id: Option<Guid>,
+        pub name: String,
+    }
+
+    impl From<FileRow> for File {
+        fn from(value: FileRow) -> Self {
+            File::new(
+                Some(value.id),
+                value.parent_id,
+                FileSystemItemName::new_unchecked(value.name.clone()),
+            )
+        }
     }
 }

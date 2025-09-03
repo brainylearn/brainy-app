@@ -9,11 +9,15 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 
 use crate::{
-    cells::repositories::{sqlite_cell_repository::SqliteCellRepository, traits::cell_repository::CellRepository}, common::traits::repositories_context::{RepositoriesContext, RepositoriesContextError}, file_system::repositories::{
+    cells::repositories::{
+        sqlite_cell_repository::SqliteCellRepository, traits::cell_repository::CellRepository,
+    },
+    common::traits::repositories_context::{RepositoriesContext, RepositoriesContextError},
+    file_system::repositories::{
         sqlite_file_repository::SqliteFileRepository,
         sqlite_folder_repository::SqliteFolderRepository,
         traits::{file_repository::FileRepository, folder_repository::FolderRepository},
-    }
+    },
 };
 
 pub struct SqliteRepositoriesContext {

@@ -24,11 +24,11 @@ export function fetchFiles() {
 	return executeRequest(() => Promise.resolve());
 }
 
-export function createFile(name: string, parentId: string | null) {
+export function createFile(name: string, parentId: string) {
 	return executeRequest(() => createFileApi(name, parentId));
 }
 
-export function createFolder(name: string, parentId: string | null) {
+export function createFolder(name: string, parentId: string) {
 	return executeRequest(() => createFolderApi(name, parentId));
 }
 

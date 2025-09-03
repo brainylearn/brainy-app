@@ -1,6 +1,5 @@
 use crate::{Guid, file_system::value_objects::file_system_item_name::FileSystemItemName};
 
-// TODO: on the same aggregate for file and not folder, add cells and reviews and parent_id
 #[derive(Debug, Clone)]
 pub struct File {
     id: Guid,

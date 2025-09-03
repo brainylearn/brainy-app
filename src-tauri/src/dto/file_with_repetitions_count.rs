@@ -11,7 +11,6 @@ use serde::Serialize;
 
 use crate::value_objects::file_repetitions_count::FileRepetitionCounts;
 
-// TODO: better name
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileWithRepetitionsCount {
@@ -22,10 +21,7 @@ pub struct FileWithRepetitionsCount {
 }
 
 impl FileWithRepetitionsCount {
-    pub fn parse_file_system(
-        folders: &[Folder],
-        files: &[File],
-    ) -> Vec<FileWithRepetitionsCount> {
+    pub fn parse_file_system(folders: &[Folder], files: &[File]) -> Vec<FileWithRepetitionsCount> {
         let mut result = Vec::new();
 
         let mut map = HashMap::new();
@@ -96,11 +92,7 @@ pub mod tests {
 
         let parent_folder_id = Guid::new_v4();
         let folders: Vec<Folder> = vec![
-            Folder::new_unchecked(
-                Some(ROOT_FOLDER_ID),
-                None,
-                "root".try_into().unwrap(),
-            ),
+            Folder::new_unchecked(Some(ROOT_FOLDER_ID), None, "root".try_into().unwrap()),
             Folder::new_unchecked(
                 Some(parent_folder_id),
                 Some(ROOT_FOLDER_ID),
@@ -108,13 +100,11 @@ pub mod tests {
             ),
         ];
 
-        let files: Vec<File> = vec![
-            File::new_unchecked(
-                None,
-                Some(parent_folder_id),
-                "file".try_into().unwrap(),
-            ),
-        ];
+        let files: Vec<File> = vec![File::new_unchecked(
+            None,
+            Some(parent_folder_id),
+            "file".try_into().unwrap(),
+        )];
 
         // Act
 
@@ -123,7 +113,15 @@ pub mod tests {
         // Assert
 
         assert!(actual.iter().any(|f| f.path.to_string() == "/root"));
-        assert!(actual.iter().any(|f| f.path.to_string() == "/root/parent folder"));
-        assert!(actual.iter().any(|f| f.path.to_string() == "/root/parent folder/file"));
+        assert!(
+            actual
+                .iter()
+                .any(|f| f.path.to_string() == "/root/parent folder")
+        );
+        assert!(
+            actual
+                .iter()
+                .any(|f| f.path.to_string() == "/root/parent folder/file")
+        );
     }
 }

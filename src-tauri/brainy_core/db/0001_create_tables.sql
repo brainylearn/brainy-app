@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = ON;
+
 CREATE TABLE folders(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     name                        TEXT        NOT NULL,
@@ -23,6 +25,5 @@ CREATE TABLE cells(
     cell_type                   TEXT        NOT NULL,
     cell_index                  INTEGER     NOT NULL,
     file_id                     TEXT        NOT NULL,
-    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE,
-    UNIQUE (file_id, cell_index)
+    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );

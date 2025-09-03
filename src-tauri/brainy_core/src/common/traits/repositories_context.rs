@@ -3,9 +3,12 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use thiserror::Error;
 
-use crate::{cells::repositories::traits::cell_repository::CellRepository, file_system::repositories::traits::{
-    file_repository::FileRepository, folder_repository::FolderRepository,
-}};
+use crate::{
+    cells::repositories::traits::cell_repository::CellRepository,
+    file_system::repositories::traits::{
+        file_repository::FileRepository, folder_repository::FolderRepository,
+    },
+};
 
 #[derive(Debug, Error)]
 pub enum RepositoriesContextError {

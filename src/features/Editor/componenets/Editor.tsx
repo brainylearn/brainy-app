@@ -58,9 +58,10 @@ function Editor({ editCellId, onError, onStudyStart }: Props) {
 
 	const retrieveRepetitionCounts = useCallback(async () => {
 		await executeRequest(async () => {
-			const repetitionCounts =
-				await getStudyRepetitionCounts(selectedFileId);
-			setRepetitionCounts(repetitionCounts);
+            // TODO: uncomment
+			// const repetitionCounts =
+			// 	await getStudyRepetitionCounts(selectedFileId);
+			// setRepetitionCounts(repetitionCounts);
 		});
 	}, [executeRequest, selectedFileId]);
 
@@ -68,9 +69,10 @@ function Editor({ editCellId, onError, onStudyStart }: Props) {
 		return await executeRequest(async () => {
 			const fetchedCells =
 				await getFileCellsOrderedByIndex(selectedFileId);
-			const fetchedRepetitions = await getFileRepetitions(selectedFileId);
+            // TODO: uncomment this and next line
+            // const fetchedRepetitions = await getFileRepetitions(selectedFileId);
 			setCells(fetchedCells);
-			setRepetitions(fetchedRepetitions);
+			// setRepetitions(fetchedRepetitions);
 		});
 	}, [executeRequest, selectedFileId]);
 

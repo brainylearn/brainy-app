@@ -9,6 +9,7 @@ mod value_objects;
 use std::sync::Arc;
 
 use brainy_core::{
+    cells::cell_service::CellService,
     common::{
         sqlite_repositories_context::SqliteRepositoriesContext,
         traits::repositories_context::RepositoriesContext,
@@ -66,6 +67,7 @@ pub async fn run() -> Result<(), String> {
                 repositories_context.folder_repository(),
                 repositories_context.file_repository(),
             ));
+            app.manage(CellService::new(repositories_context.cell_repository()));
             app.manage(
                 Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
             );
