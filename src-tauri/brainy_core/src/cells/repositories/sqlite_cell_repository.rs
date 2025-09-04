@@ -5,15 +5,13 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
     cells::{
         entities::cell::{Cell, CellType},
         repositories::{
             sqlite_cell_repository::cell_row::CellRow,
             traits::cell_repository::{CellRepository, MoveDirection},
-        },
-    },
-    common::repository_error::RepositoryError,
+        }, value_objects::cell_deletion_request::CellDeletionRequest,
+    }, common::repository_error::RepositoryError, Guid
 };
 
 pub struct SqliteCellRepository {
@@ -106,6 +104,39 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
+    async fn update(&self, cell: &Cell) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = cell.id();
+        let content = cell.content();
+        let cell_type = cell.cell_type();
+        let file_id = cell.file_id();
+        let index = cell.index();
+
+        let result = sqlx::query!(
+            r#"UPDATE cells
+                SET id = $1,
+                    file_id = $2,
+                    content = $3,
+                    cell_type = $4,
+                    cell_index = $5
+                WHERE id = $1"#,
+            id,
+            file_id,
+            content,
+            cell_type,
+            index,
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
     async fn move_cells_indices_starting_from(
         &self,
         file_id: Guid,
@@ -138,11 +169,12 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
+    async fn delete_by_id(&self, deletion_request: CellDeletionRequest) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
-        let result = sqlx::query!(r#"DELETE FROM cells WHERE id = $1"#, id,)
+        let cell_id = deletion_request.id();
+        let result = sqlx::query!(r#"DELETE FROM cells WHERE id = $1"#, cell_id,)
             .execute(&mut *tx)
             .await;
 

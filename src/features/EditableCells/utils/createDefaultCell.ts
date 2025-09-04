@@ -4,7 +4,7 @@ import TrueFalse from "../../../types/backend/value_objects/trueFalse";
 
 function createDefaultCell(cellType: CellType, fileId: string, index: number) {
 	const cell: Cell = {
-		id: 0,
+		id: "",
 		fileId,
 		content: "",
 		searchableContent: "",

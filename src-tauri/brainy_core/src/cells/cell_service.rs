@@ -7,6 +7,7 @@ use crate::{
     cells::{
         entities::cell::{Cell, CellType},
         repositories::traits::cell_repository::{CellRepository, MoveDirection},
+        value_objects::cell_deletion_request::CellDeletionRequest,
     },
     common::repository_error::RepositoryError,
 };
@@ -21,13 +22,12 @@ pub struct CellService {
     cell_repository: Arc<dyn CellRepository>,
 }
 
-// TODO: make sure to copy from cell service!
+// TODO: make sure to copy from existing cell service!
 impl CellService {
     pub fn new(cell_repository: Arc<dyn CellRepository>) -> Self {
         Self { cell_repository }
     }
 
-    // TODO: unit test
     pub async fn create_cell(
         &self,
         file_id: Guid,
@@ -56,11 +56,148 @@ impl CellService {
 
         // TODO: repetitions
 
-        self.cell_repository.delete_by_id(id).await?;
+        self.cell_repository
+            .delete_by_id(CellDeletionRequest::new(id))
+            .await?;
 
         self.cell_repository
             .move_cells_indices_starting_from(cell.file_id(), cell.index(), MoveDirection::Up)
             .await?;
         Ok(())
+    }
+
+    pub async fn move_cell(&self, id: Guid, new_index: u32) -> Result<(), CellServiceError> {
+        let mut cell = self.cell_repository.get_by_id(id).await?;
+
+        let new_index = if new_index > cell.index() {
+            new_index - 1
+        } else {
+            new_index
+        };
+
+        self.cell_repository
+            .move_cells_indices_starting_from(cell.file_id(), cell.index() + 1, MoveDirection::Up)
+            .await?;
+
+        self.cell_repository
+            .move_cells_indices_starting_from(cell.file_id(), new_index, MoveDirection::Down)
+            .await?;
+
+        cell.set_index(new_index);
+        self.cell_repository.update(&cell).await?;
+
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::{
+        ROOT_FOLDER_ID,
+        common::{
+            sqlite_repositories_context::SqliteRepositoriesContext,
+            traits::repositories_context::RepositoriesContext,
+        },
+        file_system::entities::file::File,
+    };
+
+    use super::*;
+
+    async fn create_test_dependencies() -> (SqliteRepositoriesContext, CellService) {
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+        let service = CellService::new(context.cell_repository());
+
+        (context, service)
+    }
+
+    #[tokio::test]
+    pub async fn create_cell_moved_all_cells_down_and_created_cell() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cells = [
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 0),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 1),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 2),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 3),
+        ];
+
+        context.cell_repository().create(&cells[0]).await.unwrap();
+        context.cell_repository().create(&cells[1]).await.unwrap();
+        context.cell_repository().create(&cells[2]).await.unwrap();
+        context.cell_repository().create(&cells[3]).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .create_cell(file.id(), "".to_string(), CellType::Cloze, 2)
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual_cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file.id())
+            .await
+            .unwrap();
+        assert_eq!(actual_cells[0].id(), cells[0].id());
+        assert_eq!(actual_cells[1].id(), cells[1].id());
+        assert_eq!(actual_cells[2].id(), actual);
+        assert_eq!(actual_cells[3].id(), cells[2].id());
+        assert_eq!(actual_cells[4].id(), cells[3].id());
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_moved_all_cells_up_and_deleted_cell() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cells = [
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 0),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 1),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 2),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 3),
+        ];
+
+        context.cell_repository().create(&cells[0]).await.unwrap();
+        context.cell_repository().create(&cells[1]).await.unwrap();
+        context.cell_repository().create(&cells[2]).await.unwrap();
+        context.cell_repository().create(&cells[3]).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        service.delete_by_id(cells[1].id()).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual_cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file.id())
+            .await
+            .unwrap();
+
+        assert_eq!(actual_cells[0].id(), cells[0].id());
+        assert_eq!(actual_cells[0].index(), 0);
+
+        assert_eq!(actual_cells[1].id(), cells[2].id());
+        assert_eq!(actual_cells[1].index(), 1);
+
+        assert_eq!(actual_cells[2].id(), cells[3].id());
+        assert_eq!(actual_cells[2].index(), 2);
     }
 }

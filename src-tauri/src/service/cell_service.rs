@@ -82,38 +82,6 @@ fn get_searchable_content(content: &str, cell_type: &CellType) -> String {
     searchable_content.to_lowercase()
 }
 
-pub async fn move_cell(db_conn: &DbConn, cell_id: i32, new_index: i32) -> Result<(), String> {
-    let cell = get_cell_by_id(db_conn, cell_id).await?;
-    let new_index = if new_index > cell.index {
-        new_index - 1
-    } else {
-        new_index
-    };
-
-    let txn = match db_conn.begin().await {
-        Ok(txn) => txn,
-        Err(err) => return Err(err.to_string()),
-    };
-
-    increase_cells_indices_starting_from(&txn, cell.file_id, cell.index + 1, -1).await?;
-    increase_cells_indices_starting_from(&txn, cell.file_id, new_index, 1).await?;
-    update_cell(
-        &txn,
-        cell::ActiveModel {
-            id: Set(cell_id),
-            index: Set(new_index),
-            ..Default::default()
-        },
-    )
-    .await?;
-
-    let result = txn.commit().await;
-    match result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.to_string()),
-    }
-}
-
 async fn increase_cells_indices_starting_from(
     db_conn: &impl ConnectionTrait,
     file_id: i32,

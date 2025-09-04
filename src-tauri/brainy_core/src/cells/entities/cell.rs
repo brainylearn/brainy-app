@@ -69,4 +69,8 @@ impl Cell {
     pub fn index(&self) -> u32 {
         self.index
     }
+
+    pub(in crate::cells) fn set_index(&mut self, index: u32) {
+        self.index = index;
+    }
 }

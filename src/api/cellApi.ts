@@ -12,15 +12,15 @@ export function updateCellsContents(requests: UpdateCellRequest[]) {
 	return invoke("update_cells_contents", { requests });
 }
 
-export function createCell(cell: Cell): Promise<number> {
+export function createCell(cell: Cell): Promise<string> {
 	return invoke("create_cell", { ...cell });
 }
 
-export function deleteCell(cellId: number) {
+export function deleteCell(cellId: string) {
 	return invoke("delete_cell", { cellId });
 }
 
-export function moveCell(cellId: number, newIndex: number) {
+export function moveCell(cellId: string, newIndex: number) {
 	return invoke("move_cell", {
 		cellId,
 		newIndex,

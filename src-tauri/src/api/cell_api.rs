@@ -62,12 +62,15 @@ pub async fn delete_cell(
 
 #[tauri::command]
 pub async fn move_cell(
-    db_conn: State<'_, Mutex<DbConn>>,
-    cell_id: i32,
-    new_index: i32,
-) -> Result<(), String> {
-    let db_conn = db_conn.lock().await;
-    cell_service::move_cell(&db_conn, cell_id, new_index).await
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    cell_service: State<'_, CellService>,
+    cell_id: Guid,
+    new_index: u32,
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+    cell_service.move_cell(cell_id, new_index).await.unwrap();
+    context.save_changes().await?;
+    Ok(())
 }
 
 #[tauri::command]

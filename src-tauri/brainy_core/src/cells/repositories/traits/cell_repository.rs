@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{Guid, cells::entities::cell::Cell, common::repository_error::RepositoryError};
+use crate::{cells::{entities::cell::Cell, value_objects::cell_deletion_request::CellDeletionRequest}, common::repository_error::RepositoryError, Guid};
 
 #[derive(PartialEq, Eq)]
 pub enum MoveDirection {
@@ -16,7 +16,9 @@ pub trait CellRepository: Send + Sync {
         &self,
         file_id: Guid,
     ) -> Result<Vec<Cell>, RepositoryError>;
+
     async fn create(&self, cell: &Cell) -> Result<(), RepositoryError>;
+    async fn update(&self, cell: &Cell) -> Result<(), RepositoryError>;
 
     /// Moves all the indicies of cells up or down based on the given direction.
     /// The cells moved must belong to the file given and must have an index
@@ -28,6 +30,5 @@ pub trait CellRepository: Send + Sync {
         direction: MoveDirection,
     ) -> Result<(), RepositoryError>;
 
-    // TODO: force visibility modifier here so that it is not deleted from outside
-    async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;
+    async fn delete_by_id(&self, id: CellDeletionRequest) -> Result<(), RepositoryError>;
 }

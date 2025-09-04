@@ -13,7 +13,7 @@ export const cellTypesDisplayNames: Record<CellType, string> = {
 };
 
 export default interface Cell {
-	id: number;
+	id: string;
 	fileId: string;
 	content: string;
 	searchableContent: string;

@@ -3,7 +3,7 @@ export type RepetitionState = "New" | "Learning" | "Relearning" | "Review";
 export default interface Repetition {
 	id: string;
 	fileId: string;
-	cellId: number;
+	cellId: string;
 	due: string;
 	stability: number;
 	difficulty: number;
