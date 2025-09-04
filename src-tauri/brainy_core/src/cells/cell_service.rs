@@ -41,7 +41,7 @@ impl CellService {
 
         let cell = Cell::new(None, file_id, content, cell_type, index);
 
-        // TODO: repetitions
+        // TODO: repetitions, searchable content
 
         self.cell_repository
             .move_cells_indices_starting_from(file_id, index, MoveDirection::Down)
@@ -54,7 +54,7 @@ impl CellService {
     pub async fn delete_by_id(&self, id: Guid) -> Result<(), CellServiceError> {
         let cell = self.cell_repository.get_by_id(id).await?;
 
-        // TODO: repetitions
+        // TODO: repetitions, searchable content
 
         self.cell_repository
             .delete_by_id(CellDeletionRequest::new(id))
@@ -66,6 +66,7 @@ impl CellService {
         Ok(())
     }
 
+    // TODO: unit test
     pub async fn move_cell(&self, id: Guid, new_index: u32) -> Result<(), CellServiceError> {
         let mut cell = self.cell_repository.get_by_id(id).await?;
 

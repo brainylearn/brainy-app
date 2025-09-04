@@ -1,11 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-    api::ApiError,
-    dto::update_cell_request::UpdateCellRequest,
-    entity::cell::{self},
-    service::cell_service,
-};
+use crate::{api::ApiError, dto::update_cell_request::UpdateCellRequest};
 use brainy_core::{
     Guid,
     cells::{
@@ -14,7 +9,6 @@ use brainy_core::{
     },
     common::traits::repositories_context::RepositoriesContext,
 };
-use sea_orm::DbConn;
 use tauri::State;
 use tokio::sync::Mutex;
 
@@ -52,10 +46,10 @@ pub async fn create_cell(
 pub async fn delete_cell(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
     cell_service: State<'_, CellService>,
-    cell_id: Guid,
+    id: Guid,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
-    cell_service.delete_by_id(cell_id).await?;
+    cell_service.delete_by_id(id).await?;
     context.save_changes().await?;
     Ok(())
 }
@@ -64,29 +58,46 @@ pub async fn delete_cell(
 pub async fn move_cell(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
     cell_service: State<'_, CellService>,
-    cell_id: Guid,
+    id: Guid,
     new_index: u32,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
-    cell_service.move_cell(cell_id, new_index).await.unwrap();
+    cell_service.move_cell(id, new_index).await.unwrap();
     context.save_changes().await?;
     Ok(())
 }
 
 #[tauri::command]
 pub async fn update_cells_contents(
-    db_conn: State<'_, Mutex<DbConn>>,
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
     requests: Vec<UpdateCellRequest>,
-) -> Result<(), String> {
-    let db_conn = db_conn.lock().await;
-    cell_service::update_cells_contents(&db_conn, requests).await
+) -> Result<(), ApiError> {
+    let mut context = context.lock().await;
+
+    for request in requests {
+        let mut cell = context.cell_repository().get_by_id(request.id).await?;
+        cell.set_content(request.content);
+        context.cell_repository().update(&cell).await?;
+    }
+    context.save_changes().await?;
+    Ok(())
 }
 
 #[tauri::command]
 pub async fn get_cells_for_files(
-    db_conn: State<'_, Mutex<DbConn>>,
-    file_ids: Vec<i32>,
-) -> Result<Vec<cell::Model>, String> {
-    let db_conn = db_conn.lock().await;
-    cell_service::get_cells_for_files(&db_conn, file_ids).await
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    file_ids: Vec<Guid>,
+) -> Result<Vec<Cell>, ApiError> {
+    let context = context.lock().await;
+    let mut result: Vec<Cell> = Vec::new();
+
+    for file_id in file_ids {
+        let mut cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file_id)
+            .await?;
+        result.append(&mut cells);
+    }
+
+    Ok(result)
 }

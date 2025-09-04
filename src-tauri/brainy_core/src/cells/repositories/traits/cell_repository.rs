@@ -1,6 +1,10 @@
 use async_trait::async_trait;
 
-use crate::{cells::{entities::cell::Cell, value_objects::cell_deletion_request::CellDeletionRequest}, common::repository_error::RepositoryError, Guid};
+use crate::{
+    Guid,
+    cells::{entities::cell::Cell, value_objects::cell_deletion_request::CellDeletionRequest},
+    common::repository_error::RepositoryError,
+};
 
 #[derive(PartialEq, Eq)]
 pub enum MoveDirection {

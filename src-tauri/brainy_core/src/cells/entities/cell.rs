@@ -33,7 +33,7 @@ pub struct Cell {
 }
 
 impl Cell {
-    // TODO: repetitions, maybe an aggregate
+    // TODO: repetitions, searchable content, maybe an aggregate
     pub(in crate::cells) fn new(
         id: Option<Guid>,
         file_id: Guid,
@@ -72,5 +72,10 @@ impl Cell {
 
     pub(in crate::cells) fn set_index(&mut self, index: u32) {
         self.index = index;
+    }
+
+    // TODO: repetitions, searchable content, and unit test
+    pub fn set_content(&mut self, content: String) {
+        self.content = content;
     }
 }

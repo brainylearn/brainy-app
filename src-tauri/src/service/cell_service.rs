@@ -1,5 +1,4 @@
 use crate::{
-    dto::update_cell_request::UpdateCellRequest,
     entity::cell::{self, CellType},
     value_objects::{flash_card::FlashCard, true_false::TrueFalse},
 };
@@ -103,45 +102,6 @@ async fn increase_cells_indices_starting_from(
     }
 }
 
-pub async fn update_cells_contents(
-    db_conn: &DbConn,
-    requests: Vec<UpdateCellRequest>,
-) -> Result<(), String> {
-    let txn = match db_conn.begin().await {
-        Ok(txn) => txn,
-        Err(err) => return Err(err.to_string()),
-    };
-
-    for request in requests {
-        let cell = get_cell_by_id(&txn, request.cell_id).await?;
-        update_cell(
-            &txn,
-            cell::ActiveModel {
-                id: Set(request.cell_id),
-                content: Set(request.content.clone()),
-                searchable_content: Set(get_searchable_content(&request.content, &cell.cell_type)),
-                ..Default::default()
-            },
-        )
-        .await?;
-
-        repetition_service::update_repetitions_for_cell(
-            &txn,
-            cell.file_id,
-            request.cell_id,
-            &cell.cell_type,
-            &request.content,
-        )
-        .await?;
-    }
-
-    let result = txn.commit().await;
-    match result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.to_string()),
-    }
-}
-
 pub async fn get_cell_by_id(
     db_conn: &impl ConnectionTrait,
     cell_id: i32,
@@ -151,36 +111,6 @@ pub async fn get_cell_by_id(
         Ok(cell) => Ok(cell.unwrap()),
         Err(err) => Err(err.to_string()),
     }
-}
-
-async fn update_cell(
-    db_conn: &impl ConnectionTrait,
-    cell: cell::ActiveModel,
-) -> Result<(), String> {
-    let result = cell::Entity::update(cell).exec(db_conn).await;
-    match result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.to_string()),
-    }
-}
-
-pub async fn get_cells_for_files(
-    db_conn: &DbConn,
-    file_ids: Vec<i32>,
-) -> Result<Vec<cell::Model>, String> {
-    let mut cells: Vec<cell::Model> = Vec::new();
-    for file_id in file_ids {
-        let result = cell::Entity::find()
-            .filter(cell::Column::FileId.eq(file_id))
-            .all(db_conn)
-            .await;
-        let mut file_cells = match result {
-            Ok(result) => result,
-            Err(err) => return Err(err.to_string()),
-        };
-        cells.append(&mut file_cells);
-    }
-    Ok(cells)
 }
 
 // #[cfg(test)]

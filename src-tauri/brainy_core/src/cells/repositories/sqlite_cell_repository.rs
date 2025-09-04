@@ -5,13 +5,16 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
+    Guid,
     cells::{
         entities::cell::{Cell, CellType},
         repositories::{
             sqlite_cell_repository::cell_row::CellRow,
             traits::cell_repository::{CellRepository, MoveDirection},
-        }, value_objects::cell_deletion_request::CellDeletionRequest,
-    }, common::repository_error::RepositoryError, Guid
+        },
+        value_objects::cell_deletion_request::CellDeletionRequest,
+    },
+    common::repository_error::RepositoryError,
 };
 
 pub struct SqliteCellRepository {
@@ -169,7 +172,10 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    async fn delete_by_id(&self, deletion_request: CellDeletionRequest) -> Result<(), RepositoryError> {
+    async fn delete_by_id(
+        &self,
+        deletion_request: CellDeletionRequest,
+    ) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 

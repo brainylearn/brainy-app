@@ -5,10 +5,16 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    common::repository_error::RepositoryError, file_system::{
-        entities::folder::Folder, repositories::{sqlite_folder_repository::folder_row::FolderRow, traits::folder_repository::FolderRepository},
+    Guid,
+    common::repository_error::RepositoryError,
+    file_system::{
+        entities::folder::Folder,
+        repositories::{
+            sqlite_folder_repository::folder_row::FolderRow,
+            traits::folder_repository::FolderRepository,
+        },
         value_objects::file_system_item_name::FileSystemItemName,
-    }, Guid
+    },
 };
 
 pub struct SqliteFolderRepository {

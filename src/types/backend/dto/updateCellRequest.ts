@@ -1,4 +1,4 @@
 export default interface UpdateCellRequest {
-	cellId: string;
+	id: string;
 	content: string;
 }

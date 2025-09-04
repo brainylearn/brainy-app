@@ -1,9 +1,6 @@
-use prelude::Expr;
 use sea_orm::{DbConn, entity::*, query::*};
 
-use crate::{dto::file_with_repetitions_count::FileWithRepetitionsCount, entity::file};
-
-use super::repetition_service;
+use crate::entity::file;
 
 pub async fn create_file(db_conn: &impl ConnectionTrait, path: String) -> Result<i32, String> {
     let path = path.trim_matches('/').to_string();

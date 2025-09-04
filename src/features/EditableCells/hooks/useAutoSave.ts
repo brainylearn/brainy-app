@@ -51,7 +51,7 @@ function useAutoSave({
 				const cell = updatedCells.current.find(c => c.id === id);
 				if (!cell) continue;
 				requests.push({
-					cellId: id,
+					id,
 					content: cell.content,
 				});
 			}

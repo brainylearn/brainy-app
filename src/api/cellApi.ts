@@ -16,13 +16,13 @@ export function createCell(cell: Cell): Promise<string> {
 	return invoke("create_cell", { ...cell });
 }
 
-export function deleteCell(cellId: string) {
-	return invoke("delete_cell", { cellId });
+export function deleteCell(id: string) {
+	return invoke("delete_cell", { id });
 }
 
-export function moveCell(cellId: string, newIndex: number) {
+export function moveCell(id: string, newIndex: number) {
 	return invoke("move_cell", {
-		cellId,
+		id,
 		newIndex,
 	});
 }
