@@ -215,6 +215,7 @@ pub async fn reset_repetitions_for_cell(db_conn: &DbConn, cell_id: i32) -> Resul
 
 #[cfg(test)]
 mod tests {
+    use brainy_core::cells::value_objects::flash_card::FlashCard;
     use chrono::Duration;
 
     use crate::{
@@ -226,7 +227,6 @@ mod tests {
                 insert_repetitions,
             },
         },
-        value_objects::flash_card::FlashCard,
     };
 
     use super::*;

@@ -213,8 +213,8 @@ mod tests {
             repetition_service,
             tests::{create_file_cell_with_cell_type_and_content, get_db},
         },
-        value_objects::{flash_card::FlashCard, true_false::TrueFalse},
     };
+    use brainy_core::cells::value_objects::{flash_card::FlashCard, true_false::TrueFalse};
     use rand::prelude::*;
 
     fn get_random_file_path() -> PathBuf {

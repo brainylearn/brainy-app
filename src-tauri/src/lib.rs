@@ -6,6 +6,8 @@ mod service;
 mod util;
 mod value_objects;
 
+// TODO: look at sending files to frontend without any conversion, see dto and value objects
+// folder, and also delete value objects folder
 use std::sync::Arc;
 
 use brainy_core::{

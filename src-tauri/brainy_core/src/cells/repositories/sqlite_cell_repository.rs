@@ -359,6 +359,7 @@ pub mod tests {
 
         // Assert
 
+        assert_eq!(2, actual.len());
         assert!(actual.iter().any(|cell| cell.id() == cells[0].id()));
         assert!(actual.iter().any(|cell| cell.id() == cells[1].id()));
     }
