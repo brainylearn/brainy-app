@@ -38,7 +38,8 @@ impl CellRepository for SqliteCellRepository {
                 file_id as "file_id: _",
                 content,
                 cell_index as "index: _",
-                cell_type as "cell_type: _"
+                cell_type as "cell_type: _",
+                searchable_content as "searchable_content: _"
             FROM cells
             WHERE id = $1"#,
             id
@@ -63,7 +64,8 @@ impl CellRepository for SqliteCellRepository {
                 file_id as "file_id: _",
                 content,
                 cell_index as "index: _",
-                cell_type as "cell_type: _"
+                cell_type as "cell_type: _",
+                searchable_content as "searchable_content: _"
             FROM cells
             WHERE file_id = $1
             ORDER BY cell_index"#,
@@ -87,16 +89,18 @@ impl CellRepository for SqliteCellRepository {
         let cell_type = cell.cell_type();
         let file_id = cell.file_id();
         let index = cell.index();
+        let searchable_content = cell.searchable_content();
 
         let result = sqlx::query!(
             r#"INSERT INTO
-                cells(id, content, cell_type, cell_index, file_id)
-                VALUES ($1, $2, $3, $4, $5)"#,
+                cells(id, content, cell_type, cell_index, file_id, searchable_content)
+                VALUES ($1, $2, $3, $4, $5, $6)"#,
             id,
             content,
             cell_type,
             index,
-            file_id
+            file_id,
+            searchable_content
         )
         .execute(&mut *tx)
         .await;
@@ -116,6 +120,7 @@ impl CellRepository for SqliteCellRepository {
         let cell_type = cell.cell_type();
         let file_id = cell.file_id();
         let index = cell.index();
+        let searchable_content = cell.searchable_content();
 
         let result = sqlx::query!(
             r#"UPDATE cells
@@ -123,13 +128,15 @@ impl CellRepository for SqliteCellRepository {
                     file_id = $2,
                     content = $3,
                     cell_type = $4,
-                    cell_index = $5
+                    cell_index = $5,
+                    searchable_content = $6
                 WHERE id = $1"#,
             id,
             file_id,
             content,
             cell_type,
             index,
+            searchable_content
         )
         .execute(&mut *tx)
         .await;
@@ -189,6 +196,32 @@ impl CellRepository for SqliteCellRepository {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
     }
+
+    async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError> {
+        let pattern = format!("%{}%", search_text.to_lowercase());
+
+        let rows = sqlx::query_as!(
+            CellRow,
+            r#"SELECT
+                id as "id: _",
+                file_id as "file_id: _",
+                content,
+                cell_index as "index: _",
+                cell_type as "cell_type: _",
+                searchable_content as "searchable_content: _"
+            FROM cells
+            WHERE searchable_content LIKE $1
+            LIMIT 150"#,
+            pattern
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+        }
+    }
 }
 
 mod cell_type_sqlite_impls {
@@ -233,16 +266,18 @@ mod cell_row {
         pub content: String,
         pub cell_type: CellType,
         pub index: u32,
+        pub searchable_content: String,
     }
 
     impl From<CellRow> for Cell {
         fn from(value: CellRow) -> Self {
-            Cell::new(
+            Cell::new_unchecked(
                 Some(value.id),
                 value.file_id,
                 value.content,
                 value.cell_type,
                 value.index,
+                value.searchable_content,
             )
         }
     }
@@ -292,5 +327,39 @@ pub mod tests {
 
         assert_eq!(actual[0].id(), cells[0].id());
         assert_eq!(actual[1].id(), cells[1].id());
+    }
+
+    #[tokio::test]
+    pub async fn search_cells_valid_input_searched_cells_correctly() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cells = [
+            Cell::new(None, file.id(), "Test 1".to_string(), CellType::Note, 0),
+            Cell::new(None, file.id(), "Test 2".to_string(), CellType::Note, 1),
+            Cell::new(None, file.id(), "Not include".to_string(), CellType::Note, 1),
+        ];
+
+        context.cell_repository().create(&cells[1]).await.unwrap();
+        context.cell_repository().create(&cells[0]).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .cell_repository()
+            .search_cells("test")
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert!(actual.iter().any(|cell| cell.id() == cells[0].id()));
+        assert!(actual.iter().any(|cell| cell.id() == cells[1].id()));
     }
 }

@@ -25,5 +25,6 @@ CREATE TABLE cells(
     cell_type                   TEXT        NOT NULL,
     cell_index                  INTEGER     NOT NULL,
     file_id                     TEXT        NOT NULL,
+    searchable_content          TEXT        NOT NULL,
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );

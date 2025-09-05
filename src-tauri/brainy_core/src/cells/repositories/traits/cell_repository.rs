@@ -35,4 +35,6 @@ pub trait CellRepository: Send + Sync {
     ) -> Result<(), RepositoryError>;
 
     async fn delete_by_id(&self, id: CellDeletionRequest) -> Result<(), RepositoryError>;
+
+    async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError>;
 }

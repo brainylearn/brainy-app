@@ -22,7 +22,6 @@ pub struct CellService {
     cell_repository: Arc<dyn CellRepository>,
 }
 
-// TODO: make sure to copy from existing cell service!
 impl CellService {
     pub fn new(cell_repository: Arc<dyn CellRepository>) -> Self {
         Self { cell_repository }
@@ -41,7 +40,7 @@ impl CellService {
 
         let cell = Cell::new(None, file_id, content, cell_type, index);
 
-        // TODO: repetitions, searchable content
+        // TODO: repetitions
 
         self.cell_repository
             .move_cells_indices_starting_from(file_id, index, MoveDirection::Down)
@@ -54,7 +53,7 @@ impl CellService {
     pub async fn delete_by_id(&self, id: Guid) -> Result<(), CellServiceError> {
         let cell = self.cell_repository.get_by_id(id).await?;
 
-        // TODO: repetitions, searchable content
+        // TODO: repetitions
 
         self.cell_repository
             .delete_by_id(CellDeletionRequest::new(id))
@@ -66,7 +65,6 @@ impl CellService {
         Ok(())
     }
 
-    // TODO: unit test
     pub async fn move_cell(&self, id: Guid, new_index: u32) -> Result<(), CellServiceError> {
         let mut cell = self.cell_repository.get_by_id(id).await?;
 
@@ -200,5 +198,113 @@ pub mod tests {
 
         assert_eq!(actual_cells[2].id(), cells[3].id());
         assert_eq!(actual_cells[2].index(), 2);
+    }
+
+    #[tokio::test]
+    pub async fn move_cell_forward_moved_cell_correctly() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cells = [
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 0),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 1),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 2),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 3),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 4),
+        ];
+
+        context.cell_repository().create(&cells[0]).await.unwrap();
+        context.cell_repository().create(&cells[1]).await.unwrap();
+        context.cell_repository().create(&cells[2]).await.unwrap();
+        context.cell_repository().create(&cells[3]).await.unwrap();
+        context.cell_repository().create(&cells[4]).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        service.move_cell(cells[1].id(), 3).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual_cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file.id())
+            .await
+            .unwrap();
+
+        assert_eq!(actual_cells[0].id(), cells[0].id());
+        assert_eq!(actual_cells[0].index(), 0);
+
+        assert_eq!(actual_cells[1].id(), cells[2].id());
+        assert_eq!(actual_cells[1].index(), 1);
+
+        assert_eq!(actual_cells[2].id(), cells[1].id());
+        assert_eq!(actual_cells[2].index(), 2);
+
+        assert_eq!(actual_cells[3].id(), cells[3].id());
+        assert_eq!(actual_cells[3].index(), 3);
+
+        assert_eq!(actual_cells[4].id(), cells[4].id());
+        assert_eq!(actual_cells[4].index(), 4);
+    }
+
+    #[tokio::test]
+    pub async fn move_cell_backward_moved_cell_correctly() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cells = [
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 0),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 1),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 2),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 3),
+            Cell::new(None, file.id(), "".to_string(), CellType::Note, 4),
+        ];
+
+        context.cell_repository().create(&cells[0]).await.unwrap();
+        context.cell_repository().create(&cells[1]).await.unwrap();
+        context.cell_repository().create(&cells[2]).await.unwrap();
+        context.cell_repository().create(&cells[3]).await.unwrap();
+        context.cell_repository().create(&cells[4]).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        service.move_cell(cells[3].id(), 1).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual_cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file.id())
+            .await
+            .unwrap();
+
+        assert_eq!(actual_cells[0].id(), cells[0].id());
+        assert_eq!(actual_cells[0].index(), 0);
+
+        assert_eq!(actual_cells[1].id(), cells[3].id());
+        assert_eq!(actual_cells[1].index(), 1);
+
+        assert_eq!(actual_cells[2].id(), cells[1].id());
+        assert_eq!(actual_cells[2].index(), 2);
+
+        assert_eq!(actual_cells[3].id(), cells[2].id());
+        assert_eq!(actual_cells[3].index(), 3);
+
+        assert_eq!(actual_cells[4].id(), cells[4].id());
+        assert_eq!(actual_cells[4].index(), 4);
     }
 }

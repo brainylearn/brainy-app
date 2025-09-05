@@ -1,8 +1,6 @@
-use crate::{
-    entity::cell::{self, CellType},
-    value_objects::{flash_card::FlashCard, true_false::TrueFalse},
-};
+use crate::entity::cell::{self, CellType};
 
+use brainy_core::cells::value_objects::{flash_card::FlashCard, true_false::TrueFalse};
 use prelude::Expr;
 use regex::Regex;
 use sea_orm::{DbConn, entity::*, query::*};
