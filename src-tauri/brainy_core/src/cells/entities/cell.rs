@@ -1,10 +1,14 @@
-use std::fmt::Display;
+use std::{collections::HashSet, fmt::Display};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cells::{entities::repetition::Repetition, value_objects::{flash_card::FlashCard, true_false::TrueFalse}}, Guid
+    Guid,
+    cells::{
+        entities::repetition::Repetition,
+        value_objects::{flash_card::FlashCard, true_false::TrueFalse},
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -52,10 +56,11 @@ impl Cell {
             cell_type,
             index,
             searchable_content: "".to_string(),
-            repetitions: Vec::new()
+            repetitions: Vec::new(),
         };
 
         output.update_searcahble_content();
+        output.update_repetitions();
         output
     }
 
@@ -76,12 +81,8 @@ impl Cell {
             cell_type,
             index,
             searchable_content,
-            repetitions
+            repetitions,
         }
-    }
-
-    pub(in crate::cells) fn add_repetition(&mut self, repetition: Repetition) {
-        self.repetitions.push(repetition);
     }
 
     pub fn id(&self) -> Guid {
@@ -112,10 +113,24 @@ impl Cell {
         self.index = index;
     }
 
-    // TODO: repetitions, and unit test
+    pub fn repetitions(&self) -> &Vec<Repetition> {
+        &self.repetitions
+    }
+
     pub fn set_content(&mut self, content: String) {
         self.content = content;
         self.update_searcahble_content();
+        self.update_repetitions();
+    }
+
+    pub(in crate::cells) fn create_repetition_with_content(&mut self, additional_content: Option<String>) {
+        self.repetitions.push(Repetition {
+            id: Guid::new_v4(),
+            file_id: self.file_id,
+            cell_id: self.id,
+            additional_content,
+            ..Default::default()
+        });
     }
 
     fn update_searcahble_content(&mut self) {
@@ -144,6 +159,47 @@ impl Cell {
         };
 
         self.searchable_content = searchable_content.to_lowercase().to_string();
+    }
+
+    // TODO: unit test on create and on update
+    fn update_repetitions(&mut self) {
+        match self.cell_type {
+            CellType::Note => (),
+            CellType::FlashCard | CellType::TrueFalse => {
+                if self.repetitions.is_empty() {
+                    self.create_repetition_with_content(None);
+                }
+            }
+            CellType::Cloze => {
+                self.update_repetitions_for_cloze_cell();
+            }
+        }
+    }
+
+    fn update_repetitions_for_cloze_cell(&mut self) {
+        let re = Regex::new("<cloze[^>]*index=\"(\\d+)\"[^>]*>").expect("Invalid regex");
+        let indices: HashSet<String> = re
+            .captures_iter(&self.content)
+            .map(|c| c.extract())
+            .map(|c: (&str, [&str; 1])| c.1[0].to_string())
+            .collect();
+
+        self.repetitions.retain(|repetition| {
+            match repetition.additional_content.as_ref() {
+                Some(additional_content) => indices.contains(additional_content),
+                None => false,
+            }
+        });
+
+        for index in indices {
+            if !self
+                .repetitions
+                .iter()
+                .any(|c| c.additional_content == Some(index.clone()))
+            {
+                self.create_repetition_with_content(Some(index));
+            }
+        }
     }
 }
 

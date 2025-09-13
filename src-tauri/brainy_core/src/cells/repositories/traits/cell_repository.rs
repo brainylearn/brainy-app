@@ -1,9 +1,7 @@
 use async_trait::async_trait;
 
 use crate::{
-    Guid,
-    cells::{entities::cell::Cell, value_objects::cell_deletion_request::CellDeletionRequest},
-    common::repository_error::RepositoryError,
+    cells::{entities::{cell::Cell, repetition::Repetition}, value_objects::cell_deletion_request::CellDeletionRequest}, common::repository_error::RepositoryError, Guid
 };
 
 #[derive(PartialEq, Eq)]
@@ -37,4 +35,6 @@ pub trait CellRepository: Send + Sync {
     async fn delete_by_id(&self, id: CellDeletionRequest) -> Result<(), RepositoryError>;
 
     async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError>;
+
+    async fn get_file_repetitions(&self, file_id: Guid) -> Result<Vec<Repetition>, RepositoryError>;
 }

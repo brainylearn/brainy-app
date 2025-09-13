@@ -1,17 +1,20 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use sqlx::{Sqlite, SqlitePool, Transaction};
+use sqlx::{QueryBuilder, Sqlite, SqliteConnection, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
+    Guid,
     cells::{
-        entities::cell::Cell,
+        entities::{cell::Cell, repetition::Repetition},
         repositories::{
-            sqlite_rows::cell_row::{convert_rows_to_cells, CellRow}, traits::cell_repository::{CellRepository, MoveDirection}
+            sqlite_rows::cell_row::{CellRow, RepetitionRow, convert_rows_to_cells},
+            traits::cell_repository::{CellRepository, MoveDirection},
         },
         value_objects::cell_deletion_request::CellDeletionRequest,
-    }, common::repository_error::RepositoryError, Guid
+    },
+    common::repository_error::RepositoryError,
 };
 
 pub struct SqliteCellRepository {
@@ -25,7 +28,7 @@ impl SqliteCellRepository {
     }
 }
 
-// TODO: update unit tests for repetitions, all methods!
+// TODO: update unit tests for repetitions, all methods! specially create and update
 #[async_trait]
 impl CellRepository for SqliteCellRepository {
     async fn get_by_id(&self, id: Guid) -> Result<Cell, RepositoryError> {
@@ -67,7 +70,7 @@ impl CellRepository for SqliteCellRepository {
                 // Should be a single cell in list.
                 let cell = convert_rows_to_cells(rows).remove(0);
                 Ok(cell)
-            },
+            }
         }
     }
 
@@ -114,7 +117,7 @@ impl CellRepository for SqliteCellRepository {
             Ok(rows) => {
                 let cells = convert_rows_to_cells(rows);
                 Ok(cells)
-            },
+            }
         }
     }
 
@@ -143,10 +146,11 @@ impl CellRepository for SqliteCellRepository {
         .execute(&mut *tx)
         .await;
 
-        match result {
-            Ok(_) => Ok(()),
-            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        if let Err(err) = result {
+            return Err(RepositoryError::UnknownError(err.to_string()));
         }
+
+        self.upsert_repetitions(tx, cell.repetitions()).await
     }
 
     async fn update(&self, cell: &Cell) -> Result<(), RepositoryError> {
@@ -179,10 +183,28 @@ impl CellRepository for SqliteCellRepository {
         .execute(&mut *tx)
         .await;
 
-        match result {
-            Ok(_) => Ok(()),
-            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        if let Err(err) = result {
+            return Err(RepositoryError::UnknownError(err.to_string()));
         }
+
+        // Deleteing removed repetitions.
+
+        let mut query_builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
+            "DELETE FROM repetitions WHERE cell_id = ",
+        );
+        query_builder.push_bind(id);
+        query_builder.push(" AND id NOT IN (");
+        let mut separated = query_builder.separated(",");
+        for repetition in cell.repetitions() {
+            separated.push_bind(repetition.id);
+        }
+        separated.push_unseparated(")");
+
+        if let Err(err) = query_builder.build().execute(&mut *tx).await {
+            return Err(RepositoryError::UnknownError(err.to_string()));
+        }
+
+        self.upsert_repetitions(tx, cell.repetitions()).await
     }
 
     async fn move_cells_indices_starting_from(
@@ -277,19 +299,122 @@ impl CellRepository for SqliteCellRepository {
             Ok(rows) => {
                 let cells = convert_rows_to_cells(rows);
                 Ok(cells)
-            },
+            }
+        }
+    }
+
+    async fn get_file_repetitions(
+        &self,
+        file_id: Guid,
+    ) -> Result<Vec<Repetition>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            RepetitionRow,
+            r#"SELECT
+                id as "id: _",
+                file_id as "file_id: _",
+                cell_id as "cell_id: _",
+                due as "due: _",
+                stability as "stability: _",
+                difficulty as "difficulty: _",
+                elapsed_days as "elapsed_days: _",
+                scheduled_days as "scheduled_days",
+                reps as "reps: _",
+                lapses as "lapses: _",
+                state as "state: _",
+                last_review as "last_review: _",
+                additional_content as "additional_content: _"
+
+            FROM repetitions
+            WHERE file_id = $1"#,
+            file_id
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
         }
     }
 }
 
+impl SqliteCellRepository {
+    async fn upsert_repetitions(
+        &self,
+        tx: &mut SqliteConnection,
+        repetitions: &Vec<Repetition>,
+    ) -> Result<(), RepositoryError> {
+        for repetition in repetitions {
+            let Repetition {
+                id,
+                file_id,
+                cell_id,
+                due,
+                stability,
+                difficulty,
+                elapsed_days,
+                scheduled_days,
+                reps,
+                lapses,
+                state,
+                last_review,
+                additional_content,
+            } = repetition;
+
+            // TODO: maybe INSERT OR REPLACE is too dangerous?
+            let result = sqlx::query!(
+                r#"INSERT OR REPLACE INTO
+                    repetitions(
+                        id,
+                        file_id,
+                        cell_id,
+                        due,
+                        stability,
+                        difficulty,
+                        elapsed_days,
+                        scheduled_days,
+                        reps,
+                        lapses,
+                        state,
+                        last_review,
+                        additional_content)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"#,
+                id,
+                file_id,
+                cell_id,
+                due,
+                stability,
+                difficulty,
+                elapsed_days,
+                scheduled_days,
+                reps,
+                lapses,
+                state,
+                last_review,
+                additional_content
+            )
+            .execute(&mut *tx)
+            .await;
+
+            if let Err(err) = result {
+                return Err(RepositoryError::UnknownError(err.to_string()));
+            }
+        }
+
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 pub mod tests {
     use crate::{
-        cells::entities::cell::CellType, common::{
+        ROOT_FOLDER_ID,
+        cells::entities::cell::CellType,
+        common::{
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
-        }, file_system::entities::file::File, ROOT_FOLDER_ID
+        },
+        file_system::entities::file::File,
     };
 
     use super::*;
@@ -339,7 +464,13 @@ pub mod tests {
         let cells = [
             Cell::new(None, file.id(), "Test 1".to_string(), CellType::Note, 0),
             Cell::new(None, file.id(), "Test 2".to_string(), CellType::Note, 1),
-            Cell::new(None, file.id(), "Not include".to_string(), CellType::Note, 1),
+            Cell::new(
+                None,
+                file.id(),
+                "Not include".to_string(),
+                CellType::Note,
+                1,
+            ),
         ];
 
         context.cell_repository().create(&cells[1]).await.unwrap();

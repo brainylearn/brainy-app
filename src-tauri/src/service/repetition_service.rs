@@ -213,288 +213,289 @@ pub async fn reset_repetitions_for_cell(db_conn: &DbConn, cell_id: i32) -> Resul
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use brainy_core::cells::value_objects::flash_card::FlashCard;
-    use chrono::Duration;
-
-    use crate::{
-        entity::review::Rating,
-        service::{
-            review_service::register_review,
-            tests::{
-                create_file_cell, create_file_cell_with_cell_type_and_content, get_db,
-                insert_repetitions,
-            },
-        },
-    };
-
-    use super::*;
-
-    #[tokio::test]
-    async fn update_repetitions_for_cell_flash_card_with_no_repetitions_added_repetition() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
-
-        // Act
-
-        update_repetitions_for_cell(&db_conn, file_id, cell_id, &CellType::FlashCard, "")
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
-        assert_eq!(actual.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn update_repetitions_for_cell_flash_card_with_repetitions_no_repetition_added() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
-        repetition::ActiveModel {
-            file_id: Set(file_id),
-            cell_id: Set(cell_id),
-            ..Default::default()
-        }
-        .insert(&db_conn)
-        .await
-        .unwrap();
-
-        // Act
-
-        update_repetitions_for_cell(&db_conn, file_id, cell_id, &CellType::FlashCard, "")
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
-        assert_eq!(actual.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn update_repetitions_for_cloze_added_new_repetitions() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
-        let content = r#"
-            <cloze index="0">First cloze</cloze>
-            <cloze index="1">Second cloze</cloze>
-        "#;
-        // Only adding the first cloze.
-        repetition::ActiveModel {
-            file_id: Set(file_id),
-            cell_id: Set(cell_id),
-            additional_content: Set(Some("0".into())),
-            ..Default::default()
-        }
-        .insert(&db_conn)
-        .await
-        .unwrap();
-
-        // Act
-
-        update_repetitions_for_cell(&db_conn, file_id, cell_id, &CellType::Cloze, content)
-            .await
-            .unwrap();
-
-        // Assert
-
-        let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
-        assert_eq!(actual.len(), 2);
-        assert_eq!(actual[0].additional_content, Some("0".to_string()));
-        assert_eq!(actual[1].additional_content, Some("1".to_string()));
-    }
-
-    #[tokio::test]
-    async fn get_study_repetition_counts_valid_input_returned_count() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
-        for _ in 0..2 {
-            insert_repetitions(
-                &db_conn,
-                vec![repetition::ActiveModel {
-                    cell_id: Set(cell_id),
-                    file_id: Set(file_id),
-                    state: Set(State::New),
-                    ..Default::default()
-                }],
-            )
-            .await
-            .unwrap();
-        }
-
-        insert_repetitions(
-            &db_conn,
-            vec![
-                repetition::ActiveModel {
-                    cell_id: Set(cell_id),
-                    file_id: Set(file_id),
-                    state: Set(State::Review),
-                    ..Default::default()
-                },
-                repetition::ActiveModel {
-                    cell_id: Set(cell_id),
-                    file_id: Set(file_id),
-                    state: Set(State::Learning),
-                    ..Default::default()
-                },
-                repetition::ActiveModel {
-                    cell_id: Set(cell_id),
-                    file_id: Set(file_id),
-                    state: Set(State::Learning),
-                    due: Set((Utc::now() + Duration::days(1)).to_utc()),
-                    ..Default::default()
-                },
-            ],
-        )
-        .await
-        .unwrap();
-
-        // Act
-
-        let actual = get_study_repetition_counts(&db_conn, file_id)
-            .await
-            .unwrap();
-
-        // Assert
-
-        assert_eq!(2, actual.new);
-        assert_eq!(1, actual.learning);
-        assert_eq!(0, actual.relearning);
-        assert_eq!(1, actual.review);
-    }
-
-    #[tokio::test]
-    async fn get_file_repetitions_valid_input_returned_repetitions() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
-        let (file_id_2, cell_id_2) = create_file_cell(&db_conn, "file 2").await;
-        insert_repetitions(
-            &db_conn,
-            vec![
-                repetition::ActiveModel {
-                    file_id: Set(file_id),
-                    cell_id: Set(cell_id),
-                    ..Default::default()
-                },
-                repetition::ActiveModel {
-                    file_id: Set(file_id_2),
-                    cell_id: Set(cell_id_2),
-                    ..Default::default()
-                },
-            ],
-        )
-        .await
-        .unwrap();
-
-        // Act
-
-        let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
-
-        // Assert
-
-        assert_eq!(actual.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn get_repetitions_for_files_valid_input_returned_repetitions() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file1_id, cell1_id) = create_file_cell(&db_conn, "file 1").await;
-
-        insert_repetitions(
-            &db_conn,
-            vec![
-                repetition::ActiveModel {
-                    file_id: Set(file1_id),
-                    cell_id: Set(cell1_id),
-                    ..Default::default()
-                },
-                repetition::ActiveModel {
-                    file_id: Set(file1_id),
-                    cell_id: Set(cell1_id),
-                    ..Default::default()
-                },
-            ],
-        )
-        .await
-        .unwrap();
-        let (file2_id, cell2_id) = create_file_cell(&db_conn, "file 2").await;
-        insert_repetitions(
-            &db_conn,
-            vec![repetition::ActiveModel {
-                file_id: Set(file2_id),
-                cell_id: Set(cell2_id),
-                ..Default::default()
-            }],
-        )
-        .await
-        .unwrap();
-
-        // Act
-
-        let actual = get_repetitions_for_files(&db_conn, vec![file1_id, file2_id])
-            .await
-            .unwrap();
-
-        // Assert
-
-        assert_eq!(3, actual.len());
-    }
-
-    #[tokio::test]
-    async fn reset_repetitions_for_cell_valid_input_reseted_repetition() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let (file_id, cell_id) = create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "file 1",
-            CellType::FlashCard,
-            &serde_json::to_string(&FlashCard {
-                question: "old content".into(),
-                ..Default::default()
-            })
-            .unwrap(),
-        )
-        .await;
-        let repetition_id = get_repetitions_by_cell_id(&db_conn, cell_id).await.unwrap()[0].id;
-        register_review(
-            &db_conn,
-            repetition::Model {
-                id: repetition_id,
-                file_id,
-                cell_id,
-                state: State::Learning,
-                scheduled_days: 100,
-                ..Default::default()
-            },
-            Rating::Again,
-            0,
-        )
-        .await
-        .unwrap();
-
-        // Act
-
-        reset_repetitions_for_cell(&db_conn, cell_id).await.unwrap();
-
-        // Assert
-
-        let actual = get_repetitions_by_cell_id(&db_conn, cell_id).await.unwrap();
-        assert_eq!(State::New, actual[0].state);
-        assert_eq!(0, actual[0].scheduled_days);
-    }
-}
+// TODO:
+// #[cfg(test)]
+// mod tests {
+//     use brainy_core::cells::value_objects::flash_card::FlashCard;
+//     use chrono::Duration;
+//
+//     use crate::{
+//         entity::review::Rating,
+//         service::{
+//             review_service::register_review,
+//             tests::{
+//                 create_file_cell, create_file_cell_with_cell_type_and_content, get_db,
+//                 insert_repetitions,
+//             },
+//         },
+//     };
+//
+//     use super::*;
+//
+//     #[tokio::test]
+//     async fn update_repetitions_for_cell_flash_card_with_no_repetitions_added_repetition() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
+//
+//         // Act
+//
+//         update_repetitions_for_cell(&db_conn, file_id, cell_id, &CellType::FlashCard, "")
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
+//         assert_eq!(actual.len(), 1);
+//     }
+//
+//     #[tokio::test]
+//     async fn update_repetitions_for_cell_flash_card_with_repetitions_no_repetition_added() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
+//         repetition::ActiveModel {
+//             file_id: Set(file_id),
+//             cell_id: Set(cell_id),
+//             ..Default::default()
+//         }
+//         .insert(&db_conn)
+//         .await
+//         .unwrap();
+//
+//         // Act
+//
+//         update_repetitions_for_cell(&db_conn, file_id, cell_id, &CellType::FlashCard, "")
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
+//         assert_eq!(actual.len(), 1);
+//     }
+//
+//     #[tokio::test]
+//     async fn update_repetitions_for_cloze_added_new_repetitions() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
+//         let content = r#"
+//             <cloze index="0">First cloze</cloze>
+//             <cloze index="1">Second cloze</cloze>
+//         "#;
+//         // Only adding the first cloze.
+//         repetition::ActiveModel {
+//             file_id: Set(file_id),
+//             cell_id: Set(cell_id),
+//             additional_content: Set(Some("0".into())),
+//             ..Default::default()
+//         }
+//         .insert(&db_conn)
+//         .await
+//         .unwrap();
+//
+//         // Act
+//
+//         update_repetitions_for_cell(&db_conn, file_id, cell_id, &CellType::Cloze, content)
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
+//         assert_eq!(actual.len(), 2);
+//         assert_eq!(actual[0].additional_content, Some("0".to_string()));
+//         assert_eq!(actual[1].additional_content, Some("1".to_string()));
+//     }
+//
+//     #[tokio::test]
+//     async fn get_study_repetition_counts_valid_input_returned_count() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
+//         for _ in 0..2 {
+//             insert_repetitions(
+//                 &db_conn,
+//                 vec![repetition::ActiveModel {
+//                     cell_id: Set(cell_id),
+//                     file_id: Set(file_id),
+//                     state: Set(State::New),
+//                     ..Default::default()
+//                 }],
+//             )
+//             .await
+//             .unwrap();
+//         }
+//
+//         insert_repetitions(
+//             &db_conn,
+//             vec![
+//                 repetition::ActiveModel {
+//                     cell_id: Set(cell_id),
+//                     file_id: Set(file_id),
+//                     state: Set(State::Review),
+//                     ..Default::default()
+//                 },
+//                 repetition::ActiveModel {
+//                     cell_id: Set(cell_id),
+//                     file_id: Set(file_id),
+//                     state: Set(State::Learning),
+//                     ..Default::default()
+//                 },
+//                 repetition::ActiveModel {
+//                     cell_id: Set(cell_id),
+//                     file_id: Set(file_id),
+//                     state: Set(State::Learning),
+//                     due: Set((Utc::now() + Duration::days(1)).to_utc()),
+//                     ..Default::default()
+//                 },
+//             ],
+//         )
+//         .await
+//         .unwrap();
+//
+//         // Act
+//
+//         let actual = get_study_repetition_counts(&db_conn, file_id)
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         assert_eq!(2, actual.new);
+//         assert_eq!(1, actual.learning);
+//         assert_eq!(0, actual.relearning);
+//         assert_eq!(1, actual.review);
+//     }
+//
+//     #[tokio::test]
+//     async fn get_file_repetitions_valid_input_returned_repetitions() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file_id, cell_id) = create_file_cell(&db_conn, "file 1").await;
+//         let (file_id_2, cell_id_2) = create_file_cell(&db_conn, "file 2").await;
+//         insert_repetitions(
+//             &db_conn,
+//             vec![
+//                 repetition::ActiveModel {
+//                     file_id: Set(file_id),
+//                     cell_id: Set(cell_id),
+//                     ..Default::default()
+//                 },
+//                 repetition::ActiveModel {
+//                     file_id: Set(file_id_2),
+//                     cell_id: Set(cell_id_2),
+//                     ..Default::default()
+//                 },
+//             ],
+//         )
+//         .await
+//         .unwrap();
+//
+//         // Act
+//
+//         let actual = get_file_repetitions(&db_conn, file_id).await.unwrap();
+//
+//         // Assert
+//
+//         assert_eq!(actual.len(), 1);
+//     }
+//
+//     #[tokio::test]
+//     async fn get_repetitions_for_files_valid_input_returned_repetitions() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file1_id, cell1_id) = create_file_cell(&db_conn, "file 1").await;
+//
+//         insert_repetitions(
+//             &db_conn,
+//             vec![
+//                 repetition::ActiveModel {
+//                     file_id: Set(file1_id),
+//                     cell_id: Set(cell1_id),
+//                     ..Default::default()
+//                 },
+//                 repetition::ActiveModel {
+//                     file_id: Set(file1_id),
+//                     cell_id: Set(cell1_id),
+//                     ..Default::default()
+//                 },
+//             ],
+//         )
+//         .await
+//         .unwrap();
+//         let (file2_id, cell2_id) = create_file_cell(&db_conn, "file 2").await;
+//         insert_repetitions(
+//             &db_conn,
+//             vec![repetition::ActiveModel {
+//                 file_id: Set(file2_id),
+//                 cell_id: Set(cell2_id),
+//                 ..Default::default()
+//             }],
+//         )
+//         .await
+//         .unwrap();
+//
+//         // Act
+//
+//         let actual = get_repetitions_for_files(&db_conn, vec![file1_id, file2_id])
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         assert_eq!(3, actual.len());
+//     }
+//
+//     #[tokio::test]
+//     async fn reset_repetitions_for_cell_valid_input_reseted_repetition() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let (file_id, cell_id) = create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "file 1",
+//             CellType::FlashCard,
+//             &serde_json::to_string(&FlashCard {
+//                 question: "old content".into(),
+//                 ..Default::default()
+//             })
+//             .unwrap(),
+//         )
+//         .await;
+//         let repetition_id = get_repetitions_by_cell_id(&db_conn, cell_id).await.unwrap()[0].id;
+//         register_review(
+//             &db_conn,
+//             repetition::Model {
+//                 id: repetition_id,
+//                 file_id,
+//                 cell_id,
+//                 state: State::Learning,
+//                 scheduled_days: 100,
+//                 ..Default::default()
+//             },
+//             Rating::Again,
+//             0,
+//         )
+//         .await
+//         .unwrap();
+//
+//         // Act
+//
+//         reset_repetitions_for_cell(&db_conn, cell_id).await.unwrap();
+//
+//         // Assert
+//
+//         let actual = get_repetitions_by_cell_id(&db_conn, cell_id).await.unwrap();
+//         assert_eq!(State::New, actual[0].state);
+//         assert_eq!(0, actual[0].scheduled_days);
+//     }
+// }

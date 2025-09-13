@@ -3,9 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::Guid;
 
-#[derive(
-    Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize,
-)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum State {
     #[default]
@@ -15,7 +13,7 @@ pub enum State {
     Review,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Repetition {
     pub(in crate::cells) id: Guid,
@@ -29,6 +27,27 @@ pub struct Repetition {
     pub(in crate::cells) reps: i64,
     pub(in crate::cells) lapses: i64,
     pub(in crate::cells) state: State,
+    // TODO: should be nullable
     pub(in crate::cells) last_review: DateTime<Utc>,
     pub(in crate::cells) additional_content: Option<String>,
+}
+
+impl Default for Repetition {
+    fn default() -> Self {
+        Self {
+            id: Default::default(),
+            file_id: Default::default(),
+            cell_id: Default::default(),
+            due: Utc::now().to_utc(),
+            stability: Default::default(),
+            difficulty: Default::default(),
+            elapsed_days: Default::default(),
+            scheduled_days: Default::default(),
+            reps: Default::default(),
+            lapses: Default::default(),
+            state: Default::default(),
+            last_review: Utc::now().to_utc(),
+            additional_content: Default::default(),
+        }
+    }
 }

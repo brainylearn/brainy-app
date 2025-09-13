@@ -28,6 +28,7 @@ CREATE TABLE cells(
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
+-- TODO: maybe create index for cell and file id
 CREATE TABLE repetitions(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     file_id                     TEXT        NOT NULL,

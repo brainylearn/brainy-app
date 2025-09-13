@@ -1,15 +1,16 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
 
 use crate::{
+    Guid,
     cells::entities::{
         cell::{Cell, CellType},
         repetition::{Repetition, State},
-    }, Guid
+    },
 };
 
-/// Used to select cells with left join on repetitions
+/// Used to select cells with left join on repetitions.
 pub struct CellRow {
     // Cell fields
     pub cell_id: Guid,
@@ -32,27 +33,53 @@ pub struct CellRow {
     pub repetition_lapses: Option<i64>,
     pub repetition_state: Option<State>,
     pub repetition_last_review: Option<DateTime<Utc>>,
-    pub repetition_additional_content: Option<Option<String>>,
+    pub repetition_additional_content: Option<String>,
+}
+
+/// Used to select only repetitions.
+pub struct RepetitionRow {
+    pub id: Guid,
+    pub file_id: Guid,
+    pub cell_id: Guid,
+    pub due: DateTime<Utc>,
+    pub stability: f64,
+    pub difficulty: f64,
+    pub elapsed_days: i64,
+    pub scheduled_days: i64,
+    pub reps: i64,
+    pub lapses: i64,
+    pub state: State,
+    pub last_review: DateTime<Utc>,
+    pub additional_content: Option<String>,
+}
+
+impl From<RepetitionRow> for Repetition {
+    fn from(value: RepetitionRow) -> Self {
+        Repetition {
+            id: value.id,
+            file_id: value.file_id,
+            cell_id: value.cell_id,
+            due: value.due,
+            stability: value.stability,
+            difficulty: value.difficulty,
+            elapsed_days: value.elapsed_days,
+            scheduled_days: value.scheduled_days,
+            reps: value.reps,
+            lapses: value.lapses,
+            state: value.state,
+            last_review: value.last_review,
+            additional_content: value.additional_content,
+        }
+    }
 }
 
 pub fn convert_rows_to_cells(rows: Vec<CellRow>) -> Vec<Cell> {
-    let mut cells_map: HashMap<Guid, Cell> = HashMap::new();
+    let mut cells_repetitions: HashMap<Guid, Vec<Repetition>> = HashMap::new();
 
-    for row in rows {
-        if !cells_map.contains_key(&row.cell_id) {
-            let cell = Cell::new_unchecked(
-                Some(row.cell_id),
-                row.cell_file_id,
-                row.cell_content,
-                row.cell_type,
-                row.cell_index,
-                row.cell_searchable_content,
-                Vec::new(),
-            );
-            cells_map.insert(row.cell_id, cell);
+    for row in &rows {
+        if row.repetition_id.is_none() {
+            continue;
         }
-
-        if row.repetition_id.is_none() { continue; }
 
         let repetition = Repetition {
             id: row.repetition_id.unwrap(),
@@ -65,15 +92,36 @@ pub fn convert_rows_to_cells(rows: Vec<CellRow>) -> Vec<Cell> {
             scheduled_days: row.repetition_scheduled_days.unwrap(),
             reps: row.repetition_reps.unwrap(),
             lapses: row.repetition_lapses.unwrap(),
-            state: row.repetition_state.unwrap(),
+            state: row.repetition_state.clone().unwrap(),
             last_review: row.repetition_last_review.unwrap(),
-            additional_content: row.repetition_additional_content.unwrap(),
+            additional_content: row.repetition_additional_content.clone(),
         };
 
-        cells_map.get_mut(&row.cell_id).unwrap().add_repetition(repetition);
+        cells_repetitions
+            .entry(row.cell_id)
+            .or_default()
+            .push(repetition);
     }
 
-    cells_map.into_values().collect()
+    let mut added_cells: HashSet<Guid> = HashSet::new();
+    let mut result = Vec::new();
+
+    for row in rows {
+        if added_cells.insert(row.cell_id) {
+            let cell = Cell::new_unchecked(
+                Some(row.cell_id),
+                row.cell_file_id,
+                row.cell_content,
+                row.cell_type,
+                row.cell_index,
+                row.cell_searchable_content,
+                cells_repetitions.remove(&row.cell_id).unwrap_or_default(),
+            );
+            result.push(cell);
+        }
+    }
+
+    result
 }
 
 pub mod cell_type_sqlite_impls {

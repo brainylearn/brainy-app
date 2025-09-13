@@ -69,10 +69,9 @@ function Editor({ editCellId, onError, onStudyStart }: Props) {
 		return await executeRequest(async () => {
 			const fetchedCells =
 				await getFileCellsOrderedByIndex(selectedFileId);
-            // TODO: uncomment this and next line
-            // const fetchedRepetitions = await getFileRepetitions(selectedFileId);
+            const fetchedRepetitions = await getFileRepetitions(selectedFileId);
 			setCells(fetchedCells);
-			// setRepetitions(fetchedRepetitions);
+			setRepetitions(fetchedRepetitions);
 		});
 	}, [executeRequest, selectedFileId]);
 

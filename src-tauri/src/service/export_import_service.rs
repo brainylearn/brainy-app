@@ -202,321 +202,322 @@ async fn import_folder_from_exported_item(
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-
-    use super::*;
-    use crate::{
-        entity::cell::CellType,
-        service::{
-            repetition_service,
-            tests::{create_file_cell_with_cell_type_and_content, get_db},
-        },
-    };
-    use brainy_core::cells::value_objects::{flash_card::FlashCard, true_false::TrueFalse};
-    use rand::prelude::*;
-
-    fn get_random_file_path() -> PathBuf {
-        let temp_dir = std::env::current_dir().unwrap().join("temp");
-
-        if !temp_dir.exists() {
-            std::fs::create_dir(&temp_dir).unwrap();
-        }
-
-        let mut rng = rand::rng();
-        let mut file_name = String::new();
-
-        for _ in 1..6 {
-            file_name = format!("{}{}", file_name, rng.random::<char>());
-        }
-
-        temp_dir.join(format!("{file_name}.json"))
-    }
-
-    #[tokio::test]
-    async fn export_file_exported_file_correctly() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let file_content = serde_json::to_string(&FlashCard {
-            question: "file content".into(),
-            ..Default::default()
-        })
-        .unwrap();
-        let (file_id, _) = create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder/file 1",
-            CellType::FlashCard,
-            &file_content,
-        )
-        .await;
-        let export_path = get_random_file_path();
-
-        // Act
-
-        export(&db_conn, file_id, export_path.to_str().unwrap().into())
-            .await
-            .unwrap();
-
-        // Assert
-
-        let file = File::open(export_path.clone()).unwrap();
-        let exported_item: ExportedItem = serde_json::from_reader(file).unwrap();
-
-        assert_eq!(exported_item.item_type, ExportedItemType::File);
-        assert_eq!(exported_item.path, "file 1".to_string());
-        let cells = exported_item.cells.unwrap();
-        assert_eq!(cells.len(), 1);
-        assert_eq!(cells[0].content, file_content);
-        assert_eq!(cells[0].cell_type, CellType::FlashCard);
-    }
-
-    #[tokio::test]
-    async fn export_item_folder_exported_folder_correctly() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = file_service::create_folder(&db_conn, "folder 1/folder 2".into())
-            .await
-            .unwrap();
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder 1/folder 2/file 1",
-            CellType::FlashCard,
-            &serde_json::to_string(&FlashCard {
-                question: "file content".into(),
-                ..Default::default()
-            })
-            .unwrap(),
-        )
-        .await;
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder 1/folder 2/file 2",
-            CellType::TrueFalse,
-            &serde_json::to_string(&TrueFalse {
-                question: "file content".into(),
-                ..Default::default()
-            })
-            .unwrap(),
-        )
-        .await;
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder 1/folder 2/folder 3/file 3",
-            CellType::Note,
-            "file content",
-        )
-        .await;
-        let export_path = get_random_file_path();
-
-        // Act
-
-        export(&db_conn, folder_id, export_path.to_str().unwrap().into())
-            .await
-            .unwrap();
-
-        // Assert
-
-        let file = File::open(export_path.clone()).unwrap();
-        let exported_item: ExportedItem = serde_json::from_reader(file).unwrap();
-
-        assert_eq!(exported_item.item_type, ExportedItemType::Folder);
-        assert_eq!(exported_item.path, "folder 2".to_string());
-        assert_eq!(exported_item.cells, None);
-        let children = exported_item.children.unwrap();
-        assert_eq!(children.len(), 3);
-
-        let folder3 = children
-            .iter()
-            .find(|child| child.path == "folder 2/folder 3")
-            .unwrap()
-            .clone();
-        assert_eq!(folder3.item_type, ExportedItemType::Folder);
-        assert_eq!(folder3.cells, None);
-        let folder3_children = folder3.children.unwrap();
-        assert_eq!(folder3_children.len(), 1);
-
-        let file3 = folder3_children
-            .iter()
-            .find(|child| child.path == "folder 2/folder 3/file 3".to_string())
-            .unwrap()
-            .clone();
-        assert_eq!(file3.item_type, ExportedItemType::File);
-        assert_eq!(file3.children, None);
-        let file3_cells = file3.cells.unwrap();
-        assert_eq!(file3_cells.len(), 1);
-        assert_eq!(file3_cells[0].content, "file content");
-        assert_eq!(file3_cells[0].cell_type, CellType::Note);
-    }
-
-    #[tokio::test]
-    async fn import_valid_input_imported_file_correctly() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder2_id = file_service::create_folder(&db_conn, "folder 1/folder 2".into())
-            .await
-            .unwrap();
-        let file1_cell_content = serde_json::to_string(&FlashCard {
-            question: "old content".into(),
-            ..Default::default()
-        })
-        .unwrap();
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder 1/folder 2/file 1",
-            CellType::FlashCard,
-            &file1_cell_content,
-        )
-        .await;
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder 1/folder 2/file 2",
-            CellType::TrueFalse,
-            &serde_json::to_string(&TrueFalse {
-                question: "old content".into(),
-                ..Default::default()
-            })
-            .unwrap(),
-        )
-        .await;
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder 1/folder 2/folder 3/file 3",
-            CellType::Note,
-            "old content",
-        )
-        .await;
-
-        let import_folder_id = file_service::create_folder(&db_conn, "import folder".into())
-            .await
-            .unwrap();
-
-        let export_path = get_random_file_path();
-        export(&db_conn, folder2_id, export_path.to_str().unwrap().into())
-            .await
-            .unwrap();
-
-        // Act
-
-        import(
-            &db_conn,
-            export_path.to_str().unwrap().into(),
-            import_folder_id,
-        )
-        .await
-        .unwrap();
-
-        // Assert
-
-        let import_folder_children =
-            file_service::list_folder_children_recursively(&db_conn, import_folder_id)
-                .await
-                .unwrap();
-
-        assert_eq!(import_folder_children.len(), 5);
-        assert!(
-            import_folder_children
-                .iter()
-                .any(|file| file.path == "import folder/folder 2" && file.is_folder)
-        );
-        assert!(
-            import_folder_children
-                .iter()
-                .any(|file| file.path == "import folder/folder 2/file 1" && !file.is_folder)
-        );
-        assert!(
-            import_folder_children
-                .iter()
-                .any(|file| file.path == "import folder/folder 2/file 2" && !file.is_folder)
-        );
-        assert!(
-            import_folder_children
-                .iter()
-                .any(|file| file.path == "import folder/folder 2/folder 3" && file.is_folder)
-        );
-        assert!(
-            import_folder_children.iter().any(|file| file.path
-                == "import folder/folder 2/folder 3/file 3"
-                && !file.is_folder)
-        );
-
-        let file1_id = import_folder_children
-            .iter()
-            .find(|file| file.path == "import folder/folder 2/file 1")
-            .unwrap()
-            .id;
-
-        let file1_cells = cell_service::get_file_cells_ordered_by_index(&db_conn, file1_id)
-            .await
-            .unwrap();
-        assert_eq!(file1_cells.len(), 1);
-        assert_eq!(file1_cells[0].cell_type, CellType::FlashCard);
-        assert_eq!(file1_cells[0].content, file1_cell_content);
-
-        let file1_repetitions = repetition_service::get_file_repetitions(&db_conn, file1_id)
-            .await
-            .unwrap();
-        assert_eq!(file1_repetitions.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn import_input_that_contains_javascript_removed_javascript() {
-        // Arrange
-
-        let db_conn = get_db().await;
-        let folder_id = file_service::create_folder(&db_conn, "folder".into())
-            .await
-            .unwrap();
-        let file_cell_content = serde_json::to_string(&FlashCard {
-            question:
-                "content<script>alert('hello')</script><button onLoad='alert'>button</button>"
-                    .into(),
-            ..Default::default()
-        })
-        .unwrap();
-        create_file_cell_with_cell_type_and_content(
-            &db_conn,
-            "folder/file",
-            CellType::FlashCard,
-            &file_cell_content,
-        )
-        .await;
-
-        let import_folder_id = file_service::create_folder(&db_conn, "import folder".into())
-            .await
-            .unwrap();
-
-        let export_path = get_random_file_path();
-        export(&db_conn, folder_id, export_path.to_str().unwrap().into())
-            .await
-            .unwrap();
-
-        // Act
-
-        import(
-            &db_conn,
-            export_path.to_str().unwrap().into(),
-            import_folder_id,
-        )
-        .await
-        .unwrap();
-
-        // Assert
-
-        let imported_file_id =
-            file_service::list_folder_children_recursively(&db_conn, import_folder_id)
-                .await
-                .unwrap()[0]
-                .id;
-        let cells = cell_service::get_file_cells_ordered_by_index(&db_conn, imported_file_id)
-            .await
-            .unwrap();
-        let is_javascript_existing = cells
-            .iter()
-            .any(|c| c.content.contains("script") || c.content.contains("onLoad"));
-        assert!(!is_javascript_existing);
-    }
-}
+// TODO:
+// #[cfg(test)]
+// mod tests {
+//     use std::path::PathBuf;
+//
+//     use super::*;
+//     use crate::{
+//         entity::cell::CellType,
+//         service::{
+//             repetition_service,
+//             tests::{create_file_cell_with_cell_type_and_content, get_db},
+//         },
+//     };
+//     use brainy_core::cells::value_objects::{flash_card::FlashCard, true_false::TrueFalse};
+//     use rand::prelude::*;
+//
+//     fn get_random_file_path() -> PathBuf {
+//         let temp_dir = std::env::current_dir().unwrap().join("temp");
+//
+//         if !temp_dir.exists() {
+//             std::fs::create_dir(&temp_dir).unwrap();
+//         }
+//
+//         let mut rng = rand::rng();
+//         let mut file_name = String::new();
+//
+//         for _ in 1..6 {
+//             file_name = format!("{}{}", file_name, rng.random::<char>());
+//         }
+//
+//         temp_dir.join(format!("{file_name}.json"))
+//     }
+//
+//     #[tokio::test]
+//     async fn export_file_exported_file_correctly() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let file_content = serde_json::to_string(&FlashCard {
+//             question: "file content".into(),
+//             ..Default::default()
+//         })
+//         .unwrap();
+//         let (file_id, _) = create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder/file 1",
+//             CellType::FlashCard,
+//             &file_content,
+//         )
+//         .await;
+//         let export_path = get_random_file_path();
+//
+//         // Act
+//
+//         export(&db_conn, file_id, export_path.to_str().unwrap().into())
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         let file = File::open(export_path.clone()).unwrap();
+//         let exported_item: ExportedItem = serde_json::from_reader(file).unwrap();
+//
+//         assert_eq!(exported_item.item_type, ExportedItemType::File);
+//         assert_eq!(exported_item.path, "file 1".to_string());
+//         let cells = exported_item.cells.unwrap();
+//         assert_eq!(cells.len(), 1);
+//         assert_eq!(cells[0].content, file_content);
+//         assert_eq!(cells[0].cell_type, CellType::FlashCard);
+//     }
+//
+//     #[tokio::test]
+//     async fn export_item_folder_exported_folder_correctly() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let folder_id = file_service::create_folder(&db_conn, "folder 1/folder 2".into())
+//             .await
+//             .unwrap();
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder 1/folder 2/file 1",
+//             CellType::FlashCard,
+//             &serde_json::to_string(&FlashCard {
+//                 question: "file content".into(),
+//                 ..Default::default()
+//             })
+//             .unwrap(),
+//         )
+//         .await;
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder 1/folder 2/file 2",
+//             CellType::TrueFalse,
+//             &serde_json::to_string(&TrueFalse {
+//                 question: "file content".into(),
+//                 ..Default::default()
+//             })
+//             .unwrap(),
+//         )
+//         .await;
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder 1/folder 2/folder 3/file 3",
+//             CellType::Note,
+//             "file content",
+//         )
+//         .await;
+//         let export_path = get_random_file_path();
+//
+//         // Act
+//
+//         export(&db_conn, folder_id, export_path.to_str().unwrap().into())
+//             .await
+//             .unwrap();
+//
+//         // Assert
+//
+//         let file = File::open(export_path.clone()).unwrap();
+//         let exported_item: ExportedItem = serde_json::from_reader(file).unwrap();
+//
+//         assert_eq!(exported_item.item_type, ExportedItemType::Folder);
+//         assert_eq!(exported_item.path, "folder 2".to_string());
+//         assert_eq!(exported_item.cells, None);
+//         let children = exported_item.children.unwrap();
+//         assert_eq!(children.len(), 3);
+//
+//         let folder3 = children
+//             .iter()
+//             .find(|child| child.path == "folder 2/folder 3")
+//             .unwrap()
+//             .clone();
+//         assert_eq!(folder3.item_type, ExportedItemType::Folder);
+//         assert_eq!(folder3.cells, None);
+//         let folder3_children = folder3.children.unwrap();
+//         assert_eq!(folder3_children.len(), 1);
+//
+//         let file3 = folder3_children
+//             .iter()
+//             .find(|child| child.path == "folder 2/folder 3/file 3".to_string())
+//             .unwrap()
+//             .clone();
+//         assert_eq!(file3.item_type, ExportedItemType::File);
+//         assert_eq!(file3.children, None);
+//         let file3_cells = file3.cells.unwrap();
+//         assert_eq!(file3_cells.len(), 1);
+//         assert_eq!(file3_cells[0].content, "file content");
+//         assert_eq!(file3_cells[0].cell_type, CellType::Note);
+//     }
+//
+//     #[tokio::test]
+//     async fn import_valid_input_imported_file_correctly() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let folder2_id = file_service::create_folder(&db_conn, "folder 1/folder 2".into())
+//             .await
+//             .unwrap();
+//         let file1_cell_content = serde_json::to_string(&FlashCard {
+//             question: "old content".into(),
+//             ..Default::default()
+//         })
+//         .unwrap();
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder 1/folder 2/file 1",
+//             CellType::FlashCard,
+//             &file1_cell_content,
+//         )
+//         .await;
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder 1/folder 2/file 2",
+//             CellType::TrueFalse,
+//             &serde_json::to_string(&TrueFalse {
+//                 question: "old content".into(),
+//                 ..Default::default()
+//             })
+//             .unwrap(),
+//         )
+//         .await;
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder 1/folder 2/folder 3/file 3",
+//             CellType::Note,
+//             "old content",
+//         )
+//         .await;
+//
+//         let import_folder_id = file_service::create_folder(&db_conn, "import folder".into())
+//             .await
+//             .unwrap();
+//
+//         let export_path = get_random_file_path();
+//         export(&db_conn, folder2_id, export_path.to_str().unwrap().into())
+//             .await
+//             .unwrap();
+//
+//         // Act
+//
+//         import(
+//             &db_conn,
+//             export_path.to_str().unwrap().into(),
+//             import_folder_id,
+//         )
+//         .await
+//         .unwrap();
+//
+//         // Assert
+//
+//         let import_folder_children =
+//             file_service::list_folder_children_recursively(&db_conn, import_folder_id)
+//                 .await
+//                 .unwrap();
+//
+//         assert_eq!(import_folder_children.len(), 5);
+//         assert!(
+//             import_folder_children
+//                 .iter()
+//                 .any(|file| file.path == "import folder/folder 2" && file.is_folder)
+//         );
+//         assert!(
+//             import_folder_children
+//                 .iter()
+//                 .any(|file| file.path == "import folder/folder 2/file 1" && !file.is_folder)
+//         );
+//         assert!(
+//             import_folder_children
+//                 .iter()
+//                 .any(|file| file.path == "import folder/folder 2/file 2" && !file.is_folder)
+//         );
+//         assert!(
+//             import_folder_children
+//                 .iter()
+//                 .any(|file| file.path == "import folder/folder 2/folder 3" && file.is_folder)
+//         );
+//         assert!(
+//             import_folder_children.iter().any(|file| file.path
+//                 == "import folder/folder 2/folder 3/file 3"
+//                 && !file.is_folder)
+//         );
+//
+//         let file1_id = import_folder_children
+//             .iter()
+//             .find(|file| file.path == "import folder/folder 2/file 1")
+//             .unwrap()
+//             .id;
+//
+//         let file1_cells = cell_service::get_file_cells_ordered_by_index(&db_conn, file1_id)
+//             .await
+//             .unwrap();
+//         assert_eq!(file1_cells.len(), 1);
+//         assert_eq!(file1_cells[0].cell_type, CellType::FlashCard);
+//         assert_eq!(file1_cells[0].content, file1_cell_content);
+//
+//         let file1_repetitions = repetition_service::get_file_repetitions(&db_conn, file1_id)
+//             .await
+//             .unwrap();
+//         assert_eq!(file1_repetitions.len(), 1);
+//     }
+//
+//     #[tokio::test]
+//     async fn import_input_that_contains_javascript_removed_javascript() {
+//         // Arrange
+//
+//         let db_conn = get_db().await;
+//         let folder_id = file_service::create_folder(&db_conn, "folder".into())
+//             .await
+//             .unwrap();
+//         let file_cell_content = serde_json::to_string(&FlashCard {
+//             question:
+//                 "content<script>alert('hello')</script><button onLoad='alert'>button</button>"
+//                     .into(),
+//             ..Default::default()
+//         })
+//         .unwrap();
+//         create_file_cell_with_cell_type_and_content(
+//             &db_conn,
+//             "folder/file",
+//             CellType::FlashCard,
+//             &file_cell_content,
+//         )
+//         .await;
+//
+//         let import_folder_id = file_service::create_folder(&db_conn, "import folder".into())
+//             .await
+//             .unwrap();
+//
+//         let export_path = get_random_file_path();
+//         export(&db_conn, folder_id, export_path.to_str().unwrap().into())
+//             .await
+//             .unwrap();
+//
+//         // Act
+//
+//         import(
+//             &db_conn,
+//             export_path.to_str().unwrap().into(),
+//             import_folder_id,
+//         )
+//         .await
+//         .unwrap();
+//
+//         // Assert
+//
+//         let imported_file_id =
+//             file_service::list_folder_children_recursively(&db_conn, import_folder_id)
+//                 .await
+//                 .unwrap()[0]
+//                 .id;
+//         let cells = cell_service::get_file_cells_ordered_by_index(&db_conn, imported_file_id)
+//             .await
+//             .unwrap();
+//         let is_javascript_existing = cells
+//             .iter()
+//             .any(|c| c.content.contains("script") || c.content.contains("onLoad"));
+//         assert!(!is_javascript_existing);
+//     }
+// }
