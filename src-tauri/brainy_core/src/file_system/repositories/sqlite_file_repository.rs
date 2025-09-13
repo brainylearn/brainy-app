@@ -220,7 +220,6 @@ pub mod tests {
 mod file_row {
     use super::*;
 
-    #[derive(sqlx::FromRow)]
     pub(super) struct FileRow {
         pub id: Guid,
         pub parent_id: Option<Guid>,

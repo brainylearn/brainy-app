@@ -4,8 +4,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Guid,
-    cells::value_objects::{flash_card::FlashCard, true_false::TrueFalse},
+    cells::{entities::repetition::Repetition, value_objects::{flash_card::FlashCard, true_false::TrueFalse}}, Guid
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -26,7 +25,7 @@ impl Display for CellType {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Cell {
     id: Guid,
@@ -35,10 +34,10 @@ pub struct Cell {
     cell_type: CellType,
     searchable_content: String,
     index: u32,
+    repetitions: Vec<Repetition>,
 }
 
 impl Cell {
-    // TODO: repetitions, maybe an aggregate
     pub(in crate::cells) fn new(
         id: Option<Guid>,
         file_id: Guid,
@@ -53,6 +52,7 @@ impl Cell {
             cell_type,
             index,
             searchable_content: "".to_string(),
+            repetitions: Vec::new()
         };
 
         output.update_searcahble_content();
@@ -67,6 +67,7 @@ impl Cell {
         cell_type: CellType,
         index: u32,
         searchable_content: String,
+        repetitions: Vec<Repetition>,
     ) -> Self {
         Self {
             id: id.unwrap_or(Guid::new_v4()),
@@ -75,7 +76,12 @@ impl Cell {
             cell_type,
             index,
             searchable_content,
+            repetitions
         }
+    }
+
+    pub(in crate::cells) fn add_repetition(&mut self, repetition: Repetition) {
+        self.repetitions.push(repetition);
     }
 
     pub fn id(&self) -> Guid {

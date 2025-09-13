@@ -141,7 +141,6 @@ impl FolderRepository for SqliteFolderRepository {
 mod folder_row {
     use super::*;
 
-    #[derive(sqlx::FromRow)]
     pub(super) struct FolderRow {
         pub id: Guid,
         pub parent_id: Option<Guid>,

@@ -62,6 +62,7 @@ pub async fn move_cell(
     new_index: u32,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
+    // TODO: test more not working correctly, specially moving cell to same position
     cell_service.move_cell(id, new_index).await.unwrap();
     context.save_changes().await?;
     Ok(())

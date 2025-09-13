@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE folders(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     name                        TEXT        NOT NULL,
@@ -19,6 +17,7 @@ CREATE TABLE files(
     UNIQUE (name, parent_id)
 );
 
+-- TODO:: create index for searchable content https://www.sqlite.org/fts5.html
 CREATE TABLE cells(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     content                     TEXT        NOT NULL        DEFAULT "",
@@ -27,4 +26,22 @@ CREATE TABLE cells(
     file_id                     TEXT        NOT NULL,
     searchable_content          TEXT        NOT NULL,
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+);
+
+CREATE TABLE repetitions(
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    file_id                     TEXT        NOT NULL,
+    cell_id                     TEXT        NOT NULL,
+    due                         DATETIME    NOT NULL,
+    stability                   REAL        NOT NULL,
+    difficulty                  REAL        NOT NULL,
+    elapsed_days                INTEGER     NOT NULL,
+    scheduled_days              INTEGER     NOT NULL,
+    reps                        INTEGER     NOT NULL,
+    lapses                      INTEGER     NOT NULL,
+    state                       TEXT        NOT NULL,
+    last_review                 DATETIME    NOT NULL,
+    additional_content          TEXT,
+    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE,
+    FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE CASCADE
 );

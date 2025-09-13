@@ -5,16 +5,13 @@ use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
     cells::{
-        entities::cell::{Cell, CellType},
+        entities::cell::Cell,
         repositories::{
-            sqlite_cell_repository::cell_row::CellRow,
-            traits::cell_repository::{CellRepository, MoveDirection},
+            sqlite_rows::cell_row::{convert_rows_to_cells, CellRow}, traits::cell_repository::{CellRepository, MoveDirection}
         },
         value_objects::cell_deletion_request::CellDeletionRequest,
-    },
-    common::repository_error::RepositoryError,
+    }, common::repository_error::RepositoryError, Guid
 };
 
 pub struct SqliteCellRepository {
@@ -28,28 +25,49 @@ impl SqliteCellRepository {
     }
 }
 
+// TODO: update unit tests for repetitions, all methods!
 #[async_trait]
 impl CellRepository for SqliteCellRepository {
     async fn get_by_id(&self, id: Guid) -> Result<Cell, RepositoryError> {
-        let row = sqlx::query_as!(
+        let rows = sqlx::query_as!(
             CellRow,
             r#"SELECT
-                id as "id: _",
-                file_id as "file_id: _",
-                content,
-                cell_index as "index: _",
-                cell_type as "cell_type: _",
-                searchable_content as "searchable_content: _"
-            FROM cells
-            WHERE id = $1"#,
+                cell.id as "cell_id: _",
+                cell.file_id as "cell_file_id: _",
+                cell.content as cell_content,
+                cell.cell_index as "cell_index: _",
+                cell.cell_type as "cell_type: _",
+                cell.searchable_content as cell_searchable_content,
+
+                repetition.id as "repetition_id: _",
+                repetition.file_id as "repetition_file_id: _",
+                repetition.cell_id as "repetition_cell_id: _",
+                repetition.due as "repetition_due: _",
+                repetition.stability as "repetition_stability: _",
+                repetition.difficulty as "repetition_difficulty: _",
+                repetition.elapsed_days as "repetition_elapsed_days: _",
+                repetition.scheduled_days as "repetition_scheduled_days",
+                repetition.reps as "repetition_reps: _",
+                repetition.lapses as "repetition_lapses: _",
+                repetition.state as "repetition_state: _",
+                repetition.last_review as "repetition_last_review: _",
+                repetition.additional_content as "repetition_additional_content: _"
+
+            FROM cells As cell
+            LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
+            WHERE cell.id = $1"#,
             id
         )
-        .fetch_one(&*self.pool)
+        .fetch_all(&*self.pool)
         .await;
 
-        match row {
+        match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
-            Ok(row) => Ok(row.into()),
+            Ok(rows) => {
+                // Should be a single cell in list.
+                let cell = convert_rows_to_cells(rows).remove(0);
+                Ok(cell)
+            },
         }
     }
 
@@ -60,15 +78,32 @@ impl CellRepository for SqliteCellRepository {
         let rows = sqlx::query_as!(
             CellRow,
             r#"SELECT
-                id as "id: _",
-                file_id as "file_id: _",
-                content,
-                cell_index as "index: _",
-                cell_type as "cell_type: _",
-                searchable_content as "searchable_content: _"
-            FROM cells
-            WHERE file_id = $1
-            ORDER BY cell_index"#,
+                cell.id as "cell_id: _",
+                cell.file_id as "cell_file_id: _",
+                cell.content as cell_content,
+                cell.cell_index as "cell_index: _",
+                cell.cell_type as "cell_type: _",
+                cell.searchable_content as cell_searchable_content,
+
+                repetition.id as "repetition_id: _",
+                repetition.file_id as "repetition_file_id: _",
+                repetition.cell_id as "repetition_cell_id: _",
+                repetition.due as "repetition_due: _",
+                repetition.stability as "repetition_stability: _",
+                repetition.difficulty as "repetition_difficulty: _",
+                repetition.elapsed_days as "repetition_elapsed_days: _",
+                repetition.scheduled_days as "repetition_scheduled_days",
+                repetition.reps as "repetition_reps: _",
+                repetition.lapses as "repetition_lapses: _",
+                repetition.state as "repetition_state: _",
+                repetition.last_review as "repetition_last_review: _",
+                repetition.additional_content as "repetition_additional_content: _"
+
+            FROM cells As cell
+            LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
+
+            WHERE cell.file_id = $1
+            ORDER BY cell.cell_index"#,
             file_id
         )
         .fetch_all(&*self.pool)
@@ -76,7 +111,10 @@ impl CellRepository for SqliteCellRepository {
 
         match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
-            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+            Ok(rows) => {
+                let cells = convert_rows_to_cells(rows);
+                Ok(cells)
+            },
         }
     }
 
@@ -203,13 +241,30 @@ impl CellRepository for SqliteCellRepository {
         let rows = sqlx::query_as!(
             CellRow,
             r#"SELECT
-                id as "id: _",
-                file_id as "file_id: _",
-                content,
-                cell_index as "index: _",
-                cell_type as "cell_type: _",
-                searchable_content as "searchable_content: _"
-            FROM cells
+                cell.id as "cell_id: _",
+                cell.file_id as "cell_file_id: _",
+                cell.content as cell_content,
+                cell.cell_index as "cell_index: _",
+                cell.cell_type as "cell_type: _",
+                cell.searchable_content as cell_searchable_content,
+
+                repetition.id as "repetition_id: _",
+                repetition.file_id as "repetition_file_id: _",
+                repetition.cell_id as "repetition_cell_id: _",
+                repetition.due as "repetition_due: _",
+                repetition.stability as "repetition_stability: _",
+                repetition.difficulty as "repetition_difficulty: _",
+                repetition.elapsed_days as "repetition_elapsed_days: _",
+                repetition.scheduled_days as "repetition_scheduled_days",
+                repetition.reps as "repetition_reps: _",
+                repetition.lapses as "repetition_lapses: _",
+                repetition.state as "repetition_state: _",
+                repetition.last_review as "repetition_last_review: _",
+                repetition.additional_content as "repetition_additional_content: _"
+
+            FROM cells As cell
+            LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
+
             WHERE searchable_content LIKE $1
             LIMIT 150"#,
             pattern
@@ -219,79 +274,22 @@ impl CellRepository for SqliteCellRepository {
 
         match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
-            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+            Ok(rows) => {
+                let cells = convert_rows_to_cells(rows);
+                Ok(cells)
+            },
         }
     }
 }
 
-mod cell_type_sqlite_impls {
-    use super::*;
-
-    impl sqlx::Type<Sqlite> for CellType {
-        fn type_info() -> <Sqlite as sqlx::Database>::TypeInfo {
-            <str as sqlx::Type<sqlx::Sqlite>>::type_info()
-        }
-    }
-
-    impl<'r> sqlx::Decode<'r, Sqlite> for CellType {
-        fn decode(
-            value: <Sqlite as sqlx::Database>::ValueRef<'r>,
-        ) -> Result<Self, sqlx::error::BoxDynError> {
-            let value = <&'r str as sqlx::decode::Decode<'r, sqlx::sqlite::Sqlite>>::decode(value)?;
-            match serde_json::from_str(value) {
-                Ok(cell_type) => Ok(cell_type),
-                _ => Err(format!("invalid value {:?} for enum {}", value, "CellType").into()),
-            }
-        }
-    }
-
-    impl<'q> sqlx::Encode<'q, Sqlite> for CellType {
-        fn encode_by_ref(
-            &self,
-            buf: &mut <Sqlite as sqlx::Database>::ArgumentBuffer<'q>,
-        ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
-            let val = serde_json::to_string(&self).expect("Cannot serialize CellType");
-            <String as sqlx::encode::Encode<'q, Sqlite>>::encode(val, buf)
-        }
-    }
-}
-
-mod cell_row {
-    use super::*;
-
-    #[derive(sqlx::FromRow)]
-    pub(super) struct CellRow {
-        pub id: Guid,
-        pub file_id: Guid,
-        pub content: String,
-        pub cell_type: CellType,
-        pub index: u32,
-        pub searchable_content: String,
-    }
-
-    impl From<CellRow> for Cell {
-        fn from(value: CellRow) -> Self {
-            Cell::new_unchecked(
-                Some(value.id),
-                value.file_id,
-                value.content,
-                value.cell_type,
-                value.index,
-                value.searchable_content,
-            )
-        }
-    }
-}
 
 #[cfg(test)]
 pub mod tests {
     use crate::{
-        ROOT_FOLDER_ID,
-        common::{
+        cells::entities::cell::CellType, common::{
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
-        },
-        file_system::entities::file::File,
+        }, file_system::entities::file::File, ROOT_FOLDER_ID
     };
 
     use super::*;
