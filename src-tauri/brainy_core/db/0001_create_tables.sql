@@ -40,7 +40,7 @@ CREATE TABLE repetitions(
     reps                        INTEGER     NOT NULL,
     lapses                      INTEGER     NOT NULL,
     state                       TEXT        NOT NULL,
-    last_review                 DATETIME    NOT NULL,
+    last_review                 DATETIME,
     additional_content          TEXT,
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE,
     FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE CASCADE

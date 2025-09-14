@@ -49,7 +49,7 @@ pub struct RepetitionRow {
     pub reps: i64,
     pub lapses: i64,
     pub state: State,
-    pub last_review: DateTime<Utc>,
+    pub last_review: Option<DateTime<Utc>>,
     pub additional_content: Option<String>,
 }
 
@@ -93,7 +93,7 @@ pub fn convert_rows_to_cells(rows: Vec<CellRow>) -> Vec<Cell> {
             reps: row.repetition_reps.unwrap(),
             lapses: row.repetition_lapses.unwrap(),
             state: row.repetition_state.clone().unwrap(),
-            last_review: row.repetition_last_review.unwrap(),
+            last_review: row.repetition_last_review,
             additional_content: row.repetition_additional_content.clone(),
         };
 

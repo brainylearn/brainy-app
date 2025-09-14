@@ -12,6 +12,6 @@ export default interface Repetition {
 	reps: number;
 	lapses: number;
 	state: RepetitionState;
-	lastReview: string;
-	additionalContent?: string;
+	lastReview: string | null;
+	additionalContent: string | null;
 }

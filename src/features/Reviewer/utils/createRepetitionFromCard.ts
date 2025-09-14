@@ -8,7 +8,7 @@ function createRepetitionFromCard(
 	id: string,
 	fileId: string,
 	cellId: string,
-	additionalContent?: string,
+	additionalContent: string | null,
 ): Repetition {
 	let state: RepetitionState;
 	switch (card.state) {
@@ -36,7 +36,7 @@ function createRepetitionFromCard(
 		lapses: card.lapses,
 		stability: card.stability,
 		difficulty: card.difficulty,
-		lastReview: card.last_review!.toISOString(),
+		lastReview: card.last_review?.toISOString() ?? null,
 		elapsedDays: card.elapsed_days,
 		scheduledDays: card.scheduled_days,
 		additionalContent: additionalContent,

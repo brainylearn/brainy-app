@@ -28,7 +28,7 @@ pub struct Repetition {
     pub(in crate::cells) lapses: i64,
     pub(in crate::cells) state: State,
     // TODO: should be nullable
-    pub(in crate::cells) last_review: DateTime<Utc>,
+    pub(in crate::cells) last_review: Option<DateTime<Utc>>,
     pub(in crate::cells) additional_content: Option<String>,
 }
 
@@ -46,7 +46,7 @@ impl Default for Repetition {
             reps: Default::default(),
             lapses: Default::default(),
             state: Default::default(),
-            last_review: Utc::now().to_utc(),
+            last_review: None,
             additional_content: Default::default(),
         }
     }

@@ -374,18 +374,17 @@ impl CellRepository for SqliteCellRepository {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
             Ok(rows) => {
 
-                println!("{:#?}", rows);
                 let mut counts: FileRepetitionCounts = Default::default();
 
                 for row in rows {
                     if row.state == State::New {
-                        counts.new = row.count;
+                        counts.new = row.count.unwrap_or_default();
                     } else if row.state == State::Learning {
-                        counts.learning = row.count;
+                        counts.learning = row.count.unwrap_or_default();
                     } else if row.state == State::Relearning {
-                        counts.relearning = row.count;
+                        counts.relearning = row.count.unwrap_or_default();
                     } else if row.state == State::Review {
-                        counts.review = row.count;
+                        counts.review = row.count.unwrap_or_default();
                     }
                 }
 

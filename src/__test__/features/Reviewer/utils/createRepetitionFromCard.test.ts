@@ -22,7 +22,7 @@ describe(createRepetitionFromCard, () => {
 		};
 		const id = "8";
 		const fileId = "9";
-		const cellId = 10;
+		const cellId = "10";
 		const expected: Repetition = {
 			cellId,
 			fileId,

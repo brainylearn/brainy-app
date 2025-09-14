@@ -29,8 +29,9 @@ describe(createCardFromRepetition, () => {
 				difficulty: 4,
 				elapsedDays: 5,
 				scheduledDays: 6,
-				cellId: 99,
+				cellId: "99",
 				fileId: "99",
+                additionalContent: null,
 			};
 			const expected: Card = {
 				due: new Date("2000/12/12"),
