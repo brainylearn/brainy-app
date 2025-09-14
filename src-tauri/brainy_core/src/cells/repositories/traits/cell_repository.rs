@@ -44,7 +44,8 @@ pub trait CellRepository: Send + Sync {
 
     async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError>;
 
-    async fn get_file_repetitions(&self, file_id: Guid)
+    /// This function returns all repetitions belonging to a file in a random number.
+    async fn get_file_repetitions_shuffled(&self, file_id: Guid)
     -> Result<Vec<Repetition>, RepositoryError>;
 
     /// Returns the count of repetitions ready for study, i.e. their due is less

@@ -1,18 +1,12 @@
 use std::collections::HashSet;
 
-use rand::{SeedableRng, seq::SliceRandom};
-use rand_chacha::ChaCha8Rng;
 use regex::Regex;
-use sea_orm::{DbConn, Set};
+use sea_orm::{Set};
 
 use crate::entity::cell::CellType;
 use crate::entity::repetition::{self};
 
 use sea_orm::{entity::*, query::*};
-
-use super::cell_service;
-
-const SEED: [u8; 32] = [42u8; 32];
 
 pub async fn update_repetitions_for_cell(
     db_conn: &impl ConnectionTrait,
@@ -115,63 +109,6 @@ fn update_repetitions_for_cloze_cell(
                 ..Default::default()
             });
         }
-    }
-}
-
-pub async fn get_file_repetitions(
-    db_conn: &DbConn,
-    file_id: i32,
-) -> Result<Vec<repetition::Model>, String> {
-    let result = repetition::Entity::find()
-        .filter(repetition::Column::FileId.eq(file_id))
-        .all(db_conn)
-        .await;
-
-    match result {
-        Ok(mut result) => {
-            let mut rng = ChaCha8Rng::from_seed(SEED);
-            result.shuffle(&mut rng);
-            Ok(result)
-        }
-        Err(err) => Err(err.to_string()),
-    }
-}
-
-pub async fn get_repetitions_for_files(
-    db_conn: &DbConn,
-    file_ids: Vec<i32>,
-) -> Result<Vec<repetition::Model>, String> {
-    let mut repetitions: Vec<repetition::Model> = Vec::new();
-    for file_id in file_ids {
-        let mut file_repetitions = get_file_repetitions(db_conn, file_id).await?;
-        repetitions.append(&mut file_repetitions);
-    }
-    Ok(repetitions)
-}
-
-pub async fn reset_repetitions_for_cell(db_conn: &DbConn, cell_id: i32) -> Result<(), String> {
-    let txn = match db_conn.begin().await {
-        Ok(txn) => txn,
-        Err(err) => return Err(err.to_string()),
-    };
-
-    if let Err(err) = repetition::Entity::delete_many()
-        .filter(repetition::Column::CellId.eq(cell_id))
-        .exec(&txn)
-        .await
-    {
-        return Err(err.to_string());
-    }
-
-    let cell = cell_service::get_cell_by_id(&txn, cell_id).await?;
-
-    update_repetitions_for_cell(&txn, cell.file_id, cell_id, &cell.cell_type, &cell.content)
-        .await?;
-
-    let result = txn.commit().await;
-    match result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.to_string()),
     }
 }
 

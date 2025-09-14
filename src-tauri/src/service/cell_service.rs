@@ -100,17 +100,6 @@ async fn increase_cells_indices_starting_from(
     }
 }
 
-pub async fn get_cell_by_id(
-    db_conn: &impl ConnectionTrait,
-    cell_id: i32,
-) -> Result<cell::Model, String> {
-    let result = cell::Entity::find_by_id(cell_id).one(db_conn).await;
-    match result {
-        Ok(cell) => Ok(cell.unwrap()),
-        Err(err) => Err(err.to_string()),
-    }
-}
-
 // #[cfg(test)]
 // mod tests {
 //     use repetition_service::get_file_repetitions;

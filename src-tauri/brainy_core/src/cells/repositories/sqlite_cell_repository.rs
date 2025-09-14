@@ -2,19 +2,32 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use chrono::Utc;
+use rand::SeedableRng;
+use rand::seq::SliceRandom;
+use rand_chacha::ChaCha8Rng;
 use sqlx::{QueryBuilder, Sqlite, SqliteConnection, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
+    Guid,
     cells::{
-        entities::{cell::Cell, repetition::{Repetition, State}},
+        entities::{
+            cell::Cell,
+            repetition::{Repetition, State},
+        },
         repositories::{
-            sqlite_rows::cell_row::{convert_rows_to_cells, CellRow, RepetitionRow},
+            sqlite_rows::cell_row::{CellRow, RepetitionRow, convert_rows_to_cells},
             traits::cell_repository::{CellRepository, MoveDirection},
         },
-        value_objects::{cell_deletion_request::CellDeletionRequest, file_repetitions_count::FileRepetitionCounts},
-    }, common::repository_error::RepositoryError, Guid
+        value_objects::{
+            cell_deletion_request::CellDeletionRequest,
+            file_repetitions_count::FileRepetitionCounts,
+        },
+    },
+    common::repository_error::RepositoryError,
 };
+
+const SEED: [u8; 32] = [42u8; 32];
 
 pub struct SqliteCellRepository {
     pool: Arc<SqlitePool>,
@@ -300,7 +313,7 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    async fn get_file_repetitions(
+    async fn get_file_repetitions_shuffled(
         &self,
         file_id: Guid,
     ) -> Result<Vec<Repetition>, RepositoryError> {
@@ -330,11 +343,15 @@ impl CellRepository for SqliteCellRepository {
 
         match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
-            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+            Ok(rows) => {
+                let mut result = rows.into_iter().map(|row| row.into()).collect::<Vec<_>>();
+                let mut rng = ChaCha8Rng::from_seed(SEED);
+                result.shuffle(&mut rng);
+                Ok(result)
+            }
         }
     }
 
-    // TODO: unit tests
     async fn get_study_repetitions(
         &self,
         file_id: Guid,
@@ -356,6 +373,8 @@ impl CellRepository for SqliteCellRepository {
         match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
             Ok(rows) => {
+
+                println!("{:#?}", rows);
                 let mut counts: FileRepetitionCounts = Default::default();
 
                 for row in rows {
@@ -371,7 +390,7 @@ impl CellRepository for SqliteCellRepository {
                 }
 
                 Ok(counts)
-            },
+            }
         }
     }
 }
@@ -399,24 +418,36 @@ impl SqliteCellRepository {
                 additional_content,
             } = repetition;
 
-            // TODO: maybe INSERT OR REPLACE is too dangerous?
             let result = sqlx::query!(
-                r#"INSERT OR REPLACE INTO
-                    repetitions(
-                        id,
-                        file_id,
-                        cell_id,
-                        due,
-                        stability,
-                        difficulty,
-                        elapsed_days,
-                        scheduled_days,
-                        reps,
-                        lapses,
-                        state,
-                        last_review,
-                        additional_content)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"#,
+                r#"INSERT INTO repetitions(
+                    id,
+                    file_id,
+                    cell_id,
+                    due,
+                    stability,
+                    difficulty,
+                    elapsed_days,
+                    scheduled_days,
+                    reps,
+                    lapses,
+                    state,
+                    last_review,
+                    additional_content)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                ON CONFLICT(id) DO UPDATE SET
+                    file_id = $2,
+                    cell_id = $3,
+                    due = $4,
+                    stability = $5,
+                    difficulty = $6,
+                    elapsed_days = $7,
+                    scheduled_days = $8,
+                    reps = $9,
+                    lapses = $10,
+                    state = $11,
+                    last_review = $12,
+                    additional_content = $13
+                "#,
                 id,
                 file_id,
                 cell_id,
@@ -445,6 +476,8 @@ impl SqliteCellRepository {
 
 #[cfg(test)]
 pub mod tests {
+    use chrono::Duration;
+
     use crate::{
         ROOT_FOLDER_ID,
         cells::entities::cell::CellType,
@@ -695,7 +728,7 @@ pub mod tests {
 
         let actual = context
             .cell_repository()
-            .get_file_repetitions(file.id())
+            .get_file_repetitions_shuffled(file.id())
             .await
             .unwrap();
         assert_eq!(0, actual.len());
@@ -728,7 +761,7 @@ pub mod tests {
 
         let actual = context
             .cell_repository()
-            .get_file_repetitions(file.id())
+            .get_file_repetitions_shuffled(file.id())
             .await
             .unwrap();
 
@@ -745,5 +778,88 @@ pub mod tests {
                 .iter()
                 .any(|r| r.additional_content.as_ref().unwrap() == "2")
         );
+    }
+
+    #[tokio::test]
+    pub async fn get_study_repetitions_valid_input_returned_count_correctly() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cell_id = Guid::new_v4();
+        let cell = Cell::new_unchecked(
+            Some(cell_id),
+            file.id(),
+            "".to_string(),
+            CellType::Cloze,
+            0,
+            "".to_string(),
+            vec![
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::New,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::New,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Learning,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Relearning,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Review,
+                    ..Default::default()
+                },
+                // Due later.
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc() + Duration::days(1),
+                    state: State::New,
+                    additional_content: Some("6".to_string()),
+                    ..Default::default()
+                },
+            ],
+        );
+        context.cell_repository().create(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .cell_repository()
+            .get_study_repetitions(file.id())
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(2, actual.new);
+        assert_eq!(1, actual.learning);
+        assert_eq!(1, actual.relearning);
+        assert_eq!(1, actual.review);
     }
 }

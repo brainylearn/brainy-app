@@ -117,16 +117,18 @@ impl Cell {
         &self.repetitions
     }
 
+    pub fn reset_repetitions(&mut self) {
+        self.repetitions = Vec::new();
+        self.update_repetitions();
+    }
+
     pub fn set_content(&mut self, content: String) {
         self.content = content;
         self.update_searcahble_content();
         self.update_repetitions();
     }
 
-    pub(in crate::cells) fn create_repetition_with_content(
-        &mut self,
-        additional_content: Option<String>,
-    ) {
+    fn create_repetition_with_content(&mut self, additional_content: Option<String>) {
         self.repetitions.push(Repetition {
             id: Guid::new_v4(),
             file_id: self.file_id,
@@ -358,5 +360,27 @@ mod tests {
                 .unwrap()
                 .as_str()
         );
+    }
+
+    #[test]
+    pub fn reset_repetitions_valid_input_reseted_repetitions() {
+        // Arrange
+
+        let content = serde_json::to_string(&FlashCard {
+            question: "question".into(),
+            answer: "<bold>Answer</bold>".into(),
+        })
+        .unwrap();
+        let mut cell = Cell::new(None, Guid::new_v4(), content, CellType::FlashCard, 0);
+        // Doing random modificaiton on the cell.
+        cell.repetitions[0].difficulty = 99f64;
+
+        // Act
+
+        cell.reset_repetitions();
+
+        // Assert
+
+        assert_eq!(0f64, cell.repetitions[0].difficulty);
     }
 }

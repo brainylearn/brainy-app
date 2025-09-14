@@ -35,7 +35,7 @@ pub struct Repetition {
 impl Default for Repetition {
     fn default() -> Self {
         Self {
-            id: Default::default(),
+            id: Guid::new_v4(),
             file_id: Default::default(),
             cell_id: Default::default(),
             due: Utc::now().to_utc(),
