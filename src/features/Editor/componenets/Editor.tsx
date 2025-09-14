@@ -16,7 +16,7 @@ import Repetition from "../../../types/backend/entity/repetition";
 import EditableCells from "../../EditableCells/components/EditableCells";
 
 interface Props {
-	editCellId: number | null;
+	editCellId: string | null;
 	onError: (error: string) => void;
 	onStudyStart: () => void;
 }
@@ -58,10 +58,9 @@ function Editor({ editCellId, onError, onStudyStart }: Props) {
 
 	const retrieveRepetitionCounts = useCallback(async () => {
 		await executeRequest(async () => {
-            // TODO: uncomment
-			// const repetitionCounts =
-			// 	await getStudyRepetitionCounts(selectedFileId);
-			// setRepetitionCounts(repetitionCounts);
+			const repetitionCounts =
+				await getStudyRepetitionCounts(selectedFileId);
+			setRepetitionCounts(repetitionCounts);
 		});
 	}, [executeRequest, selectedFileId]);
 

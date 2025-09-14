@@ -2,10 +2,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+// TODO: maybe change name to study repetition
 pub struct FileRepetitionCounts {
-    // TODO: make into u32
-    pub new: i32,
-    pub learning: i32,
-    pub relearning: i32,
-    pub review: i32,
+    pub new: u32,
+    pub learning: u32,
+    pub relearning: u32,
+    pub review: u32,
 }

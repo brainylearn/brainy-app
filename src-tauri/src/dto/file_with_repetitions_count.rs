@@ -1,15 +1,12 @@
 use std::collections::{HashMap, VecDeque};
 
 use brainy_core::{
-    Guid,
-    file_system::{
+    cells::value_objects::file_repetitions_count::FileRepetitionCounts, file_system::{
         entities::{file::File, folder::Folder},
         value_objects::path::Path,
-    },
+    }, Guid
 };
 use serde::Serialize;
-
-use crate::value_objects::file_repetitions_count::FileRepetitionCounts;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]

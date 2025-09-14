@@ -7,7 +7,7 @@ function createRepetitionFromCard(
 	card: Card,
 	id: string,
 	fileId: string,
-	cellId: number,
+	cellId: string,
 	additionalContent?: string,
 ): Repetition {
 	let state: RepetitionState;

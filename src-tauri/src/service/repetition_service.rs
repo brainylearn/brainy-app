@@ -1,14 +1,12 @@
 use std::collections::HashSet;
 
-use chrono::Utc;
 use rand::{SeedableRng, seq::SliceRandom};
 use rand_chacha::ChaCha8Rng;
 use regex::Regex;
 use sea_orm::{DbConn, Set};
 
 use crate::entity::cell::CellType;
-use crate::entity::repetition::{self, State};
-use crate::value_objects::file_repetitions_count::FileRepetitionCounts;
+use crate::entity::repetition::{self};
 
 use sea_orm::{entity::*, query::*};
 
@@ -118,42 +116,6 @@ fn update_repetitions_for_cloze_cell(
             });
         }
     }
-}
-
-pub async fn get_study_repetition_counts(
-    db_conn: &DbConn,
-    file_id: i32,
-) -> Result<FileRepetitionCounts, String> {
-    let result = repetition::Entity::find()
-        .select_only()
-        .column(repetition::Column::State)
-        .column_as(repetition::Column::State.count(), "count")
-        .filter(repetition::Column::FileId.eq(file_id))
-        .filter(repetition::Column::Due.lte(Utc::now().to_utc()))
-        .group_by(repetition::Column::State)
-        .into_tuple::<(State, i32)>()
-        .all(db_conn)
-        .await;
-
-    let result = match result {
-        Ok(result) => result,
-        Err(err) => return Err(err.to_string()),
-    };
-
-    let mut counts: FileRepetitionCounts = Default::default();
-    for row in result {
-        if row.0 == State::New {
-            counts.new = row.1;
-        } else if row.0 == State::Learning {
-            counts.learning = row.1;
-        } else if row.0 == State::Relearning {
-            counts.relearning = row.1;
-        } else if row.0 == State::Review {
-            counts.review = row.1;
-        }
-    }
-
-    Ok(counts)
 }
 
 pub async fn get_file_repetitions(

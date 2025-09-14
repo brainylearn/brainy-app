@@ -24,7 +24,7 @@ interface Props {
 	className?: string;
 	onError: (error: string) => void;
 	onCellsUpdateSave: () => Promise<void>;
-	onEditButtonClick?: (fileId: string, cellId: number) => void;
+	onEditButtonClick?: (fileId: string, cellId: string) => void;
 }
 
 function EditableCells({

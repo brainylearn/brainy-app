@@ -28,7 +28,7 @@ function App() {
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [searchParams] = useSearchParams();
 	const studyFileIds = useRef<string[]>([]);
-	const editCellId = useRef<number | null>(null);
+	const editCellId = useRef<string | null>(null);
 	const selectedFileId = searchParams.get(fileIdQueryParameter);
 	const location = useLocation();
 	const dispatch = useAppDispatch();
@@ -79,7 +79,7 @@ function App() {
 		}
 	}, "keydown");
 
-	const handleEditButtonClick = (fileId: string, cellId: number) => {
+	const handleEditButtonClick = (fileId: string, cellId: string) => {
 		editCellId.current = cellId;
 		searchParams.set(fileIdQueryParameter, fileId);
 		void navigate({

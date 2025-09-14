@@ -22,6 +22,6 @@ export function getRepetitionsForFiles(
 	return invoke("get_repetitions_for_files", { fileIds });
 }
 
-export function resetRepetitionsForCell(cellId: number) {
+export function resetRepetitionsForCell(cellId: string) {
 	return invoke("reset_repetitions_for_cell", { cellId });
 }

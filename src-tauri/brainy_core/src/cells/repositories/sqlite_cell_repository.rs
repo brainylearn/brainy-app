@@ -1,20 +1,19 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::Utc;
 use sqlx::{QueryBuilder, Sqlite, SqliteConnection, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
     cells::{
-        entities::{cell::Cell, repetition::Repetition},
+        entities::{cell::Cell, repetition::{Repetition, State}},
         repositories::{
-            sqlite_rows::cell_row::{CellRow, RepetitionRow, convert_rows_to_cells},
+            sqlite_rows::cell_row::{convert_rows_to_cells, CellRow, RepetitionRow},
             traits::cell_repository::{CellRepository, MoveDirection},
         },
-        value_objects::cell_deletion_request::CellDeletionRequest,
-    },
-    common::repository_error::RepositoryError,
+        value_objects::{cell_deletion_request::CellDeletionRequest, file_repetitions_count::FileRepetitionCounts},
+    }, common::repository_error::RepositoryError, Guid
 };
 
 pub struct SqliteCellRepository {
@@ -334,6 +333,47 @@ impl CellRepository for SqliteCellRepository {
             Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
         }
     }
+
+    // TODO: unit tests
+    async fn get_study_repetitions(
+        &self,
+        file_id: Guid,
+    ) -> Result<FileRepetitionCounts, RepositoryError> {
+        let now = Utc::now().to_utc();
+        let rows = sqlx::query!(
+            r#"
+                SELECT state AS "state: State", COUNT(*) AS "count: u32"
+                FROM repetitions
+                WHERE file_id = $1 AND due <= $2
+                GROUP BY state
+            "#,
+            file_id,
+            now
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => {
+                let mut counts: FileRepetitionCounts = Default::default();
+
+                for row in rows {
+                    if row.state == State::New {
+                        counts.new = row.count;
+                    } else if row.state == State::Learning {
+                        counts.learning = row.count;
+                    } else if row.state == State::Relearning {
+                        counts.relearning = row.count;
+                    } else if row.state == State::Review {
+                        counts.review = row.count;
+                    }
+                }
+
+                Ok(counts)
+            },
+        }
+    }
 }
 
 impl SqliteCellRepository {
@@ -644,12 +684,20 @@ pub mod tests {
 
         // Act
 
-        context.cell_repository().delete_by_id(CellDeletionRequest::new(cell.id())).await.unwrap();
+        context
+            .cell_repository()
+            .delete_by_id(CellDeletionRequest::new(cell.id()))
+            .await
+            .unwrap();
         context.save_changes().await.unwrap();
 
         // Assert
 
-        let actual = context.cell_repository().get_file_repetitions(file.id()).await.unwrap();
+        let actual = context
+            .cell_repository()
+            .get_file_repetitions(file.id())
+            .await
+            .unwrap();
         assert_eq!(0, actual.len());
     }
 
@@ -681,7 +729,8 @@ pub mod tests {
         let actual = context
             .cell_repository()
             .get_file_repetitions(file.id())
-            .await.unwrap();
+            .await
+            .unwrap();
 
         // Assert
 

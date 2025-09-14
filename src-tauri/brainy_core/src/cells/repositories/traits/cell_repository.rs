@@ -4,7 +4,10 @@ use crate::{
     Guid,
     cells::{
         entities::{cell::Cell, repetition::Repetition},
-        value_objects::cell_deletion_request::CellDeletionRequest,
+        value_objects::{
+            cell_deletion_request::CellDeletionRequest,
+            file_repetitions_count::FileRepetitionCounts,
+        },
     },
     common::repository_error::RepositoryError,
 };
@@ -43,4 +46,11 @@ pub trait CellRepository: Send + Sync {
 
     async fn get_file_repetitions(&self, file_id: Guid)
     -> Result<Vec<Repetition>, RepositoryError>;
+
+    /// Returns the count of repetitions ready for study, i.e. their due is less
+    /// than or equal to now.
+    async fn get_study_repetitions(
+        &self,
+        file_id: Guid,
+    ) -> Result<FileRepetitionCounts, RepositoryError>;
 }
