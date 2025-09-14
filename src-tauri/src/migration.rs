@@ -4,7 +4,6 @@ use sea_orm::{
 
 use crate::entity::{cell, file, repetition, review};
 
-// TODO: delete
 pub async fn setup_schema(db_conn: &DatabaseConnection) -> Result<(), DbErr> {
     let schema = Schema::new(DbBackend::Sqlite);
     let backend = db_conn.get_database_backend();

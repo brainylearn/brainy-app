@@ -7,6 +7,7 @@ use crate::{
     value_objects::settings::Settings,
 };
 
+// TODO:
 #[tauri::command]
 pub async fn get_settings() -> Result<Settings, ()> {
     Ok(settings_service::get_settings())

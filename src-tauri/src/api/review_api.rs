@@ -7,6 +7,7 @@ use sea_orm::DbConn;
 use tauri::State;
 use tokio::sync::Mutex;
 
+// TODO:
 #[tauri::command]
 pub async fn get_home_statistics(
     db_conn: State<'_, Mutex<DbConn>>,
