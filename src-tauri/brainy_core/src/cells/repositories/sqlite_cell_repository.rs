@@ -28,7 +28,6 @@ impl SqliteCellRepository {
     }
 }
 
-// TODO: update unit tests for repetitions, all methods! specially create and update
 #[async_trait]
 impl CellRepository for SqliteCellRepository {
     async fn get_by_id(&self, id: Guid) -> Result<Cell, RepositoryError> {
@@ -189,9 +188,8 @@ impl CellRepository for SqliteCellRepository {
 
         // Deleteing removed repetitions.
 
-        let mut query_builder: QueryBuilder<sqlx::Sqlite> = QueryBuilder::new(
-            "DELETE FROM repetitions WHERE cell_id = ",
-        );
+        let mut query_builder: QueryBuilder<sqlx::Sqlite> =
+            QueryBuilder::new("DELETE FROM repetitions WHERE cell_id = ");
         query_builder.push_bind(id);
         query_builder.push(" AND id NOT IN (");
         let mut separated = query_builder.separated(",");
@@ -420,7 +418,56 @@ pub mod tests {
     use super::*;
 
     #[tokio::test]
-    pub async fn get_file_cells_ordered_by_index() {
+    pub async fn get_by_id_valid_input_returned_cell_correctly() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cell = Cell::new(
+            None,
+            file.id(),
+            r#"
+                <cloze index="1">test<cloze>
+                <cloze index="2">test<cloze>
+            "#
+            .to_string(),
+            CellType::Cloze,
+            0,
+        );
+        context.cell_repository().create(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .cell_repository()
+            .get_by_id(cell.id())
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(cell.id(), actual.id());
+        assert_eq!(2, actual.repetitions().len());
+        assert!(
+            actual
+                .repetitions()
+                .iter()
+                .any(|r| r.additional_content.as_ref().unwrap() == "1")
+        );
+        assert!(
+            actual
+                .repetitions()
+                .iter()
+                .any(|r| r.additional_content.as_ref().unwrap() == "2")
+        );
+    }
+
+    #[tokio::test]
+    pub async fn get_file_cells_ordered_by_index_valid_input_returned_files_ordered() {
         // Arrange
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
@@ -429,7 +476,13 @@ pub mod tests {
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
-            Cell::new(None, file.id(), "".to_string(), CellType::Note, 0),
+            Cell::new(
+                None,
+                file.id(),
+                r#"<cloze index="1"></cloze>"#.to_string(),
+                CellType::Cloze,
+                0,
+            ),
             Cell::new(None, file.id(), "".to_string(), CellType::Note, 1),
         ];
 
@@ -448,8 +501,82 @@ pub mod tests {
 
         // Assert
 
-        assert_eq!(actual[0].id(), cells[0].id());
-        assert_eq!(actual[1].id(), cells[1].id());
+        assert_eq!(cells[0].id(), actual[0].id());
+        assert_eq!(1, actual[0].repetitions().len());
+        assert_eq!(cells[1].id(), actual[1].id());
+    }
+
+    #[tokio::test]
+    pub async fn update_deleted_old_repetitions_and_added_new_ones() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let mut cell = Cell::new(
+            None,
+            file.id(),
+            r#"
+                <cloze index="1">test<cloze>
+                <cloze index="2">test<cloze>
+            "#
+            .to_string(),
+            CellType::Cloze,
+            0,
+        );
+        context.cell_repository().create(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        let old_repetitions = cell.repetitions().clone();
+        cell.set_content(
+            r#"
+                <cloze index="1">test<cloze>
+                <cloze index="3">test<cloze>
+            "#
+            .to_string(),
+        );
+
+        // Act
+
+        context.cell_repository().update(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = context
+            .cell_repository()
+            .get_by_id(cell.id())
+            .await
+            .unwrap();
+
+        assert_eq!(2, cell.repetitions().len());
+        assert!(
+            actual
+                .repetitions()
+                .iter()
+                .any(|r| r.additional_content.as_ref().unwrap() == "1"
+                    && old_repetitions.iter().any(|r2| r2.id == r.id))
+        );
+        assert!(
+            actual
+                .repetitions()
+                .iter()
+                .any(|r| r.additional_content.as_ref().unwrap() == "3")
+        );
+
+        let deleted_repetition_id = old_repetitions
+            .iter()
+            .find(|r| r.additional_content.as_ref().unwrap() == "2")
+            .unwrap()
+            .id;
+        assert!(
+            !cell
+                .repetitions()
+                .iter()
+                .any(|r| r.id == deleted_repetition_id)
+        );
     }
 
     #[tokio::test]
@@ -491,5 +618,83 @@ pub mod tests {
         assert_eq!(2, actual.len());
         assert!(actual.iter().any(|cell| cell.id() == cells[0].id()));
         assert!(actual.iter().any(|cell| cell.id() == cells[1].id()));
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_cloze_cell_deleted_repetitions() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cell = Cell::new(
+            None,
+            file.id(),
+            r#"
+                <cloze index="1">test<cloze>
+            "#
+            .to_string(),
+            CellType::Cloze,
+            0,
+        );
+        context.cell_repository().create(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        context.cell_repository().delete_by_id(CellDeletionRequest::new(cell.id())).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = context.cell_repository().get_file_repetitions(file.id()).await.unwrap();
+        assert_eq!(0, actual.len());
+    }
+
+    #[tokio::test]
+    pub async fn get_file_repetitions_returned_all_repetitions_correctly() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cell = Cell::new(
+            None,
+            file.id(),
+            r#"
+                <cloze index="1">test<cloze>
+                <cloze index="2">test<cloze>
+            "#
+            .to_string(),
+            CellType::Cloze,
+            0,
+        );
+        context.cell_repository().create(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .cell_repository()
+            .get_file_repetitions(file.id())
+            .await.unwrap();
+
+        // Assert
+
+        assert_eq!(2, actual.len());
+        assert!(
+            actual
+                .iter()
+                .any(|r| r.additional_content.as_ref().unwrap() == "1")
+        );
+        assert!(
+            actual
+                .iter()
+                .any(|r| r.additional_content.as_ref().unwrap() == "2")
+        );
     }
 }

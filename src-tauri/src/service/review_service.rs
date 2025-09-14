@@ -163,7 +163,6 @@ pub async fn register_review(
     }
 }
 
-// TODO:
 // #[cfg(test)]
 // mod tests {
 //     use chrono::Duration;

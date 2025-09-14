@@ -123,7 +123,10 @@ impl Cell {
         self.update_repetitions();
     }
 
-    pub(in crate::cells) fn create_repetition_with_content(&mut self, additional_content: Option<String>) {
+    pub(in crate::cells) fn create_repetition_with_content(
+        &mut self,
+        additional_content: Option<String>,
+    ) {
         self.repetitions.push(Repetition {
             id: Guid::new_v4(),
             file_id: self.file_id,
@@ -161,7 +164,6 @@ impl Cell {
         self.searchable_content = searchable_content.to_lowercase().to_string();
     }
 
-    // TODO: unit test on create and on update
     fn update_repetitions(&mut self) {
         match self.cell_type {
             CellType::Note => (),
@@ -184,12 +186,11 @@ impl Cell {
             .map(|c: (&str, [&str; 1])| c.1[0].to_string())
             .collect();
 
-        self.repetitions.retain(|repetition| {
-            match repetition.additional_content.as_ref() {
+        self.repetitions
+            .retain(|repetition| match repetition.additional_content.as_ref() {
                 Some(additional_content) => indices.contains(additional_content),
                 None => false,
-            }
-        });
+            });
 
         for index in indices {
             if !self
@@ -208,7 +209,7 @@ mod tests {
     use super::*;
 
     #[test]
-    pub fn new_flash_card_updated_search_content_correctly() {
+    pub fn new_flash_card_set_search_content_and_repetitions_correctly() {
         // Arrange
 
         let content = serde_json::to_string(&FlashCard {
@@ -223,30 +224,61 @@ mod tests {
 
         // Assert
 
-        assert_eq!(actual.searchable_content(), "question answer".to_string());
+        assert_eq!("question answer".to_string(), actual.searchable_content());
+        assert_eq!(1, actual.repetitions().len());
+    }
+
+    #[test]
+    pub fn new_cloze_added_repetitions_correctly() {
+        // Arrange
+
+        let content = r#"<cloze index="1">Test</cloze>"#.to_string();
+
+        // Act
+
+        let actual = Cell::new(None, Guid::new_v4(), content, CellType::Cloze, 0);
+
+        // Assert
+
+        assert_eq!(1, actual.repetitions().len());
+        assert_eq!(
+            "1",
+            actual.repetitions()[0]
+                .additional_content
+                .as_ref()
+                .unwrap()
+                .as_str()
+        );
     }
 
     #[test]
     pub fn set_content_on_true_false_updated_search_content_correctly() {
         // Arrange
 
-        let content = serde_json::to_string(&TrueFalse {
+        let old_content = serde_json::to_string(&TrueFalse {
+            question: "<bold>Old content</bold>".into(),
+            is_true: true,
+        })
+        .unwrap();
+        let new_content = serde_json::to_string(&TrueFalse {
             question: "<bold>Question</bold>".into(),
             is_true: true,
         })
         .unwrap();
 
+        let mut cell = Cell::new(None, Guid::new_v4(), old_content, CellType::TrueFalse, 0);
+
         // Act
 
-        let actual = Cell::new(None, Guid::new_v4(), content, CellType::TrueFalse, 0);
+        cell.set_content(new_content);
 
         // Assert
 
-        assert_eq!(actual.searchable_content(), "question".to_string());
+        assert_eq!(cell.searchable_content(), "question".to_string());
     }
 
     #[test]
-    pub fn set_content_on_note_updated_search_content_correctly() {
+    pub fn new_note_updated_search_content_correctly() {
         // Act
 
         let actual = Cell::new(
@@ -260,5 +292,71 @@ mod tests {
         // Assert
 
         assert_eq!(actual.searchable_content(), "note".to_string());
+    }
+
+    #[test]
+    pub fn set_content_on_cloze_added_new_repetitions_correctly() {
+        // Arrange
+
+        let old_content = r#"<cloze index="1">Test</cloze>"#.to_string();
+        let mut cell = Cell::new(None, Guid::new_v4(), old_content, CellType::Cloze, 0);
+        let new_content = r#"
+            <cloze index="1">Test 1</cloze>
+            <cloze index="2">Test 2</cloze>
+        "#
+        .to_string();
+
+        // Act
+
+        cell.set_content(new_content);
+
+        // Assert
+
+        assert_eq!(2, cell.repetitions().len());
+        assert_eq!(
+            "1",
+            cell.repetitions()[0]
+                .additional_content
+                .as_ref()
+                .unwrap()
+                .as_str()
+        );
+        assert_eq!(
+            "2",
+            cell.repetitions()[1]
+                .additional_content
+                .as_ref()
+                .unwrap()
+                .as_str()
+        );
+    }
+
+    #[test]
+    pub fn set_content_on_cloze_deleted_old_repetitions_correctly() {
+        // Arrange
+
+        let old_content = r#"
+            <cloze index="1">Test 1</cloze>
+            <cloze index="2">Test 2</cloze>
+        "#
+        .to_string();
+        let mut cell = Cell::new(None, Guid::new_v4(), old_content, CellType::Cloze, 0);
+        let new_content = r#"<cloze index="1">Test</cloze>"#.to_string();
+
+        // Act
+
+        cell.set_content(new_content);
+
+        // Assert
+
+        assert_eq!(1, cell.repetitions().len());
+        assert_eq!(
+            "1",
+            cell.repetitions()[0]
+                .additional_content
+                .as_ref()
+                .unwrap()
+                .as_str()
+        );
     }
 }

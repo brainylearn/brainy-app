@@ -40,8 +40,6 @@ impl CellService {
 
         let cell = Cell::new(None, file_id, content, cell_type, index);
 
-        // TODO: repetitions
-
         self.cell_repository
             .move_cells_indices_starting_from(file_id, index, MoveDirection::Down)
             .await?;
@@ -52,8 +50,6 @@ impl CellService {
 
     pub async fn delete_by_id(&self, id: Guid) -> Result<(), CellServiceError> {
         let cell = self.cell_repository.get_by_id(id).await?;
-
-        // TODO: repetitions
 
         self.cell_repository
             .delete_by_id(CellDeletionRequest::new(id))
