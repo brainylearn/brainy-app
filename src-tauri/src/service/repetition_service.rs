@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use regex::Regex;
-use sea_orm::{Set};
+use sea_orm::Set;
 
 use crate::entity::cell::CellType;
 use crate::entity::repetition::{self};

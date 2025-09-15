@@ -1,4 +1,4 @@
-export type RepetitionState = "New" | "Learning" | "Relearning" | "Review";
+export type RepetitionState = "new" | "learning" | "relearning" | "review";
 
 export default interface Repetition {
 	id: string;

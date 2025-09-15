@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
 use chrono::Utc;
@@ -373,7 +373,6 @@ impl CellRepository for SqliteCellRepository {
         match rows {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
             Ok(rows) => {
-
                 let mut counts: FileRepetitionCounts = Default::default();
 
                 for row in rows {
@@ -389,6 +388,47 @@ impl CellRepository for SqliteCellRepository {
                 }
 
                 Ok(counts)
+            }
+        }
+    }
+
+    // TODO: unit test
+    async fn get_study_repetitions_for_all_files(
+        &self,
+    ) -> Result<HashMap<Guid, FileRepetitionCounts>, RepositoryError> {
+        let now = Utc::now().to_utc();
+        let rows = sqlx::query!(
+            r#"
+                SELECT state AS "state: State", COUNT(*) AS "count: u32", file_id as "file_id: Guid"
+                FROM repetitions
+                WHERE due <= $1
+                GROUP BY file_id, state
+            "#,
+            now
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => {
+                let mut output = HashMap::new();
+
+                for row in rows {
+                    let entry: &mut FileRepetitionCounts = output.entry(row.file_id).or_default();
+
+                    if row.state == State::New {
+                        entry.new = row.count;
+                    } else if row.state == State::Learning {
+                        entry.learning = row.count;
+                    } else if row.state == State::Relearning {
+                        entry.relearning = row.count;
+                    } else if row.state == State::Review {
+                        entry.review = row.count;
+                    }
+                }
+
+                Ok(output)
             }
         }
     }

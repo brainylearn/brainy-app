@@ -137,11 +137,11 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 		}
 	};
 
-	const isCurrentCellNew = dueToday[currentCellIndex]?.state === "New";
+	const isCurrentCellNew = dueToday[currentCellIndex]?.state === "new";
 	const isCurrentCellLearning =
-		dueToday[currentCellIndex]?.state === "Learning" ||
-		dueToday[currentCellIndex]?.state === "Relearning";
-	const isCurrentCellReview = dueToday[currentCellIndex]?.state === "Review";
+		dueToday[currentCellIndex]?.state === "learning" ||
+		dueToday[currentCellIndex]?.state === "relearning";
+	const isCurrentCellReview = dueToday[currentCellIndex]?.state === "review";
 
 	const reptitionsCounts = useMemo(
 		() =>

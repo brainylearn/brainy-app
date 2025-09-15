@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 
 use crate::{
@@ -45,8 +47,10 @@ pub trait CellRepository: Send + Sync {
     async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError>;
 
     /// This function returns all repetitions belonging to a file in a random number.
-    async fn get_file_repetitions_shuffled(&self, file_id: Guid)
-    -> Result<Vec<Repetition>, RepositoryError>;
+    async fn get_file_repetitions_shuffled(
+        &self,
+        file_id: Guid,
+    ) -> Result<Vec<Repetition>, RepositoryError>;
 
     /// Returns the count of repetitions ready for study, i.e. their due is less
     /// than or equal to now.
@@ -54,4 +58,10 @@ pub trait CellRepository: Send + Sync {
         &self,
         file_id: Guid,
     ) -> Result<FileRepetitionCounts, RepositoryError>;
+
+    /// Returns the count of repetitions ready for study, i.e. their due is less
+    /// than or equal to now.
+    async fn get_study_repetitions_for_all_files(
+        &self,
+    ) -> Result<HashMap<Guid, FileRepetitionCounts>, RepositoryError>;
 }

@@ -28,7 +28,7 @@ describe(createRepetitionFromCard, () => {
 			fileId,
 			id,
 			due: dueDate.toISOString(),
-			state: "New",
+			state: "new",
 			lastReview: lastReviewDate.toISOString(),
 			reps: 1,
 			lapses: 2,

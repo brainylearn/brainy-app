@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeStatistics {
+    // TODO: indicate that only for today
     pub number_of_reviews: u64,
     pub total_time: i32,
     pub review_counts: HashMap<NaiveDate, i32>,

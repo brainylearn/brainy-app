@@ -48,3 +48,12 @@ CREATE TABLE repetitions(
 
 CREATE INDEX repetitions_cell_id_index ON repetitions(cell_id);
 CREATE INDEX repetitions_file_id_index ON repetitions(file_id);
+
+CREATE TABLE reviews(
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    cell_id                     TEXT,
+    study_time                  INTEGER     NOT NULL,
+    date                        DATETIME    NOT NULL,
+    rating                      TEXT        NOT NULL,
+    FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE SET NULL
+);

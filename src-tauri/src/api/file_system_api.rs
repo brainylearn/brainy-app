@@ -16,10 +16,11 @@ pub async fn get_files(
     let context = context.lock().await;
     let folders = context.folder_repository().get_all_folders().await?;
     let files = context.file_repository().get_all_files().await?;
-
-    // TODO: repetitions!
-    let result = FileWithRepetitionsCount::parse_file_system(&folders, &files);
-
+    let repetition_counts = context
+        .cell_repository()
+        .get_study_repetitions_for_all_files()
+        .await?;
+    let result = FileWithRepetitionsCount::parse_file_system(&folders, &files, repetition_counts);
     Ok(result)
 }
 

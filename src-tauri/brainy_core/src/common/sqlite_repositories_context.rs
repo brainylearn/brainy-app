@@ -10,7 +10,9 @@ use tokio::sync::Mutex;
 
 use crate::{
     cells::repositories::{
-        sqlite_cell_repository::SqliteCellRepository, traits::cell_repository::CellRepository,
+        sqlite_cell_repository::SqliteCellRepository,
+        sqlite_review_repository::SqliteReviewRepository,
+        traits::{cell_repository::CellRepository, review_repository::ReviewRepository},
     },
     common::traits::repositories_context::{RepositoriesContext, RepositoriesContextError},
     file_system::repositories::{
@@ -26,6 +28,7 @@ pub struct SqliteRepositoriesContext {
     folder_repository: Arc<SqliteFolderRepository>,
     file_repository: Arc<SqliteFileRepository>,
     cell_repository: Arc<SqliteCellRepository>,
+    review_repository: Arc<SqliteReviewRepository>,
 }
 
 #[derive(Debug, Error)]
@@ -55,6 +58,7 @@ impl SqliteRepositoriesContext {
             file_repository: Arc::new(SqliteFileRepository::new(arc_pool.clone(), tx.clone())),
             folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
             cell_repository: Arc::new(SqliteCellRepository::new(arc_pool.clone(), tx.clone())),
+            review_repository: Arc::new(SqliteReviewRepository::new(arc_pool.clone(), tx.clone())),
         })
     }
 
@@ -79,6 +83,10 @@ impl RepositoriesContext for SqliteRepositoriesContext {
 
     fn cell_repository(&self) -> Arc<dyn CellRepository> {
         self.cell_repository.clone()
+    }
+
+    fn review_repository(&self) -> Arc<dyn ReviewRepository> {
+        self.review_repository.clone()
     }
 
     async fn save_changes(&mut self) -> Result<(), RepositoriesContextError> {

@@ -13,16 +13,16 @@ function createCardFromRepetition(repetition: Repetition): Card {
 	card.scheduled_days = repetition.scheduledDays;
 
 	switch (repetition.state) {
-		case "New":
+		case "new":
 			card.state = State.New;
 			break;
-		case "Learning":
+		case "learning":
 			card.state = State.Learning;
 			break;
-		case "Relearning":
+		case "relearning":
 			card.state = State.Relearning;
 			break;
-		case "Review":
+		case "review":
 			card.state = State.Review;
 			break;
 	}

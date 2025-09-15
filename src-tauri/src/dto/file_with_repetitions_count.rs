@@ -1,10 +1,12 @@
 use std::collections::{HashMap, VecDeque};
 
 use brainy_core::{
-    cells::value_objects::file_repetitions_count::FileRepetitionCounts, file_system::{
+    Guid,
+    cells::value_objects::file_repetitions_count::FileRepetitionCounts,
+    file_system::{
         entities::{file::File, folder::Folder},
         value_objects::path::Path,
-    }, Guid
+    },
 };
 use serde::Serialize;
 
@@ -18,7 +20,11 @@ pub struct FileWithRepetitionsCount {
 }
 
 impl FileWithRepetitionsCount {
-    pub fn parse_file_system(folders: &[Folder], files: &[File]) -> Vec<FileWithRepetitionsCount> {
+    pub fn parse_file_system(
+        folders: &[Folder],
+        files: &[File],
+        mut study_repetitions: HashMap<Guid, FileRepetitionCounts>,
+    ) -> Vec<FileWithRepetitionsCount> {
         let mut result = Vec::new();
 
         let mut map = HashMap::new();
@@ -60,6 +66,11 @@ impl FileWithRepetitionsCount {
             .collect::<HashMap<Guid, Path>>();
 
         for file in files {
+            let mut repetition_count = study_repetitions.remove(&file.id());
+            if repetition_count.is_none() {
+                repetition_count = Some(FileRepetitionCounts::default());
+            }
+
             result.push(FileWithRepetitionsCount {
                 id: file.id(),
                 path: match file.parent_id() {
@@ -67,9 +78,7 @@ impl FileWithRepetitionsCount {
                     Some(parent_id) => folder_names.get(&parent_id).unwrap().navigate(file.name()),
                 },
                 is_folder: false,
-                repetition_counts: Some(FileRepetitionCounts {
-                    ..Default::default()
-                }),
+                repetition_counts: repetition_count,
             });
         }
 
@@ -103,9 +112,19 @@ pub mod tests {
             "file".try_into().unwrap(),
         )];
 
+        let mut study_repetitions = HashMap::new();
+        study_repetitions.insert(
+            files[0].id(),
+            FileRepetitionCounts {
+                new: 4,
+                ..Default::default()
+            },
+        );
+
         // Act
 
-        let actual = FileWithRepetitionsCount::parse_file_system(&folders, &files);
+        let actual =
+            FileWithRepetitionsCount::parse_file_system(&folders, &files, study_repetitions);
 
         // Assert
 
@@ -118,7 +137,8 @@ pub mod tests {
         assert!(
             actual
                 .iter()
-                .any(|f| f.path.to_string() == "/root/parent folder/file")
+                .any(|f| f.path.to_string() == "/root/parent folder/file"
+                    && f.repetition_counts.as_ref().unwrap().new == 4)
         );
     }
 }

@@ -16,6 +16,7 @@ pub async fn get_home_statistics(
     review_service::get_home_statistics(&db_conn).await
 }
 
+// TODO:
 #[tauri::command]
 pub async fn register_review(
     db_conn: State<'_, Mutex<DbConn>>,

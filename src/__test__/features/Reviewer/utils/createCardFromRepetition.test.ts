@@ -9,10 +9,10 @@ describe(createCardFromRepetition, () => {
 		// Arrange
 
 		const statePairs = [
-			["New", State.New],
-			["Learning", State.Learning],
-			["Relearning", State.Relearning],
-			["Review", State.Review],
+			["new", State.New],
+			["learning", State.Learning],
+			["relearning", State.Relearning],
+			["review", State.Review],
 		];
 
 		// Act & Assert

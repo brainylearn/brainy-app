@@ -13,16 +13,16 @@ function createRepetitionFromCard(
 	let state: RepetitionState;
 	switch (card.state) {
 		case State.New:
-			state = "New";
+			state = "new";
 			break;
 		case State.Learning:
-			state = "Learning";
+			state = "learning";
 			break;
 		case State.Relearning:
-			state = "Relearning";
+			state = "relearning";
 			break;
 		case State.Review:
-			state = "Review";
+			state = "review";
 			break;
 	}
 

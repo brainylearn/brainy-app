@@ -5,7 +5,11 @@ use thiserror::Error;
 use crate::{
     Guid,
     cells::{
-        entities::cell::{Cell, CellType},
+        entities::{
+            cell::{Cell, CellType},
+            repetition::Repetition,
+            review::Rating,
+        },
         repositories::traits::cell_repository::{CellRepository, MoveDirection},
         value_objects::cell_deletion_request::CellDeletionRequest,
     },
@@ -82,6 +86,16 @@ impl CellService {
         self.cell_repository.update(&cell).await?;
 
         Ok(())
+    }
+
+    // TODO: unit test
+    pub async fn register_review(
+        &self,
+        new_repetition: Repetition,
+        rating: Rating,
+        study_time: u32,
+    ) {
+        // TODO: implementation, return value
     }
 }
 
