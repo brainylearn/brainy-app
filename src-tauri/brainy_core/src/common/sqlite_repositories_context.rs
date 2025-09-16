@@ -58,7 +58,7 @@ impl SqliteRepositoriesContext {
             file_repository: Arc::new(SqliteFileRepository::new(arc_pool.clone(), tx.clone())),
             folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
             cell_repository: Arc::new(SqliteCellRepository::new(arc_pool.clone(), tx.clone())),
-            review_repository: Arc::new(SqliteReviewRepository::new(arc_pool.clone(), tx.clone())),
+            review_repository: Arc::new(SqliteReviewRepository::new(tx.clone())),
         })
     }
 

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use chrono::Utc;
 use thiserror::Error;
 
 use crate::{
@@ -8,9 +9,12 @@ use crate::{
         entities::{
             cell::{Cell, CellType},
             repetition::Repetition,
-            review::Rating,
+            review::{Rating, Review},
         },
-        repositories::traits::cell_repository::{CellRepository, MoveDirection},
+        repositories::traits::{
+            cell_repository::{CellRepository, MoveDirection},
+            review_repository::ReviewRepository,
+        },
         value_objects::cell_deletion_request::CellDeletionRequest,
     },
     common::repository_error::RepositoryError,
@@ -24,11 +28,18 @@ pub enum CellServiceError {
 
 pub struct CellService {
     cell_repository: Arc<dyn CellRepository>,
+    review_repository: Arc<dyn ReviewRepository>,
 }
 
 impl CellService {
-    pub fn new(cell_repository: Arc<dyn CellRepository>) -> Self {
-        Self { cell_repository }
+    pub fn new(
+        cell_repository: Arc<dyn CellRepository>,
+        review_repository: Arc<dyn ReviewRepository>,
+    ) -> Self {
+        Self {
+            cell_repository,
+            review_repository,
+        }
     }
 
     pub async fn create_cell(
@@ -53,6 +64,7 @@ impl CellService {
     }
 
     pub async fn delete_by_id(&self, id: Guid) -> Result<(), CellServiceError> {
+        log::info!("Deleting cell with id {id}.");
         let cell = self.cell_repository.get_by_id(id).await?;
 
         self.cell_repository
@@ -66,6 +78,7 @@ impl CellService {
     }
 
     pub async fn move_cell(&self, id: Guid, new_index: u32) -> Result<(), CellServiceError> {
+        log::info!("Moving cell with id {id} to new index {new_index}.");
         let mut cell = self.cell_repository.get_by_id(id).await?;
 
         let new_index = if new_index > cell.index() {
@@ -88,14 +101,36 @@ impl CellService {
         Ok(())
     }
 
-    // TODO: unit test
     pub async fn register_review(
         &self,
         new_repetition: Repetition,
         rating: Rating,
         study_time: u32,
-    ) {
-        // TODO: implementation, return value
+    ) -> Result<(), CellServiceError> {
+        log::info!("Registering review for repetition with id {}, and rating {rating:?}, and study time of {study_time} seconds.", new_repetition.id);
+
+        let mut cell = self.cell_repository.get_by_id(new_repetition.cell_id).await?;
+        if let Some(element) = cell
+            .repetitions
+            .iter_mut()
+            .find(|r| r.id == new_repetition.id)
+        {
+            *element = new_repetition;
+        } else {
+            panic!("Cannot find repetition with specified id!");
+        }
+        self.cell_repository.update(&cell).await?;
+
+        let review = Review::new(
+            None,
+            Some(cell.id()),
+            study_time,
+            Utc::now().to_utc(),
+            rating,
+        );
+        self.review_repository.create(&review).await?;
+
+        Ok(())
     }
 }
 
@@ -114,7 +149,7 @@ pub mod tests {
 
     async fn create_test_dependencies() -> (SqliteRepositoriesContext, CellService) {
         let context = SqliteRepositoriesContext::create_testing_context().await;
-        let service = CellService::new(context.cell_repository());
+        let service = CellService::new(context.cell_repository(), context.review_repository());
 
         (context, service)
     }
@@ -316,5 +351,48 @@ pub mod tests {
 
         assert_eq!(actual_cells[4].id(), cells[4].id());
         assert_eq!(actual_cells[4].index(), 4);
+    }
+
+    #[tokio::test]
+    pub async fn register_review_updated_repetition_and_created_review() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let content = r#"
+            <cloze index="1">Test</cloze>
+        "#.to_string();
+        let cell = Cell::new(None, file.id(), content, CellType::Cloze, 0);
+
+        context.cell_repository().create(&cell).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        let new_repetition = Repetition {
+            id: cell.repetitions()[0].id,
+            cell_id: cell.id(),
+            file_id: cell.file_id(),
+            stability: 5.4f64,
+            ..Default::default()
+        };
+
+        // Act
+
+        service.register_review(new_repetition.clone(), Rating::Hard, 10).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = context
+            .cell_repository()
+            .get_by_id(cell.id())
+            .await
+            .unwrap();
+
+        assert_eq!(actual.repetitions()[0].stability, new_repetition.stability);
+        // TODO: check that review has been created
+        // TODO: check that deleting cell does not delete review
     }
 }

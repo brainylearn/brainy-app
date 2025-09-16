@@ -38,7 +38,7 @@ pub struct Cell {
     cell_type: CellType,
     searchable_content: String,
     index: u32,
-    repetitions: Vec<Repetition>,
+    pub(in crate::cells) repetitions: Vec<Repetition>,
 }
 
 impl Cell {

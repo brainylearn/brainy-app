@@ -69,7 +69,7 @@ pub async fn run() -> Result<(), String> {
                 repositories_context.folder_repository(),
                 repositories_context.file_repository(),
             ));
-            app.manage(CellService::new(repositories_context.cell_repository()));
+            app.manage(CellService::new(repositories_context.cell_repository(), repositories_context.review_repository()));
             app.manage(
                 Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
             );

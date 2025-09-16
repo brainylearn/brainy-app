@@ -13,7 +13,7 @@ use crate::{
     dto::home_statistics::HomeStatistics,
     entity::{
         repetition,
-        review::{self, Rating},
+        review::{self},
     },
     util::database_util::DateTimeToDate,
 };
@@ -113,54 +113,6 @@ where
     }
 
     Ok(hash_map)
-}
-
-pub async fn register_review(
-    db_conn: &DbConn,
-    new_repetition: repetition::Model,
-    rating: Rating,
-    study_time: i32,
-) -> Result<(), String> {
-    let repetition_active_entity = repetition::ActiveModel {
-        id: Set(new_repetition.id),
-        file_id: Set(new_repetition.file_id),
-        cell_id: Set(new_repetition.cell_id),
-        due: Set(new_repetition.due),
-        stability: Set(new_repetition.stability),
-        difficulty: Set(new_repetition.difficulty),
-        elapsed_days: Set(new_repetition.elapsed_days),
-        scheduled_days: Set(new_repetition.scheduled_days),
-        reps: Set(new_repetition.reps),
-        lapses: Set(new_repetition.lapses),
-        state: Set(new_repetition.state),
-        last_review: Set(new_repetition.last_review),
-        additional_content: Set(new_repetition.additional_content),
-    };
-    let txn = match db_conn.begin().await {
-        Ok(txn) => txn,
-        Err(err) => return Err(err.to_string()),
-    };
-
-    if let Err(err) = repetition_active_entity.update(&txn).await {
-        return Err(err.to_string());
-    }
-
-    let review_active_entity = review::ActiveModel {
-        cell_id: Set(Some(new_repetition.cell_id)),
-        date: Set(Utc::now().to_utc()),
-        rating: Set(rating),
-        study_time: Set(study_time),
-        ..Default::default()
-    };
-    if let Err(err) = review_active_entity.insert(&txn).await {
-        return Err(err.to_string());
-    }
-
-    let result = txn.commit().await;
-    match result {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.to_string()),
-    }
 }
 
 // #[cfg(test)]
