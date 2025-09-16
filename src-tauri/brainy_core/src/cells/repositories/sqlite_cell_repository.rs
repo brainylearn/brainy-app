@@ -392,7 +392,6 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    // TODO: unit test
     async fn get_study_repetitions_for_all_files(
         &self,
     ) -> Result<HashMap<Guid, FileRepetitionCounts>, RepositoryError> {
@@ -900,5 +899,106 @@ pub mod tests {
         assert_eq!(1, actual.learning);
         assert_eq!(1, actual.relearning);
         assert_eq!(1, actual.review);
+    }
+
+    #[tokio::test]
+    pub async fn get_study_repetitions_for_all_files_valid_input_returned_count_correctly() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file1 = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file2 = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test2".try_into().unwrap());
+        context.file_repository().create(&file1).await.unwrap();
+        context.file_repository().create(&file2).await.unwrap();
+
+        let cell1_id = Guid::new_v4();
+        let cell1 = Cell::new_unchecked(
+            Some(cell1_id),
+            file1.id(),
+            "".to_string(),
+            CellType::Cloze,
+            0,
+            "".to_string(),
+            vec![
+                Repetition {
+                    cell_id: cell1_id,
+                    file_id: file1.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::New,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id: cell1_id,
+                    file_id: file1.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::New,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id: cell1_id,
+                    file_id: file1.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Learning,
+                    ..Default::default()
+                },
+            ],
+        );
+
+        let cell2_id = Guid::new_v4();
+        let cell2 = Cell::new_unchecked(
+            Some(cell2_id),
+            file2.id(),
+            "".to_string(),
+            CellType::Cloze,
+            0,
+            "".to_string(),
+            vec![
+                Repetition {
+                    cell_id: cell2_id,
+                    file_id: file2.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Relearning,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id: cell2_id,
+                    file_id: file2.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Review,
+                    ..Default::default()
+                },
+                // Due later.
+                Repetition {
+                    cell_id: cell2_id,
+                    file_id: file2.id(),
+                    due: Utc::now().to_utc() + Duration::days(1),
+                    state: State::New,
+                    additional_content: Some("6".to_string()),
+                    ..Default::default()
+                },
+            ],
+        );
+        context.cell_repository().create(&cell1).await.unwrap();
+        context.cell_repository().create(&cell2).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .cell_repository()
+            .get_study_repetitions_for_all_files()
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(1, actual[&file1.id()].learning);
+        assert_eq!(2, actual[&file1.id()].new);
+        assert_eq!(0, actual[&file1.id()].relearning);
+
+        assert_eq!(0, actual[&file2.id()].new);
+        assert_eq!(1, actual[&file2.id()].relearning);
+        assert_eq!(1, actual[&file2.id()].review);
     }
 }

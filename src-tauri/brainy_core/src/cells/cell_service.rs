@@ -107,9 +107,15 @@ impl CellService {
         rating: Rating,
         study_time: u32,
     ) -> Result<(), CellServiceError> {
-        log::info!("Registering review for repetition with id {}, and rating {rating:?}, and study time of {study_time} seconds.", new_repetition.id);
+        log::info!(
+            "Registering review for repetition with id {}, and rating {rating:?}, and study time of {study_time} seconds.",
+            new_repetition.id
+        );
 
-        let mut cell = self.cell_repository.get_by_id(new_repetition.cell_id).await?;
+        let mut cell = self
+            .cell_repository
+            .get_by_id(new_repetition.cell_id)
+            .await?;
         if let Some(element) = cell
             .repetitions
             .iter_mut()
@@ -364,7 +370,8 @@ pub mod tests {
 
         let content = r#"
             <cloze index="1">Test</cloze>
-        "#.to_string();
+        "#
+        .to_string();
         let cell = Cell::new(None, file.id(), content, CellType::Cloze, 0);
 
         context.cell_repository().create(&cell).await.unwrap();
@@ -380,7 +387,10 @@ pub mod tests {
 
         // Act
 
-        service.register_review(new_repetition.clone(), Rating::Hard, 10).await.unwrap();
+        service
+            .register_review(new_repetition.clone(), Rating::Hard, 10)
+            .await
+            .unwrap();
         context.save_changes().await.unwrap();
 
         // Assert

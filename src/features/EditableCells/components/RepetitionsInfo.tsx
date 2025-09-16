@@ -40,8 +40,10 @@ function RepetitionsInfo({ repetitions, cellType }: Props) {
 					<p>Lapses: {repetition.lapses}</p>
 					<p>State: {repetition.state}</p>
 					<p>
-						Last review:
-						{repetition.lastReview ? repetitionsInfoFormatDate(repetition.lastReview) : "no review yet"}
+						Last review:{" "}
+						{repetition.lastReview
+							? repetitionsInfoFormatDate(repetition.lastReview)
+							: "no review yet"}
 					</p>
 				</div>
 			))}

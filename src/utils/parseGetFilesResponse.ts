@@ -6,11 +6,15 @@ import ParsedFolder from "../types/parsedFolder";
 function parseGetFilesResponse(
 	files: FileWithRepetitionCounts[],
 ): ParsedFolder {
-    const rootFolder = files.find(f => f.id === ROOT_FOLDER_ID)!;
-    const filesWithoutRootFolder = files
-        .filter(f => f.id !== ROOT_FOLDER_ID)
-        .map(f => ({...f, path: f.path.substring("/root/".length)}));
-	return parseGetFilesResponseHelper(filesWithoutRootFolder, rootFolder.path, rootFolder.id);
+	const rootFolder = files.find(f => f.id === ROOT_FOLDER_ID)!;
+	const filesWithoutRootFolder = files
+		.filter(f => f.id !== ROOT_FOLDER_ID)
+		.map(f => ({ ...f, path: f.path.substring("/root/".length) }));
+	return parseGetFilesResponseHelper(
+		filesWithoutRootFolder,
+		rootFolder.path,
+		rootFolder.id,
+	);
 }
 
 function parseGetFilesResponseHelper(

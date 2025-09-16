@@ -8,7 +8,9 @@ function createCardFromRepetition(repetition: Repetition): Card {
 	card.lapses = repetition.lapses;
 	card.difficulty = repetition.difficulty;
 	card.elapsed_days = repetition.elapsedDays;
-	card.last_review = repetition.lastReview ? new Date(repetition.lastReview) : undefined;
+	card.last_review = repetition.lastReview
+		? new Date(repetition.lastReview)
+		: undefined;
 	card.stability = repetition.stability;
 	card.scheduled_days = repetition.scheduledDays;
 

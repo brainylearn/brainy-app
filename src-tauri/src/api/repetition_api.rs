@@ -54,7 +54,6 @@ pub async fn get_repetitions_for_files(
     Ok(repetitions)
 }
 
-// TODO: test in app
 #[tauri::command]
 pub async fn reset_repetitions_for_cell(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,

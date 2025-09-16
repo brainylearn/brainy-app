@@ -19,11 +19,11 @@
 	font-weight: 600;
 	padding: var(--smalll-padding);
 	margin-left: 4px;
-    margin-top: var(--default-padding);
+	margin-top: var(--default-padding);
 	border: 1px solid transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 
 	&:hover {
 		opacity: 0.8;

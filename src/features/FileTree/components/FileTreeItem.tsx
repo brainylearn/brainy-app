@@ -26,7 +26,10 @@ import { exportItem } from "../../../api/exportImportApi";
 import FileTreeItemRow from "./FileTreeItemRow";
 import FileTreeItemChildren from "./FileTreeItemChildren";
 import errorToString from "../../../utils/errorToString";
-import { fileIdQueryParameter, ROOT_FOLDER_ID } from "../../../config/constants";
+import {
+	fileIdQueryParameter,
+	ROOT_FOLDER_ID,
+} from "../../../config/constants";
 import { useNavigate, useSearchParams } from "react-router";
 import {
 	dragFormatForFile,

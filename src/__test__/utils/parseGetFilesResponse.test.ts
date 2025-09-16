@@ -8,11 +8,11 @@ describe(parseGetFilesResponse, () => {
 		// Arrange
 
 		const response: FileWithRepetitionCounts[] = [
-            {
-                id: ROOT_FOLDER_ID,
-                path: "/root/",
-                isFolder: true,
-            },
+			{
+				id: ROOT_FOLDER_ID,
+				path: "/root/",
+				isFolder: true,
+			},
 			{
 				id: "1",
 				path: "/root/file 1",

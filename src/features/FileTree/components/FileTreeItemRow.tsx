@@ -80,7 +80,7 @@ function FileTreeItemRow({
 		onRenameEnd();
 	};
 
-    // TODO: on ESC on input call stop renaming and creating
+	// TODO: on ESC on input call stop renaming and creating
 	return (
 		<>
 			<div

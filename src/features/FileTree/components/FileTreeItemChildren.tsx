@@ -48,7 +48,7 @@ function FileTreeItemChildren({
 		if (creatingNewFolder) {
 			await dispatch(createFolder(newItemName, folder.id));
 		} else if (creatingNewFile) {
-            console.log(folder.id);
+			console.log(folder.id);
 			await dispatch(createFile(newItemName, folder.id));
 		}
 		setNewItemName("");

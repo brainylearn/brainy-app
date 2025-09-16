@@ -31,7 +31,7 @@ describe(createCardFromRepetition, () => {
 				scheduledDays: 6,
 				cellId: "99",
 				fileId: "99",
-                additionalContent: null,
+				additionalContent: null,
 			};
 			const expected: Card = {
 				due: new Date("2000/12/12"),

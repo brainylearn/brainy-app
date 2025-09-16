@@ -13,6 +13,7 @@ pub async fn get_settings() -> Result<Settings, ()> {
     Ok(settings_service::get_settings())
 }
 
+// TODO:
 #[tauri::command]
 pub async fn update_settings(
     db_conn: State<'_, Mutex<DbConn>>,

@@ -16,7 +16,7 @@ pub enum Rating {
 #[serde(rename_all = "camelCase")]
 pub struct Review {
     pub(in crate::cells) id: Guid,
-    /// Review can should exist even when the cell is deleted. 
+    /// Review can should exist even when the cell is deleted.
     pub(in crate::cells) cell_id: Option<Guid>,
     pub(in crate::cells) study_time: u32,
     pub(in crate::cells) date: DateTime<Utc>,
