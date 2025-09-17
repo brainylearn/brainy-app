@@ -24,6 +24,7 @@ function Home({ onStudyClick, onError }: Props) {
 	);
 	const dispatch = useAppDispatch();
 	const rootFolder = useAppSelector(selectRootFolder);
+    console.log(homeStatistics);
 
 	useEffect(() => {
 		void dispatch(fetchFiles());

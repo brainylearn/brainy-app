@@ -1,24 +1,23 @@
 use std::sync::Arc;
 
-use crate::{api::ApiError, dto::home_statistics::HomeStatistics, service::review_service};
+use crate::api::ApiError;
 use brainy_core::{
     cells::{
         cell_service::CellService,
-        entities::{repetition::Repetition, review::Rating},
+        entities::{repetition::Repetition, review::Rating}, models::home_statistics::HomeStatistics,
     },
     common::traits::repositories_context::RepositoriesContext,
 };
-use sea_orm::DbConn;
 use tauri::State;
 use tokio::sync::Mutex;
 
-// TODO:
 #[tauri::command]
 pub async fn get_home_statistics(
-    db_conn: State<'_, Mutex<DbConn>>,
-) -> Result<HomeStatistics, String> {
-    let db_conn = db_conn.lock().await;
-    review_service::get_home_statistics(&db_conn).await
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+) -> Result<HomeStatistics, ApiError> {
+    let context = context.lock().await;
+    let result = context.cell_repository().get_home_statistics().await?;
+    Ok(result)
 }
 
 #[tauri::command]

@@ -4,11 +4,9 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Guid,
     cells::{
-        entities::repetition::Repetition,
-        value_objects::{flash_card::FlashCard, true_false::TrueFalse},
-    },
+        entities::repetition::Repetition, models::{flash_card::FlashCard, true_false::TrueFalse},
+    }, Guid
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

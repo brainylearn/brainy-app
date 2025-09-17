@@ -228,7 +228,7 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 					<ButtonRow
 						startTime={startTime.current}
 						disabled={isSendingRequest}
-						onClick={() => void handleGradeSubmit(Rating.Good)}
+						onClick={grade => void handleGradeSubmit(grade)}
 						recordLog={recordLog}
 					/>
 				)}

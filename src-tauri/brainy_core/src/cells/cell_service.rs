@@ -4,20 +4,16 @@ use chrono::Utc;
 use thiserror::Error;
 
 use crate::{
-    Guid,
     cells::{
         entities::{
             cell::{Cell, CellType},
             repetition::Repetition,
             review::{Rating, Review},
-        },
-        repositories::traits::{
+        }, models::cell_deletion_request::CellDeletionRequest, repositories::traits::{
             cell_repository::{CellRepository, MoveDirection},
             review_repository::ReviewRepository,
-        },
-        value_objects::cell_deletion_request::CellDeletionRequest,
-    },
-    common::repository_error::RepositoryError,
+        }
+    }, common::repository_error::RepositoryError, Guid
 };
 
 #[derive(Error, Debug, PartialEq, Eq)]

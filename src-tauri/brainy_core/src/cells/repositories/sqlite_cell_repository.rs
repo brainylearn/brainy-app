@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{Datelike, NaiveDate, NaiveTime, Utc};
 use rand::SeedableRng;
 use rand::seq::SliceRandom;
 use rand_chacha::ChaCha8Rng;
@@ -15,13 +15,13 @@ use crate::{
             cell::Cell,
             repetition::{Repetition, State},
         },
+        models::{
+            cell_deletion_request::CellDeletionRequest,
+            file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics,
+        },
         repositories::{
             sqlite_rows::cell_row::{CellRow, RepetitionRow, convert_rows_to_cells},
             traits::cell_repository::{CellRepository, MoveDirection},
-        },
-        value_objects::{
-            cell_deletion_request::CellDeletionRequest,
-            file_repetitions_count::FileRepetitionCounts,
         },
     },
     common::repository_error::RepositoryError,
@@ -431,7 +431,102 @@ impl CellRepository for SqliteCellRepository {
             }
         }
     }
+
+    // TODO: unit tests
+    async fn get_home_statistics(&self) -> Result<HomeStatistics, RepositoryError> {
+        let start_of_today = Utc::now()
+            .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+            .unwrap();
+
+        let end_of_today = Utc::now()
+            .with_time(NaiveTime::from_hms_opt(23, 59, 59).unwrap())
+            .unwrap();
+
+        let row = sqlx::query!(
+            r#"
+                SELECT COUNT(*) AS "count: u64", SUM(study_time) AS "total_study_time: u64"
+                FROM reviews
+                WHERE $1 <= date AND date <= $2
+            "#,
+            start_of_today,
+            end_of_today
+        )
+        .fetch_one(&*self.pool)
+        .await;
+
+        let (number_of_reviews, total_study_time) = match row {
+            Ok(result) => (result.count, result.total_study_time.unwrap_or(0)),
+            Err(err) => return Err(RepositoryError::UnknownError(err.to_string())),
+        };
+
+        let start_of_year = Utc::now()
+            .with_month(1)
+            .unwrap()
+            .with_day(1)
+            .unwrap()
+            .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+            .unwrap();
+        let end_of_year = Utc::now()
+            .with_month(12)
+            .unwrap()
+            .with_day(31)
+            .unwrap()
+            .with_time(NaiveTime::from_hms_opt(11, 59, 59).unwrap())
+            .unwrap();
+
+        let rows = sqlx::query!(
+            r#"
+                SELECT date(date) AS "date: NaiveDate", COUNT(*) AS "count: u64"
+                FROM reviews
+                WHERE $1 <= date AND date <= $2
+                GROUP BY date(date)
+            "#,
+            start_of_year,
+            end_of_year
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        if let Err(err) = rows {
+            return Err(RepositoryError::UnknownError(err.to_string()));
+        }
+
+        let mut review_counts: HashMap<NaiveDate, u64> = HashMap::new();
+        for row in rows.unwrap() {
+            review_counts.insert(row.date.unwrap(), row.count);
+        }
+
+        let rows = sqlx::query!(
+            r#"
+                SELECT date(due) AS "due: NaiveDate", COUNT(*) AS "count: u64"
+                FROM repetitions
+                WHERE $1 <= due AND due <= $2
+                GROUP BY date(due)
+            "#,
+            start_of_year,
+            end_of_year
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        if let Err(err) = rows {
+            return Err(RepositoryError::UnknownError(err.to_string()));
+        }
+
+        let mut due_counts: HashMap<NaiveDate, u64> = HashMap::new();
+        for row in rows.unwrap() {
+            due_counts.insert(row.due.unwrap(), row.count);
+        }
+
+        Ok(HomeStatistics {
+            number_of_reviews,
+            total_time: total_study_time,
+            review_counts,
+            due_counts,
+        })
+    }
 }
+// TODO: replace all u32 with u64
 
 impl SqliteCellRepository {
     async fn upsert_repetitions(

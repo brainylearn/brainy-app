@@ -1,12 +1,10 @@
 use std::collections::{HashMap, VecDeque};
 
 use brainy_core::{
-    Guid,
-    cells::value_objects::file_repetitions_count::FileRepetitionCounts,
-    file_system::{
+    cells::models::file_repetitions_count::FileRepetitionCounts, file_system::{
         entities::{file::File, folder::Folder},
         value_objects::path::Path,
-    },
+    }, Guid
 };
 use serde::Serialize;
 
