@@ -3,9 +3,15 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 
 use crate::{
+    Guid,
     cells::{
-        entities::{cell::Cell, repetition::Repetition}, models::{cell_deletion_request::CellDeletionRequest, file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics}, 
-    }, common::repository_error::RepositoryError, Guid
+        entities::{cell::Cell, repetition::Repetition},
+        models::{
+            cell_deletion_request::CellDeletionRequest,
+            file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics,
+        },
+    },
+    common::repository_error::RepositoryError,
 };
 
 #[async_trait]
@@ -53,9 +59,7 @@ pub trait CellRepository: Send + Sync {
         &self,
     ) -> Result<HashMap<Guid, FileRepetitionCounts>, RepositoryError>;
 
-    async fn get_home_statistics(
-        &self,
-    ) -> Result<HomeStatistics, RepositoryError>;
+    async fn get_home_statistics(&self) -> Result<HomeStatistics, RepositoryError>;
 }
 
 #[derive(PartialEq, Eq)]

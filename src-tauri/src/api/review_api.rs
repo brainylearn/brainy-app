@@ -4,7 +4,8 @@ use crate::api::ApiError;
 use brainy_core::{
     cells::{
         cell_service::CellService,
-        entities::{repetition::Repetition, review::Rating}, models::home_statistics::HomeStatistics,
+        entities::{repetition::Repetition, review::Rating},
+        models::home_statistics::HomeStatistics,
     },
     common::traits::repositories_context::RepositoriesContext,
 };

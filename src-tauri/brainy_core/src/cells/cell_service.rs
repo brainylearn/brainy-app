@@ -4,16 +4,20 @@ use chrono::Utc;
 use thiserror::Error;
 
 use crate::{
+    Guid,
     cells::{
         entities::{
             cell::{Cell, CellType},
             repetition::Repetition,
             review::{Rating, Review},
-        }, models::cell_deletion_request::CellDeletionRequest, repositories::traits::{
+        },
+        models::cell_deletion_request::CellDeletionRequest,
+        repositories::traits::{
             cell_repository::{CellRepository, MoveDirection},
             review_repository::ReviewRepository,
-        }
-    }, common::repository_error::RepositoryError, Guid
+        },
+    },
+    common::repository_error::RepositoryError,
 };
 
 #[derive(Error, Debug, PartialEq, Eq)]
@@ -398,7 +402,12 @@ pub mod tests {
             .unwrap();
 
         assert_eq!(actual.repetitions()[0].stability, new_repetition.stability);
-        // TODO: check that review has been created
-        // TODO: check that deleting cell does not delete review
+
+        let home_statistics = context
+            .cell_repository()
+            .get_home_statistics()
+            .await
+            .unwrap();
+        assert_eq!(1, home_statistics.number_of_reviews);
     }
 }

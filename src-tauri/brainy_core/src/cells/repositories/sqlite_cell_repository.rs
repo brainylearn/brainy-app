@@ -526,7 +526,6 @@ impl CellRepository for SqliteCellRepository {
         })
     }
 }
-// TODO: replace all u32 with u64
 
 impl SqliteCellRepository {
     async fn upsert_repetitions(
@@ -613,7 +612,7 @@ pub mod tests {
 
     use crate::{
         ROOT_FOLDER_ID,
-        cells::entities::cell::CellType,
+        cells::entities::{cell::CellType, review::Review},
         common::{
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
@@ -1095,5 +1094,125 @@ pub mod tests {
         assert_eq!(0, actual[&file2.id()].new);
         assert_eq!(1, actual[&file2.id()].relearning);
         assert_eq!(1, actual[&file2.id()].review);
+    }
+
+    #[tokio::test]
+    async fn get_home_statistics_with_reviews_returned_correct_statistics() {
+        // Arrange
+
+        let mut context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        context.file_repository().create(&file).await.unwrap();
+
+        let cell_id = Guid::new_v4();
+        let cell = Cell::new_unchecked(
+            Some(cell_id),
+            file.id(),
+            "".to_string(),
+            CellType::Cloze,
+            0,
+            "".to_string(),
+            vec![
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::New,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::New,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Learning,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Relearning,
+                    ..Default::default()
+                },
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc(),
+                    state: State::Review,
+                    ..Default::default()
+                },
+                // Due later.
+                Repetition {
+                    cell_id,
+                    file_id: file.id(),
+                    due: Utc::now().to_utc() + Duration::days(5),
+                    state: State::New,
+                    additional_content: Some("6".to_string()),
+                    ..Default::default()
+                },
+            ],
+        );
+        context.cell_repository().create(&cell).await.unwrap();
+
+        context
+            .review_repository()
+            .create(&Review {
+                date: Utc::now().to_utc(),
+                study_time: 10,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        context
+            .review_repository()
+            .create(&Review {
+                date: Utc::now().to_utc(),
+                study_time: 10,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        context
+            .review_repository()
+            .create(&Review {
+                date: Utc::now().to_utc() - Duration::days(1),
+                study_time: 5,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .cell_repository()
+            .get_home_statistics()
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(2, actual.number_of_reviews);
+        assert_eq!(20, actual.total_time);
+        assert_eq!(2, actual.review_counts[&Utc::now().date_naive()]);
+        assert_eq!(
+            1,
+            actual.review_counts[&(Utc::now().to_utc() - Duration::days(1)).date_naive()]
+        );
+        assert_eq!(5, actual.due_counts[&Utc::now().date_naive()]);
+        assert_eq!(
+            1,
+            actual.due_counts[&(Utc::now().to_utc() + Duration::days(5)).date_naive()]
+        );
     }
 }

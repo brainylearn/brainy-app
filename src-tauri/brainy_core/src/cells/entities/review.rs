@@ -12,7 +12,7 @@ pub enum Rating {
     Easy,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Review {
     pub(in crate::cells) id: Guid,
@@ -37,6 +37,18 @@ impl Review {
             study_time,
             date,
             rating,
+        }
+    }
+}
+
+impl Default for Review {
+    fn default() -> Self {
+        Self {
+            id: Guid::new_v4(),
+            cell_id: Default::default(),
+            study_time: Default::default(),
+            date: Default::default(),
+            rating: Default::default(),
         }
     }
 }
