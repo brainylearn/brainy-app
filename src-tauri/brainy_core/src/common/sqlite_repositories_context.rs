@@ -44,8 +44,9 @@ pub enum SqliteRepositoriesContextError {
 impl SqliteRepositoriesContext {
     /// Creates a new instance with the url provided, be aware the the migrations
     /// are automatically applied!
-    pub async fn new_with_migration(url: &str) -> Result<Self, SqliteRepositoriesContextError> {
-        let options = SqliteConnectOptions::from_str(url)?;
+    pub async fn new_with_migration(path: &str) -> Result<Self, SqliteRepositoriesContextError> {
+        let url = format!("sqlite:///{path}?mode=rwc");
+        let options = SqliteConnectOptions::from_str(&url)?;
         let pool = SqlitePoolOptions::new().connect_with(options).await?;
         sqlx::migrate!("./db/").run(&pool).await?;
 

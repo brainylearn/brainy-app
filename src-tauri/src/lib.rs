@@ -1,9 +1,7 @@
 mod api;
 mod dto;
 mod entity;
-mod migration;
 mod service;
-mod util;
 mod value_objects;
 
 // TODO: look at sending files to frontend without any conversion, see dto and value objects
@@ -16,30 +14,25 @@ use brainy_core::{
         sqlite_repositories_context::SqliteRepositoriesContext,
         traits::repositories_context::RepositoriesContext,
     },
-    file_system::file_system_service::FileSystemService,
+    file_system::file_system_service::FileSystemService, settings::Settings,
 };
-use service::settings_service;
 use tauri::Manager;
 
 use api::*;
 use tauri_plugin_window_state::StateFlags;
 use tokio::sync::Mutex;
-use util::database_util::load_database;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
-    settings_service::init_settings();
+    let settings = &Settings::init_settings_and_get().await.unwrap();
 
-    // TODO: fix path
     let repositories_context = SqliteRepositoriesContext::new_with_migration(
-        "sqlite:////home/ramikw/Downloads/test.db?mode=rwc",
+        &settings.database_location
     )
     .await
     .unwrap();
-
-    let db_conn = load_database(&settings_service::get_settings().database_location).await;
 
     let mut tauri_builder = tauri::Builder::default();
 
@@ -64,7 +57,6 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
-            app.manage(Mutex::new(db_conn));
             app.manage(FileSystemService::new(
                 repositories_context.folder_repository(),
                 repositories_context.file_repository(),

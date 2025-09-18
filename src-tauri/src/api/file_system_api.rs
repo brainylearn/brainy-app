@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use brainy_core::{
-    Guid, common::traits::repositories_context::RepositoriesContext,
-    file_system::file_system_service::FileSystemService,
+    common::{traits::repositories_context::RepositoriesContext}, file_system::file_system_service::FileSystemService, Guid
 };
 use tauri::State;
 use tokio::sync::Mutex;

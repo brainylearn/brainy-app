@@ -2,12 +2,10 @@ use std::sync::Arc;
 
 use crate::{api::ApiError, dto::update_cell_request::UpdateCellRequest};
 use brainy_core::{
-    Guid,
     cells::{
         cell_service::CellService,
         entities::cell::{Cell, CellType},
-    },
-    common::traits::repositories_context::RepositoriesContext,
+    }, common::traits::repositories_context::RepositoriesContext, Guid
 };
 use tauri::State;
 use tokio::sync::Mutex;
