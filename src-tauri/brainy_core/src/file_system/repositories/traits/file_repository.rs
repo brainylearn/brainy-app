@@ -9,6 +9,7 @@ use async_trait::async_trait;
 pub trait FileRepository: Send + Sync {
     async fn get_by_id(&self, id: Guid) -> Result<File, RepositoryError>;
     async fn get_all_files(&self) -> Result<Vec<File>, RepositoryError>;
+    async fn get_folder_files(&self, parent_folder_id: Guid) -> Result<Vec<File>, RepositoryError>;
     async fn exists(
         &self,
         parent_id: Option<Guid>,

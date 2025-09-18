@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use brainy_core::{
-    common::{traits::repositories_context::RepositoriesContext}, file_system::file_system_service::FileSystemService, Guid
+    Guid, common::traits::repositories_context::RepositoriesContext,
+    file_system::file_system_service::FileSystemService,
 };
 use tauri::State;
 use tokio::sync::Mutex;
@@ -26,7 +27,7 @@ pub async fn get_files(
 #[tauri::command]
 pub async fn create_folder(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_system_service: State<'_, FileSystemService>,
+    file_system_service: State<'_, Arc<FileSystemService>>,
     parent_id: Option<Guid>,
     name: String,
 ) -> Result<Guid, ApiError> {
@@ -44,7 +45,7 @@ pub async fn create_folder(
 #[tauri::command]
 pub async fn create_file(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_system_service: State<'_, FileSystemService>,
+    file_system_service: State<'_, Arc<FileSystemService>>,
     parent_id: Option<Guid>,
     name: String,
 ) -> Result<Guid, ApiError> {
@@ -84,7 +85,7 @@ pub async fn delete_folder(
 #[tauri::command]
 pub async fn move_file(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_system_service: State<'_, FileSystemService>,
+    file_system_service: State<'_, Arc<FileSystemService>>,
     file_id: Guid,
     destination_folder_id: Option<Guid>,
 ) -> Result<(), ApiError> {
@@ -99,7 +100,7 @@ pub async fn move_file(
 #[tauri::command]
 pub async fn move_folder(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_system_service: State<'_, FileSystemService>,
+    file_system_service: State<'_, Arc<FileSystemService>>,
     folder_id: Guid,
     destination_folder_id: Option<Guid>,
 ) -> Result<(), ApiError> {
@@ -114,7 +115,7 @@ pub async fn move_folder(
 #[tauri::command]
 pub async fn rename_file(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_system_service: State<'_, FileSystemService>,
+    file_system_service: State<'_, Arc<FileSystemService>>,
     file_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {
@@ -129,7 +130,7 @@ pub async fn rename_file(
 #[tauri::command]
 pub async fn rename_folder(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_system_service: State<'_, FileSystemService>,
+    file_system_service: State<'_, Arc<FileSystemService>>,
     folder_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {

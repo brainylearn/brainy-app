@@ -25,7 +25,7 @@ pub use file_system_api::{
 
 pub use search_api::search_cells;
 
-pub use export_import_api::{export, import};
+pub use export_import_api::{export_file, export_folder, import};
 
 use serde::Serialize;
 pub use settings_api::{get_settings, update_settings};

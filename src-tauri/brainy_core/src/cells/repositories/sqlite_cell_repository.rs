@@ -432,7 +432,6 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    // TODO: unit tests
     async fn get_home_statistics(&self) -> Result<HomeStatistics, RepositoryError> {
         let start_of_today = Utc::now()
             .with_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())

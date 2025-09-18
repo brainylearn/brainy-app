@@ -1,7 +1,4 @@
-
-use brainy_core::
-    settings::Settings
-;
+use brainy_core::settings::Settings;
 use tauri::AppHandle;
 
 use crate::{api::ApiError, dto::update_settings_request::UpdateSettingsRequest};

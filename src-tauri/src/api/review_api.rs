@@ -24,7 +24,7 @@ pub async fn get_home_statistics(
 #[tauri::command]
 pub async fn register_review(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    cell_service: State<'_, CellService>,
+    cell_service: State<'_, Arc<CellService>>,
     new_repetition: Repetition,
     rating: Rating,
     study_time: u32,

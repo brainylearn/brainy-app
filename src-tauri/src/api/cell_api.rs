@@ -2,10 +2,12 @@ use std::sync::Arc;
 
 use crate::{api::ApiError, dto::update_cell_request::UpdateCellRequest};
 use brainy_core::{
+    Guid,
     cells::{
         cell_service::CellService,
         entities::cell::{Cell, CellType},
-    }, common::traits::repositories_context::RepositoriesContext, Guid
+    },
+    common::traits::repositories_context::RepositoriesContext,
 };
 use tauri::State;
 use tokio::sync::Mutex;
@@ -26,7 +28,7 @@ pub async fn get_file_cells_ordered_by_index(
 #[tauri::command]
 pub async fn create_cell(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    cell_service: State<'_, CellService>,
+    cell_service: State<'_, Arc<CellService>>,
     file_id: Guid,
     content: String,
     cell_type: CellType,
@@ -43,7 +45,7 @@ pub async fn create_cell(
 #[tauri::command]
 pub async fn delete_cell(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    cell_service: State<'_, CellService>,
+    cell_service: State<'_, Arc<CellService>>,
     id: Guid,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
@@ -55,7 +57,7 @@ pub async fn delete_cell(
 #[tauri::command]
 pub async fn move_cell(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    cell_service: State<'_, CellService>,
+    cell_service: State<'_, Arc<CellService>>,
     id: Guid,
     new_index: u32,
 ) -> Result<(), ApiError> {

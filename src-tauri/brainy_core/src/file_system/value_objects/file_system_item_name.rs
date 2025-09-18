@@ -1,9 +1,10 @@
 use std::fmt::Display;
 
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// A common value ojbect used to represent the name of a folder or a file.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FileSystemItemName(String);
 
 #[derive(Error, Debug, PartialEq, Eq)]

@@ -22,7 +22,6 @@ import {
 import getFileName from "../utils/getFileName.ts";
 import { requestFailure } from "../../../stores/fileSystem/fileSystemReducers.ts";
 import UiFolder from "../../../types/ui/uiFolder.ts";
-import { exportItem } from "../../../api/exportImportApi";
 import FileTreeItemRow from "./FileTreeItemRow";
 import FileTreeItemChildren from "./FileTreeItemChildren";
 import errorToString from "../../../utils/errorToString";
@@ -36,6 +35,7 @@ import {
 	dragFormatForFolder,
 	jsonFileFilter,
 } from "../config/constants.ts";
+import { exportFile, exportFolder } from "../../../api/exportImportApi.ts";
 
 interface Props {
 	folder: UiFolder | null;
@@ -131,7 +131,7 @@ function FileTreeItem({
 				});
 				if (!savePath) return;
 				try {
-					await exportItem(id, savePath);
+					await (folder ? exportFolder(id, savePath) : exportFile(id, savePath));
 				} catch (e) {
 					console.error(e);
 					dispatch(requestFailure(errorToString(e)));

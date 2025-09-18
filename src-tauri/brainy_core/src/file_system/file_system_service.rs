@@ -4,9 +4,14 @@ use thiserror::Error;
 
 use crate::{
     Guid,
+    cells::{
+        cell_service::{CellService, CellServiceError},
+        repositories::traits::cell_repository::CellRepository,
+    },
     common::repository_error::RepositoryError,
     file_system::{
         entities::{file::File, folder::Folder},
+        models::exported_item::{ExportedItem, ExportedItemType},
         repositories::traits::{
             file_repository::FileRepository, folder_repository::FolderRepository,
         },
@@ -23,22 +28,30 @@ pub enum FileServiceError {
     #[error("Cannot move folder to a nested folder within the current folder")]
     CannotMoveChildIntoInnerFolder,
     #[error("{0}")]
+    CellServiceError(#[from] CellServiceError),
+    #[error("{0}")]
     UnknownRepositoryError(#[from] RepositoryError),
 }
 
 pub struct FileSystemService {
+    cell_service: Arc<CellService>,
     folder_repository: Arc<dyn FolderRepository>,
     file_repository: Arc<dyn FileRepository>,
+    cell_repository: Arc<dyn CellRepository>,
 }
 
 impl FileSystemService {
     pub fn new(
+        cell_service: Arc<CellService>,
         folder_repository: Arc<dyn FolderRepository>,
         file_repository: Arc<dyn FileRepository>,
+        cell_repository: Arc<dyn CellRepository>,
     ) -> Self {
         Self {
+            cell_service,
             folder_repository,
             file_repository,
+            cell_repository,
         }
     }
 
@@ -243,6 +256,98 @@ impl FileSystemService {
         );
         Ok(())
     }
+
+    // TODO: unit test
+    pub async fn convert_folder_to_exported_item(
+        &self,
+        folder_id: Guid,
+    ) -> Result<ExportedItem, FileServiceError> {
+        log::info!("Exporting folder with id {folder_id}.");
+
+        let folder = self.folder_repository.get_by_id(folder_id).await?;
+        let mut children = Vec::new();
+
+        let subfolders = self.folder_repository.get_subfolders(folder_id).await?;
+        for subfolder in subfolders {
+            let subfolder_exported_item =
+                Box::pin(self.convert_folder_to_exported_item(subfolder.id())).await?;
+            children.push(subfolder_exported_item);
+        }
+
+        let files = self.file_repository.get_folder_files(folder_id).await?;
+        for file in files {
+            let file_exported_item = self.convert_file_to_exported_item(file.id()).await?;
+            children.push(file_exported_item);
+        }
+
+        Ok(ExportedItem {
+            name: folder.name(),
+            item_type: ExportedItemType::Folder,
+            cells: None,
+            children: Some(children),
+        })
+    }
+
+    pub async fn convert_file_to_exported_item(
+        &self,
+        file_id: Guid,
+    ) -> Result<ExportedItem, FileServiceError> {
+        log::info!("Exporting file with id {file_id}.");
+
+        let file = self.file_repository.get_by_id(file_id).await?;
+        let cells = self
+            .cell_repository
+            .get_file_cells_ordered_by_index(file_id)
+            .await?;
+        let exported_cells = cells.into_iter().map(|c| c.into()).collect();
+
+        Ok(ExportedItem {
+            name: file.name(),
+            item_type: ExportedItemType::File,
+            cells: Some(exported_cells),
+            children: None,
+        })
+    }
+
+    // TODO: unit test
+    // TODO: remove javascript, see lol html in existing service
+    pub async fn import_exported_item(
+        &self,
+        import_into_folder_id: Guid,
+        exported_item: ExportedItem,
+    ) -> Result<(), FileServiceError> {
+        match exported_item.item_type {
+            ExportedItemType::File => {
+                log::info!("Importing file with name {}.", exported_item.name);
+
+                let file = File::new(None, Some(import_into_folder_id), exported_item.name);
+                self.file_repository.create(&file).await?;
+
+                for (i, cell) in exported_item
+                    .cells
+                    .unwrap_or_default()
+                    .into_iter()
+                    .enumerate()
+                {
+                    self.cell_service
+                        .create_cell(file.id(), cell.content, cell.cell_type, i as u32)
+                        .await?;
+                }
+            }
+            ExportedItemType::Folder => {
+                log::info!("Importing folder with name {}.", exported_item.name);
+
+                let folder = Folder::new(None, Some(import_into_folder_id), exported_item.name);
+                self.folder_repository.create(&folder).await?;
+
+                for child in exported_item.children.unwrap_or_default() {
+                    Box::pin(self.import_exported_item(folder.id(), child)).await?;
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -258,8 +363,13 @@ pub mod tests {
 
     async fn create_test_dependencies() -> (SqliteRepositoriesContext, FileSystemService) {
         let context = SqliteRepositoriesContext::create_testing_context().await;
-        let service =
-            FileSystemService::new(context.folder_repository(), context.file_repository());
+        let cell_service = CellService::new(context.cell_repository(), context.review_repository());
+        let service = FileSystemService::new(
+            Arc::new(cell_service),
+            context.folder_repository(),
+            context.file_repository(),
+            context.cell_repository(),
+        );
 
         (context, service)
     }

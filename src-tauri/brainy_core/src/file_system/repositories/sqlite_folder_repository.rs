@@ -59,6 +59,20 @@ impl FolderRepository for SqliteFolderRepository {
         }
     }
 
+    async fn get_subfolders(&self, parent_folder_id: Guid) -> Result<Vec<Folder>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            FolderRow,
+            r#"SELECT id as "id: _", parent_id as "parent_id: _", name FROM folders WHERE parent_id = $1"#, parent_folder_id
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+        }
+    }
+
     async fn exists(
         &self,
         parent_id: Option<Guid>,

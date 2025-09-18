@@ -2,7 +2,6 @@ mod api;
 mod dto;
 mod entity;
 mod service;
-mod value_objects;
 
 // TODO: look at sending files to frontend without any conversion, see dto and value objects
 // folder, and also delete value objects folder
@@ -14,7 +13,8 @@ use brainy_core::{
         sqlite_repositories_context::SqliteRepositoriesContext,
         traits::repositories_context::RepositoriesContext,
     },
-    file_system::file_system_service::FileSystemService, settings::Settings,
+    file_system::file_system_service::FileSystemService,
+    settings::Settings,
 };
 use tauri::Manager;
 
@@ -28,11 +28,10 @@ pub async fn run() -> Result<(), String> {
 
     let settings = &Settings::init_settings_and_get().await.unwrap();
 
-    let repositories_context = SqliteRepositoriesContext::new_with_migration(
-        &settings.database_location
-    )
-    .await
-    .unwrap();
+    let repositories_context =
+        SqliteRepositoriesContext::new_with_migration(&settings.database_location)
+            .await
+            .unwrap();
 
     let mut tauri_builder = tauri::Builder::default();
 
@@ -57,14 +56,18 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
-            app.manage(FileSystemService::new(
-                repositories_context.folder_repository(),
-                repositories_context.file_repository(),
-            ));
-            app.manage(CellService::new(
+            let cell_service = Arc::new(CellService::new(
                 repositories_context.cell_repository(),
                 repositories_context.review_repository(),
             ));
+            app.manage(cell_service.clone());
+
+            app.manage(Arc::new(FileSystemService::new(
+                cell_service,
+                repositories_context.folder_repository(),
+                repositories_context.file_repository(),
+                repositories_context.cell_repository(),
+            )));
             app.manage(
                 Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
             );
@@ -109,7 +112,8 @@ pub async fn run() -> Result<(), String> {
             get_settings,
             update_settings,
             // Export/Import
-            export,
+            export_file,
+            export_folder,
             import,
         ])
         .run(tauri::generate_context!())

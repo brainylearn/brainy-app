@@ -1,25 +1,34 @@
 use serde::{Deserialize, Serialize};
 
-use crate::entity::cell::{self, CellType};
+use crate::{
+    cells::entities::cell::{Cell, CellType},
+    file_system::value_objects::file_system_item_name::FileSystemItemName,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportedItem {
-    pub path: String,
+    pub name: FileSystemItemName,
     pub item_type: ExportedItemType,
     pub cells: Option<Vec<ExportedCell>>,
     pub children: Option<Vec<ExportedItem>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ExportedItemType {
+    File,
+    Folder,
+}
+
 impl ExportedItem {
     pub fn new(
-        path: String,
+        name: FileSystemItemName,
         item_type: ExportedItemType,
         cells: Option<Vec<ExportedCell>>,
         children: Option<Vec<ExportedItem>>,
     ) -> Self {
         Self {
-            path,
+            name,
             item_type,
             cells,
             children,
@@ -34,17 +43,11 @@ pub struct ExportedCell {
     pub cell_type: CellType,
 }
 
-impl From<cell::Model> for ExportedCell {
-    fn from(value: cell::Model) -> Self {
+impl From<Cell> for ExportedCell {
+    fn from(value: Cell) -> Self {
         ExportedCell {
-            cell_type: value.cell_type,
-            content: value.content,
+            cell_type: value.cell_type().clone(),
+            content: value.content().to_string(),
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ExportedItemType {
-    File,
-    Folder,
 }

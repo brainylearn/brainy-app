@@ -1,8 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
 
-export function exportItem(itemId: string, exportPath: string) {
-	return invoke("export", {
-		itemId,
+export function exportFolder(folderId: string, exportPath: string) {
+	return invoke("export_folder", {
+		folderId,
+		exportPath,
+	});
+}
+
+export function exportFile(fileId: string, exportPath: string) {
+	return invoke("export_file", {
+		fileId,
 		exportPath,
 	});
 }
