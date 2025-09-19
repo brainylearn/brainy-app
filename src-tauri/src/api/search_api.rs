@@ -15,6 +15,7 @@ pub async fn search_cells(
 
     Ok(SearchResult {
         cells,
+        // TODO: repetitions
         repetitions: Vec::new(),
     })
 }

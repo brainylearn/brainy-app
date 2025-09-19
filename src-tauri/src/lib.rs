@@ -1,7 +1,5 @@
 mod api;
 mod dto;
-mod entity;
-mod service;
 
 // TODO: look at sending files to frontend without any conversion, see dto and value objects
 // folder, and also delete value objects folder
@@ -28,10 +26,12 @@ pub async fn run() -> Result<(), String> {
 
     let settings = &Settings::init_settings_and_get().await.unwrap();
 
-    let repositories_context =
-        SqliteRepositoriesContext::new_with_migration(&settings.database_location)
-            .await
-            .unwrap();
+    let repositories_context = SqliteRepositoriesContext::new_with_migration(&format!(
+        "sqlite:///{}",
+        settings.database_location
+    ))
+    .await
+    .unwrap();
 
     let mut tauri_builder = tauri::Builder::default();
 

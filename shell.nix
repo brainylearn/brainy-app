@@ -5,7 +5,6 @@ pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     cargo
     cargo-expand
-    cargo-nextest
     cargo-tauri
     clippy
     gobject-introspection

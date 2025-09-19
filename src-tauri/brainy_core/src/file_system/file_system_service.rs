@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use lol_html::html_content::Element;
+use lol_html::{RewriteStrSettings, element, rewrite_str};
 use thiserror::Error;
 
 use crate::{
@@ -131,13 +133,12 @@ impl FileSystemService {
             });
         }
 
-        if let Some(destination_folder_id) = destination_folder_id {
-            if self
+        if let Some(destination_folder_id) = destination_folder_id
+            && self
                 .is_subfolder_of(folder_id, destination_folder_id)
                 .await?
-            {
-                return Err(FileServiceError::CannotMoveChildIntoInnerFolder);
-            }
+        {
+            return Err(FileServiceError::CannotMoveChildIntoInnerFolder);
         }
 
         folder.set_parent_id(destination_folder_id);
@@ -257,7 +258,6 @@ impl FileSystemService {
         Ok(())
     }
 
-    // TODO: unit test
     pub async fn convert_folder_to_exported_item(
         &self,
         folder_id: Guid,
@@ -309,8 +309,6 @@ impl FileSystemService {
         })
     }
 
-    // TODO: unit test
-    // TODO: remove javascript, see lol html in existing service
     pub async fn import_exported_item(
         &self,
         import_into_folder_id: Guid,
@@ -329,8 +327,9 @@ impl FileSystemService {
                     .into_iter()
                     .enumerate()
                 {
+                    let purified_html = purify_html(&cell.content);
                     self.cell_service
-                        .create_cell(file.id(), cell.content, cell.cell_type, i as u32)
+                        .create_cell(file.id(), purified_html, cell.cell_type, i as u32)
                         .await?;
                 }
             }
@@ -350,11 +349,36 @@ impl FileSystemService {
     }
 }
 
+fn purify_html(html: &str) -> String {
+    let handler = |el: &mut Element| {
+        if el.tag_name().to_lowercase() == "script"
+            || el
+                .attributes()
+                .iter()
+                .any(|attr| attr.name().to_lowercase().starts_with("on"))
+        {
+            el.remove();
+        }
+
+        Ok(())
+    };
+
+    rewrite_str(
+        html,
+        RewriteStrSettings {
+            element_content_handlers: vec![element!("*", handler)],
+            ..RewriteStrSettings::default()
+        },
+    )
+    .unwrap()
+}
+
 #[cfg(test)]
 pub mod tests {
     use super::*;
     use crate::{
         ROOT_FOLDER_ID,
+        cells::entities::cell::CellType,
         common::{
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
@@ -984,7 +1008,7 @@ pub mod tests {
             .create(&Folder::new(
                 Some(parent_folder_id1),
                 Some(ROOT_FOLDER_ID),
-                "parent file 1".try_into().unwrap(),
+                "parent folder 1".try_into().unwrap(),
             ))
             .await
             .unwrap();
@@ -993,7 +1017,7 @@ pub mod tests {
             .create(&Folder::new(
                 Some(parent_folder_id2),
                 Some(ROOT_FOLDER_ID),
-                "parent file 2".try_into().unwrap(),
+                "parent folder 2".try_into().unwrap(),
             ))
             .await
             .unwrap();
@@ -1024,5 +1048,220 @@ pub mod tests {
             .await
             .unwrap();
         assert_eq!(Some(parent_folder_id2), file.parent_id());
+    }
+
+    #[tokio::test]
+    pub async fn convert_folder_to_exported_item_valid_input_converted_folder_and_file() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id = Guid::new_v4();
+        let nested_folder_id = Guid::new_v4();
+        let file_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(nested_folder_id),
+                Some(parent_folder_id),
+                "nested folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(file_id),
+                Some(nested_folder_id),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+
+        service
+            .cell_service
+            .create_cell(file_id, "note 1".to_string(), CellType::Note, 0)
+            .await
+            .unwrap();
+        service
+            .cell_service
+            .create_cell(file_id, "note 2".to_string(), CellType::Note, 1)
+            .await
+            .unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = service
+            .convert_folder_to_exported_item(parent_folder_id)
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(
+            FileSystemItemName::new_unchecked("parent folder".to_string()),
+            actual.name
+        );
+        assert_eq!(None, actual.cells);
+        assert_eq!(ExportedItemType::Folder, actual.item_type);
+
+        let actual_nested_folder = actual.children.unwrap().remove(0);
+        assert_eq!(
+            FileSystemItemName::new_unchecked("nested folder".to_string()),
+            actual_nested_folder.name
+        );
+        assert_eq!(None, actual_nested_folder.cells);
+        assert_eq!(ExportedItemType::Folder, actual_nested_folder.item_type);
+
+        let actual_file = actual_nested_folder.children.unwrap().remove(0);
+        assert_eq!(
+            FileSystemItemName::new_unchecked("file".to_string()),
+            actual_file.name
+        );
+        assert_eq!(ExportedItemType::File, actual_file.item_type);
+
+        let actual_cells = actual_file.cells.unwrap();
+        assert!(
+            actual_cells
+                .iter()
+                .any(|c| c.cell_type == CellType::Note && c.content == "note 1")
+        );
+        assert!(
+            actual_cells
+                .iter()
+                .any(|c| c.cell_type == CellType::Note && c.content == "note 2")
+        );
+    }
+
+    #[tokio::test]
+    pub async fn import_exported_item_valid_input_imported_folders_and_files() {
+        // Arrange
+
+        let (mut context, service) = create_test_dependencies().await;
+
+        let parent_folder_id = Guid::new_v4();
+        let nested_folder_id = Guid::new_v4();
+        let file_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(parent_folder_id),
+                Some(ROOT_FOLDER_ID),
+                "parent folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .folder_repository()
+            .create(&Folder::new(
+                Some(nested_folder_id),
+                Some(parent_folder_id),
+                "nested folder".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+        context
+            .file_repository()
+            .create(&File::new(
+                Some(file_id),
+                Some(nested_folder_id),
+                "file".try_into().unwrap(),
+            ))
+            .await
+            .unwrap();
+
+        service
+            .cell_service
+            .create_cell(file_id, "note 1".to_string(), CellType::Note, 0)
+            .await
+            .unwrap();
+        service
+            .cell_service
+            .create_cell(file_id, "content<script>alert('hello')</script><button onLoad='alert'>button</button>".to_string(), CellType::Note, 1)
+            .await
+            .unwrap();
+
+        context.save_changes().await.unwrap();
+
+        let exported_item = service
+            .convert_folder_to_exported_item(parent_folder_id)
+            .await
+            .unwrap();
+
+        context
+            .folder_repository()
+            .delete_by_id(parent_folder_id)
+            .await
+            .unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        service
+            .import_exported_item(ROOT_FOLDER_ID, exported_item)
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let all_folders = context.folder_repository().get_all_folders().await.unwrap();
+        assert_eq!(3, all_folders.len());
+        let actual_parent_folder = all_folders
+            .iter()
+            .find(|f| {
+                f.name() == FileSystemItemName::new_unchecked("parent folder".to_string())
+                    && f.parent_id().unwrap() == ROOT_FOLDER_ID
+            })
+            .unwrap();
+        let actual_nested_folder = all_folders
+            .iter()
+            .find(|f| {
+                f.name() == FileSystemItemName::new_unchecked("nested folder".to_string())
+                    && f.parent_id().unwrap() == actual_parent_folder.id()
+            })
+            .unwrap();
+
+        let all_files = context.file_repository().get_all_files().await.unwrap();
+        assert_eq!(1, all_files.len());
+        let actual_file = all_files
+            .iter()
+            .find(|f| {
+                f.name() == FileSystemItemName::new_unchecked("file".to_string())
+                    && f.parent_id().unwrap() == actual_nested_folder.id()
+            })
+            .unwrap();
+
+        let all_cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(actual_file.id())
+            .await
+            .unwrap();
+        assert_eq!(2, all_cells.len());
+        assert!(
+            all_cells
+                .iter()
+                .any(|c| c.content() == "note 1" && c.cell_type() == &CellType::Note)
+        );
+        // Verifying that all JS is removed.
+        assert!(
+            all_cells
+                .iter()
+                .all(|c| !c.content().contains("script") && !c.content().contains("onLoad"))
+        );
     }
 }
