@@ -101,8 +101,6 @@ pub async fn run() -> Result<(), String> {
             rename_file,
             rename_folder,
             // Repetitions
-            get_file_repetitions,
-            get_repetitions_for_files,
             get_study_repetition_counts,
             reset_repetitions_for_cell,
             // Review

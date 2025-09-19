@@ -15,7 +15,9 @@ pub async fn update_settings(
 ) -> Result<(), ApiError> {
     let mut settings = Settings::init_settings_and_get().await?;
     let mut restart = false;
-    if let Some(database_location) = new_settings.database_location {
+    if let Some(database_location) = new_settings.database_location
+        && settings.database_location != database_location
+    {
         settings.database_location = database_location;
         restart = true;
     }

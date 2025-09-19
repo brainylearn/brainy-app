@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::api::ApiError;
 use brainy_core::Guid;
-use brainy_core::cells::entities::repetition::Repetition;
 use brainy_core::cells::models::file_repetitions_count::FileRepetitionCounts;
 use brainy_core::common::traits::repositories_context::RepositoriesContext;
 use tauri::State;
@@ -21,37 +20,6 @@ pub async fn get_study_repetition_counts(
         .get_study_repetitions(file_id)
         .await?;
     Ok(result)
-}
-
-#[tauri::command]
-pub async fn get_file_repetitions(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_id: Guid,
-) -> Result<Vec<Repetition>, ApiError> {
-    let context = context.lock().await;
-    let result = context
-        .cell_repository()
-        .get_file_repetitions_shuffled(file_id)
-        .await?;
-    Ok(result)
-}
-
-#[tauri::command]
-pub async fn get_repetitions_for_files(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    file_ids: Vec<Guid>,
-) -> Result<Vec<Repetition>, ApiError> {
-    let context = context.lock().await;
-
-    let mut repetitions = Vec::new();
-    for file_id in file_ids {
-        let mut file_repetitions = context
-            .cell_repository()
-            .get_file_repetitions_shuffled(file_id)
-            .await?;
-        repetitions.append(&mut file_repetitions);
-    }
-    Ok(repetitions)
 }
 
 #[tauri::command]

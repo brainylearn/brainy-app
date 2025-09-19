@@ -131,7 +131,9 @@ function FileTreeItem({
 				});
 				if (!savePath) return;
 				try {
-					await (folder ? exportFolder(id, savePath) : exportFile(id, savePath));
+					await (folder
+						? exportFolder(id, savePath)
+						: exportFile(id, savePath));
 				} catch (e) {
 					console.error(e);
 					dispatch(requestFailure(errorToString(e)));

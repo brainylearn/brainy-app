@@ -1,3 +1,5 @@
+import Repetition from "./repetition";
+
 export type CellType = "FlashCard" | "Note" | "Cloze" | "TrueFalse";
 export const allCellTypes: CellType[] = [
 	"Cloze",
@@ -19,4 +21,5 @@ export default interface Cell {
 	searchableContent: string;
 	cellType: CellType;
 	index: number;
+	repetitions: Repetition[];
 }

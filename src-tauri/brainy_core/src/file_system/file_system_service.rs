@@ -1190,7 +1190,13 @@ pub mod tests {
             .unwrap();
         service
             .cell_service
-            .create_cell(file_id, "content<script>alert('hello')</script><button onLoad='alert'>button</button>".to_string(), CellType::Note, 1)
+            .create_cell(
+                file_id,
+                "content<script>alert('hello')</script><button onLoad='alert'>button</button>"
+                    .to_string(),
+                CellType::Note,
+                1,
+            )
             .await
             .unwrap();
 

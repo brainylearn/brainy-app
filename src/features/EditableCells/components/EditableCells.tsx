@@ -4,7 +4,6 @@ import RenderIfVisible from "../../../components/RenderIfVisible/RenderIfVisible
 import AddCellContainer from "./AddCellContainer";
 import styles from "./styles.module.css";
 import CellBlock from "./CellBlock";
-import Repetition from "../../../types/backend/entity/repetition";
 import createDefaultCell from "../utils/createDefaultCell";
 import { createCell, deleteCell, moveCell } from "../../../api/cellApi";
 import errorToString from "../../../utils/errorToString";
@@ -16,7 +15,6 @@ import useAutoSave from "../hooks/useAutoSave";
 interface Props {
 	cells: Cell[];
 	searchText?: string;
-	repetitions: Repetition[];
 	editCellId: string | null;
 	fileId?: string;
 	autoFocusEditor?: boolean;
@@ -30,7 +28,6 @@ interface Props {
 function EditableCells({
 	cells,
 	searchText,
-	repetitions,
 	fileId,
 	editCellId,
 	autoFocusEditor,
@@ -187,9 +184,7 @@ function EditableCells({
 						autoFocusEditor={
 							autoFocusEditor && selectedCellId === cell.id
 						}
-						repetitions={repetitions.filter(
-							r => r.cellId === cell.id,
-						)}
+						repetitions={cell.repetitions}
 						onError={onError}
 						onDrop={e => void handleDrop(e, i)}
 						onUpdate={content =>
