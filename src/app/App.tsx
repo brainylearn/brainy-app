@@ -5,7 +5,7 @@ import ErrorBox from "../components/ErrorBox/ErrorBox";
 import Reviewer from "../features/Reviewer/components/Reviewer";
 import Home from "../features/Home/componenets/Home";
 import useAppDispatch from "../hooks/useAppDispatch";
-import { fetchFiles } from "../stores/fileSystem/fileSystemActions";
+import { getReviewTreeFolderForRoot } from "../stores/fileSystem/fileSystemActions";
 import SideBar from "../features/SideBar/componenets/SideBar";
 import SettingsPopup from "../features/SettingsPopup/componenets/SettingsPopup";
 import { getSettings } from "../api/settingsApi";
@@ -50,7 +50,7 @@ function App() {
 	};
 
 	useEffect(() => {
-		void dispatch(fetchFiles());
+		void dispatch(getReviewTreeFolderForRoot());
 		void (async () => {
 			const settings = await getSettings();
 			applySettings(settings);

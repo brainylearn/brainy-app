@@ -1,4 +1,3 @@
-import parseGetFilesResponse from "../../utils/parseGetFilesResponse";
 import {
 	requestFailure,
 	requestStart,
@@ -13,14 +12,14 @@ import {
 	moveFile as moveFileApi,
 	renameFile as renameFileApi,
 	createFile as createFileApi,
-	getFiles as getFilesApi,
+	getReviewTreeFolderForRoot as getReviewTreeFolderForRootApi,
 	renameFolder as renameFolderApi,
 } from "../../api/fileSystemApi";
 import { importFile as importFileApi } from "../../api/exportImportApi";
 import { AppDispatch, RootState } from "../store";
 import errorToString from "../../utils/errorToString";
 
-export function fetchFiles() {
+export function getReviewTreeFolderForRoot() {
 	return executeRequest(() => Promise.resolve());
 }
 
@@ -69,9 +68,8 @@ function executeRequest<T>(
 		try {
 			dispatch(requestStart());
 			await cb(dispatch, getState());
-			const files = await getFilesApi();
-			const rootFolder = parseGetFilesResponse(files);
-			dispatch(requestSuccess(rootFolder));
+			const reviewTreeFolder = await getReviewTreeFolderForRootApi();
+			dispatch(requestSuccess(reviewTreeFolder));
 		} catch (e) {
 			console.error(e);
 			dispatch(requestFailure(errorToString(e)));

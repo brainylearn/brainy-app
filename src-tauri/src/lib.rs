@@ -1,8 +1,6 @@
 mod api;
 mod dto;
 
-// TODO: look at sending files to frontend without any conversion, see dto and value objects
-// folder, and also delete value objects folder
 use std::sync::Arc;
 
 use brainy_core::{
@@ -95,7 +93,7 @@ pub async fn run() -> Result<(), String> {
             create_folder,
             delete_file,
             delete_folder,
-            get_files,
+            get_review_tree_folder_for_root,
             move_file,
             move_folder,
             rename_file,

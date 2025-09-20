@@ -7,12 +7,12 @@ use brainy_core::{
 use tauri::State;
 use tokio::sync::Mutex;
 
-use crate::{api::ApiError, dto::file_with_repetitions_count::FileWithRepetitionsCount};
+use crate::{api::ApiError, dto::review_tree_folder::ReviewTreeFolder};
 
 #[tauri::command]
-pub async fn get_files(
+pub async fn get_review_tree_folder_for_root(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-) -> Result<Vec<FileWithRepetitionsCount>, ApiError> {
+) -> Result<ReviewTreeFolder, ApiError> {
     let context = context.lock().await;
     let folders = context.folder_repository().get_all_folders().await?;
     let files = context.file_repository().get_all_files().await?;
@@ -20,7 +20,7 @@ pub async fn get_files(
         .cell_repository()
         .get_study_repetitions_for_all_files()
         .await?;
-    let result = FileWithRepetitionsCount::parse_file_system(&folders, &files, repetition_counts);
+    let result = ReviewTreeFolder::parse_file_system_from_root(&folders, &files, repetition_counts);
     Ok(result)
 }
 

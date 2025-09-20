@@ -1,6 +1,6 @@
-import ParsedFolder from "../../../../types/parsedFolder";
 import UiFolder from "../../../../types/ui/uiFolder";
 import searchFolder from "../../../../features/SideBar/utils/searchFolder";
+import { ReviewTreeFolder } from "../../../../types/backend/dto/reviewTreeFolder";
 
 describe(searchFolder, () => {
 	it("Searches folder correctly", () => {
@@ -13,7 +13,7 @@ describe(searchFolder, () => {
 			review: 0,
 		};
 
-		const folder: ParsedFolder = {
+		const folder: ReviewTreeFolder = {
 			id: "0",
 			name: "",
 			files: [
@@ -28,11 +28,11 @@ describe(searchFolder, () => {
 					repetitionCounts,
 				},
 			],
-			subFolders: [
+			subfolders: [
 				{
 					id: "3",
 					name: "test",
-					subFolders: [],
+					subfolders: [],
 					files: [
 						{
 							id: "4",
@@ -47,7 +47,7 @@ describe(searchFolder, () => {
 					id: "4",
 					// Should not be visible since none of its files include "search".
 					name: "search",
-					subFolders: [],
+					subfolders: [],
 					files: [],
 					repetitionCounts,
 				},
@@ -72,11 +72,11 @@ describe(searchFolder, () => {
 					repetitionCounts,
 				},
 			],
-			subFolders: [
+			subfolders: [
 				{
 					id: "3",
 					name: "test",
-					subFolders: [],
+					subfolders: [],
 					isVisible: true,
 					files: [
 						{
@@ -92,7 +92,7 @@ describe(searchFolder, () => {
 					id: "4",
 					// Should not be visible since none of its files include "search".
 					name: "search",
-					subFolders: [],
+					subfolders: [],
 					files: [],
 					isVisible: false,
 					repetitionCounts,

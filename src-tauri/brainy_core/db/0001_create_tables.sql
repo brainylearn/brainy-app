@@ -17,7 +17,7 @@ CREATE TABLE files(
     UNIQUE (name, parent_id)
 );
 
--- TODO: create index for searchable content https://www.sqlite.org/fts5.html
+-- TODO: create index for searchable content https://www.sqlite.org/fts5.html, and https://stackoverflow.com/questions/68676884/sqlite-using-fts5-table-to-perform-all-queries-instead-of-main-table
 CREATE TABLE cells(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     content                     TEXT        NOT NULL        DEFAULT "",

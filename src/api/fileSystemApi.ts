@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import FileWithRepetitionCounts from "../types/backend/dto/fileWithRepetitionCounts";
+import { ReviewTreeFolder } from "../types/backend/dto/reviewTreeFolder";
 
 export function createFolder(name: string, parentId: string) {
 	return invoke("create_folder", { name, parentId });
@@ -39,6 +39,6 @@ export function createFile(name: string, parentId: string) {
 	return invoke("create_file", { name, parentId });
 }
 
-export function getFiles(): Promise<FileWithRepetitionCounts[]> {
-	return invoke("get_files");
+export function getReviewTreeFolderForRoot(): Promise<ReviewTreeFolder> {
+	return invoke("get_review_tree_folder_for_root");
 }

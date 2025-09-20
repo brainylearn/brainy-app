@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import useAppDispatch from "../../../hooks/useAppDispatch";
 import useAppSelector from "../../../hooks/useAppSelector";
-import { fetchFiles } from "../../../stores/fileSystem/fileSystemActions";
+import { getReviewTreeFolderForRoot } from "../../../stores/fileSystem/fileSystemActions";
 import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
 import ReviewTree from "./ReviewTree";
 import styles from "./styles.module.css";
-import ParsedFolder from "../../../types/parsedFolder";
 import ReviewHeatmap from "./ReviewHeatmap";
 import HomeStatistics from "../../../types/backend/dto/homeStatistics";
 import errorToString from "../../../utils/errorToString";
 import secondsToLongString from "../utils/secondsToLongString";
 import { getHomeStatistics } from "../../../api/reviewApi";
-import ParsedFile from "../../../types/parsedFile";
+import {
+	ReviewTreeFile,
+	ReviewTreeFolder,
+} from "../../../types/backend/dto/reviewTreeFolder";
 
 interface Props {
 	onStudyClick: (fileIds: string[]) => void;
@@ -26,7 +28,7 @@ function Home({ onStudyClick, onError }: Props) {
 	const rootFolder = useAppSelector(selectRootFolder);
 
 	useEffect(() => {
-		void dispatch(fetchFiles());
+		void dispatch(getReviewTreeFolderForRoot());
 	}, [dispatch]);
 
 	useEffect(() => {
@@ -42,7 +44,7 @@ function Home({ onStudyClick, onError }: Props) {
 
 	const handleStudyClick = (
 		fileIds: string[],
-		item: ParsedFolder | ParsedFile,
+		item: ReviewTreeFolder | ReviewTreeFile,
 	) => {
 		if (
 			item.repetitionCounts.new +
@@ -54,7 +56,7 @@ function Home({ onStudyClick, onError }: Props) {
 		}
 	};
 
-	const handleFolderClick = (folder: ParsedFolder) => {
+	const handleFolderClick = (folder: ReviewTreeFolder) => {
 		const fileIds = [];
 		const folderQueue = [folder];
 		while (folderQueue.length > 0) {
@@ -62,7 +64,7 @@ function Home({ onStudyClick, onError }: Props) {
 			for (const file of currentFolder.files) {
 				fileIds.push(file.id);
 			}
-			folderQueue.push(...currentFolder.subFolders);
+			folderQueue.push(...currentFolder.subfolders);
 		}
 		handleStudyClick(fileIds, folder);
 	};
@@ -87,7 +89,7 @@ function Home({ onStudyClick, onError }: Props) {
 					</div>
 				</div>
 				{rootFolder &&
-					rootFolder.files.length + rootFolder.subFolders.length ===
+					rootFolder.files.length + rootFolder.subfolders.length ===
 						0 && <p>Create a file to see it in the review tree.</p>}
 				{rootFolder && (
 					<ReviewTree

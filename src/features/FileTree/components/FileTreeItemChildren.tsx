@@ -80,7 +80,7 @@ function FileTreeItemChildren({
 				</form>
 			)}
 
-			{folder.subFolders.length + folder.files.length === 0 &&
+			{folder.subfolders.length + folder.files.length === 0 &&
 				!creatingNewFolder &&
 				!creatingNewFile && (
 					<p>
@@ -91,7 +91,7 @@ function FileTreeItemChildren({
 					</p>
 				)}
 
-			{folder.subFolders.map(subFolder => (
+			{folder.subfolders.map(subFolder => (
 				<FileTreeItem
 					key={subFolder.id}
 					folder={subFolder}

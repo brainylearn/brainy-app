@@ -14,7 +14,7 @@ describe(createDefaultCell, () => {
 			searchableContent: "",
 			fileId,
 			index,
-            repetitions: [],
+			repetitions: [],
 		};
 
 		// Act

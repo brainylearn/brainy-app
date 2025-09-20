@@ -10,7 +10,7 @@ function createDefaultCell(cellType: CellType, fileId: string, index: number) {
 		searchableContent: "",
 		cellType,
 		index,
-        repetitions: [],
+		repetitions: [],
 	};
 
 	switch (cellType) {

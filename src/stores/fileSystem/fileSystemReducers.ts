@@ -1,10 +1,10 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
-import ParsedFolder from "../../types/parsedFolder";
 import { ROOT_FOLDER_ID } from "../../config/constants";
+import { ReviewTreeFolder } from "../../types/backend/dto/reviewTreeFolder";
 
 interface FileSystemState {
 	error: string | null;
-	rootFolder: ParsedFolder;
+	rootFolder: ReviewTreeFolder;
 }
 
 const initialState: FileSystemState = {
@@ -13,7 +13,7 @@ const initialState: FileSystemState = {
 		id: ROOT_FOLDER_ID,
 		files: [],
 		name: "",
-		subFolders: [],
+		subfolders: [],
 		repetitionCounts: {
 			new: 0,
 			learning: 0,
@@ -30,7 +30,7 @@ export const fileSystemSlice = createSlice({
 		requestStart: state => {
 			state.error = null;
 		},
-		requestSuccess: (state, payload: PayloadAction<ParsedFolder>) => {
+		requestSuccess: (state, payload: PayloadAction<ReviewTreeFolder>) => {
 			state.error = null;
 			state.rootFolder = payload.payload;
 		},

@@ -16,8 +16,8 @@ pub use cell_api::{
 };
 
 pub use file_system_api::{
-    create_file, create_folder, delete_file, delete_folder, get_files, move_file, move_folder,
-    rename_file, rename_folder,
+    create_file, create_folder, delete_file, delete_folder, get_review_tree_folder_for_root,
+    move_file, move_folder, rename_file, rename_folder,
 };
 
 pub use search_api::search_cells;
