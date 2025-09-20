@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id as \"id: _\", parent_id as \"parent_id: _\", name FROM files WHERE parent_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id: _",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "parent_id: _",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "name",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cfa52990a6fbe9b0ff19233e5e5190fbedac46c63fed44e33fca48f1c1c34b90"
+}

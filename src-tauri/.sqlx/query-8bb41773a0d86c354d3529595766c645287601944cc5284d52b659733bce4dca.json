@@ -1,0 +1,92 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT\n                id as \"id: _\",\n                file_id as \"file_id: _\",\n                cell_id as \"cell_id: _\",\n                due as \"due: _\",\n                stability as \"stability: _\",\n                difficulty as \"difficulty: _\",\n                elapsed_days as \"elapsed_days: _\",\n                scheduled_days as \"scheduled_days\",\n                reps as \"reps: _\",\n                lapses as \"lapses: _\",\n                state as \"state: _\",\n                last_review as \"last_review: _\",\n                additional_content as \"additional_content: _\"\n\n            FROM repetitions\n            WHERE file_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "name": "id: _",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "file_id: _",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "cell_id: _",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "due: _",
+        "ordinal": 3,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "stability: _",
+        "ordinal": 4,
+        "type_info": "Float"
+      },
+      {
+        "name": "difficulty: _",
+        "ordinal": 5,
+        "type_info": "Float"
+      },
+      {
+        "name": "elapsed_days: _",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "scheduled_days",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "reps: _",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "lapses: _",
+        "ordinal": 9,
+        "type_info": "Integer"
+      },
+      {
+        "name": "state: _",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "last_review: _",
+        "ordinal": 11,
+        "type_info": "Datetime"
+      },
+      {
+        "name": "additional_content: _",
+        "ordinal": 12,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "8bb41773a0d86c354d3529595766c645287601944cc5284d52b659733bce4dca"
+}

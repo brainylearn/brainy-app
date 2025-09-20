@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO\n                cells(id, content, cell_type, cell_index, file_id, searchable_content)\n                VALUES ($1, $2, $3, $4, $5, $6)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "681261fa4b5be00c32859d2a90a6df3cc69f2d3f833b92f01516874ab010b7be"
+}

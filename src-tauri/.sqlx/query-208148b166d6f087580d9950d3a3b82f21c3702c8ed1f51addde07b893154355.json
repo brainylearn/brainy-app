@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n                SELECT COUNT(*) AS \"count: u64\", SUM(study_time) AS \"total_study_time: u64\"\n                FROM reviews\n                WHERE $1 <= date AND date <= $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "count: u64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "total_study_time: u64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "208148b166d6f087580d9950d3a3b82f21c3702c8ed1f51addde07b893154355"
+}
