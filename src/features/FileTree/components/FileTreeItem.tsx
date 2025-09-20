@@ -201,8 +201,6 @@ function FileTreeItem({
 			showCreateNewFileInput();
 		} else if (e.key === "Escape") {
 			setShowActions(false);
-			setCreatingNewFile(false);
-			setCreatingNewFolder(false);
 		}
 	};
 

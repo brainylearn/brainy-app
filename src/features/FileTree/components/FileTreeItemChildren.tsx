@@ -9,6 +9,7 @@ import {
 	createFile,
 	createFolder,
 } from "../../../stores/fileSystem/fileSystemActions";
+import CancellableInput from "../../../components/CancellableInput/CancellableInput";
 
 interface Props {
 	creatingNewFolder: boolean;
@@ -69,13 +70,13 @@ function FileTreeItemChildren({
 						}
 						size={1}
 					/>
-					<input
+					<CancellableInput
 						type="text"
 						value={newItemName}
 						onChange={e => setNewItemName(e.target.value)}
 						placeholder="Enter the name"
 						autoFocus
-						onBlur={onCreatingNewItemEnd}
+						onCancel={onCreatingNewItemEnd}
 					/>
 				</form>
 			)}

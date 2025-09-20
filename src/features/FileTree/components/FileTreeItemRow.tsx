@@ -19,6 +19,7 @@ import useAppDispatch from "../../../hooks/useAppDispatch";
 import { useSearchParams } from "react-router";
 import { fileIdQueryParameter } from "../../../config/constants";
 import useOutsideClick from "../../../hooks/useOutsideClick";
+import CancellableInput from "../../../components/CancellableInput/CancellableInput";
 
 interface Props {
 	isRoot: boolean;
@@ -80,7 +81,6 @@ function FileTreeItemRow({
 		onRenameEnd();
 	};
 
-	// TODO: on ESC on input call stop renaming and creating
 	return (
 		<>
 			<div
@@ -107,14 +107,14 @@ function FileTreeItemRow({
 					/>
 					{isRenaming && (
 						<form onSubmit={e => void handleRenameSubmit(e)}>
-							<input
+							<CancellableInput
+                                onCancel={onStopRenaming}
 								type="text"
 								value={newName}
 								onChange={e => setNewName(e.target.value)}
 								onFocus={e => e.target.select()}
 								autoFocus
 								className={`${styles.fileTreeRenameInput}`}
-								onBlur={onStopRenaming}
 							/>
 						</form>
 					)}
