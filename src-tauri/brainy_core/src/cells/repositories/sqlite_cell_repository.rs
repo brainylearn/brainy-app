@@ -268,7 +268,7 @@ impl CellRepository for SqliteCellRepository {
     }
 
     async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError> {
-        let pattern = format!("%{}%", search_text.to_lowercase());
+        let search_match = format!("%{}%", search_text);
 
         let rows = sqlx::query_as!(
             CellRow,
@@ -294,12 +294,13 @@ impl CellRepository for SqliteCellRepository {
                 repetition.last_review as "repetition_last_review: _",
                 repetition.additional_content as "repetition_additional_content: _"
 
-            FROM cells As cell
+            FROM cells_fts AS fts
+            JOIN cells AS cell ON fts.rowid = cell.rowid
             LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
 
-            WHERE searchable_content LIKE $1
+            WHERE fts.searchable_content LIKE $1
             LIMIT 150"#,
-            pattern
+            search_match
         )
         .fetch_all(&*self.pool)
         .await;

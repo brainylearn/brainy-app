@@ -163,7 +163,7 @@ impl Cell {
             }
         };
 
-        self.searchable_content = searchable_content.to_lowercase().to_string();
+        self.searchable_content = searchable_content.to_string();
     }
 
     fn update_repetitions(&mut self) {
@@ -226,7 +226,7 @@ mod tests {
 
         // Assert
 
-        assert_eq!("question answer".to_string(), actual.searchable_content());
+        assert_eq!("question Answer".to_string(), actual.searchable_content());
         assert_eq!(1, actual.repetitions().len());
     }
 
@@ -276,7 +276,7 @@ mod tests {
 
         // Assert
 
-        assert_eq!(cell.searchable_content(), "question".to_string());
+        assert_eq!(cell.searchable_content(), "Question".to_string());
     }
 
     #[test]
@@ -293,7 +293,7 @@ mod tests {
 
         // Assert
 
-        assert_eq!(actual.searchable_content(), "note".to_string());
+        assert_eq!(actual.searchable_content(), "Note".to_string());
     }
 
     #[test]

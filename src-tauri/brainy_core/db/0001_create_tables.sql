@@ -17,7 +17,6 @@ CREATE TABLE files(
     UNIQUE (name, parent_id)
 );
 
--- TODO: create index for searchable content https://www.sqlite.org/fts5.html, and https://stackoverflow.com/questions/68676884/sqlite-using-fts5-table-to-perform-all-queries-instead-of-main-table
 CREATE TABLE cells(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     content                     TEXT        NOT NULL        DEFAULT "",
@@ -27,6 +26,32 @@ CREATE TABLE cells(
     searchable_content          TEXT        NOT NULL,
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );
+
+CREATE VIRTUAL TABLE cells_fts USING fts5(
+    searchable_content, 
+    content='cells',
+    tokenize='trigram'
+);
+
+CREATE TRIGGER cells_ai AFTER INSERT ON cells
+    BEGIN
+        INSERT INTO cells_fts (rowid, searchable_content)
+        VALUES (new.rowid, new.searchable_content);
+    END;
+
+CREATE TRIGGER cells_ad AFTER DELETE ON cells
+    BEGIN
+        INSERT INTO cells_fts (cells_fts, rowid, searchable_content)
+        VALUES ('delete', old.rowid, old.searchable_content);
+    END;
+
+CREATE TRIGGER cells_au AFTER UPDATE ON cells
+    BEGIN
+        INSERT INTO cells_fts (cells_fts, rowid, searchable_content)
+        VALUES ('delete', old.rowid, old.searchable_content);
+        INSERT INTO cells_fts (rowid, searchable_content)
+        VALUES (new.rowid, new.searchable_content);
+    END;
 
 CREATE TABLE repetitions(
     id                          TEXT        NOT NULL        PRIMARY KEY,
