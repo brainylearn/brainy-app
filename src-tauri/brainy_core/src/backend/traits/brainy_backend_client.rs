@@ -1,7 +1,8 @@
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use thiserror::Error;
 
-use crate::backend::models::{GetNextSyncPageResponseDto, UserInformnationDto};
+use crate::{backend::models::UserInformnationDto, sync::entities::synced_entity::SyncedEntity};
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum BrainyBackendClientError {
@@ -48,8 +49,9 @@ pub trait BrainyBackendClient: Send + Sync {
         last_name: Option<String>,
     ) -> Result<(), BrainyBackendClientError>;
 
-    async fn get_next_sync_page(
+    async fn get_synced_entities_after_ordered_by_created_date(
         &self,
-        sync_number: u32,
-    ) -> Result<GetNextSyncPageResponseDto, BrainyBackendClientError>;
+        date: DateTime<Utc>,
+        page: u32,
+    ) -> Result<Vec<SyncedEntity>, BrainyBackendClientError>;
 }

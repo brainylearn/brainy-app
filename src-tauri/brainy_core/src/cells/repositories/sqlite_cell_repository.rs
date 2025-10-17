@@ -85,53 +85,6 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    async fn try_get_by_id(&self, id: Guid) -> Result<Option<Cell>, RepositoryError> {
-        let rows = sqlx::query_as!(
-            CellRow,
-            r#"SELECT
-                cell.id as "cell_id: _",
-                cell.file_id as "cell_file_id: _",
-                cell.content as cell_content,
-                cell.cell_index as "cell_index: _",
-                cell.cell_type as "cell_type: _",
-                cell.searchable_content as cell_searchable_content,
-
-                repetition.id as "repetition_id: _",
-                repetition.file_id as "repetition_file_id: _",
-                repetition.cell_id as "repetition_cell_id: _",
-                repetition.due as "repetition_due: _",
-                repetition.stability as "repetition_stability: _",
-                repetition.difficulty as "repetition_difficulty: _",
-                repetition.elapsed_days as "repetition_elapsed_days: _",
-                repetition.scheduled_days as "repetition_scheduled_days",
-                repetition.reps as "repetition_reps: _",
-                repetition.lapses as "repetition_lapses: _",
-                repetition.state as "repetition_state: _",
-                repetition.last_review as "repetition_last_review: _",
-                repetition.additional_content as "repetition_additional_content: _"
-
-            FROM cells As cell
-            LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
-            WHERE cell.id = $1"#,
-            id
-        )
-        .fetch_all(&*self.pool)
-        .await;
-
-        match rows {
-            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
-            Ok(rows) => {
-                if rows.is_empty() {
-                    Ok(None)
-                } else {
-                    // Should be a single cell in list.
-                    let cell = convert_rows_to_cells(rows).remove(0);
-                    Ok(Some(cell))
-                }
-            }
-        }
-    }
-
     async fn get_file_cells_ordered_by_index(
         &self,
         file_id: Guid,
@@ -264,7 +217,7 @@ impl CellRepository for SqliteCellRepository {
         self.upsert_repetitions(tx, cell.repetitions()).await
     }
 
-    async fn upsert_with_modified_date_if_modified_before(
+    async fn upsert_without_repetition_and_with_modified_date_if_modified_before(
         &self,
         cell: &Cell,
         date: DateTime<Utc>,
@@ -289,8 +242,7 @@ impl CellRepository for SqliteCellRepository {
 
         let current_modified_date = current_modified_date.unwrap().unwrap();
         if current_modified_date <= date {
-            self.update(cell).await?;
-            return Ok(());
+            self.update_cell_without_repetitions_and_with_modified_date(cell, &date).await?;
         }
 
         Ok(())
@@ -679,6 +631,47 @@ impl SqliteCellRepository {
             if let Err(err) = result {
                 return Err(RepositoryError::UnknownError(err.to_string()));
             }
+        }
+
+        Ok(())
+    }
+
+    async fn update_cell_without_repetitions_and_with_modified_date(
+        &self,
+        cell: &Cell,
+        modified_date: &DateTime<Utc>) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+        let id = cell.id();
+        let content = cell.content();
+        let cell_type = cell.cell_type();
+        let file_id = cell.file_id();
+        let index = cell.index();
+        let searchable_content = cell.searchable_content();
+
+        let result = sqlx::query!(
+            r#"UPDATE cells
+                SET id = $1,
+                    file_id = $2,
+                    content = $3,
+                    cell_type = $4,
+                    cell_index = $5,
+                    searchable_content = $6,
+                    modified_date = $7
+                WHERE id = $1"#,
+            id,
+            file_id,
+            content,
+            cell_type,
+            index,
+            searchable_content,
+            modified_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        if let Err(err) = result {
+            return Err(RepositoryError::UnknownError(err.to_string()));
         }
 
         Ok(())

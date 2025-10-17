@@ -18,8 +18,6 @@ use crate::{
 #[async_trait]
 pub trait CellRepository: Send + Sync {
     async fn get_by_id(&self, id: Guid) -> Result<Cell, RepositoryError>;
-    // TODO: if not used, delete
-    async fn try_get_by_id(&self, id: Guid) -> Result<Option<Cell>, RepositoryError>;
 
     async fn get_file_cells_ordered_by_index(
         &self,
@@ -29,7 +27,7 @@ pub trait CellRepository: Send + Sync {
     async fn create(&self, cell: &Cell) -> Result<(), RepositoryError>;
     async fn update(&self, cell: &Cell) -> Result<(), RepositoryError>;
 
-    async fn upsert_with_modified_date_if_modified_before(
+    async fn upsert_without_repetition_and_with_modified_date_if_modified_before(
         &self,
         cell: &Cell,
         date: DateTime<Utc>,

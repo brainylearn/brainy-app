@@ -1,6 +1,8 @@
 -- Since there is a single client, we can allow read uncommitted.
 PRAGMA read_uncommitted = TRUE;
 
+-- TODO: create date is requried for all
+
 CREATE TABLE folders(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     modified_date               DATETIME    DEFAULT CURRENT_TIMESTAMP,

@@ -1,11 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    Guid,
-    common::extensions::to_datetime_ext::{OptionToDateTimeExt, ToDateTimeExt},
-    generated_code,
-};
+use crate::Guid;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -57,26 +53,6 @@ impl Default for Repetition {
             state: Default::default(),
             last_review: None,
             additional_content: Default::default(),
-        }
-    }
-}
-
-impl From<generated_code::Repetition> for Repetition {
-    fn from(value: generated_code::Repetition) -> Self {
-        Self {
-            id: Guid::parse_str(&value.id).unwrap(),
-            file_id: Guid::parse_str(&value.file_id).unwrap(),
-            cell_id: Guid::parse_str(&value.cell_id).unwrap(),
-            due: value.due.unwrap().to_datetime_utc(),
-            stability: value.stability,
-            difficulty: value.difficulty,
-            elapsed_days: value.elapsed_days,
-            scheduled_days: value.scheduled_days,
-            reps: value.reps,
-            lapses: value.lapses,
-            state: serde_json::from_str(&value.state).unwrap(),
-            last_review: value.last_review.to_datetime_utc(),
-            additional_content: value.additional_content,
         }
     }
 }

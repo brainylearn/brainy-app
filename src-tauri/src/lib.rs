@@ -82,6 +82,7 @@ pub async fn run() -> Result<(), String> {
                 repositories_context.cell_repository(),
                 repositories_context.review_repository(),
                 repositories_context.deleted_entity_repository(),
+                repositories_context.local_configuration_repository(),
             )));
 
             app.manage(

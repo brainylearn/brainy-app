@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{common::extensions::to_datetime_ext::ToDateTimeExt, generated_code, Guid};
+use crate::{Guid, common::extensions::to_datetime_ext::ToDateTimeExt, generated_code};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Rating {
@@ -37,18 +37,6 @@ impl Review {
             study_time,
             date,
             rating,
-        }
-    }
-}
-
-impl From<generated_code::Review> for Review {
-    fn from(value: generated_code::Review) -> Self {
-        Self {
-            id: Guid::parse_str(&value.id).unwrap(),
-            cell_id: value.cell_id.map(|r| Guid::parse_str(&r).unwrap()),
-            study_time: value.study_time,
-            date: value.date.unwrap().to_datetime_utc(),
-            rating: serde_json::from_str(&value.rating).unwrap(),
         }
     }
 }

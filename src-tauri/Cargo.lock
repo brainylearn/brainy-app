@@ -7,7 +7,6 @@ name = "Brainy"
 version = "1.1.0"
 dependencies = [
  "async-trait",
- "base64 0.22.1",
  "brainy_core",
  "log",
  "prost",
@@ -394,6 +393,7 @@ name = "brainy_core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "chrono",
  "cookie_store 0.22.0",
  "dirs",
