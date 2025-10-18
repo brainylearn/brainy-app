@@ -11,6 +11,8 @@ CREATE TABLE folders(
     UNIQUE (name, parent_id)
 );
 
+CREATE INDEX folders_modified_date_index ON folders(modified_date);
+
 -- The id of root is 00000000-0000-0000-0000-000000000001
 INSERT INTO folders(id, name, parent_id) VALUES (X'00000000000000000000000000000001', 'root', NULL);
 
@@ -26,6 +28,8 @@ CREATE TABLE files(
     UNIQUE (name, parent_id)
 );
 
+CREATE INDEX files_modified_date_index ON files(modified_date);
+
 -------------------------------------------------------------------------
 
 CREATE TABLE cells(
@@ -39,6 +43,8 @@ CREATE TABLE cells(
     searchable_content          TEXT        NOT NULL,
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );
+
+CREATE INDEX cells_modified_date_index ON cells(modified_date);
 
 CREATE VIRTUAL TABLE cells_fts USING fts5(
     searchable_content, 
@@ -94,6 +100,7 @@ CREATE TABLE repetitions(
 
 CREATE INDEX repetitions_cell_id_index ON repetitions(cell_id);
 CREATE INDEX repetitions_file_id_index ON repetitions(file_id);
+CREATE INDEX repetitions_modified_date_index ON repetitions(modified_date);
 
 -------------------------------------------------------------------------
 
@@ -108,17 +115,19 @@ CREATE TABLE reviews(
     FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE SET NULL
 );
 
+CREATE INDEX reviews_modified_date_index ON reviews(modified_date);
+
 -------------------------------------------------------------------------
 
 CREATE TABLE deleted_entities(
     entity_name                 TEXT        NOT NULL,
     entity_id                   TEXT        NOT NULL,
     entity_created_date         DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
-    delete_date                 DATETIME    DEFAULT CURRENT_TIMESTAMP
+    deleted_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX deleted_entities_entity_name_and_id_index ON deleted_entities(entity_name, entity_id);
-CREATE INDEX deleted_entities_delete_date_index ON deleted_entities(delete_date);
+CREATE INDEX deleted_entities_entity_id_and_name_index ON deleted_entities(entity_id, entity_name);
+CREATE INDEX deleted_entities_deleted_date_index ON deleted_entities(deleted_date);
 
 -------------------------------------------------------------------------
 
