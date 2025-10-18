@@ -39,6 +39,26 @@ impl Review {
             rating,
         }
     }
+
+    pub fn id(&self) -> Guid {
+        self.id
+    }
+
+    pub fn cell_id(&self) -> Option<Guid> {
+        self.cell_id
+    }
+
+    pub fn study_time(&self) -> u32 {
+        self.study_time
+    }
+
+    pub fn date(&self) -> DateTime<Utc> {
+        self.date
+    }
+
+    pub fn rating(&self) -> &Rating {
+        &self.rating
+    }
 }
 
 impl Default for Review {

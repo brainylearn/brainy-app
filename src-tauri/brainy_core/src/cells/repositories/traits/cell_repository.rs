@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 
 use crate::{
     Guid,
@@ -26,18 +25,6 @@ pub trait CellRepository: Send + Sync {
 
     async fn create(&self, cell: &Cell) -> Result<(), RepositoryError>;
     async fn update(&self, cell: &Cell) -> Result<(), RepositoryError>;
-
-    async fn upsert_without_repetition_and_with_modified_date_if_modified_before(
-        &self,
-        cell: &Cell,
-        date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError>;
-
-    async fn upsert_repetition_with_modified_date_if_modified_before(
-        &self,
-        repetition: &Repetition,
-        date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError>;
 
     /// Moves all the indicies of cells up or down based on the given direction.
     /// The cells moved must belong to the file given and must have an index

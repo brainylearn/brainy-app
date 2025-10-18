@@ -110,7 +110,7 @@ pub fn convert_rows_to_cells(rows: Vec<CellRow>) -> Vec<Cell> {
     for row in rows {
         if added_cells.insert(row.cell_id) {
             let cell = Cell::new_unchecked(
-                Some(row.cell_id),
+                row.cell_id,
                 row.cell_file_id,
                 row.cell_content,
                 row.cell_type,

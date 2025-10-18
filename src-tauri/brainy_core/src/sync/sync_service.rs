@@ -6,28 +6,13 @@ use prost::Message;
 use thiserror::Error;
 
 use crate::{
-    Guid,
-    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
-    cells::{
+    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError}, cells::{
         entities::{cell::Cell, repetition::Repetition, review::Review},
-        repositories::traits::{
-            cell_repository::CellRepository, review_repository::ReviewRepository,
-        },
-    },
-    common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError},
-    file_system::{
-        entities::{file::File, folder::Folder},
-        repositories::traits::{
-            file_repository::FileRepository, folder_repository::FolderRepository,
-        },
-        value_objects::file_system_item_name::FileSystemItemName,
-    },
-    generated_code::{self},
-    local_configurations::repositories::traits::LocalConfigurationRepository,
-    sync::{
-        entities::synced_entity::{EntityType, SyncedEntity},
-        repositories::traits::DeletedEntityRepository,
-    },
+    }, common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError}, file_system::{
+        entities::{file::File, folder::Folder}, value_objects::file_system_item_name::FileSystemItemName
+    }, generated_code::{self}, local_configurations::repositories::traits::LocalConfigurationRepository, sync::{
+        entities::synced_entity::{EntityType, SyncedEntity}, repositories::traits::sync_repository::SyncRepository,
+    }, Guid
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
@@ -42,29 +27,17 @@ pub enum SyncError {
 }
 
 pub struct SyncService {
-    folder_repository: Arc<dyn FolderRepository>,
-    file_repository: Arc<dyn FileRepository>,
-    cell_repository: Arc<dyn CellRepository>,
-    review_repository: Arc<dyn ReviewRepository>,
-    deleted_entity_repository: Arc<dyn DeletedEntityRepository>,
+    sync_repository: Arc<dyn SyncRepository>,
     local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
 }
 
 impl SyncService {
     pub fn new(
-        folder_repository: Arc<dyn FolderRepository>,
-        file_repository: Arc<dyn FileRepository>,
-        cell_repository: Arc<dyn CellRepository>,
-        review_repository: Arc<dyn ReviewRepository>,
-        deleted_entity_repository: Arc<dyn DeletedEntityRepository>,
+        sync_repository: Arc<dyn SyncRepository>,
         local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
     ) -> Self {
         Self {
-            folder_repository,
-            file_repository,
-            cell_repository,
-            review_repository,
-            deleted_entity_repository,
+            sync_repository,
             local_configuration_repository,
         }
     }
@@ -108,7 +81,6 @@ impl SyncService {
     }
 
     async fn process_synced_entity(&self, synced_entity: SyncedEntity) -> Result<(), SyncError> {
-        // TODO: maybe move all these upsert calls to sync repository
         log::info!(
             "Processing synced entity with id {} and of type {:?}",
             synced_entity.entity_id,
@@ -123,12 +95,12 @@ impl SyncService {
             EntityType::Folder => {
                 let folder = generated_code::Folder::decode(&bytes[..]).unwrap();
                 let entity = Folder::new_unchecked(
-                    Some(synced_entity.entity_id),
+                    synced_entity.entity_id,
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
                 );
-                self.folder_repository
-                    .upsert_with_modified_date_if_modified_before(
+                self.sync_repository
+                    .upsert_folder_with_modified_date_if_modified_before(
                         &entity,
                         folder.modified_date.unwrap().into_datetime(),
                     )
@@ -137,12 +109,12 @@ impl SyncService {
             EntityType::File => {
                 let file = generated_code::File::decode(&bytes[..]).unwrap();
                 let entity = File::new_unchecked(
-                    Some(synced_entity.entity_id),
+                    synced_entity.entity_id,
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
                 );
-                self.file_repository
-                    .upsert_with_modified_date_if_modified_before(
+                self.sync_repository
+                    .upsert_file_with_modified_date_if_modified_before(
                         &entity,
                         file.modified_date.unwrap().into_datetime(),
                     )
@@ -151,7 +123,7 @@ impl SyncService {
             EntityType::Cell => {
                 let cell = generated_code::Cell::decode(&bytes[..]).unwrap();
                 let entity = Cell::new_unchecked(
-                    Some(synced_entity.entity_id),
+                    synced_entity.entity_id,
                     Guid::parse_str(&cell.file_id).unwrap(),
                     cell.content,
                     serde_json::from_str(&cell.cell_type).unwrap(),
@@ -159,8 +131,8 @@ impl SyncService {
                     cell.searchable_content,
                     Vec::new(),
                 );
-                self.cell_repository
-                    .upsert_without_repetition_and_with_modified_date_if_modified_before(
+                self.sync_repository
+                    .upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
                         &entity,
                         cell.modified_date.unwrap().into_datetime(),
                     )
@@ -169,7 +141,7 @@ impl SyncService {
             EntityType::Repetition => {
                 let repetition = generated_code::Repetition::decode(&bytes[..]).unwrap();
                 let entity = Repetition::new_unchecked(
-                    Some(synced_entity.entity_id),
+                    synced_entity.entity_id,
                     Guid::parse_str(&repetition.file_id).unwrap(),
                     Guid::parse_str(&repetition.cell_id).unwrap(),
                     repetition.due.unwrap().into_datetime(),
@@ -183,7 +155,7 @@ impl SyncService {
                     repetition.last_review.map(|value| value.into_datetime()),
                     repetition.additional_content,
                 );
-                self.cell_repository
+                self.sync_repository
                     .upsert_repetition_with_modified_date_if_modified_before(
                         &entity,
                         repetition.modified_date.unwrap().into_datetime(),
@@ -199,8 +171,8 @@ impl SyncService {
                     review.date.unwrap().into_datetime(),
                     serde_json::from_str(&review.rating).unwrap(),
                 );
-                self.review_repository
-                    .upsert_with_modified_date_if_modified_before(
+                self.sync_repository
+                    .upsert_review_with_modified_date_if_modified_before(
                         &entity,
                         synced_entity.last_sync_date,
                     )
@@ -208,7 +180,7 @@ impl SyncService {
             }
             EntityType::DeletedEntity => {
                 let deleted_entity = generated_code::DeletedEntity::decode(&bytes[..]).unwrap();
-                self.deleted_entity_repository
+                self.sync_repository
                     .apply_deleted_entity(
                         &deleted_entity.entity_name,
                         synced_entity.entity_id,
@@ -250,11 +222,7 @@ mod tests {
     ) {
         let context = SqliteRepositoriesContext::create_testing_context().await;
         let service = SyncService::new(
-            context.folder_repository(),
-            context.file_repository(),
-            context.cell_repository(),
-            context.review_repository(),
-            context.deleted_entity_repository(),
+            context.sync_repository(),
             context.local_configuration_repository(),
         );
 

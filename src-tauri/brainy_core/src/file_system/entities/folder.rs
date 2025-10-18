@@ -22,12 +22,12 @@ impl Folder {
 
     /// Used for unit testing, or repositories when reconsturcting a folder.
     pub fn new_unchecked(
-        id: Option<Guid>,
+        id: Guid,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> Self {
         Folder {
-            id: id.unwrap_or(Guid::new_v4()),
+            id,
             parent_id,
             name,
         }

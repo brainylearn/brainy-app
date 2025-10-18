@@ -7,8 +7,7 @@ pub trait IntoDateTime {
 
 impl IntoDateTime for Timestamp {
     fn into_datetime(self) -> DateTime<Utc> {
-        let nanos = if self.nanos < 0 { 0 } else { self.nanos as u32 };
-        DateTime::<Utc>::from_timestamp(self.seconds, nanos).expect("Failed to convert timestamp")
+        DateTime::<Utc>::from_timestamp(self.seconds, 0).expect("Failed to convert timestamp")
     }
 }
 

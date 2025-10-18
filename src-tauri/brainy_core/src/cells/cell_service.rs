@@ -166,7 +166,7 @@ pub mod tests {
 
         let (mut context, service) = create_test_dependencies().await;
 
-        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
@@ -211,7 +211,7 @@ pub mod tests {
 
         let (mut context, service) = create_test_dependencies().await;
 
-        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
@@ -257,7 +257,7 @@ pub mod tests {
 
         let (mut context, service) = create_test_dependencies().await;
 
-        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
@@ -311,7 +311,7 @@ pub mod tests {
 
         let (mut context, service) = create_test_dependencies().await;
 
-        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
@@ -365,7 +365,7 @@ pub mod tests {
 
         let (mut context, service) = create_test_dependencies().await;
 
-        let file = File::new_unchecked(None, Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
         context.file_repository().create(&file).await.unwrap();
 
         let content = r#"

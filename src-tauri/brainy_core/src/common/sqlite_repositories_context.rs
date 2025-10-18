@@ -23,11 +23,7 @@ use crate::{
     local_configurations::repositories::{
         sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
         traits::LocalConfigurationRepository,
-    },
-    sync::repositories::{
-        sqlite_deleted_entity_repository::SqliteDeletedEntityRepository,
-        traits::DeletedEntityRepository,
-    },
+    }, sync::repositories::{sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository}, 
 };
 
 pub struct SqliteRepositoriesContext {
@@ -38,7 +34,7 @@ pub struct SqliteRepositoriesContext {
     cell_repository: Arc<SqliteCellRepository>,
     review_repository: Arc<SqliteReviewRepository>,
     local_configuration_repository: Arc<SqliteLocalConfigurationRepository>,
-    deleted_entity_repository: Arc<SqliteDeletedEntityRepository>,
+    sync_repository: Arc<SqliteSyncRepository>,
 }
 
 #[derive(Debug, Error)]
@@ -74,7 +70,7 @@ impl SqliteRepositoriesContext {
                 arc_pool.clone(),
                 tx.clone(),
             )),
-            deleted_entity_repository: Arc::new(SqliteDeletedEntityRepository::new(tx.clone())),
+            sync_repository: Arc::new(SqliteSyncRepository::new(tx.clone())),
         })
     }
 
@@ -109,8 +105,8 @@ impl RepositoriesContext for SqliteRepositoriesContext {
         self.local_configuration_repository.clone()
     }
 
-    fn deleted_entity_repository(&self) -> Arc<dyn DeletedEntityRepository> {
-        self.deleted_entity_repository.clone()
+    fn sync_repository(&self) -> Arc<dyn SyncRepository> {
+        self.sync_repository.clone()
     }
 
     async fn save_changes(&mut self) -> Result<(), RepositoriesContextError> {

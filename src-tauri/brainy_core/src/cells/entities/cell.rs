@@ -66,7 +66,7 @@ impl Cell {
 
     /// Used for unit testing, or repositories when reconsturcting a cell.
     pub fn new_unchecked(
-        id: Option<Guid>,
+        id: Guid,
         file_id: Guid,
         content: String,
         cell_type: CellType,
@@ -75,7 +75,7 @@ impl Cell {
         repetitions: Vec<Repetition>,
     ) -> Self {
         Self {
-            id: id.unwrap_or(Guid::new_v4()),
+            id,
             file_id,
             content,
             cell_type,
