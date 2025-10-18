@@ -32,6 +32,40 @@ pub struct Repetition {
 }
 
 impl Repetition {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_unchecked(
+        id: Option<Guid>,
+        file_id: Guid,
+        cell_id: Guid,
+        due: DateTime<Utc>,
+        stability: f64,
+        difficulty: f64,
+        elapsed_days: i64,
+        scheduled_days: i64,
+        reps: i64,
+        lapses: i64,
+        state: State,
+        last_review: Option<DateTime<Utc>>,
+        additional_content: Option<String>,
+    ) -> Self {
+        Self {
+            // TODO: maybe on new_unchecked we always have guid?
+            id: id.unwrap_or(Guid::new_v4()),
+            file_id,
+            cell_id,
+            due,
+            stability,
+            difficulty,
+            elapsed_days,
+            scheduled_days,
+            reps,
+            lapses,
+            state,
+            last_review,
+            additional_content,
+        }
+    }
+
     pub fn cell_id(&self) -> Guid {
         self.cell_id
     }

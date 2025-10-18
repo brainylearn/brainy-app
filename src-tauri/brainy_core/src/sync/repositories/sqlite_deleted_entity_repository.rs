@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use sqlx::{Sqlite, Transaction};
 use tokio::sync::Mutex;
 
@@ -25,21 +26,36 @@ impl DeletedEntityRepository for SqliteDeletedEntityRepository {
         &self,
         entity_name: &str,
         entity_id: Guid,
+        delete_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
-
-        // TODO: move logging to sync service, also add logging for other entities too
-        log::info!("Deleting entity with entity name {entity_name} and id {entity_id}.");
 
         let result = sqlx::query(&format!("DELETE FROM {entity_name} WHERE id = $1"))
             .bind(entity_id)
             .execute(&mut *tx)
             .await;
 
-        match result {
-            Ok(_) => Ok(()),
-            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        if let Err(err) = result {
+            return Err(RepositoryError::UnknownError(err.to_string()));
         }
+
+        let result = sqlx::query!(
+            r#"UPDATE deleted_entities
+                SET delete_date = $1
+                WHERE entity_name = $2 AND entity_id = $3
+            "#,
+            delete_date,
+            entity_name,
+            entity_id
+        )
+        .execute(&mut *tx)
+        .await;
+
+        if let Err(err) = result {
+            return Err(RepositoryError::UnknownError(err.to_string()));
+        }
+
+        Ok(())
     }
 }

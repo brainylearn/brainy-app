@@ -18,7 +18,7 @@ pub async fn sync(
     let mut context = context.lock().await;
 
     while sync_service
-        .fetch_and_process_next_sync_page(&backend_client)
+        .fetch_and_process_next_sync_page(&**backend_client)
         .await?
     {
         context.save_changes().await?;

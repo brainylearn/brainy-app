@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use crate::{Guid, common::repository_error::RepositoryError};
 
@@ -8,5 +9,6 @@ pub trait DeletedEntityRepository: Send + Sync {
         &self,
         entity_name: &str,
         entity_id: Guid,
+        delete_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError>;
 }

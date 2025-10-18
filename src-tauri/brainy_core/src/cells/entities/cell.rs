@@ -105,7 +105,7 @@ impl Cell {
         self.index
     }
 
-    pub(in crate::cells) fn searchable_content(&self) -> &str {
+    pub fn searchable_content(&self) -> &str {
         &self.searchable_content
     }
 

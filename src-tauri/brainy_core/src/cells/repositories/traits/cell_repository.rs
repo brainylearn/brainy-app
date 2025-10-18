@@ -33,6 +33,12 @@ pub trait CellRepository: Send + Sync {
         date: DateTime<Utc>,
     ) -> Result<(), RepositoryError>;
 
+    async fn upsert_repetition_with_modified_date_if_modified_before(
+        &self,
+        repetition: &Repetition,
+        date: DateTime<Utc>,
+    ) -> Result<(), RepositoryError>;
+
     /// Moves all the indicies of cells up or down based on the given direction.
     /// The cells moved must belong to the file given and must have an index
     /// greater than or equal to the given value.

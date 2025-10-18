@@ -242,7 +242,90 @@ impl CellRepository for SqliteCellRepository {
 
         let current_modified_date = current_modified_date.unwrap().unwrap();
         if current_modified_date <= date {
-            self.update_cell_without_repetitions_and_with_modified_date(cell, &date).await?;
+            self.update_cell_without_repetitions_and_with_modified_date(cell, &date)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    async fn upsert_repetition_with_modified_date_if_modified_before(
+        &self,
+        repetition: &Repetition,
+        date: DateTime<Utc>,
+    ) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let Repetition {
+            id,
+            file_id,
+            cell_id,
+            due,
+            stability,
+            difficulty,
+            elapsed_days,
+            scheduled_days,
+            reps,
+            lapses,
+            state,
+            last_review,
+            additional_content,
+        } = repetition;
+
+        let result = sqlx::query!(
+            r#"INSERT INTO repetitions(
+                id,
+                file_id,
+                cell_id,
+                due,
+                stability,
+                difficulty,
+                elapsed_days,
+                scheduled_days,
+                reps,
+                lapses,
+                state,
+                last_review,
+                additional_content,
+                modified_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 14)
+            ON CONFLICT(id) DO UPDATE SET
+                file_id = $2,
+                cell_id = $3,
+                due = $4,
+                stability = $5,
+                difficulty = $6,
+                elapsed_days = $7,
+                scheduled_days = $8,
+                reps = $9,
+                lapses = $10,
+                state = $11,
+                last_review = $12,
+                additional_content = $13,
+                modified_date = $14
+            WHERE modified_date <= datetime($14)
+            "#,
+            id,
+            file_id,
+            cell_id,
+            due,
+            stability,
+            difficulty,
+            elapsed_days,
+            scheduled_days,
+            reps,
+            lapses,
+            state,
+            last_review,
+            additional_content,
+            date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        if let Err(err) = result {
+            return Err(RepositoryError::UnknownError(err.to_string()));
         }
 
         Ok(())
@@ -639,7 +722,8 @@ impl SqliteCellRepository {
     async fn update_cell_without_repetitions_and_with_modified_date(
         &self,
         cell: &Cell,
-        modified_date: &DateTime<Utc>) -> Result<(), RepositoryError> {
+        modified_date: &DateTime<Utc>,
+    ) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
         let id = cell.id();

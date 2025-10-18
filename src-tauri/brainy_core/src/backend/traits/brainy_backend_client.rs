@@ -1,5 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+#[cfg(test)]
+use mockall::automock;
 use thiserror::Error;
 
 use crate::{backend::models::UserInformnationDto, sync::entities::synced_entity::SyncedEntity};
@@ -20,6 +22,7 @@ pub enum BrainyBackendClientError {
     BadRequest(String),
 }
 
+#[cfg_attr(test, automock)]
 #[async_trait]
 pub trait BrainyBackendClient: Send + Sync {
     async fn log_in(

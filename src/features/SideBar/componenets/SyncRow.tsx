@@ -16,7 +16,7 @@ export default function SyncRow() {
         // TODO: error handling
         try {
             setIsSyncing(true);
-            // TODO: refersh current file if user in file
+            // TODO: refersh current file if user in file, also refresh home, etc...
             await sync();
             await dispatch(getReviewTreeFolderForRoot());
         } finally {

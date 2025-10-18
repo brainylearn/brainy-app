@@ -70,9 +70,9 @@ impl ReviewRepository for SqliteReviewRepository {
         } = review;
 
         let result = sqlx::query!(
-            r#"INSERT INTO reviews(id, cell_id, study_time, date, rating) VALUES ($1, $2, $3, $4, $5)
+            r#"INSERT INTO reviews(id, cell_id, study_time, date, rating, modified_date) VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT(id) DO UPDATE
-            SET id = $1, cell_id = $2, study_time = $3, date = $4, rating = $5
+            SET id = $1, cell_id = $2, study_time = $3, date = $4, rating = $5, modified_date = $6
             WHERE modified_date <= datetime($6)
             "#,
             id,

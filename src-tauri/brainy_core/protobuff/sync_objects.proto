@@ -20,7 +20,7 @@ message Cell {
   google.protobuf.Timestamp modified_date = 1;
   string content = 2;
   string cell_type = 3;
-  uint32 cell_index = 4;
+  uint32 index = 4;
   string file_id = 5;
   string searchable_content = 6;
 }
