@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::Guid;
+use crate::{Guid, sync::entities::synced_entity::SyncedEntity};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,4 +40,11 @@ pub struct SignUpDto {
 pub struct UpdateUserInformationDto {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncedEntitiesPageDto {
+    pub synced_entities: Vec<SyncedEntity>,
+    pub has_more: bool,
 }

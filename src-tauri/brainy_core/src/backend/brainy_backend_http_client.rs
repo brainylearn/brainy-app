@@ -3,14 +3,12 @@ use std::{
     sync::Arc,
 };
 
-use crate::{
-    backend::{
-        models::{
-            ProblemDetails, SignInDto, SignUpDto, UpdateUserInformationDto, UserInformnationDto,
-        },
-        traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+use crate::backend::{
+    models::{
+        ProblemDetails, SignInDto, SignUpDto, SyncedEntitiesPageDto, UpdateUserInformationDto,
+        UserInformnationDto,
     },
-    sync::entities::synced_entity::SyncedEntity,
+    traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -194,7 +192,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
         &self,
         date: DateTime<Utc>,
         page: u32,
-    ) -> Result<Vec<SyncedEntity>, BrainyBackendClientError> {
+    ) -> Result<SyncedEntitiesPageDto, BrainyBackendClientError> {
         log::info!("Getting synced entity after {date} and for the page {page}...");
 
         let response = self
@@ -206,7 +204,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .await;
 
         let response = ensure_success_response(response).await?;
-        match response.json::<Vec<SyncedEntity>>().await {
+        match response.json::<SyncedEntitiesPageDto>().await {
             Ok(result) => Ok(result),
             Err(_) => Err(BrainyBackendClientError::UnexpectedResponse),
         }

@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use mockall::automock;
 use thiserror::Error;
 
-use crate::{backend::models::UserInformnationDto, sync::entities::synced_entity::SyncedEntity};
+use crate::backend::models::{SyncedEntitiesPageDto, UserInformnationDto};
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum BrainyBackendClientError {
@@ -56,5 +56,5 @@ pub trait BrainyBackendClient: Send + Sync {
         &self,
         date: DateTime<Utc>,
         page: u32,
-    ) -> Result<Vec<SyncedEntity>, BrainyBackendClientError>;
+    ) -> Result<SyncedEntitiesPageDto, BrainyBackendClientError>;
 }

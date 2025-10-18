@@ -15,7 +15,9 @@ use crate::{
         value_objects::file_system_item_name::FileSystemItemName,
     },
     generated_code::{self},
-    local_configurations::repositories::traits::LocalConfigurationRepository,
+    local_configurations::{
+        entities::LocalConfiguration, repositories::traits::LocalConfigurationRepository,
+    },
     sync::{
         entities::synced_entity::{EntityType, SyncedEntity},
         repositories::traits::sync_repository::SyncRepository,
@@ -23,7 +25,7 @@ use crate::{
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
-const LAST_SYNC_PAGE_CONFIGURATION_NAME: &str = "LAST_SYNC_PAGE";
+const SYNC_PAGE_TO_GET_CONFIGURATION_NAME: &str = "SYNC_PAGE_TO_GET";
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum SyncError {
@@ -69,7 +71,7 @@ impl SyncService {
 
         let last_sync_page = self
             .local_configuration_repository
-            .get_by_name(LAST_SYNC_PAGE_CONFIGURATION_NAME)
+            .get_by_name(SYNC_PAGE_TO_GET_CONFIGURATION_NAME)
             .await?
             .map(|conf| conf.value.parse::<u32>().unwrap())
             .unwrap_or(0);
@@ -78,13 +80,33 @@ impl SyncService {
             .get_synced_entities_after_ordered_by_created_date(last_sync_date, last_sync_page)
             .await?;
 
-        for synced_entity in result {
+        for synced_entity in result.synced_entities {
             self.process_synced_entity(synced_entity).await?;
         }
 
-        // TODO: update configuration
-        // TODO: return correct
-        Ok(false)
+        if result.has_more {
+            self.local_configuration_repository
+                .upsert(&LocalConfiguration {
+                    name: SYNC_PAGE_TO_GET_CONFIGURATION_NAME.to_string(),
+                    value: (last_sync_page + 1).to_string(),
+                })
+                .await?;
+        } else {
+            self.local_configuration_repository
+                .upsert(&LocalConfiguration {
+                    name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
+                    value: Utc::now().to_string(),
+                })
+                .await?;
+            self.local_configuration_repository
+                .upsert(&LocalConfiguration {
+                    name: SYNC_PAGE_TO_GET_CONFIGURATION_NAME.to_string(),
+                    value: 0.to_string(),
+                })
+                .await?;
+        }
+
+        Ok(result.has_more)
     }
 
     async fn process_synced_entity(&self, synced_entity: SyncedEntity) -> Result<(), SyncError> {
@@ -216,7 +238,9 @@ impl SyncService {
 mod tests {
     use crate::{
         ROOT_FOLDER_ID,
-        backend::traits::brainy_backend_client::MockBrainyBackendClient,
+        backend::{
+            models::SyncedEntitiesPageDto, traits::brainy_backend_client::MockBrainyBackendClient,
+        },
         cells::entities::{cell::CellType, repetition::State, review::Rating},
         common::{
             extensions::into_timestamp::IntoTimestamp,
@@ -332,7 +356,12 @@ mod tests {
 
         backend_client
             .expect_get_synced_entities_after_ordered_by_created_date()
-            .returning(move |_, _| Ok(synced_entities.clone()));
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: synced_entities.clone(),
+                    has_more: false,
+                })
+            });
 
         // Act
 
@@ -448,7 +477,12 @@ mod tests {
 
         backend_client
             .expect_get_synced_entities_after_ordered_by_created_date()
-            .returning(move |_, _| Ok(synced_entities.clone()));
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: synced_entities.clone(),
+                    has_more: false,
+                })
+            });
 
         // Act
 
@@ -548,7 +582,12 @@ mod tests {
 
         backend_client
             .expect_get_synced_entities_after_ordered_by_created_date()
-            .returning(move |_, _| Ok(synced_entities.clone()));
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: synced_entities.clone(),
+                    has_more: false,
+                })
+            });
 
         // Act
 
@@ -579,5 +618,6 @@ mod tests {
         assert!(cells.iter().any(|c| c.content() == "new content"));
     }
 
-    // TODO: test that modified date get sets correctly, configuration update
+    // TODO: test that modified date get sets correctly, configuration update, and correct return
+    // value
 }
