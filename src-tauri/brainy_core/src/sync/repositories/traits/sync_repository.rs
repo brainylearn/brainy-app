@@ -15,7 +15,7 @@ pub trait SyncRepository: Send + Sync {
         entity_name: &str,
         entity_created_date: DateTime<Utc>,
         entity_id: Guid,
-        delete_date: DateTime<Utc>,
+        deleted_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError>;
 
     async fn upsert_folder_with_modified_date_if_modified_before(

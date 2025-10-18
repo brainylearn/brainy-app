@@ -27,6 +27,8 @@ pub async fn sync(
     context.save_changes().await?;
     Ok(())
 
+    // TODO: repository for getting modified after or on deleted entities
     // TODO: send to server changes (all entities including deleted entitites) (exclude fetched
     // entities)
+    // TODO: unit test repositories for filtering on modified date to send to backend
 }

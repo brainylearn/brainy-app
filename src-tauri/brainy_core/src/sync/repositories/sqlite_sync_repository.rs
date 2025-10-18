@@ -30,7 +30,7 @@ impl SyncRepository for SqliteSyncRepository {
         entity_name: &str,
         entity_created_date: DateTime<Utc>,
         entity_id: Guid,
-        delete_date: DateTime<Utc>,
+        deleted_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
@@ -46,10 +46,10 @@ impl SyncRepository for SqliteSyncRepository {
 
         let result = sqlx::query!(
             r#"UPDATE deleted_entities
-                SET delete_date = $1, entity_created_date = $2
+                SET deleted_date = $1, entity_created_date = $2
                 WHERE entity_name = $3 AND entity_id = $4
             "#,
-            delete_date,
+            deleted_date,
             entity_created_date,
             entity_name,
             entity_id

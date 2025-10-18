@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
-use chrono::{Datelike, NaiveDate, NaiveTime, Utc};
+use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, Utc};
 use rand::SeedableRng;
 use rand::seq::SliceRandom;
 use rand_chacha::ChaCha8Rng;
@@ -132,6 +132,91 @@ impl CellRepository for SqliteCellRepository {
             Ok(rows) => {
                 let cells = convert_rows_to_cells(rows);
                 Ok(cells)
+            }
+        }
+    }
+
+    async fn get_all_cells_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Cell>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            CellRow,
+            r#"SELECT
+                cell.id as "cell_id: _",
+                cell.created_date as "cell_created_date: _",
+                cell.file_id as "cell_file_id: _",
+                cell.content as cell_content,
+                cell.cell_index as "cell_index: _",
+                cell.cell_type as "cell_type: _",
+                cell.searchable_content as cell_searchable_content,
+
+                repetition.id as "repetition_id: _",
+                repetition.created_date as "repetition_created_date: _",
+                repetition.file_id as "repetition_file_id: _",
+                repetition.cell_id as "repetition_cell_id: _",
+                repetition.due as "repetition_due: _",
+                repetition.stability as "repetition_stability: _",
+                repetition.difficulty as "repetition_difficulty: _",
+                repetition.elapsed_days as "repetition_elapsed_days: _",
+                repetition.scheduled_days as "repetition_scheduled_days",
+                repetition.reps as "repetition_reps: _",
+                repetition.lapses as "repetition_lapses: _",
+                repetition.state as "repetition_state: _",
+                repetition.last_review as "repetition_last_review: _",
+                repetition.additional_content as "repetition_additional_content: _"
+
+            FROM cells As cell
+            LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
+            WHERE cell.modified_date >= datetime($1)"#,
+            modified_date
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => {
+                let cells = convert_rows_to_cells(rows);
+                Ok(cells)
+            }
+        }
+    }
+
+    async fn get_all_repetitions_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Repetition>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            RepetitionRow,
+            r#"SELECT
+                id as "id: _",
+                file_id as "file_id: _",
+                created_date as "created_date: _",
+                cell_id as "cell_id: _",
+                due as "due: _",
+                stability as "stability: _",
+                difficulty as "difficulty: _",
+                elapsed_days as "elapsed_days: _",
+                scheduled_days as "scheduled_days",
+                reps as "reps: _",
+                lapses as "lapses: _",
+                state as "state: _",
+                last_review as "last_review: _",
+                additional_content as "additional_content: _"
+
+            FROM repetitions
+            WHERE modified_date >= datetime($1)"#,
+            modified_date
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => {
+                let result = rows.into_iter().map(|row| row.into()).collect::<Vec<_>>();
+                Ok(result)
             }
         }
     }

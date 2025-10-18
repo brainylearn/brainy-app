@@ -21,8 +21,7 @@ use crate::{
         traits::{file_repository::FileRepository, folder_repository::FolderRepository},
     },
     local_configurations::repositories::{
-        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
-        traits::LocalConfigurationRepository,
+        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository, traits::local_configuration_repository::LocalConfigurationRepository,
     },
     sync::repositories::{
         sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository,
@@ -68,7 +67,7 @@ impl SqliteRepositoriesContext {
             file_repository: Arc::new(SqliteFileRepository::new(arc_pool.clone(), tx.clone())),
             folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
             cell_repository: Arc::new(SqliteCellRepository::new(arc_pool.clone(), tx.clone())),
-            review_repository: Arc::new(SqliteReviewRepository::new(tx.clone())),
+            review_repository: Arc::new(SqliteReviewRepository::new(arc_pool.clone(), tx.clone())),
             local_configuration_repository: Arc::new(SqliteLocalConfigurationRepository::new(
                 arc_pool.clone(),
                 tx.clone(),

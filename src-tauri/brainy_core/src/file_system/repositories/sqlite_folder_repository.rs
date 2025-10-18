@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
@@ -81,6 +82,30 @@ impl FolderRepository for SqliteFolderRepository {
             FROM folders
             WHERE parent_id = $1"#,
             parent_folder_id
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+        }
+    }
+
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Folder>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            FolderRow,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                parent_id as "parent_id: _",
+                name
+            FROM folders
+            WHERE modified_date >= datetime($1)"#,
+            modified_date
         )
         .fetch_all(&*self.pool)
         .await;

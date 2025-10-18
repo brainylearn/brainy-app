@@ -6,12 +6,17 @@ use crate::{
     },
 };
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 #[async_trait]
 pub trait FolderRepository: Send + Sync {
     async fn get_by_id(&self, id: Guid) -> Result<Folder, RepositoryError>;
     async fn get_all_folders(&self) -> Result<Vec<Folder>, RepositoryError>;
     async fn get_subfolders(&self, parent_folder_id: Guid) -> Result<Vec<Folder>, RepositoryError>;
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Folder>, RepositoryError>;
     async fn exists(
         &self,
         parent_id: Option<Guid>,

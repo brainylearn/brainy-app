@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use crate::{
     Guid,
@@ -22,6 +23,16 @@ pub trait CellRepository: Send + Sync {
         &self,
         file_id: Guid,
     ) -> Result<Vec<Cell>, RepositoryError>;
+
+    async fn get_all_cells_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Cell>, RepositoryError>;
+
+    async fn get_all_repetitions_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Repetition>, RepositoryError>;
 
     async fn create(&self, cell: &Cell) -> Result<(), RepositoryError>;
     async fn update(&self, cell: &Cell) -> Result<(), RepositoryError>;

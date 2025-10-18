@@ -9,8 +9,7 @@ use crate::{
     local_configurations::{
         entities::LocalConfiguration,
         repositories::{
-            sqlite_local_configuration_repository::local_configuration_row::LocalConfigurationRow,
-            traits::LocalConfigurationRepository,
+            sqlite_local_configuration_repository::local_configuration_row::LocalConfigurationRow, traits::local_configuration_repository::LocalConfigurationRepository,
         },
     },
 };

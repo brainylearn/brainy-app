@@ -6,22 +6,15 @@ use prost::Message;
 use thiserror::Error;
 
 use crate::{
-    Guid,
-    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
-    cells::entities::{cell::Cell, repetition::Repetition, review::Review},
-    common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError},
-    file_system::{
+    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError}, cells::entities::{cell::Cell, repetition::Repetition, review::Review}, common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError}, file_system::{
         entities::{file::File, folder::Folder},
         value_objects::file_system_item_name::FileSystemItemName,
-    },
-    generated_code::{self},
-    local_configurations::{
-        entities::LocalConfiguration, repositories::traits::LocalConfigurationRepository,
-    },
-    sync::{
+    }, generated_code::{self}, local_configurations::{
+        entities::LocalConfiguration, repositories::traits::local_configuration_repository::LocalConfigurationRepository, 
+    }, sync::{
         entities::synced_entity::{EntityType, SyncedEntity},
         repositories::traits::sync_repository::SyncRepository,
-    },
+    }, Guid
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
@@ -219,7 +212,7 @@ impl SyncService {
                         &deleted_entity.entity_name,
                         synced_entity.created_date,
                         synced_entity.entity_id,
-                        deleted_entity.delete_date.unwrap().into_datetime(),
+                        deleted_entity.deleted_date.unwrap().into_datetime(),
                     )
                     .await?;
             }
