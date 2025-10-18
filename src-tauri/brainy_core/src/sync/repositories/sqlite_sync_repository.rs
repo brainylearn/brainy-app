@@ -28,6 +28,7 @@ impl SyncRepository for SqliteSyncRepository {
     async fn apply_deleted_entity(
         &self,
         entity_name: &str,
+        entity_created_date: DateTime<Utc>,
         entity_id: Guid,
         delete_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError> {
@@ -45,10 +46,11 @@ impl SyncRepository for SqliteSyncRepository {
 
         let result = sqlx::query!(
             r#"UPDATE deleted_entities
-                SET delete_date = $1
-                WHERE entity_name = $2 AND entity_id = $3
+                SET delete_date = $1, entity_created_date = $2
+                WHERE entity_name = $3 AND entity_id = $4
             "#,
             delete_date,
+            entity_created_date,
             entity_name,
             entity_id
         )
@@ -73,16 +75,24 @@ impl SyncRepository for SqliteSyncRepository {
         let folder_id = folder.id();
         let folder_name = folder.name().to_string();
         let parent_id = folder.parent_id();
+        let created_date = folder.created_date();
         let result = sqlx::query!(
-            r#"INSERT INTO folders(id, name, parent_id, modified_date) VALUES ($1, $2, $3, $4)
+            r#"INSERT INTO folders(
+                id,
+                name,
+                parent_id,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT(id) DO UPDATE
-            SET id = $1, name = $2, parent_id = $3, modified_date = datetime($4)
+            SET id = $1, name = $2, parent_id = $3, modified_date = $4, created_date = $5
             WHERE modified_date <= datetime($4)
             "#,
             folder_id,
             folder_name,
             parent_id,
-            modified_date
+            modified_date,
+            created_date
         )
         .execute(&mut *tx)
         .await;
@@ -108,7 +118,7 @@ impl SyncRepository for SqliteSyncRepository {
         let result = sqlx::query!(
             r#"INSERT INTO files(id, name, parent_id, modified_date) VALUES ($1, $2, $3, $4)
             ON CONFLICT(id) DO UPDATE
-            SET id = $1, name = $2, parent_id = $3, modified_date = datetime($4)
+            SET id = $1, name = $2, parent_id = $3, modified_date = $4
             WHERE modified_date <= datetime($4)
             "#,
             file_id,

@@ -168,6 +168,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -217,6 +218,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -267,6 +269,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -325,6 +328,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -383,6 +387,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );

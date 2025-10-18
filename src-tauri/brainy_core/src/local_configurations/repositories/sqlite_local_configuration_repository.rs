@@ -26,7 +26,6 @@ impl SqliteLocalConfigurationRepository {
     }
 }
 
-// TODO: unit tests (maybe not if used in some service)
 #[async_trait]
 impl LocalConfigurationRepository for SqliteLocalConfigurationRepository {
     async fn get_by_name(&self, name: &str) -> Result<Option<LocalConfiguration>, RepositoryError> {

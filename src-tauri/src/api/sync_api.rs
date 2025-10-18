@@ -27,6 +27,6 @@ pub async fn sync(
     context.save_changes().await?;
     Ok(())
 
-    // TODO: fix proto files and remove submodule
-    // TODO: send to server changes
+    // TODO: send to server changes (all entities including deleted entitites) (exclude fetched
+    // entities)
 }

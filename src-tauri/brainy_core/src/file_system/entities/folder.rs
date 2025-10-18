@@ -1,8 +1,11 @@
+use chrono::{DateTime, Utc};
+
 use crate::{Guid, file_system::value_objects::file_system_item_name::FileSystemItemName};
 
 #[derive(Debug, Clone)]
 pub struct Folder {
     id: Guid,
+    created_date: DateTime<Utc>,
     parent_id: Option<Guid>,
     name: FileSystemItemName,
 }
@@ -15,15 +18,22 @@ impl Folder {
     ) -> Folder {
         Folder {
             id: id.unwrap_or(Guid::new_v4()),
+            created_date: Utc::now(),
             parent_id,
             name,
         }
     }
 
     /// Used for unit testing, or repositories when reconsturcting a folder.
-    pub fn new_unchecked(id: Guid, parent_id: Option<Guid>, name: FileSystemItemName) -> Self {
+    pub fn new_unchecked(
+        id: Guid,
+        created_date: DateTime<Utc>,
+        parent_id: Option<Guid>,
+        name: FileSystemItemName,
+    ) -> Self {
         Folder {
             id,
+            created_date,
             parent_id,
             name,
         }
@@ -31,6 +41,10 @@ impl Folder {
 
     pub fn id(&self) -> Guid {
         self.id
+    }
+
+    pub fn created_date(&self) -> DateTime<Utc> {
+        self.created_date
     }
 
     pub fn parent_id(&self) -> Option<Guid> {

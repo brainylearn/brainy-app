@@ -103,6 +103,7 @@ impl SyncService {
                 let folder = generated_code::Folder::decode(&bytes[..]).unwrap();
                 let entity = Folder::new_unchecked(
                     synced_entity.entity_id,
+                    synced_entity.created_date,
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
                 );
@@ -117,6 +118,7 @@ impl SyncService {
                 let file = generated_code::File::decode(&bytes[..]).unwrap();
                 let entity = File::new_unchecked(
                     synced_entity.entity_id,
+                    synced_entity.created_date,
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
                 );
@@ -131,6 +133,7 @@ impl SyncService {
                 let cell = generated_code::Cell::decode(&bytes[..]).unwrap();
                 let entity = Cell::new_unchecked(
                     synced_entity.entity_id,
+                    synced_entity.created_date,
                     Guid::parse_str(&cell.file_id).unwrap(),
                     cell.content,
                     serde_json::from_str(&cell.cell_type).unwrap(),
@@ -149,6 +152,7 @@ impl SyncService {
                 let repetition = generated_code::Repetition::decode(&bytes[..]).unwrap();
                 let entity = Repetition::new_unchecked(
                     synced_entity.entity_id,
+                    synced_entity.created_date,
                     Guid::parse_str(&repetition.file_id).unwrap(),
                     Guid::parse_str(&repetition.cell_id).unwrap(),
                     repetition.due.unwrap().into_datetime(),
@@ -171,8 +175,9 @@ impl SyncService {
             }
             EntityType::Review => {
                 let review = generated_code::Review::decode(&bytes[..]).unwrap();
-                let entity = Review::new(
-                    Some(synced_entity.entity_id),
+                let entity = Review::new_unchecked(
+                    synced_entity.entity_id,
+                    synced_entity.created_date,
                     review.cell_id.map(|value| Guid::parse_str(&value).unwrap()),
                     review.study_time,
                     review.date.unwrap().into_datetime(),
@@ -190,6 +195,7 @@ impl SyncService {
                 self.sync_repository
                     .apply_deleted_entity(
                         &deleted_entity.entity_name,
+                        synced_entity.created_date,
                         synced_entity.entity_id,
                         deleted_entity.delete_date.unwrap().into_datetime(),
                     )
@@ -388,6 +394,7 @@ mod tests {
             .file_repository()
             .create(&File::new_unchecked(
                 file_id,
+                Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
             ))
@@ -398,6 +405,7 @@ mod tests {
             .cell_repository()
             .create(&Cell::new_unchecked(
                 cell_id,
+                Utc::now(),
                 file_id,
                 "old content".to_string(),
                 CellType::FlashCard,
@@ -515,6 +523,7 @@ mod tests {
             .file_repository()
             .create(&File::new_unchecked(
                 file_id,
+                Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
             ))
@@ -525,6 +534,7 @@ mod tests {
             .cell_repository()
             .create(&Cell::new_unchecked(
                 cell_id,
+                Utc::now(),
                 file_id,
                 "old content".to_string(),
                 CellType::FlashCard,

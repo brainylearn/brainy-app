@@ -1,5 +1,6 @@
 use std::{collections::HashSet, fmt::Display};
 
+use chrono::{DateTime, Utc};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -33,6 +34,7 @@ impl Display for CellType {
 #[serde(rename_all = "camelCase")]
 pub struct Cell {
     id: Guid,
+    created_date: DateTime<Utc>,
     file_id: Guid,
     content: String,
     cell_type: CellType,
@@ -51,6 +53,7 @@ impl Cell {
     ) -> Self {
         let mut output = Self {
             id: id.unwrap_or(Guid::new_v4()),
+            created_date: Utc::now(),
             file_id,
             content,
             cell_type,
@@ -65,8 +68,10 @@ impl Cell {
     }
 
     /// Used for unit testing, or repositories when reconsturcting a cell.
+    #[allow(clippy::too_many_arguments)]
     pub fn new_unchecked(
         id: Guid,
+        created_date: DateTime<Utc>,
         file_id: Guid,
         content: String,
         cell_type: CellType,
@@ -76,6 +81,7 @@ impl Cell {
     ) -> Self {
         Self {
             id,
+            created_date,
             file_id,
             content,
             cell_type,
@@ -87,6 +93,10 @@ impl Cell {
 
     pub fn id(&self) -> Guid {
         self.id
+    }
+
+    pub fn created_date(&self) -> DateTime<Utc> {
+        self.created_date
     }
 
     pub fn file_id(&self) -> Guid {

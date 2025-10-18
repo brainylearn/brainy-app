@@ -1,11 +1,10 @@
 -- Since there is a single client, we can allow read uncommitted.
 PRAGMA read_uncommitted = TRUE;
 
--- TODO: create date is requried for all
-
 CREATE TABLE folders(
     id                          TEXT        NOT NULL        PRIMARY KEY,
-    modified_date               DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    created_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
+    modified_date               DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     name                        TEXT        NOT NULL,
     parent_id                   TEXT,
     FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
@@ -19,7 +18,8 @@ INSERT INTO folders(id, name, parent_id) VALUES (X'00000000000000000000000000000
 
 CREATE TABLE files(
     id                          TEXT        NOT NULL        PRIMARY KEY,
-    modified_date               DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    created_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
+    modified_date               DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     name                        TEXT        NOT NULL,
     parent_id                   TEXT        NOT NULL,
     FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
@@ -30,7 +30,8 @@ CREATE TABLE files(
 
 CREATE TABLE cells(
     id                          TEXT        NOT NULL        PRIMARY KEY,
-    modified_date               DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    created_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
+    modified_date               DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     content                     TEXT        NOT NULL        DEFAULT "",
     cell_type                   TEXT        NOT NULL,
     cell_index                  INTEGER     NOT NULL,
@@ -73,7 +74,8 @@ END;
 
 CREATE TABLE repetitions(
     id                          TEXT        NOT NULL        PRIMARY KEY,
-    modified_date               DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    created_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
+    modified_date               DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     file_id                     TEXT        NOT NULL,
     cell_id                     TEXT        NOT NULL,
     due                         DATETIME    NOT NULL,
@@ -97,7 +99,8 @@ CREATE INDEX repetitions_file_id_index ON repetitions(file_id);
 
 CREATE TABLE reviews(
     id                          TEXT        NOT NULL        PRIMARY KEY,
-    modified_date               DATETIME    DEFAULT CURRENT_TIMESTAMP,
+    created_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
+    modified_date               DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     cell_id                     TEXT,
     study_time                  INTEGER     NOT NULL,
     date                        DATETIME    NOT NULL,
@@ -110,6 +113,7 @@ CREATE TABLE reviews(
 CREATE TABLE deleted_entities(
     entity_name                 TEXT        NOT NULL,
     entity_id                   TEXT        NOT NULL,
+    entity_created_date         DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     delete_date                 DATETIME    DEFAULT CURRENT_TIMESTAMP
 );
 

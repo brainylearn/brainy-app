@@ -32,7 +32,13 @@ impl FileRepository for SqliteFileRepository {
     async fn get_by_id(&self, id: Guid) -> Result<File, RepositoryError> {
         let row = sqlx::query_as!(
             FileRow,
-            r#"SELECT id as "id: _", parent_id as "parent_id: _", name FROM files WHERE id = $1"#,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                parent_id as "parent_id: _",
+                name
+            FROM files
+            WHERE id = $1"#,
             id
         )
         .fetch_one(&*self.pool)
@@ -47,7 +53,12 @@ impl FileRepository for SqliteFileRepository {
     async fn get_all_files(&self) -> Result<Vec<File>, RepositoryError> {
         let rows = sqlx::query_as!(
             FileRow,
-            r#"SELECT id as "id: _", parent_id as "parent_id: _", name FROM files"#,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                parent_id as "parent_id: _",
+                name
+            FROM files"#,
         )
         .fetch_all(&*self.pool)
         .await;
@@ -61,7 +72,13 @@ impl FileRepository for SqliteFileRepository {
     async fn get_folder_files(&self, parent_folder_id: Guid) -> Result<Vec<File>, RepositoryError> {
         let rows = sqlx::query_as!(
             FileRow,
-            r#"SELECT id as "id: _", parent_id as "parent_id: _", name FROM files WHERE parent_id = $1"#,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                parent_id as "parent_id: _",
+                name
+            FROM files
+            WHERE parent_id = $1"#,
             parent_folder_id
         )
         .fetch_all(&*self.pool)
@@ -99,12 +116,14 @@ impl FileRepository for SqliteFileRepository {
         let tx = tx.as_mut();
 
         let file_id = file.id();
+        let created_date = file.created_date();
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
 
         let result = sqlx::query!(
-            "INSERT INTO files(id, name, parent_id) VALUES ($1, $2, $3)",
+            "INSERT INTO files(id, created_date, name, parent_id) VALUES ($1, $2, $3, $4)",
             file_id,
+            created_date,
             file_name,
             parent_id
         )
@@ -122,12 +141,14 @@ impl FileRepository for SqliteFileRepository {
         let tx = tx.as_mut();
 
         let file_id = file.id();
+        let created_date = file.created_date();
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
 
         let result = sqlx::query!(
-            "UPDATE files SET id = $1, name = $2, parent_id = $3 WHERE id = $1",
+            "UPDATE files SET id = $1, created_date = $2, name = $3, parent_id = $4 WHERE id = $1",
             file_id,
+            created_date,
             file_name,
             parent_id
         )
@@ -233,18 +254,22 @@ pub mod tests {
 }
 
 mod file_row {
+    use chrono::{DateTime, Utc};
+
     use super::*;
 
     pub(super) struct FileRow {
         pub id: Guid,
+        pub created_date: DateTime<Utc>,
         pub parent_id: Option<Guid>,
         pub name: String,
     }
 
     impl From<FileRow> for File {
         fn from(value: FileRow) -> Self {
-            File::new(
-                Some(value.id),
+            File::new_unchecked(
+                value.id,
+                value.created_date,
                 value.parent_id,
                 FileSystemItemName::new_unchecked(value.name.clone()),
             )

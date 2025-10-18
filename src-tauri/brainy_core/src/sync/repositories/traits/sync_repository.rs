@@ -13,6 +13,7 @@ pub trait SyncRepository: Send + Sync {
     async fn apply_deleted_entity(
         &self,
         entity_name: &str,
+        entity_created_date: DateTime<Utc>,
         entity_id: Guid,
         delete_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError>;

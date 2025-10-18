@@ -27,6 +27,7 @@ impl ReviewRepository for SqliteReviewRepository {
 
         let Review {
             id,
+            created_date,
             cell_id,
             study_time,
             date,
@@ -35,9 +36,10 @@ impl ReviewRepository for SqliteReviewRepository {
 
         let result = sqlx::query!(
             r#"INSERT INTO
-                reviews(id, cell_id, study_time, date, rating)
-                VALUES ($1, $2, $3, $4, $5)"#,
+                reviews(id, created_date, cell_id, study_time, date, rating)
+                VALUES ($1, $2, $3, $4, $5, $6)"#,
             id,
+            created_date,
             cell_id,
             study_time,
             date,
