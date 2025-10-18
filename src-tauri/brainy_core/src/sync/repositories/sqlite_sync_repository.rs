@@ -6,7 +6,11 @@ use sqlx::{Sqlite, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    cells::entities::{cell::Cell, repetition::Repetition, review::Review}, common::repository_error::RepositoryError, file_system::entities::{file::File, folder::Folder}, sync::repositories::traits::sync_repository::SyncRepository, Guid
+    Guid,
+    cells::entities::{cell::Cell, repetition::Repetition, review::Review},
+    common::repository_error::RepositoryError,
+    file_system::entities::{file::File, folder::Folder},
+    sync::repositories::traits::sync_repository::SyncRepository,
 };
 
 pub struct SqliteSyncRepository {
@@ -127,7 +131,6 @@ impl SyncRepository for SqliteSyncRepository {
         cell: &Cell,
         modified_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError> {
-
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
         let id = cell.id();

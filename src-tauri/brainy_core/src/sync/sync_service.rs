@@ -6,13 +6,20 @@ use prost::Message;
 use thiserror::Error;
 
 use crate::{
-    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError}, cells::{
-        entities::{cell::Cell, repetition::Repetition, review::Review},
-    }, common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError}, file_system::{
-        entities::{file::File, folder::Folder}, value_objects::file_system_item_name::FileSystemItemName
-    }, generated_code::{self}, local_configurations::repositories::traits::LocalConfigurationRepository, sync::{
-        entities::synced_entity::{EntityType, SyncedEntity}, repositories::traits::sync_repository::SyncRepository,
-    }, Guid
+    Guid,
+    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+    cells::entities::{cell::Cell, repetition::Repetition, review::Review},
+    common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError},
+    file_system::{
+        entities::{file::File, folder::Folder},
+        value_objects::file_system_item_name::FileSystemItemName,
+    },
+    generated_code::{self},
+    local_configurations::repositories::traits::LocalConfigurationRepository,
+    sync::{
+        entities::synced_entity::{EntityType, SyncedEntity},
+        repositories::traits::sync_repository::SyncRepository,
+    },
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
@@ -201,13 +208,12 @@ impl SyncService {
 
 #[cfg(test)]
 mod tests {
-    use prost_types::Timestamp;
-
     use crate::{
         ROOT_FOLDER_ID,
         backend::traits::brainy_backend_client::MockBrainyBackendClient,
         cells::entities::{cell::CellType, repetition::State, review::Rating},
         common::{
+            extensions::into_timestamp::IntoTimestamp,
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
         },
@@ -255,7 +261,7 @@ mod tests {
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
                 data: encode_to_base64(generated_code::Folder {
-                    modified_date: Some(Utc::now().to_timestamp()),
+                    modified_date: Some(Utc::now().into_timestamp()),
                     name: "test".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
                 }),
@@ -267,7 +273,7 @@ mod tests {
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
                 data: encode_to_base64(generated_code::File {
-                    modified_date: Some(Utc::now().to_timestamp()),
+                    modified_date: Some(Utc::now().into_timestamp()),
                     name: "test".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
                 }),
@@ -279,7 +285,7 @@ mod tests {
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
                 data: encode_to_base64(generated_code::Cell {
-                    modified_date: Some(Utc::now().to_timestamp()),
+                    modified_date: Some(Utc::now().into_timestamp()),
                     content: "content".to_string(),
                     cell_type: serde_json::to_string(&CellType::FlashCard).unwrap(),
                     index: 1,
@@ -294,10 +300,10 @@ mod tests {
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
                 data: encode_to_base64(generated_code::Repetition {
-                    modified_date: Some(Utc::now().to_timestamp()),
+                    modified_date: Some(Utc::now().into_timestamp()),
                     file_id: file_id.to_string(),
                     cell_id: cell_id.to_string(),
-                    due: Some(Utc::now().to_timestamp()),
+                    due: Some(Utc::now().into_timestamp()),
                     state: serde_json::to_string(&State::Learning).unwrap(),
                     ..Default::default()
                 }),
@@ -309,9 +315,9 @@ mod tests {
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
                 data: encode_to_base64(generated_code::Review {
-                    modified_date: Some(Utc::now().to_timestamp()),
+                    modified_date: Some(Utc::now().into_timestamp()),
                     cell_id: Some(cell_id.to_string()),
-                    date: Some(Utc::now().to_timestamp()),
+                    date: Some(Utc::now().into_timestamp()),
                     rating: serde_json::to_string(&Rating::Hard).unwrap(),
                     ..Default::default()
                 }),
@@ -367,20 +373,201 @@ mod tests {
         assert_eq!(1, home_statistics.number_of_reviews);
     }
 
-    // TODO: test update on existing with and withoud correct modified date, also check that
-    // modified date get sets correctly, configuration update
+    #[tokio::test]
+    pub async fn fetch_and_process_next_sync_page_existing_entity_with_older_modified_date_entity_updated()
+     {
+        // Arrange
 
-    // TODO: move
-    pub trait ToTimestampExt {
-        fn to_timestamp(&self) -> Timestamp;
+        let (mut context, service, mut backend_client) = create_test_dependencies().await;
+        let user_id = Guid::new_v4();
+
+        let file_id = Guid::new_v4();
+        let cell_id = Guid::new_v4();
+
+        context
+            .file_repository()
+            .create(&File::new_unchecked(
+                file_id,
+                Some(ROOT_FOLDER_ID),
+                FileSystemItemName::new_unchecked("old name".to_string()),
+            ))
+            .await
+            .unwrap();
+
+        context
+            .cell_repository()
+            .create(&Cell::new_unchecked(
+                cell_id,
+                file_id,
+                "old content".to_string(),
+                CellType::FlashCard,
+                1,
+                "".to_string(),
+                Vec::new(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        let synced_entities: Vec<SyncedEntity> = vec![
+            SyncedEntity {
+                user_id,
+                entity_id: file_id,
+                entity_type: EntityType::File,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: encode_to_base64(generated_code::File {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    name: "new name".into(),
+                    parent_id: Some(ROOT_FOLDER_ID.into()),
+                }),
+            },
+            SyncedEntity {
+                user_id,
+                entity_id: cell_id,
+                entity_type: EntityType::Cell,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: encode_to_base64(generated_code::Cell {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    content: "new content".to_string(),
+                    cell_type: serde_json::to_string(&CellType::FlashCard).unwrap(),
+                    file_id: file_id.to_string(),
+                    ..Default::default()
+                }),
+            },
+        ];
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| Ok(synced_entities.clone()));
+
+        // Act
+
+        service
+            .fetch_and_process_next_sync_page(
+                &*(Box::new(backend_client) as Box<dyn BrainyBackendClient>),
+            )
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let files = context.file_repository().get_all_files().await.unwrap();
+        assert_eq!(1, files.len());
+        assert!(
+            files
+                .iter()
+                .any(|f| f.name() == FileSystemItemName::new_unchecked("new name".to_string()))
+        );
+
+        let cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file_id)
+            .await
+            .unwrap();
+        assert_eq!(1, cells.len());
+        assert!(cells.iter().any(|c| c.content() == "new content"));
     }
 
-    impl ToTimestampExt for DateTime<Utc> {
-        fn to_timestamp(&self) -> Timestamp {
-            Timestamp {
-                seconds: self.timestamp(),
-                nanos: self.timestamp_nanos_opt().unwrap_or(0) as i32,
-            }
-        }
+    #[tokio::test]
+    pub async fn fetch_and_process_next_sync_page_existing_entity_with_newer_modified_date_entities_not_updated()
+     {
+        // Arrange
+
+        let (mut context, service, mut backend_client) = create_test_dependencies().await;
+        let user_id = Guid::new_v4();
+
+        let file_id = Guid::new_v4();
+        let cell_id = Guid::new_v4();
+
+        let synced_entities: Vec<SyncedEntity> = vec![
+            SyncedEntity {
+                user_id,
+                entity_id: file_id,
+                entity_type: EntityType::File,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: encode_to_base64(generated_code::File {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    name: "new name".into(),
+                    parent_id: Some(ROOT_FOLDER_ID.into()),
+                }),
+            },
+            SyncedEntity {
+                user_id,
+                entity_id: cell_id,
+                entity_type: EntityType::Cell,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: encode_to_base64(generated_code::Cell {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    content: "new content".to_string(),
+                    cell_type: serde_json::to_string(&CellType::FlashCard).unwrap(),
+                    file_id: file_id.to_string(),
+                    ..Default::default()
+                }),
+            },
+        ];
+
+        context
+            .file_repository()
+            .create(&File::new_unchecked(
+                file_id,
+                Some(ROOT_FOLDER_ID),
+                FileSystemItemName::new_unchecked("old name".to_string()),
+            ))
+            .await
+            .unwrap();
+
+        context
+            .cell_repository()
+            .create(&Cell::new_unchecked(
+                cell_id,
+                file_id,
+                "old content".to_string(),
+                CellType::FlashCard,
+                1,
+                "".to_string(),
+                Vec::new(),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| Ok(synced_entities.clone()));
+
+        // Act
+
+        service
+            .fetch_and_process_next_sync_page(
+                &*(Box::new(backend_client) as Box<dyn BrainyBackendClient>),
+            )
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let files = context.file_repository().get_all_files().await.unwrap();
+        assert_eq!(1, files.len());
+        assert!(
+            files
+                .iter()
+                .any(|f| f.name() == FileSystemItemName::new_unchecked("new name".to_string()))
+        );
+
+        let cells = context
+            .cell_repository()
+            .get_file_cells_ordered_by_index(file_id)
+            .await
+            .unwrap();
+        assert_eq!(1, cells.len());
+        assert!(cells.iter().any(|c| c.content() == "new content"));
     }
+
+    // TODO: test that modified date get sets correctly, configuration update
 }

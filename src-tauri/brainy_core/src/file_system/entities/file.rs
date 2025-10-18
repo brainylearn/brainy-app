@@ -21,11 +21,7 @@ impl File {
     }
 
     /// Used for unit testing, or repositories when reconsturcting a file.
-    pub fn new_unchecked(
-        id: Guid,
-        parent_id: Option<Guid>,
-        name: FileSystemItemName,
-    ) -> File {
+    pub fn new_unchecked(id: Guid, parent_id: Option<Guid>, name: FileSystemItemName) -> File {
         File {
             id,
             parent_id,

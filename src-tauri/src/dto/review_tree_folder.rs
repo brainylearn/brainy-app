@@ -134,8 +134,16 @@ pub mod tests {
         ];
 
         let files: Vec<File> = vec![
-            File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "file".try_into().unwrap()),
-            File::new_unchecked(Guid::new_v4(), Some(parent_folder_id), "file".try_into().unwrap()),
+            File::new_unchecked(
+                Guid::new_v4(),
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+            ),
+            File::new_unchecked(
+                Guid::new_v4(),
+                Some(parent_folder_id),
+                "file".try_into().unwrap(),
+            ),
         ];
 
         let mut study_repetitions = HashMap::new();

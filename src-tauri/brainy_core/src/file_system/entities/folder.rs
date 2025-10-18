@@ -21,11 +21,7 @@ impl Folder {
     }
 
     /// Used for unit testing, or repositories when reconsturcting a folder.
-    pub fn new_unchecked(
-        id: Guid,
-        parent_id: Option<Guid>,
-        name: FileSystemItemName,
-    ) -> Self {
+    pub fn new_unchecked(id: Guid, parent_id: Option<Guid>, name: FileSystemItemName) -> Self {
         Folder {
             id,
             parent_id,

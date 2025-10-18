@@ -628,7 +628,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cell = Cell::new(
@@ -677,7 +681,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
@@ -717,7 +725,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let mut cell = Cell::new(
@@ -790,7 +802,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cells = [
@@ -831,7 +847,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cell = Cell::new(
@@ -872,7 +892,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cell = Cell::new(
@@ -918,7 +942,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cell_id = Guid::new_v4();
@@ -1001,8 +1029,16 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file1 = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
-        let file2 = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test2".try_into().unwrap());
+        let file1 = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
+        let file2 = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test2".try_into().unwrap(),
+        );
         context.file_repository().create(&file1).await.unwrap();
         context.file_repository().create(&file2).await.unwrap();
 
@@ -1102,7 +1138,11 @@ pub mod tests {
 
         let mut context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let file = File::new_unchecked(Guid::new_v4(), Some(ROOT_FOLDER_ID), "test".try_into().unwrap());
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+        );
         context.file_repository().create(&file).await.unwrap();
 
         let cell_id = Guid::new_v4();

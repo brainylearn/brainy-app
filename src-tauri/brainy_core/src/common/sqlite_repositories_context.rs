@@ -23,7 +23,10 @@ use crate::{
     local_configurations::repositories::{
         sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
         traits::LocalConfigurationRepository,
-    }, sync::repositories::{sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository}, 
+    },
+    sync::repositories::{
+        sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository,
+    },
 };
 
 pub struct SqliteRepositoriesContext {

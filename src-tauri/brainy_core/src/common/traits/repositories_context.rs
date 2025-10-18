@@ -10,7 +10,8 @@ use crate::{
     file_system::repositories::traits::{
         file_repository::FileRepository, folder_repository::FolderRepository,
     },
-    local_configurations::repositories::traits::LocalConfigurationRepository, sync::repositories::traits::sync_repository::SyncRepository,
+    local_configurations::repositories::traits::LocalConfigurationRepository,
+    sync::repositories::traits::sync_repository::SyncRepository,
 };
 
 #[derive(Debug, Error)]
