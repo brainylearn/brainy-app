@@ -42,6 +42,7 @@ pub async fn run() -> Result<(), String> {
     let backend_url = Url::parse("http://localhost:5078").unwrap();
     let backend_client =
         BrainyBackendHttpClient::new(backend_url).expect("Cannot create backend client");
+    let backend_client = Arc::new(backend_client) as Arc<dyn BrainyBackendClient>;
 
     #[cfg(desktop)]
     {
@@ -77,6 +78,7 @@ pub async fn run() -> Result<(), String> {
                 repositories_context.cell_repository(),
             )));
             app.manage(Arc::new(SyncService::new(
+                backend_client.clone(),
                 repositories_context.sync_repository(),
                 repositories_context.local_configuration_repository(),
             )));
@@ -85,7 +87,7 @@ pub async fn run() -> Result<(), String> {
                 Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
             );
 
-            app.manage(Box::new(backend_client) as Box<dyn BrainyBackendClient>);
+            app.manage(backend_client);
 
             #[cfg(dev)]
             {

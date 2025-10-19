@@ -19,9 +19,10 @@ export default function SyncRow() {
             // TODO: refersh current file if user in file, also refresh home, etc...
             await sync();
             await dispatch(getReviewTreeFolderForRoot());
-        } finally {
-            setIsSyncing(false);
+        } catch (e) {
+            console.error(e);
         }
+        setIsSyncing(false);
     };
 
 	// TODO: sync shortcut

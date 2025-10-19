@@ -73,7 +73,7 @@ impl SqliteRepositoriesContext {
                 arc_pool.clone(),
                 tx.clone(),
             )),
-            sync_repository: Arc::new(SqliteSyncRepository::new(tx.clone())),
+            sync_repository: Arc::new(SqliteSyncRepository::new(arc_pool.clone(), tx.clone())),
         })
     }
 

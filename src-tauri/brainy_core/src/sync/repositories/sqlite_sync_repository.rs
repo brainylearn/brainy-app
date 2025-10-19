@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-use sqlx::{Sqlite, Transaction};
+use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -16,12 +16,13 @@ use crate::{
 };
 
 pub struct SqliteSyncRepository {
+    pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
 }
 
 impl SqliteSyncRepository {
-    pub fn new(tx: Arc<Mutex<Transaction<'static, Sqlite>>>) -> Self {
-        Self { tx }
+    pub fn new(pool: Arc<SqlitePool>, tx: Arc<Mutex<Transaction<'static, Sqlite>>>) -> Self {
+        Self { pool, tx }
     }
 }
 
@@ -68,6 +69,31 @@ impl SyncRepository for SqliteSyncRepository {
         }
 
         Ok(())
+    }
+
+    async fn get_all_deleted_entities_on_or_after(
+        &self,
+        deleted_date: DateTime<Utc>,
+    ) -> Result<Vec<DeletedEntity>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            DeletedEntity,
+            r#"SELECT
+                entity_id as "entity_id: _",
+                entity_name,
+                entity_created_date as "entity_created_date: _",
+                deleted_date as "deleted_date: _"
+            FROM deleted_entities
+            WHERE deleted_date >= datetime($1)"#,
+            deleted_date
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => Ok(rows.into_iter().collect()),
+        }
+
     }
 
     async fn upsert_folder_with_modified_date_if_modified_before(

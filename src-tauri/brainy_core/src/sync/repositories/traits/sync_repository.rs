@@ -15,6 +15,11 @@ pub trait SyncRepository: Send + Sync {
         deleted_entity: DeletedEntity,
     ) -> Result<(), RepositoryError>;
 
+    async fn get_all_deleted_entities_on_or_after(
+        &self,
+        deleted_date: DateTime<Utc>,
+    ) -> Result<Vec<DeletedEntity>, RepositoryError>;
+
     async fn upsert_folder_with_modified_date_if_modified_before(
         &self,
         folder: &Folder,

@@ -6,30 +6,23 @@ use prost::Message;
 use thiserror::Error;
 
 use crate::{
-    Guid,
-    backend::traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
-    cells::entities::{cell::Cell, repetition::Repetition, review::Review},
-    common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError},
-    file_system::{
-        entities::{file::File, folder::Folder},
-        value_objects::file_system_item_name::FileSystemItemName,
-    },
-    generated_code::{self},
-    local_configurations::{
+    backend::{models::SyncEntityDto, traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError}}, cells::entities::{cell::Cell, repetition::Repetition, review::Review}, common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError}, file_system::{
+        entities::{file::File, folder::Folder}, repositories::traits::folder_repository::FolderRepository, value_objects::file_system_item_name::FileSystemItemName
+    }, generated_code::{self}, local_configurations::{
         entities::LocalConfiguration,
         repositories::traits::local_configuration_repository::LocalConfigurationRepository,
-    },
-    sync::{
+    }, sync::{
         entities::{
             deleted_entity::DeletedEntity,
             synced_entity::{EntityType, SyncedEntity},
         },
         repositories::traits::sync_repository::SyncRepository,
-    },
+    }, Guid
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
 const SYNC_PAGE_TO_GET_CONFIGURATION_NAME: &str = "SYNC_PAGE_TO_GET";
+const LAST_SENT_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SENT_SYNC_DATE";
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum SyncError {
@@ -40,28 +33,31 @@ pub enum SyncError {
 }
 
 pub struct SyncService {
+    backend_client: Arc<dyn BrainyBackendClient>,
+    folder_repository: Arc<dyn FolderRepository>,
     sync_repository: Arc<dyn SyncRepository>,
     local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
 }
 
 impl SyncService {
     pub fn new(
+        backend_client: Arc<dyn BrainyBackendClient>,
+        folder_repository: Arc<dyn FolderRepository>,
         sync_repository: Arc<dyn SyncRepository>,
         local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
     ) -> Self {
         Self {
+            backend_client,
+            folder_repository,
             sync_repository,
             local_configuration_repository,
         }
     }
 
-    /// This function fetches ahd proccess the next fetch page, it also
+    /// This function fetches and proccess the next fetched page, it also
     /// updates all relevant configuration for fetching.
     /// Returns true if there are more sync pages to fetch.
-    pub async fn fetch_and_process_next_sync_page(
-        &self,
-        backend_client: &dyn BrainyBackendClient,
-    ) -> Result<bool, SyncError> {
+    pub async fn fetch_and_process_next_sync_page(&self) -> Result<bool, SyncError> {
         let last_sync_date = self
             .local_configuration_repository
             .get_by_name(LAST_SYNC_DATE_CONFIGURATION_NAME)
@@ -80,7 +76,8 @@ impl SyncService {
             .map(|conf| conf.value.parse::<u32>().unwrap())
             .unwrap_or(0);
 
-        let result = backend_client
+        let result = self
+            .backend_client
             .get_synced_entities_after_ordered_by_created_date(last_sync_date, last_sync_page)
             .await?;
 
@@ -99,7 +96,7 @@ impl SyncService {
             self.local_configuration_repository
                 .upsert(&LocalConfiguration {
                     name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
-                    value: Utc::now().to_string(),
+                    value: Utc::now().to_rfc3339(),
                 })
                 .await?;
             self.local_configuration_repository
@@ -235,6 +232,53 @@ impl SyncService {
 
         Ok(())
     }
+
+    /// Sends all entities that has changed since the last send.
+    pub async fn send_unsynced_entities(&self) -> Result<(), SyncError> {
+        let last_sent_sync_date = self
+            .local_configuration_repository
+            .get_by_name(LAST_SENT_SYNC_DATE_CONFIGURATION_NAME)
+            .await?
+            .map(|conf| {
+                DateTime::parse_from_rfc3339(&conf.value)
+                    .unwrap()
+                    .with_timezone(&Utc)
+            })
+            .unwrap_or(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap());
+
+        let mut synced_entities = Vec::<SyncEntityDto>::new();
+
+        for folder in self.folder_repository.get_all_modified_on_or_after(last_sent_sync_date).await? {
+            let data = encode_to_base64(generated_code::Folder {
+                name: folder.name().to_string(),
+                parent_id: folder.parent_id().map(|value| value.into()),
+                // TODO: modified date is necessary
+                ..Default::default()
+            });
+
+            let dto = SyncEntityDto {
+                entity_id: folder.id(),
+                created_date: folder.created_date(),
+                entity_type: EntityType::Folder,
+                data
+            };
+
+            synced_entities.push(dto);
+        }
+        
+        // TODO: exclude entities that were retrieved in fetching and processing
+
+        Ok(())
+    }
+}
+
+fn encode_to_base64<T>(message: T) -> String
+where
+    T: Message,
+{
+    let mut buffer = Vec::new();
+    message.encode(&mut buffer).unwrap();
+    general_purpose::STANDARD.encode(buffer)
 }
 
 #[cfg(test)]
@@ -254,20 +298,13 @@ mod tests {
 
     use super::*;
 
-    async fn create_test_dependencies() -> (
-        SqliteRepositoriesContext,
-        SyncService,
-        MockBrainyBackendClient,
-    ) {
+    async fn create_test_dependencies() -> (SqliteRepositoriesContext, MockBrainyBackendClient) {
         let context = SqliteRepositoriesContext::create_testing_context().await;
-        let service = SyncService::new(
-            context.sync_repository(),
-            context.local_configuration_repository(),
-        );
 
-        (context, service, MockBrainyBackendClient::new())
+        (context, MockBrainyBackendClient::new())
     }
 
+    // TODO: move it to extension and use it with test and service (duplicated now)
     fn encode_to_base64<T>(message: T) -> String
     where
         T: Message,
@@ -281,9 +318,8 @@ mod tests {
     pub async fn fetch_and_process_next_sync_page_new_entities_inserted_new_entities() {
         // Arrange
 
-        let (mut context, service, mut backend_client) = create_test_dependencies().await;
+        let (mut context, mut backend_client) = create_test_dependencies().await;
         let user_id = Guid::new_v4();
-
         let file_id = Guid::new_v4();
         let cell_id = Guid::new_v4();
         let synced_entities: Vec<SyncedEntity> = vec![
@@ -368,12 +404,12 @@ mod tests {
 
         // Act
 
-        service
-            .fetch_and_process_next_sync_page(
-                &*(Box::new(backend_client) as Box<dyn BrainyBackendClient>),
-            )
-            .await
-            .unwrap();
+        let service = SyncService::new(
+            Arc::new(backend_client),
+            context.sync_repository(),
+            context.local_configuration_repository(),
+        );
+        service.fetch_and_process_next_sync_page().await.unwrap();
         context.save_changes().await.unwrap();
 
         // Assert
@@ -416,7 +452,7 @@ mod tests {
      {
         // Arrange
 
-        let (mut context, service, mut backend_client) = create_test_dependencies().await;
+        let (mut context, mut backend_client) = create_test_dependencies().await;
         let user_id = Guid::new_v4();
 
         let file_id = Guid::new_v4();
@@ -489,12 +525,12 @@ mod tests {
 
         // Act
 
-        service
-            .fetch_and_process_next_sync_page(
-                &*(Box::new(backend_client) as Box<dyn BrainyBackendClient>),
-            )
-            .await
-            .unwrap();
+        let service = SyncService::new(
+            Arc::new(backend_client),
+            context.sync_repository(),
+            context.local_configuration_repository(),
+        );
+        service.fetch_and_process_next_sync_page().await.unwrap();
         context.save_changes().await.unwrap();
 
         // Assert
@@ -521,7 +557,7 @@ mod tests {
      {
         // Arrange
 
-        let (mut context, service, mut backend_client) = create_test_dependencies().await;
+        let (mut context, mut backend_client) = create_test_dependencies().await;
         let user_id = Guid::new_v4();
 
         let file_id = Guid::new_v4();
@@ -594,12 +630,12 @@ mod tests {
 
         // Act
 
-        service
-            .fetch_and_process_next_sync_page(
-                &*(Box::new(backend_client) as Box<dyn BrainyBackendClient>),
-            )
-            .await
-            .unwrap();
+        let service = SyncService::new(
+            Arc::new(backend_client),
+            context.sync_repository(),
+            context.local_configuration_repository(),
+        );
+        service.fetch_and_process_next_sync_page().await.unwrap();
         context.save_changes().await.unwrap();
 
         // Assert

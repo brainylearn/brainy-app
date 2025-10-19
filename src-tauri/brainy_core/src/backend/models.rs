@@ -1,6 +1,7 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{Guid, sync::entities::synced_entity::SyncedEntity};
+use crate::{sync::entities::synced_entity::{EntityType, SyncedEntity}, Guid};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -47,4 +48,13 @@ pub struct UpdateUserInformationDto {
 pub struct SyncedEntitiesPageDto {
     pub synced_entities: Vec<SyncedEntity>,
     pub has_more: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SyncEntityDto {
+    pub entity_id: Guid,
+    pub created_date: DateTime<Utc>, 
+    pub entity_type: EntityType,
+    pub data: String,
 }
