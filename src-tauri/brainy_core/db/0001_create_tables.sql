@@ -12,6 +12,7 @@ CREATE TABLE folders(
 );
 
 CREATE INDEX folders_modified_date_index ON folders(modified_date);
+CREATE INDEX folders_parent_id ON folders(parent_id);
 
 -- The id of root is 00000000-0000-0000-0000-000000000001
 INSERT INTO folders(id, name, parent_id) VALUES (X'00000000000000000000000000000001', 'root', NULL);
@@ -29,6 +30,7 @@ CREATE TABLE files(
 );
 
 CREATE INDEX files_modified_date_index ON files(modified_date);
+CREATE INDEX files_parent_id ON files(parent_id);
 
 -------------------------------------------------------------------------
 
@@ -44,6 +46,7 @@ CREATE TABLE cells(
     FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
 );
 
+CREATE INDEX cells_file_id ON cells(file_id);
 CREATE INDEX cells_modified_date_index ON cells(modified_date);
 
 CREATE VIRTUAL TABLE cells_fts USING fts5(
@@ -115,13 +118,14 @@ CREATE TABLE reviews(
     FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE SET NULL
 );
 
+CREATE INDEX reviews_date ON reviews(date);
 CREATE INDEX reviews_modified_date_index ON reviews(modified_date);
 
 -------------------------------------------------------------------------
 
 CREATE TABLE deleted_entities(
-    entity_name                 TEXT        NOT NULL,
     entity_id                   TEXT        NOT NULL,
+    entity_name                 TEXT        NOT NULL,
     entity_created_date         DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     deleted_date                DATETIME    NOT NULL        DEFAULT CURRENT_TIMESTAMP
 );

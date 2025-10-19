@@ -21,7 +21,8 @@ use crate::{
         traits::{file_repository::FileRepository, folder_repository::FolderRepository},
     },
     local_configurations::repositories::{
-        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository, traits::local_configuration_repository::LocalConfigurationRepository,
+        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
+        traits::local_configuration_repository::LocalConfigurationRepository,
     },
     sync::repositories::{
         sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository,

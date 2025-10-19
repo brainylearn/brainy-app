@@ -6,9 +6,12 @@ use thiserror::Error;
 use crate::{
     cells::repositories::traits::{
         cell_repository::CellRepository, review_repository::ReviewRepository,
-    }, file_system::repositories::traits::{
+    },
+    file_system::repositories::traits::{
         file_repository::FileRepository, folder_repository::FolderRepository,
-    }, local_configurations::repositories::traits::local_configuration_repository::LocalConfigurationRepository, sync::repositories::traits::sync_repository::SyncRepository
+    },
+    local_configurations::repositories::traits::local_configuration_repository::LocalConfigurationRepository,
+    sync::repositories::traits::sync_repository::SyncRepository,
 };
 
 #[derive(Debug, Error)]

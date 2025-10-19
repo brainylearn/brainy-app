@@ -6,11 +6,13 @@ use sqlx::{Sqlite, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
     cells::entities::{cell::Cell, repetition::Repetition, review::Review},
     common::repository_error::RepositoryError,
     file_system::entities::{file::File, folder::Folder},
-    sync::repositories::traits::sync_repository::SyncRepository,
+    sync::{
+        entities::deleted_entity::DeletedEntity,
+        repositories::traits::sync_repository::SyncRepository,
+    },
 };
 
 pub struct SqliteSyncRepository {
@@ -27,13 +29,17 @@ impl SqliteSyncRepository {
 impl SyncRepository for SqliteSyncRepository {
     async fn apply_deleted_entity(
         &self,
-        entity_name: &str,
-        entity_created_date: DateTime<Utc>,
-        entity_id: Guid,
-        deleted_date: DateTime<Utc>,
+        deleted_entity: DeletedEntity,
     ) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
+
+        let DeletedEntity {
+            entity_name,
+            entity_id,
+            entity_created_date,
+            deleted_date,
+        } = deleted_entity;
 
         let result = sqlx::query(&format!("DELETE FROM {entity_name} WHERE id = $1"))
             .bind(entity_id)
