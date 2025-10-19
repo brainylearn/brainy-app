@@ -6,18 +6,30 @@ use prost::Message;
 use thiserror::Error;
 
 use crate::{
-    backend::{models::SyncEntityDto, traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError}}, cells::entities::{cell::Cell, repetition::Repetition, review::Review}, common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError}, file_system::{
-        entities::{file::File, folder::Folder}, repositories::traits::folder_repository::FolderRepository, value_objects::file_system_item_name::FileSystemItemName
-    }, generated_code::{self}, local_configurations::{
+    Guid,
+    backend::{
+        models::SyncEntityDto,
+        traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+    },
+    cells::entities::{cell::Cell, repetition::Repetition, review::Review},
+    common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError},
+    file_system::{
+        entities::{file::File, folder::Folder},
+        repositories::traits::folder_repository::FolderRepository,
+        value_objects::file_system_item_name::FileSystemItemName,
+    },
+    generated_code::{self},
+    local_configurations::{
         entities::LocalConfiguration,
         repositories::traits::local_configuration_repository::LocalConfigurationRepository,
-    }, sync::{
+    },
+    sync::{
         entities::{
             deleted_entity::DeletedEntity,
             synced_entity::{EntityType, SyncedEntity},
         },
         repositories::traits::sync_repository::SyncRepository,
-    }, Guid
+    },
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
@@ -121,12 +133,14 @@ impl SyncService {
             .decode(&synced_entity.data)
             .unwrap();
 
+        // TODO: use polymorphism instead here
         match synced_entity.entity_type {
             EntityType::Folder => {
                 let folder = generated_code::Folder::decode(&bytes[..]).unwrap();
                 let entity = Folder::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
+                    folder.modified_date.unwrap().into_datetime(),
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
                 );
@@ -142,6 +156,7 @@ impl SyncService {
                 let entity = File::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
+                    file.modified_date.unwrap().into_datetime(),
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
                 );
@@ -157,6 +172,7 @@ impl SyncService {
                 let entity = Cell::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
+                    cell.modified_date.unwrap().into_datetime(),
                     Guid::parse_str(&cell.file_id).unwrap(),
                     cell.content,
                     serde_json::from_str(&cell.cell_type).unwrap(),
@@ -176,6 +192,7 @@ impl SyncService {
                 let entity = Repetition::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
+                    repetition.modified_date.unwrap().into_datetime(),
                     Guid::parse_str(&repetition.file_id).unwrap(),
                     Guid::parse_str(&repetition.cell_id).unwrap(),
                     repetition.due.unwrap().into_datetime(),
@@ -201,6 +218,7 @@ impl SyncService {
                 let entity = Review::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
+                    review.modified_date.unwrap().into_datetime(),
                     review.cell_id.map(|value| Guid::parse_str(&value).unwrap()),
                     review.study_time,
                     review.date.unwrap().into_datetime(),
@@ -209,7 +227,7 @@ impl SyncService {
                 self.sync_repository
                     .upsert_review_with_modified_date_if_modified_before(
                         &entity,
-                        synced_entity.last_sync_date,
+                        review.modified_date.unwrap().into_datetime(),
                     )
                     .await?;
             }
@@ -248,11 +266,14 @@ impl SyncService {
 
         let mut synced_entities = Vec::<SyncEntityDto>::new();
 
-        for folder in self.folder_repository.get_all_modified_on_or_after(last_sent_sync_date).await? {
+        for folder in self
+            .folder_repository
+            .get_all_modified_on_or_after(last_sent_sync_date)
+            .await?
+        {
             let data = encode_to_base64(generated_code::Folder {
                 name: folder.name().to_string(),
                 parent_id: folder.parent_id().map(|value| value.into()),
-                // TODO: modified date is necessary
                 ..Default::default()
             });
 
@@ -260,12 +281,12 @@ impl SyncService {
                 entity_id: folder.id(),
                 created_date: folder.created_date(),
                 entity_type: EntityType::Folder,
-                data
+                data,
             };
 
             synced_entities.push(dto);
         }
-        
+
         // TODO: exclude entities that were retrieved in fetching and processing
 
         Ok(())
@@ -464,6 +485,7 @@ mod tests {
             .create(&File::new_unchecked(
                 file_id,
                 Utc::now(),
+                Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
             ))
@@ -474,6 +496,7 @@ mod tests {
             .cell_repository()
             .create(&Cell::new_unchecked(
                 cell_id,
+                Utc::now(),
                 Utc::now(),
                 file_id,
                 "old content".to_string(),
@@ -599,6 +622,7 @@ mod tests {
             .create(&File::new_unchecked(
                 file_id,
                 Utc::now(),
+                Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
             ))
@@ -609,6 +633,7 @@ mod tests {
             .cell_repository()
             .create(&Cell::new_unchecked(
                 cell_id,
+                Utc::now(),
                 Utc::now(),
                 file_id,
                 "old content".to_string(),

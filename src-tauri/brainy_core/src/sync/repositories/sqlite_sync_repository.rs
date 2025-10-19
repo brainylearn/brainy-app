@@ -53,7 +53,7 @@ impl SyncRepository for SqliteSyncRepository {
 
         let result = sqlx::query!(
             r#"UPDATE deleted_entities
-                SET deleted_date = $1, entity_created_date = $2
+                SET deleted_date = datetime($1), entity_created_date = datetime($2)
                 WHERE entity_name = $3 AND entity_id = $4
             "#,
             deleted_date,
@@ -93,7 +93,6 @@ impl SyncRepository for SqliteSyncRepository {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
             Ok(rows) => Ok(rows.into_iter().collect()),
         }
-
     }
 
     async fn upsert_folder_with_modified_date_if_modified_before(
@@ -115,9 +114,9 @@ impl SyncRepository for SqliteSyncRepository {
                 parent_id,
                 modified_date,
                 created_date)
-            VALUES ($1, $2, $3, $4, $5)
+            VALUES ($1, $2, $3, datetime($4), datetime($5))
             ON CONFLICT(id) DO UPDATE
-            SET id = $1, name = $2, parent_id = $3, modified_date = $4, created_date = $5
+            SET id = $1, name = $2, parent_id = $3, modified_date = datetime($4), created_date = datetime($5)
             WHERE modified_date <= datetime($4)
             "#,
             folder_id,
@@ -147,16 +146,24 @@ impl SyncRepository for SqliteSyncRepository {
         let file_id = file.id();
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
+        let created_date = file.created_date();
         let result = sqlx::query!(
-            r#"INSERT INTO files(id, name, parent_id, modified_date) VALUES ($1, $2, $3, $4)
+            r#"INSERT INTO files(
+                id,
+                name,
+                parent_id,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, datetime($4), datetime($5))
             ON CONFLICT(id) DO UPDATE
-            SET id = $1, name = $2, parent_id = $3, modified_date = $4
+            SET id = $1, name = $2, parent_id = $3, modified_date = datetime($4), created_date = datetime($5)
             WHERE modified_date <= datetime($4)
             "#,
             file_id,
             file_name,
             parent_id,
-            modified_date
+            modified_date,
+            created_date
         )
         .execute(&mut *tx)
         .await;
@@ -181,6 +188,7 @@ impl SyncRepository for SqliteSyncRepository {
         let file_id = cell.file_id();
         let index = cell.index();
         let searchable_content = cell.searchable_content();
+        let created_date = cell.created_date();
 
         let result = sqlx::query!(
             r#"INSERT INTO cells(
@@ -190,8 +198,9 @@ impl SyncRepository for SqliteSyncRepository {
                 cell_type,
                 cell_index,
                 searchable_content,
-                modified_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, $4, $5, $6, datetime($7), datetime($8))
             ON CONFLICT(id) DO UPDATE
             SET id = $1,
                 file_id = $2,
@@ -199,7 +208,8 @@ impl SyncRepository for SqliteSyncRepository {
                 cell_type = $4,
                 cell_index = $5,
                 searchable_content = $6,
-                modified_date = $7
+                modified_date = datetime($7),
+                created_date = datetime($8)
             WHERE modified_date <= datetime($7)"#,
             id,
             file_id,
@@ -207,7 +217,8 @@ impl SyncRepository for SqliteSyncRepository {
             cell_type,
             index,
             searchable_content,
-            modified_date
+            modified_date,
+            created_date
         )
         .execute(&mut *tx)
         .await;
@@ -222,7 +233,7 @@ impl SyncRepository for SqliteSyncRepository {
     async fn upsert_repetition_with_modified_date_if_modified_before(
         &self,
         repetition: &Repetition,
-        date: DateTime<Utc>,
+        modified_date: DateTime<Utc>,
     ) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
@@ -240,6 +251,7 @@ impl SyncRepository for SqliteSyncRepository {
         let state = repetition.state();
         let last_review = repetition.last_review();
         let additional_content = repetition.additional_content();
+        let created_date = repetition.created_date();
 
         let result = sqlx::query!(
             r#"INSERT INTO repetitions(
@@ -256,8 +268,9 @@ impl SyncRepository for SqliteSyncRepository {
                 state,
                 last_review,
                 additional_content,
-                modified_date)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 14)
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, datetime($14), datetime($15))
             ON CONFLICT(id) DO UPDATE SET
                 file_id = $2,
                 cell_id = $3,
@@ -271,7 +284,8 @@ impl SyncRepository for SqliteSyncRepository {
                 state = $11,
                 last_review = $12,
                 additional_content = $13,
-                modified_date = $14
+                modified_date = datetime($14),
+                created_date = datetime($15)
             WHERE modified_date <= datetime($14)
             "#,
             id,
@@ -287,7 +301,8 @@ impl SyncRepository for SqliteSyncRepository {
             state,
             last_review,
             additional_content,
-            date
+            modified_date,
+            created_date
         )
         .execute(&mut *tx)
         .await;
@@ -312,6 +327,7 @@ impl SyncRepository for SqliteSyncRepository {
         let study_time = review.study_time();
         let date = review.date();
         let rating = review.rating();
+        let created_date = review.created_date();
 
         let result = sqlx::query!(
             r#"INSERT INTO reviews(
@@ -320,15 +336,17 @@ impl SyncRepository for SqliteSyncRepository {
                 study_time,
                 date,
                 rating,
-                modified_date) 
-            VALUES ($1, $2, $3, $4, $5, $6)
+                modified_date,
+                created_date) 
+            VALUES ($1, $2, $3, $4, $5, datetime($6), datetime($7))
             ON CONFLICT(id) DO UPDATE SET
                 id = $1,
                 cell_id = $2,
                 study_time = $3,
                 date = $4,
                 rating = $5,
-                modified_date = $6
+                modified_date = datetime($6),
+                created_date = datetime($7)
             WHERE modified_date <= datetime($6)
             "#,
             id,
@@ -336,7 +354,8 @@ impl SyncRepository for SqliteSyncRepository {
             study_time,
             date,
             rating,
-            modified_date
+            modified_date,
+            created_date
         )
         .execute(&mut *tx)
         .await;

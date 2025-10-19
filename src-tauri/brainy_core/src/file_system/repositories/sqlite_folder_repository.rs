@@ -37,6 +37,7 @@ impl FolderRepository for SqliteFolderRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM folders
@@ -58,6 +59,7 @@ impl FolderRepository for SqliteFolderRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM folders"#,
@@ -77,6 +79,7 @@ impl FolderRepository for SqliteFolderRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM folders
@@ -101,6 +104,7 @@ impl FolderRepository for SqliteFolderRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM folders
@@ -144,12 +148,21 @@ impl FolderRepository for SqliteFolderRepository {
         let folder_name = folder.name().to_string();
         let parent_id = folder.parent_id();
         let created_date = folder.created_date();
+        let modified_date = folder.modified_date();
+
         let result = sqlx::query!(
-            "INSERT INTO folders(id, name, parent_id, created_date) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO folders(
+                id,
+                created_date,
+                modified_date,
+                name,
+                parent_id)
+            VALUES ($1, datetime($2), datetime($3), $4, $5)",
             folder_id,
+            created_date,
+            modified_date,
             folder_name,
-            parent_id,
-            created_date
+            parent_id
         )
         .execute(&mut *tx)
         .await;
@@ -168,12 +181,20 @@ impl FolderRepository for SqliteFolderRepository {
         let folder_name = folder.name().to_string();
         let parent_id = folder.parent_id();
         let created_date = folder.created_date();
+        let modified_date = folder.modified_date();
         let result = sqlx::query!(
-            "UPDATE folders SET id = $1, name = $2, parent_id = $3, created_date = $4 WHERE id = $1",
+            "UPDATE folders SET
+                id = $1,
+                created_date = datetime($2),
+                modified_date = datetime($3),
+                name = $4,
+                parent_id = $5
+            WHERE id = $1",
             folder_id,
+            created_date,
+            modified_date,
             folder_name,
-            parent_id,
-            created_date
+            parent_id
         )
         .execute(&mut *tx)
         .await;
@@ -207,6 +228,7 @@ mod folder_row {
     pub(super) struct FolderRow {
         pub id: Guid,
         pub created_date: DateTime<Utc>,
+        pub modified_date: DateTime<Utc>,
         pub parent_id: Option<Guid>,
         pub name: String,
     }
@@ -216,6 +238,7 @@ mod folder_row {
             Folder::new_unchecked(
                 value.id,
                 value.created_date,
+                value.modified_date,
                 value.parent_id,
                 FileSystemItemName::new_unchecked(value.name),
             )

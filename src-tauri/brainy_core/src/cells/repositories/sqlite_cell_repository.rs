@@ -48,6 +48,7 @@ impl CellRepository for SqliteCellRepository {
             r#"SELECT
                 cell.id as "cell_id: _",
                 cell.created_date as "cell_created_date: _",
+                cell.modified_date as "cell_modified_date: _",
                 cell.file_id as "cell_file_id: _",
                 cell.content as cell_content,
                 cell.cell_index as "cell_index: _",
@@ -56,6 +57,7 @@ impl CellRepository for SqliteCellRepository {
 
                 repetition.id as "repetition_id: _",
                 repetition.created_date as "repetition_created_date: _",
+                repetition.modified_date as "repetition_modified_date: _",
                 repetition.file_id as "repetition_file_id: _",
                 repetition.cell_id as "repetition_cell_id: _",
                 repetition.due as "repetition_due: _",
@@ -96,6 +98,7 @@ impl CellRepository for SqliteCellRepository {
             r#"SELECT
                 cell.id as "cell_id: _",
                 cell.created_date as "cell_created_date: _",
+                cell.modified_date as "cell_modified_date: _",
                 cell.file_id as "cell_file_id: _",
                 cell.content as cell_content,
                 cell.cell_index as "cell_index: _",
@@ -104,6 +107,7 @@ impl CellRepository for SqliteCellRepository {
 
                 repetition.id as "repetition_id: _",
                 repetition.created_date as "repetition_created_date: _",
+                repetition.modified_date as "repetition_modified_date: _",
                 repetition.file_id as "repetition_file_id: _",
                 repetition.cell_id as "repetition_cell_id: _",
                 repetition.due as "repetition_due: _",
@@ -145,6 +149,7 @@ impl CellRepository for SqliteCellRepository {
             r#"SELECT
                 cell.id as "cell_id: _",
                 cell.created_date as "cell_created_date: _",
+                cell.modified_date as "cell_modified_date: _",
                 cell.file_id as "cell_file_id: _",
                 cell.content as cell_content,
                 cell.cell_index as "cell_index: _",
@@ -153,6 +158,7 @@ impl CellRepository for SqliteCellRepository {
 
                 repetition.id as "repetition_id: _",
                 repetition.created_date as "repetition_created_date: _",
+                repetition.modified_date as "repetition_modified_date: _",
                 repetition.file_id as "repetition_file_id: _",
                 repetition.cell_id as "repetition_cell_id: _",
                 repetition.due as "repetition_due: _",
@@ -193,6 +199,7 @@ impl CellRepository for SqliteCellRepository {
                 id as "id: _",
                 file_id as "file_id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 cell_id as "cell_id: _",
                 due as "due: _",
                 stability as "stability: _",
@@ -232,13 +239,22 @@ impl CellRepository for SqliteCellRepository {
         let index = cell.index();
         let searchable_content = cell.searchable_content();
         let created_date = cell.created_date();
+        let modified_date = cell.modified_date();
 
         let result = sqlx::query!(
-            r#"INSERT INTO
-                cells(id, created_date, content, cell_type, cell_index, file_id, searchable_content)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)"#,
+            r#"INSERT INTO cells(
+                id,
+                created_date,
+                modified_date,
+                content,
+                cell_type,
+                cell_index,
+                file_id,
+                searchable_content)
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7, $8)"#,
             id,
             created_date,
+            modified_date,
             content,
             cell_type,
             index,
@@ -266,19 +282,22 @@ impl CellRepository for SqliteCellRepository {
         let index = cell.index();
         let searchable_content = cell.searchable_content();
         let created_date = cell.created_date();
+        let modified_date = cell.modified_date();
 
         let result = sqlx::query!(
             r#"UPDATE cells
                 SET id = $1,
-                    created_date = $2,
-                    file_id = $3,
-                    content = $4,
-                    cell_type = $5,
-                    cell_index = $6,
-                    searchable_content = $7
+                    created_date = datetime($2),
+                    modified_date = datetime($3),
+                    file_id = $4,
+                    content = $5,
+                    cell_type = $6,
+                    cell_index = $7,
+                    searchable_content = $8
                 WHERE id = $1"#,
             id,
             created_date,
+            modified_date,
             file_id,
             content,
             cell_type,
@@ -369,6 +388,7 @@ impl CellRepository for SqliteCellRepository {
             r#"SELECT
                 cell.id as "cell_id: _",
                 cell.created_date as "cell_created_date: _",
+                cell.modified_date as "cell_modified_date: _",
                 cell.file_id as "cell_file_id: _",
                 cell.content as cell_content,
                 cell.cell_index as "cell_index: _",
@@ -377,6 +397,7 @@ impl CellRepository for SqliteCellRepository {
 
                 repetition.id as "repetition_id: _",
                 repetition.created_date as "repetition_created_date: _",
+                repetition.modified_date as "repetition_modified_date: _",
                 repetition.file_id as "repetition_file_id: _",
                 repetition.cell_id as "repetition_cell_id: _",
                 repetition.due as "repetition_due: _",
@@ -420,6 +441,7 @@ impl CellRepository for SqliteCellRepository {
                 id as "id: _",
                 file_id as "file_id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 cell_id as "cell_id: _",
                 due as "due: _",
                 stability as "stability: _",
@@ -590,7 +612,7 @@ impl CellRepository for SqliteCellRepository {
 
         let mut review_counts: HashMap<NaiveDate, u64> = HashMap::new();
         for row in rows.unwrap() {
-            review_counts.insert(row.date.unwrap(), row.count);
+            review_counts.insert(row.date.unwrap(), row.count.unwrap_or(0));
         }
 
         let rows = sqlx::query!(
@@ -634,6 +656,7 @@ impl SqliteCellRepository {
             let Repetition {
                 id,
                 created_date,
+                modified_date,
                 file_id,
                 cell_id,
                 due,
@@ -652,6 +675,7 @@ impl SqliteCellRepository {
                 r#"INSERT INTO repetitions(
                     id,
                     created_date,
+                    modified_date,
                     file_id,
                     cell_id,
                     due,
@@ -664,23 +688,26 @@ impl SqliteCellRepository {
                     state,
                     last_review,
                     additional_content)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 ON CONFLICT(id) DO UPDATE SET
-                    file_id = $3,
-                    cell_id = $4,
-                    due = $5,
-                    stability = $6,
-                    difficulty = $7,
-                    elapsed_days = $8,
-                    scheduled_days = $9,
-                    reps = $10,
-                    lapses = $11,
-                    state = $12,
-                    last_review = $13,
-                    additional_content = $14
+                    created_date = datetime($2),
+                    modified_date = datetime($3),
+                    file_id = $4,
+                    cell_id = $5,
+                    due = $6,
+                    stability = $7,
+                    difficulty = $8,
+                    elapsed_days = $9,
+                    scheduled_days = $10,
+                    reps = $11,
+                    lapses = $12,
+                    state = $13,
+                    last_review = $14,
+                    additional_content = $15
                 "#,
                 id,
                 created_date,
+                modified_date,
                 file_id,
                 cell_id,
                 due,
@@ -730,6 +757,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
@@ -785,6 +813,7 @@ pub mod tests {
         let file = File::new_unchecked(
             Guid::new_v4(),
             Utc::now(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -829,6 +858,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
@@ -908,6 +938,7 @@ pub mod tests {
         let file = File::new_unchecked(
             Guid::new_v4(),
             Utc::now(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -954,6 +985,7 @@ pub mod tests {
         let file = File::new_unchecked(
             Guid::new_v4(),
             Utc::now(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -999,6 +1031,7 @@ pub mod tests {
 
         let file = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
@@ -1051,6 +1084,7 @@ pub mod tests {
         let file = File::new_unchecked(
             Guid::new_v4(),
             Utc::now(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -1059,6 +1093,7 @@ pub mod tests {
         let cell_id = Guid::new_v4();
         let cell = Cell::new_unchecked(
             cell_id,
+            Utc::now(),
             Utc::now(),
             file.id(),
             "".to_string(),
@@ -1140,11 +1175,13 @@ pub mod tests {
         let file1 = File::new_unchecked(
             Guid::new_v4(),
             Utc::now(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
         let file2 = File::new_unchecked(
             Guid::new_v4(),
+            Utc::now(),
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test2".try_into().unwrap(),
@@ -1155,6 +1192,7 @@ pub mod tests {
         let cell1_id = Guid::new_v4();
         let cell1 = Cell::new_unchecked(
             cell1_id,
+            Utc::now(),
             Utc::now(),
             file1.id(),
             "".to_string(),
@@ -1189,6 +1227,7 @@ pub mod tests {
         let cell2_id = Guid::new_v4();
         let cell2 = Cell::new_unchecked(
             cell2_id,
+            Utc::now(),
             Utc::now(),
             file2.id(),
             "".to_string(),
@@ -1253,6 +1292,7 @@ pub mod tests {
         let file = File::new_unchecked(
             Guid::new_v4(),
             Utc::now(),
+            Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
         );
@@ -1261,6 +1301,7 @@ pub mod tests {
         let cell_id = Guid::new_v4();
         let cell = Cell::new_unchecked(
             cell_id,
+            Utc::now(),
             Utc::now(),
             file.id(),
             "".to_string(),

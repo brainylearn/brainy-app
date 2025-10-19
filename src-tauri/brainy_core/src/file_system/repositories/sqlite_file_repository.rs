@@ -36,6 +36,7 @@ impl FileRepository for SqliteFileRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM files
@@ -57,6 +58,7 @@ impl FileRepository for SqliteFileRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM files"#,
@@ -76,6 +78,7 @@ impl FileRepository for SqliteFileRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM files
@@ -100,6 +103,7 @@ impl FileRepository for SqliteFileRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
                 name
             FROM files
@@ -144,11 +148,19 @@ impl FileRepository for SqliteFileRepository {
         let created_date = file.created_date();
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
+        let modified_date = file.modified_date();
 
         let result = sqlx::query!(
-            "INSERT INTO files(id, created_date, name, parent_id) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO files(
+                id,
+                created_date,
+                modified_date,
+                name,
+                parent_id)
+            VALUES ($1, datetime($2), datetime($3), $4, $5)",
             file_id,
             created_date,
+            modified_date,
             file_name,
             parent_id
         )
@@ -169,11 +181,19 @@ impl FileRepository for SqliteFileRepository {
         let created_date = file.created_date();
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
+        let modified_date = file.modified_date();
 
         let result = sqlx::query!(
-            "UPDATE files SET id = $1, created_date = $2, name = $3, parent_id = $4 WHERE id = $1",
+            "UPDATE files SET
+                id = $1,
+                created_date = datetime($2),
+                modified_date = datetime($3),
+                name = $4,
+                parent_id = $5
+            WHERE id = $1",
             file_id,
             created_date,
+            modified_date,
             file_name,
             parent_id
         )
@@ -286,6 +306,7 @@ mod file_row {
     pub(super) struct FileRow {
         pub id: Guid,
         pub created_date: DateTime<Utc>,
+        pub modified_date: DateTime<Utc>,
         pub parent_id: Option<Guid>,
         pub name: String,
     }
@@ -295,6 +316,7 @@ mod file_row {
             File::new_unchecked(
                 value.id,
                 value.created_date,
+                value.modified_date,
                 value.parent_id,
                 FileSystemItemName::new_unchecked(value.name.clone()),
             )

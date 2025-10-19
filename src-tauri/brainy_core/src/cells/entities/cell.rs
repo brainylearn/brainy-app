@@ -35,6 +35,7 @@ impl Display for CellType {
 pub struct Cell {
     id: Guid,
     created_date: DateTime<Utc>,
+    modified_date: DateTime<Utc>,
     file_id: Guid,
     content: String,
     cell_type: CellType,
@@ -54,6 +55,7 @@ impl Cell {
         let mut output = Self {
             id: id.unwrap_or(Guid::new_v4()),
             created_date: Utc::now(),
+            modified_date: Utc::now(),
             file_id,
             content,
             cell_type,
@@ -72,6 +74,7 @@ impl Cell {
     pub fn new_unchecked(
         id: Guid,
         created_date: DateTime<Utc>,
+        modified_date: DateTime<Utc>,
         file_id: Guid,
         content: String,
         cell_type: CellType,
@@ -82,6 +85,7 @@ impl Cell {
         Self {
             id,
             created_date,
+            modified_date,
             file_id,
             content,
             cell_type,
@@ -97,6 +101,10 @@ impl Cell {
 
     pub fn created_date(&self) -> DateTime<Utc> {
         self.created_date
+    }
+
+    pub fn modified_date(&self) -> DateTime<Utc> {
+        self.modified_date
     }
 
     pub fn file_id(&self) -> Guid {

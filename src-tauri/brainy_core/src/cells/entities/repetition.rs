@@ -18,6 +18,7 @@ pub enum State {
 pub struct Repetition {
     pub(in crate::cells) id: Guid,
     pub(in crate::cells) created_date: DateTime<Utc>,
+    pub(in crate::cells) modified_date: DateTime<Utc>,
     pub(in crate::cells) file_id: Guid,
     pub(in crate::cells) cell_id: Guid,
     pub(in crate::cells) due: DateTime<Utc>,
@@ -37,6 +38,7 @@ impl Repetition {
     pub fn new_unchecked(
         id: Guid,
         created_date: DateTime<Utc>,
+        modified_date: DateTime<Utc>,
         file_id: Guid,
         cell_id: Guid,
         due: DateTime<Utc>,
@@ -53,6 +55,7 @@ impl Repetition {
         Self {
             id,
             created_date,
+            modified_date,
             file_id,
             cell_id,
             due,
@@ -74,6 +77,10 @@ impl Repetition {
 
     pub fn created_date(&self) -> DateTime<Utc> {
         self.created_date
+    }
+
+    pub fn modified_date(&self) -> DateTime<Utc> {
+        self.modified_date
     }
 
     pub fn file_id(&self) -> Guid {
@@ -130,6 +137,7 @@ impl Default for Repetition {
         Self {
             id: Guid::new_v4(),
             created_date: Utc::now(),
+            modified_date: Utc::now(),
             file_id: Default::default(),
             cell_id: Default::default(),
             due: Utc::now().to_utc(),

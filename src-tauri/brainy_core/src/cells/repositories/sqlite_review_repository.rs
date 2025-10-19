@@ -36,6 +36,7 @@ impl ReviewRepository for SqliteReviewRepository {
         let Review {
             id,
             created_date,
+            modified_date,
             cell_id,
             study_time,
             date,
@@ -43,11 +44,18 @@ impl ReviewRepository for SqliteReviewRepository {
         } = review;
 
         let result = sqlx::query!(
-            r#"INSERT INTO
-                reviews(id, created_date, cell_id, study_time, date, rating)
-                VALUES ($1, $2, $3, $4, $5, $6)"#,
+            r#"INSERT INTO reviews(
+                id,
+                created_date,
+                modified_date,
+                cell_id,
+                study_time,
+                date,
+                rating)
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7)"#,
             id,
             created_date,
+            modified_date,
             cell_id,
             study_time,
             date,
@@ -71,6 +79,7 @@ impl ReviewRepository for SqliteReviewRepository {
             r#"SELECT
                 id as "id: _",
                 created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 cell_id as "cell_id: _",
                 study_time as "study_time: _",
                 date as "date: _",
@@ -99,6 +108,7 @@ mod review_row {
     pub(super) struct ReviewRow {
         pub id: Guid,
         pub created_date: DateTime<Utc>,
+        pub modified_date: DateTime<Utc>,
         pub cell_id: Option<Guid>,
         pub study_time: u32,
         pub date: DateTime<Utc>,
@@ -110,6 +120,7 @@ mod review_row {
             Review::new_unchecked(
                 value.id,
                 value.created_date,
+                value.modified_date,
                 value.cell_id,
                 value.study_time,
                 value.date,

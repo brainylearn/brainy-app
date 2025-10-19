@@ -126,9 +126,16 @@ pub mod tests {
 
         let parent_folder_id = Guid::new_v4();
         let folders: Vec<Folder> = vec![
-            Folder::new_unchecked(ROOT_FOLDER_ID, Utc::now(), None, "root".try_into().unwrap()),
+            Folder::new_unchecked(
+                ROOT_FOLDER_ID,
+                Utc::now(),
+                Utc::now(),
+                None,
+                "root".try_into().unwrap(),
+            ),
             Folder::new_unchecked(
                 parent_folder_id,
+                Utc::now(),
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 "parent folder".try_into().unwrap(),
@@ -139,11 +146,13 @@ pub mod tests {
             File::new_unchecked(
                 Guid::new_v4(),
                 Utc::now(),
+                Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 "file".try_into().unwrap(),
             ),
             File::new_unchecked(
                 Guid::new_v4(),
+                Utc::now(),
                 Utc::now(),
                 Some(parent_folder_id),
                 "file".try_into().unwrap(),

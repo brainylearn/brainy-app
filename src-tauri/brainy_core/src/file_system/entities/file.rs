@@ -6,6 +6,7 @@ use crate::{Guid, file_system::value_objects::file_system_item_name::FileSystemI
 pub struct File {
     id: Guid,
     created_date: DateTime<Utc>,
+    modified_date: DateTime<Utc>,
     parent_id: Option<Guid>,
     name: FileSystemItemName,
 }
@@ -19,6 +20,7 @@ impl File {
         File {
             id: id.unwrap_or(Guid::new_v4()),
             created_date: Utc::now(),
+            modified_date: Utc::now(),
             parent_id,
             name,
         }
@@ -28,12 +30,14 @@ impl File {
     pub fn new_unchecked(
         id: Guid,
         created_date: DateTime<Utc>,
+        modified_date: DateTime<Utc>,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
     ) -> File {
         File {
             id,
             created_date,
+            modified_date,
             parent_id,
             name,
         }
@@ -45,6 +49,10 @@ impl File {
 
     pub fn created_date(&self) -> DateTime<Utc> {
         self.created_date
+    }
+
+    pub fn modified_date(&self) -> DateTime<Utc> {
+        self.modified_date
     }
 
     pub fn parent_id(&self) -> Option<Guid> {

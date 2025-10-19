@@ -17,6 +17,7 @@ pub enum Rating {
 pub struct Review {
     pub(in crate::cells) id: Guid,
     pub(in crate::cells) created_date: DateTime<Utc>,
+    pub(in crate::cells) modified_date: DateTime<Utc>,
     /// Review can should exist even when the cell is deleted.
     pub(in crate::cells) cell_id: Option<Guid>,
     pub(in crate::cells) study_time: u32,
@@ -35,6 +36,7 @@ impl Review {
         Self {
             id: id.unwrap_or(Guid::new_v4()),
             created_date: Utc::now(),
+            modified_date: Utc::now(),
             cell_id,
             study_time,
             date,
@@ -45,6 +47,7 @@ impl Review {
     pub fn new_unchecked(
         id: Guid,
         created_date: DateTime<Utc>,
+        modified_date: DateTime<Utc>,
         cell_id: Option<Guid>,
         study_time: u32,
         date: DateTime<Utc>,
@@ -53,6 +56,7 @@ impl Review {
         Self {
             id,
             created_date,
+            modified_date,
             cell_id,
             study_time,
             date,
@@ -66,6 +70,10 @@ impl Review {
 
     pub fn created_date(&self) -> DateTime<Utc> {
         self.created_date
+    }
+
+    pub fn modified_date(&self) -> DateTime<Utc> {
+        self.modified_date
     }
 
     pub fn cell_id(&self) -> Option<Guid> {
@@ -90,6 +98,7 @@ impl Default for Review {
         Self {
             id: Guid::new_v4(),
             created_date: Utc::now(),
+            modified_date: Utc::now(),
             cell_id: Default::default(),
             study_time: Default::default(),
             date: Default::default(),
