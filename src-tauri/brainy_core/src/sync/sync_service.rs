@@ -11,11 +11,23 @@ use crate::{
         models::SyncEntityDto,
         traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
     },
-    cells::entities::{cell::Cell, repetition::Repetition, review::Review},
-    common::{extensions::into_datetime::IntoDateTime, repository_error::RepositoryError},
+    cells::{
+        entities::{cell::Cell, repetition::Repetition, review::Review},
+        repositories::traits::{
+            cell_repository::CellRepository, review_repository::ReviewRepository,
+        },
+    },
+    common::{
+        extensions::{
+            into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
+        },
+        repository_error::RepositoryError,
+    },
     file_system::{
         entities::{file::File, folder::Folder},
-        repositories::traits::folder_repository::FolderRepository,
+        repositories::traits::{
+            file_repository::FileRepository, folder_repository::FolderRepository,
+        },
         value_objects::file_system_item_name::FileSystemItemName,
     },
     generated_code::{self},
@@ -47,6 +59,9 @@ pub enum SyncError {
 pub struct SyncService {
     backend_client: Arc<dyn BrainyBackendClient>,
     folder_repository: Arc<dyn FolderRepository>,
+    file_repository: Arc<dyn FileRepository>,
+    cell_repository: Arc<dyn CellRepository>,
+    review_repository: Arc<dyn ReviewRepository>,
     sync_repository: Arc<dyn SyncRepository>,
     local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
 }
@@ -55,12 +70,18 @@ impl SyncService {
     pub fn new(
         backend_client: Arc<dyn BrainyBackendClient>,
         folder_repository: Arc<dyn FolderRepository>,
+        file_repository: Arc<dyn FileRepository>,
+        cell_repository: Arc<dyn CellRepository>,
+        review_repository: Arc<dyn ReviewRepository>,
         sync_repository: Arc<dyn SyncRepository>,
         local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
     ) -> Self {
         Self {
             backend_client,
             folder_repository,
+            file_repository,
+            cell_repository,
+            review_repository,
             sync_repository,
             local_configuration_repository,
         }
@@ -133,7 +154,6 @@ impl SyncService {
             .decode(&synced_entity.data)
             .unwrap();
 
-        // TODO: use polymorphism instead here
         match synced_entity.entity_type {
             EntityType::Folder => {
                 let folder = generated_code::Folder::decode(&bytes[..]).unwrap();
@@ -253,6 +273,8 @@ impl SyncService {
 
     /// Sends all entities that has changed since the last send.
     pub async fn send_unsynced_entities(&self) -> Result<(), SyncError> {
+        // TODO: unit test
+
         let last_sent_sync_date = self
             .local_configuration_repository
             .get_by_name(LAST_SENT_SYNC_DATE_CONFIGURATION_NAME)
@@ -271,11 +293,12 @@ impl SyncService {
             .get_all_modified_on_or_after(last_sent_sync_date)
             .await?
         {
-            let data = encode_to_base64(generated_code::Folder {
+            let data = generated_code::Folder {
+                modified_date: Some(folder.modified_date().into_timestamp()),
                 name: folder.name().to_string(),
                 parent_id: folder.parent_id().map(|value| value.into()),
-                ..Default::default()
-            });
+            }
+            .into_base64();
 
             let dto = SyncEntityDto {
                 entity_id: folder.id(),
@@ -287,19 +310,140 @@ impl SyncService {
             synced_entities.push(dto);
         }
 
+        for file in self
+            .file_repository
+            .get_all_modified_on_or_after(last_sent_sync_date)
+            .await?
+        {
+            let data = generated_code::File {
+                modified_date: Some(file.modified_date().into_timestamp()),
+                name: file.name().to_string(),
+                parent_id: file.parent_id().map(|value| value.into()),
+            }
+            .into_base64();
+
+            let dto = SyncEntityDto {
+                entity_id: file.id(),
+                created_date: file.created_date(),
+                entity_type: EntityType::File,
+                data,
+            };
+
+            synced_entities.push(dto);
+        }
+
+        for cell in self
+            .cell_repository
+            .get_all_cells_modified_on_or_after(last_sent_sync_date)
+            .await?
+        {
+            let data = generated_code::Cell {
+                modified_date: Some(cell.modified_date().into_timestamp()),
+                index: cell.index(),
+                content: cell.content().to_string(),
+                file_id: cell.file_id().to_string(),
+                cell_type: serde_json::to_string(&cell.cell_type()).unwrap(),
+                searchable_content: cell.searchable_content().to_string(),
+            }
+            .into_base64();
+
+            let dto = SyncEntityDto {
+                entity_id: cell.id(),
+                created_date: cell.created_date(),
+                entity_type: EntityType::Cell,
+                data,
+            };
+
+            synced_entities.push(dto);
+        }
+
+        for repetition in self
+            .cell_repository
+            .get_all_repetitions_modified_on_or_after(last_sent_sync_date)
+            .await?
+        {
+            let data = generated_code::Repetition {
+                modified_date: Some(repetition.modified_date().into_timestamp()),
+                file_id: repetition.file_id().to_string(),
+                cell_id: repetition.cell_id().to_string(),
+                due: Some(repetition.due().into_timestamp()),
+                reps: repetition.reps(),
+                stability: repetition.stability(),
+                difficulty: repetition.difficulty(),
+                elapsed_days: repetition.elapsed_days(),
+                scheduled_days: repetition.scheduled_days(),
+                lapses: repetition.lapses(),
+                state: serde_json::to_string(&repetition.state()).unwrap(),
+                last_review: repetition.last_review().map(|value| value.into_timestamp()),
+                additional_content: repetition
+                    .additional_content()
+                    .map(|value| value.to_string()),
+            }
+            .into_base64();
+
+            let dto = SyncEntityDto {
+                entity_id: repetition.id(),
+                created_date: repetition.created_date(),
+                entity_type: EntityType::Repetition,
+                data,
+            };
+
+            synced_entities.push(dto);
+        }
+
+        for review in self
+            .review_repository
+            .get_all_modified_on_or_after(last_sent_sync_date)
+            .await?
+        {
+            let data = generated_code::Review {
+                modified_date: Some(review.modified_date().into_timestamp()),
+                cell_id: review.cell_id().map(|value| value.to_string()),
+                date: Some(review.date().into_timestamp()),
+                rating: serde_json::to_string(&review.rating()).unwrap(),
+                study_time: review.study_time(),
+            }
+            .into_base64();
+
+            let dto = SyncEntityDto {
+                entity_id: review.id(),
+                created_date: review.created_date(),
+                entity_type: EntityType::Review,
+                data,
+            };
+
+            synced_entities.push(dto);
+        }
+
+        for deleted_entity in self
+            .sync_repository
+            .get_all_deleted_entities_on_or_after(last_sent_sync_date)
+            .await?
+        {
+            let data = generated_code::DeletedEntity {
+                entity_name: deleted_entity.entity_name,
+                deleted_date: Some(deleted_entity.entity_created_date.into_timestamp()),
+            }
+            .into_base64();
+
+            let dto = SyncEntityDto {
+                entity_id: deleted_entity.entity_id,
+                created_date: deleted_entity.entity_created_date,
+                entity_type: EntityType::DeletedEntity,
+                data,
+            };
+
+            synced_entities.push(dto);
+        }
+
+        self.backend_client
+            .send_synced_entities(&synced_entities)
+            .await?;
         // TODO: exclude entities that were retrieved in fetching and processing
+        // TODO: update confuration
 
         Ok(())
     }
-}
-
-fn encode_to_base64<T>(message: T) -> String
-where
-    T: Message,
-{
-    let mut buffer = Vec::new();
-    message.encode(&mut buffer).unwrap();
-    general_purpose::STANDARD.encode(buffer)
 }
 
 #[cfg(test)]
@@ -311,7 +455,7 @@ mod tests {
         },
         cells::entities::{cell::CellType, repetition::State, review::Rating},
         common::{
-            extensions::into_timestamp::IntoTimestamp,
+            extensions::{into_base64::IntoBase64, into_timestamp::IntoTimestamp},
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
         },
@@ -323,16 +467,6 @@ mod tests {
         let context = SqliteRepositoriesContext::create_testing_context().await;
 
         (context, MockBrainyBackendClient::new())
-    }
-
-    // TODO: move it to extension and use it with test and service (duplicated now)
-    fn encode_to_base64<T>(message: T) -> String
-    where
-        T: Message,
-    {
-        let mut buffer = Vec::new();
-        message.encode(&mut buffer).unwrap();
-        general_purpose::STANDARD.encode(buffer)
     }
 
     #[tokio::test]
@@ -350,11 +484,12 @@ mod tests {
                 entity_type: EntityType::Folder,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::Folder {
+                data: generated_code::Folder {
                     modified_date: Some(Utc::now().into_timestamp()),
                     name: "test".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
-                }),
+                }
+                .into_base64(),
             },
             SyncedEntity {
                 user_id,
@@ -362,11 +497,12 @@ mod tests {
                 entity_type: EntityType::File,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::File {
+                data: generated_code::File {
                     modified_date: Some(Utc::now().into_timestamp()),
                     name: "test".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
-                }),
+                }
+                .into_base64(),
             },
             SyncedEntity {
                 user_id,
@@ -374,14 +510,15 @@ mod tests {
                 entity_type: EntityType::Cell,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::Cell {
+                data: generated_code::Cell {
                     modified_date: Some(Utc::now().into_timestamp()),
                     content: "content".to_string(),
                     cell_type: serde_json::to_string(&CellType::FlashCard).unwrap(),
                     index: 1,
                     searchable_content: "search".to_string(),
                     file_id: file_id.to_string(),
-                }),
+                }
+                .into_base64(),
             },
             SyncedEntity {
                 user_id,
@@ -389,14 +526,15 @@ mod tests {
                 entity_type: EntityType::Repetition,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::Repetition {
+                data: generated_code::Repetition {
                     modified_date: Some(Utc::now().into_timestamp()),
                     file_id: file_id.to_string(),
                     cell_id: cell_id.to_string(),
                     due: Some(Utc::now().into_timestamp()),
                     state: serde_json::to_string(&State::Learning).unwrap(),
                     ..Default::default()
-                }),
+                }
+                .into_base64(),
             },
             SyncedEntity {
                 user_id,
@@ -404,13 +542,14 @@ mod tests {
                 entity_type: EntityType::Review,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::Review {
+                data: generated_code::Review {
                     modified_date: Some(Utc::now().into_timestamp()),
                     cell_id: Some(cell_id.to_string()),
                     date: Some(Utc::now().into_timestamp()),
                     rating: serde_json::to_string(&Rating::Hard).unwrap(),
                     ..Default::default()
-                }),
+                }
+                .into_base64(),
             },
         ];
 
@@ -428,6 +567,9 @@ mod tests {
         let service = SyncService::new(
             Arc::new(backend_client),
             context.folder_repository(),
+            context.file_repository(),
+            context.cell_repository(),
+            context.review_repository(),
             context.sync_repository(),
             context.local_configuration_repository(),
         );
@@ -516,11 +658,12 @@ mod tests {
                 entity_type: EntityType::File,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::File {
+                data: generated_code::File {
                     modified_date: Some(Utc::now().into_timestamp()),
                     name: "new name".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
-                }),
+                }
+                .into_base64(),
             },
             SyncedEntity {
                 user_id,
@@ -528,13 +671,14 @@ mod tests {
                 entity_type: EntityType::Cell,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::Cell {
+                data: generated_code::Cell {
                     modified_date: Some(Utc::now().into_timestamp()),
                     content: "new content".to_string(),
                     cell_type: serde_json::to_string(&CellType::FlashCard).unwrap(),
                     file_id: file_id.to_string(),
                     ..Default::default()
-                }),
+                }
+                .into_base64(),
             },
         ];
 
@@ -549,9 +693,13 @@ mod tests {
 
         // Act
 
+        // TODO: stop so much duplication
         let service = SyncService::new(
             Arc::new(backend_client),
             context.folder_repository(),
+            context.file_repository(),
+            context.cell_repository(),
+            context.review_repository(),
             context.sync_repository(),
             context.local_configuration_repository(),
         );
@@ -595,11 +743,12 @@ mod tests {
                 entity_type: EntityType::File,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::File {
+                data: generated_code::File {
                     modified_date: Some(Utc::now().into_timestamp()),
                     name: "new name".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
-                }),
+                }
+                .into_base64(),
             },
             SyncedEntity {
                 user_id,
@@ -607,13 +756,14 @@ mod tests {
                 entity_type: EntityType::Cell,
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
-                data: encode_to_base64(generated_code::Cell {
+                data: generated_code::Cell {
                     modified_date: Some(Utc::now().into_timestamp()),
                     content: "new content".to_string(),
                     cell_type: serde_json::to_string(&CellType::FlashCard).unwrap(),
                     file_id: file_id.to_string(),
                     ..Default::default()
-                }),
+                }
+                .into_base64(),
             },
         ];
 
@@ -660,6 +810,9 @@ mod tests {
         let service = SyncService::new(
             Arc::new(backend_client),
             context.folder_repository(),
+            context.file_repository(),
+            context.cell_repository(),
+            context.review_repository(),
             context.sync_repository(),
             context.local_configuration_repository(),
         );

@@ -5,8 +5,8 @@ use std::{
 
 use crate::backend::{
     models::{
-        ProblemDetails, SignInDto, SignUpDto, SyncedEntitiesPageDto, UpdateUserInformationDto,
-        UserInformnationDto,
+        ProblemDetails, SignInDto, SignUpDto, SyncEntityDto, SyncedEntitiesPageDto,
+        UpdateUserInformationDto, UserInformnationDto,
     },
     traits::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
 };
@@ -208,6 +208,27 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             Ok(result) => Ok(result),
             Err(_) => Err(BrainyBackendClientError::UnexpectedResponse),
         }
+    }
+
+    async fn send_synced_entities(
+        &self,
+        entities: &[SyncEntityDto],
+    ) -> Result<(), BrainyBackendClientError> {
+        log::info!(
+            "Sending synced entities, a total of {} entities",
+            entities.len()
+        );
+
+        let response = self
+            .reqwest_client
+            .post(self.backend_url.join("/api/sync").unwrap())
+            .json(&entities)
+            .send()
+            .await;
+
+        ensure_success_response(response).await?;
+
+        Ok(())
     }
 }
 

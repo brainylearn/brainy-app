@@ -1,3 +1,4 @@
+use crate::backend::models::SyncEntityDto;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 #[cfg(test)]
@@ -57,4 +58,9 @@ pub trait BrainyBackendClient: Send + Sync {
         date: DateTime<Utc>,
         page: u32,
     ) -> Result<SyncedEntitiesPageDto, BrainyBackendClientError>;
+
+    async fn send_synced_entities(
+        &self,
+        entities: &[SyncEntityDto],
+    ) -> Result<(), BrainyBackendClientError>;
 }

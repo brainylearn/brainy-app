@@ -21,6 +21,9 @@ pub async fn sync(
     }
 
     context.save_changes().await?;
+
+    sync_service.send_unsynced_entities().await?;
+
     Ok(())
 
     // TODO: send to server changes (all entities including deleted entitites) (exclude fetched
