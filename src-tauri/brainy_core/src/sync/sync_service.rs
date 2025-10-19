@@ -406,6 +406,7 @@ mod tests {
 
         let service = SyncService::new(
             Arc::new(backend_client),
+            context.folder_repository(),
             context.sync_repository(),
             context.local_configuration_repository(),
         );
@@ -527,6 +528,7 @@ mod tests {
 
         let service = SyncService::new(
             Arc::new(backend_client),
+            context.folder_repository(),
             context.sync_repository(),
             context.local_configuration_repository(),
         );
@@ -632,6 +634,7 @@ mod tests {
 
         let service = SyncService::new(
             Arc::new(backend_client),
+            context.folder_repository(),
             context.sync_repository(),
             context.local_configuration_repository(),
         );

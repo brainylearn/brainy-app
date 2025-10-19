@@ -79,6 +79,7 @@ pub async fn run() -> Result<(), String> {
             )));
             app.manage(Arc::new(SyncService::new(
                 backend_client.clone(),
+                repositories_context.folder_repository(),
                 repositories_context.sync_repository(),
                 repositories_context.local_configuration_repository(),
             )));
