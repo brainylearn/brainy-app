@@ -256,7 +256,13 @@ async fn ensure_success_response(
     response: Result<Response, reqwest::Error>,
 ) -> Result<Response, BrainyBackendClientError> {
     if let Err(err) = response {
-        return Err(BrainyBackendClientError::UnknownError(err.to_string()));
+        if err.is_connect() {
+            return Err(BrainyBackendClientError::ConnectError);
+        } else if err.is_timeout() {
+            return Err(BrainyBackendClientError::TimeoutError);
+        } else {
+            return Err(BrainyBackendClientError::UnknownError(err.to_string()));
+        }
     }
 
     let response = response.unwrap();

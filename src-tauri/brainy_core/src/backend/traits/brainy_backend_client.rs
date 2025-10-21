@@ -21,6 +21,10 @@ pub enum BrainyBackendClientError {
     DeserializationError(String),
     #[error("{0}")]
     BadRequest(String),
+    #[error("Error connecting to the server, please try again!")]
+    ConnectError,
+    #[error("The request has timed out, please try again!")]
+    TimeoutError,
 }
 
 #[cfg_attr(test, automock)]

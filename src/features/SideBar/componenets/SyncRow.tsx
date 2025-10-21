@@ -7,26 +7,34 @@ import Spinner from "../../../components/Spinner/Spinner";
 import { sync } from "../../../api/syncApi";
 import useAppDispatch from "../../../hooks/useAppDispatch";
 import { getReviewTreeFolderForRoot } from "../../../stores/fileSystem/fileSystemActions";
+import errorToString from "../../../utils/errorToString";
+import useGlobalKey from "../../../hooks/useGlobalKey";
 
 export default function SyncRow() {
 	const [isSyncing, setIsSyncing] = useState(false);
 	const dispatch = useAppDispatch();
 
-	const handleClick = async () => {
-		// TODO: error handling
+	const callSync = async () => {
 		try {
 			setIsSyncing(true);
 			// TODO: refersh current file if user in file, also refresh home, etc...
 			await sync();
 			await dispatch(getReviewTreeFolderForRoot());
 		} catch (e) {
+			alert(errorToString(e));
 			console.error(e);
+		} finally {
+			setIsSyncing(false);
 		}
-		setIsSyncing(false);
 	};
 
-	// TODO: sync shortcut
-	// TODO: if not logged in ask user to login
+	useGlobalKey(e => {
+		if (e.ctrlKey && e.key.toLowerCase() === "y") {
+			e.preventDefault();
+			void callSync();
+		}
+	});
+
 	return (
 		<>
 			{isSyncing && (
@@ -37,8 +45,8 @@ export default function SyncRow() {
 			)}
 			<button
 				className={`${styles.row}`}
-				title="Sync"
-				onClick={() => void handleClick()}>
+				title="Sync (Ctrl + Y)"
+				onClick={() => void callSync()}>
 				<Icon path={mdiSync} size="1em" />
 				<p>Sync</p>
 			</button>
