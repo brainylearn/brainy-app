@@ -418,6 +418,7 @@ dependencies = [
  "reqwest_cookie_store",
  "serde",
  "serde_json",
+ "serde_repr",
  "sqlx",
  "thiserror 2.0.16",
  "tokio",

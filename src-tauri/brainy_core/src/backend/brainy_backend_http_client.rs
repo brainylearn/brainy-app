@@ -67,6 +67,7 @@ impl BrainyBackendHttpClient {
     }
 }
 
+// TODO: add retry
 #[async_trait]
 impl BrainyBackendClient for BrainyBackendHttpClient {
     async fn log_in(

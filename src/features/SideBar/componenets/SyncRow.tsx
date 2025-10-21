@@ -9,37 +9,39 @@ import useAppDispatch from "../../../hooks/useAppDispatch";
 import { getReviewTreeFolderForRoot } from "../../../stores/fileSystem/fileSystemActions";
 
 export default function SyncRow() {
-    const [isSyncing, setIsSyncing] = useState(false);
-    const dispatch = useAppDispatch();
+	const [isSyncing, setIsSyncing] = useState(false);
+	const dispatch = useAppDispatch();
 
-    const handleClick = async () => {
-        // TODO: error handling
-        try {
-            setIsSyncing(true);
-            // TODO: refersh current file if user in file, also refresh home, etc...
-            await sync();
-            await dispatch(getReviewTreeFolderForRoot());
-        } catch (e) {
-            console.error(e);
-        }
-        setIsSyncing(false);
-    };
+	const handleClick = async () => {
+		// TODO: error handling
+		try {
+			setIsSyncing(true);
+			// TODO: refersh current file if user in file, also refresh home, etc...
+			await sync();
+			await dispatch(getReviewTreeFolderForRoot());
+		} catch (e) {
+			console.error(e);
+		}
+		setIsSyncing(false);
+	};
 
 	// TODO: sync shortcut
-    // TODO: if not logged in ask user to login
-    return (
-        <>
-            {isSyncing && <Dialog className={styles.syncBox}>
-                <Spinner />
-                <p>Please wait, syncing your data...</p>
-            </Dialog>}
-            <button
-                className={`${styles.row}`}
-                title="Sync"
-                onClick={() => void handleClick()}>
-                <Icon path={mdiSync} size="1em" />
-                <p>Sync</p>
-            </button>
-        </>
-    );
+	// TODO: if not logged in ask user to login
+	return (
+		<>
+			{isSyncing && (
+				<Dialog className={styles.syncBox}>
+					<Spinner />
+					<p>Please wait, syncing your data...</p>
+				</Dialog>
+			)}
+			<button
+				className={`${styles.row}`}
+				title="Sync"
+				onClick={() => void handleClick()}>
+				<Icon path={mdiSync} size="1em" />
+				<p>Sync</p>
+			</button>
+		</>
+	);
 }

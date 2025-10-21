@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use base64::{Engine as _, engine::general_purpose};
 use chrono::{DateTime, TimeZone, Utc};
@@ -45,8 +45,6 @@ use crate::{
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
-const SYNC_PAGE_TO_GET_CONFIGURATION_NAME: &str = "SYNC_PAGE_TO_GET";
-const LAST_SENT_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SENT_SYNC_DATE";
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum SyncError {
@@ -87,10 +85,9 @@ impl SyncService {
         }
     }
 
-    /// This function fetches and proccess the next fetched page, it also
-    /// updates all relevant configuration for fetching.
-    /// Returns true if there are more sync pages to fetch.
-    pub async fn fetch_and_process_next_sync_page(&self) -> Result<bool, SyncError> {
+    /// Gets the entities from the backend since last sync and upload all changed
+    /// entities that are not overwritten from the sync.
+    pub async fn sync_with_backend(&self) -> Result<(), SyncError> {
         let last_sync_date = self
             .local_configuration_repository
             .get_by_name(LAST_SYNC_DATE_CONFIGURATION_NAME)
@@ -102,48 +99,63 @@ impl SyncService {
             })
             .unwrap_or(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap());
 
-        let last_sync_page = self
-            .local_configuration_repository
-            .get_by_name(SYNC_PAGE_TO_GET_CONFIGURATION_NAME)
-            .await?
-            .map(|conf| conf.value.parse::<u32>().unwrap())
-            .unwrap_or(0);
+        let mut sync_page = 0;
+        // Contains a list of the entities that has been overwritten from the sync.
+        let mut entities_changed_locally = HashSet::new();
 
+        loop {
+            let has_more = self
+                .fetch_and_process_next_sync_page(
+                    sync_page,
+                    last_sync_date,
+                    &mut entities_changed_locally,
+                )
+                .await?;
+            if has_more {
+                sync_page += 1;
+            } else {
+                break;
+            }
+        }
+
+        self.send_unsynced_entities_since(last_sync_date, &entities_changed_locally)
+            .await?;
+
+        self.local_configuration_repository
+            .upsert(&LocalConfiguration {
+                name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
+                value: Utc::now().to_rfc3339(),
+            })
+            .await?;
+
+        Ok(())
+    }
+
+    /// This function fetches and proccess the next sync page.
+    /// Returns whether there are more pages to sync or not.
+    async fn fetch_and_process_next_sync_page(
+        &self,
+        sync_page: u32,
+        last_sync_date: DateTime<Utc>,
+        entities_changed_locally: &mut HashSet<Guid>,
+    ) -> Result<bool, SyncError> {
         let result = self
             .backend_client
-            .get_synced_entities_after_ordered_by_created_date(last_sync_date, last_sync_page)
+            .get_synced_entities_after_ordered_by_created_date(last_sync_date, sync_page)
             .await?;
 
         for synced_entity in result.synced_entities {
-            self.process_synced_entity(synced_entity).await?;
-        }
-
-        if result.has_more {
-            self.local_configuration_repository
-                .upsert(&LocalConfiguration {
-                    name: SYNC_PAGE_TO_GET_CONFIGURATION_NAME.to_string(),
-                    value: (last_sync_page + 1).to_string(),
-                })
-                .await?;
-        } else {
-            self.local_configuration_repository
-                .upsert(&LocalConfiguration {
-                    name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
-                    value: Utc::now().to_rfc3339(),
-                })
-                .await?;
-            self.local_configuration_repository
-                .upsert(&LocalConfiguration {
-                    name: SYNC_PAGE_TO_GET_CONFIGURATION_NAME.to_string(),
-                    value: 0.to_string(),
-                })
-                .await?;
+            let entity_id = synced_entity.entity_id;
+            let change_count = self.process_synced_entity(synced_entity).await?;
+            if change_count > 0 {
+                entities_changed_locally.insert(entity_id);
+            }
         }
 
         Ok(result.has_more)
     }
 
-    async fn process_synced_entity(&self, synced_entity: SyncedEntity) -> Result<(), SyncError> {
+    async fn process_synced_entity(&self, synced_entity: SyncedEntity) -> Result<u64, SyncError> {
         log::info!(
             "Processing synced entity with id {} and of type {:?}",
             synced_entity.entity_id,
@@ -154,7 +166,7 @@ impl SyncService {
             .decode(&synced_entity.data)
             .unwrap();
 
-        match synced_entity.entity_type {
+        let change_count = match synced_entity.entity_type {
             EntityType::Folder => {
                 let folder = generated_code::Folder::decode(&bytes[..]).unwrap();
                 let entity = Folder::new_unchecked(
@@ -164,12 +176,16 @@ impl SyncService {
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
                 );
+
+                #[cfg(debug_assertions)]
+                log::info!("Parsed entity {:#?}", entity);
+
                 self.sync_repository
                     .upsert_folder_with_modified_date_if_modified_before(
                         &entity,
                         folder.modified_date.unwrap().into_datetime(),
                     )
-                    .await?;
+                    .await?
             }
             EntityType::File => {
                 let file = generated_code::File::decode(&bytes[..]).unwrap();
@@ -180,12 +196,16 @@ impl SyncService {
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
                 );
+
+                #[cfg(debug_assertions)]
+                log::info!("Parsed entity {:#?}", entity);
+
                 self.sync_repository
                     .upsert_file_with_modified_date_if_modified_before(
                         &entity,
                         file.modified_date.unwrap().into_datetime(),
                     )
-                    .await?;
+                    .await?
             }
             EntityType::Cell => {
                 let cell = generated_code::Cell::decode(&bytes[..]).unwrap();
@@ -200,12 +220,16 @@ impl SyncService {
                     cell.searchable_content,
                     Vec::new(),
                 );
+
+                #[cfg(debug_assertions)]
+                log::info!("Parsed entity {:#?}", entity);
+
                 self.sync_repository
                     .upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
                         &entity,
                         cell.modified_date.unwrap().into_datetime(),
                     )
-                    .await?;
+                    .await?
             }
             EntityType::Repetition => {
                 let repetition = generated_code::Repetition::decode(&bytes[..]).unwrap();
@@ -226,12 +250,16 @@ impl SyncService {
                     repetition.last_review.map(|value| value.into_datetime()),
                     repetition.additional_content,
                 );
+
+                #[cfg(debug_assertions)]
+                log::info!("Parsed entity {:#?}", entity);
+
                 self.sync_repository
                     .upsert_repetition_with_modified_date_if_modified_before(
                         &entity,
                         repetition.modified_date.unwrap().into_datetime(),
                     )
-                    .await?;
+                    .await?
             }
             EntityType::Review => {
                 let review = generated_code::Review::decode(&bytes[..]).unwrap();
@@ -244,12 +272,16 @@ impl SyncService {
                     review.date.unwrap().into_datetime(),
                     serde_json::from_str(&review.rating).unwrap(),
                 );
+
+                #[cfg(debug_assertions)]
+                log::info!("Parsed entity {:#?}", entity);
+
                 self.sync_repository
                     .upsert_review_with_modified_date_if_modified_before(
                         &entity,
                         review.modified_date.unwrap().into_datetime(),
                     )
-                    .await?;
+                    .await?
             }
             EntityType::DeletedEntity => {
                 let deleted_entity = generated_code::DeletedEntity::decode(&bytes[..]).unwrap();
@@ -259,38 +291,31 @@ impl SyncService {
                     synced_entity.created_date,
                     deleted_entity.deleted_date.unwrap().into_datetime(),
                 );
-                self.sync_repository.apply_deleted_entity(entity).await?;
+
+                #[cfg(debug_assertions)]
+                log::info!("Parsed entity {:#?}", entity);
+
+                self.sync_repository.apply_deleted_entity(entity).await?
             }
         };
 
-        // TODO: handle file and folders with same name, (merge into same name and replace all
-        // existing with new name, order by id so that the id is the same) (possible change current
-        // with new id)
-        // TODO: handle cells with same index
-
-        Ok(())
+        Ok(change_count)
     }
 
-    /// Sends all entities that has changed since the last send.
-    pub async fn send_unsynced_entities(&self) -> Result<(), SyncError> {
-        // TODO: unit test
-
-        let last_sent_sync_date = self
-            .local_configuration_repository
-            .get_by_name(LAST_SENT_SYNC_DATE_CONFIGURATION_NAME)
-            .await?
-            .map(|conf| {
-                DateTime::parse_from_rfc3339(&conf.value)
-                    .unwrap()
-                    .with_timezone(&Utc)
-            })
-            .unwrap_or(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap());
+    /// Sends all entities with modified date after the last sync date, excluding
+    /// entities given in the vector.
+    async fn send_unsynced_entities_since(
+        &self,
+        last_sync_date: DateTime<Utc>,
+        excluded_entitiies: &HashSet<Guid>,
+    ) -> Result<(), SyncError> {
+        log::info!("Sending all entities modified after date {last_sync_date} to sync.");
 
         let mut synced_entities = Vec::<SyncEntityDto>::new();
 
         for folder in self
             .folder_repository
-            .get_all_modified_on_or_after(last_sent_sync_date)
+            .get_all_modified_on_or_after(last_sync_date)
             .await?
         {
             let data = generated_code::Folder {
@@ -312,7 +337,7 @@ impl SyncService {
 
         for file in self
             .file_repository
-            .get_all_modified_on_or_after(last_sent_sync_date)
+            .get_all_modified_on_or_after(last_sync_date)
             .await?
         {
             let data = generated_code::File {
@@ -334,7 +359,7 @@ impl SyncService {
 
         for cell in self
             .cell_repository
-            .get_all_cells_modified_on_or_after(last_sent_sync_date)
+            .get_all_cells_modified_on_or_after(last_sync_date)
             .await?
         {
             let data = generated_code::Cell {
@@ -359,7 +384,7 @@ impl SyncService {
 
         for repetition in self
             .cell_repository
-            .get_all_repetitions_modified_on_or_after(last_sent_sync_date)
+            .get_all_repetitions_modified_on_or_after(last_sync_date)
             .await?
         {
             let data = generated_code::Repetition {
@@ -393,7 +418,7 @@ impl SyncService {
 
         for review in self
             .review_repository
-            .get_all_modified_on_or_after(last_sent_sync_date)
+            .get_all_modified_on_or_after(last_sync_date)
             .await?
         {
             let data = generated_code::Review {
@@ -417,7 +442,7 @@ impl SyncService {
 
         for deleted_entity in self
             .sync_repository
-            .get_all_deleted_entities_on_or_after(last_sent_sync_date)
+            .get_all_deleted_entities_on_or_after(last_sync_date)
             .await?
         {
             let data = generated_code::DeletedEntity {
@@ -436,11 +461,14 @@ impl SyncService {
             synced_entities.push(dto);
         }
 
+        #[cfg(debug_assertions)]
+        log::info!("Sending these entities to sync:\n {:#?}", synced_entities);
+
+        synced_entities.retain(|entity| !excluded_entitiies.contains(&entity.entity_id));
+
         self.backend_client
             .send_synced_entities(&synced_entities)
             .await?;
-        // TODO: exclude entities that were retrieved in fetching and processing
-        // TODO: update confuration
 
         Ok(())
     }
@@ -448,6 +476,8 @@ impl SyncService {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Duration;
+
     use crate::{
         ROOT_FOLDER_ID,
         backend::{
@@ -465,18 +495,34 @@ mod tests {
 
     async fn create_test_dependencies() -> (SqliteRepositoriesContext, MockBrainyBackendClient) {
         let context = SqliteRepositoriesContext::create_testing_context().await;
-
         (context, MockBrainyBackendClient::new())
     }
 
+    fn create_sync_service(
+        context: &SqliteRepositoriesContext,
+        backend_client: MockBrainyBackendClient,
+    ) -> SyncService {
+        SyncService::new(
+            Arc::new(backend_client),
+            context.folder_repository(),
+            context.file_repository(),
+            context.cell_repository(),
+            context.review_repository(),
+            context.sync_repository(),
+            context.local_configuration_repository(),
+        )
+    }
+
     #[tokio::test]
-    pub async fn fetch_and_process_next_sync_page_new_entities_inserted_new_entities() {
+    pub async fn sync_with_backend_new_entities_from_backend_inserted_new_entities() {
         // Arrange
 
         let (mut context, mut backend_client) = create_test_dependencies().await;
         let user_id = Guid::new_v4();
         let file_id = Guid::new_v4();
         let cell_id = Guid::new_v4();
+        let file_modified_date = Utc::now() - Duration::hours(8);
+
         let synced_entities: Vec<SyncedEntity> = vec![
             SyncedEntity {
                 user_id,
@@ -498,7 +544,7 @@ mod tests {
                 created_date: Utc::now(),
                 last_sync_date: Utc::now(),
                 data: generated_code::File {
-                    modified_date: Some(Utc::now().into_timestamp()),
+                    modified_date: Some(file_modified_date.into_timestamp()),
                     name: "test".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
                 }
@@ -562,18 +608,15 @@ mod tests {
                 })
             });
 
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
         // Act
 
-        let service = SyncService::new(
-            Arc::new(backend_client),
-            context.folder_repository(),
-            context.file_repository(),
-            context.cell_repository(),
-            context.review_repository(),
-            context.sync_repository(),
-            context.local_configuration_repository(),
-        );
-        service.fetch_and_process_next_sync_page().await.unwrap();
+        service.sync_with_backend().await.unwrap();
         context.save_changes().await.unwrap();
 
         // Assert
@@ -588,7 +631,8 @@ mod tests {
         assert_eq!(1, files.len());
         assert!(files.iter().any(|f| f.name()
             == FileSystemItemName::new_unchecked("test".to_string())
-            && f.parent_id() == Some(ROOT_FOLDER_ID)));
+            && f.parent_id() == Some(ROOT_FOLDER_ID)
+            && (f.modified_date() - file_modified_date) <= Duration::seconds(1)));
 
         let cells = context
             .cell_repository()
@@ -612,8 +656,67 @@ mod tests {
     }
 
     #[tokio::test]
-    pub async fn fetch_and_process_next_sync_page_existing_entity_with_older_modified_date_entity_updated()
-     {
+    pub async fn sync_with_backend_deleted_entity_from_backend_processed_correctly() {
+        // Arrange
+
+        let (mut context, mut backend_client) = create_test_dependencies().await;
+        let user_id = Guid::new_v4();
+        let file_id = Guid::new_v4();
+        context
+            .file_repository()
+            .create(&File::new_unchecked(
+                file_id,
+                Utc::now(),
+                Utc::now(),
+                Some(ROOT_FOLDER_ID),
+                FileSystemItemName::new_unchecked("name".to_string()),
+            ))
+            .await
+            .unwrap();
+        context.save_changes().await.unwrap();
+
+        let synced_entities: Vec<SyncedEntity> = vec![SyncedEntity {
+            user_id,
+            entity_id: file_id,
+            entity_type: EntityType::DeletedEntity,
+            created_date: Utc::now(),
+            last_sync_date: Utc::now(),
+            data: generated_code::DeletedEntity {
+                entity_name: "files".to_string(),
+                deleted_date: Some(Utc::now().into_timestamp()),
+            }
+            .into_base64(),
+        }];
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: synced_entities.clone(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
+        // Act
+
+        service.sync_with_backend().await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let files = context.file_repository().get_all_files().await.unwrap();
+        assert_eq!(0, files.len());
+    }
+
+    #[tokio::test]
+    pub async fn sync_with_backend_existing_entit_with_older_modified_date_locally_entity_updated()
+    {
         // Arrange
 
         let (mut context, mut backend_client) = create_test_dependencies().await;
@@ -691,19 +794,15 @@ mod tests {
                 })
             });
 
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
         // Act
 
-        // TODO: stop so much duplication
-        let service = SyncService::new(
-            Arc::new(backend_client),
-            context.folder_repository(),
-            context.file_repository(),
-            context.cell_repository(),
-            context.review_repository(),
-            context.sync_repository(),
-            context.local_configuration_repository(),
-        );
-        service.fetch_and_process_next_sync_page().await.unwrap();
+        service.sync_with_backend().await.unwrap();
         context.save_changes().await.unwrap();
 
         // Assert
@@ -726,7 +825,7 @@ mod tests {
     }
 
     #[tokio::test]
-    pub async fn fetch_and_process_next_sync_page_existing_entity_with_newer_modified_date_entities_not_updated()
+    pub async fn sync_with_backend_existing_entity_with_newer_modified_date_locally_entities_not_updated()
      {
         // Arrange
 
@@ -805,18 +904,15 @@ mod tests {
                 })
             });
 
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
         // Act
 
-        let service = SyncService::new(
-            Arc::new(backend_client),
-            context.folder_repository(),
-            context.file_repository(),
-            context.cell_repository(),
-            context.review_repository(),
-            context.sync_repository(),
-            context.local_configuration_repository(),
-        );
-        service.fetch_and_process_next_sync_page().await.unwrap();
+        service.sync_with_backend().await.unwrap();
         context.save_changes().await.unwrap();
 
         // Assert
@@ -838,6 +934,187 @@ mod tests {
         assert!(cells.iter().any(|c| c.content() == "new content"));
     }
 
-    // TODO: test that modified date get sets correctly, configuration update, and correct return
-    // value
+    #[tokio::test]
+    pub async fn sync_with_backend_valid_input_updated_sync_date_at_end() {
+        // Arrange
+
+        let (mut context, mut backend_client) = create_test_dependencies().await;
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: Vec::new(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
+        // Act
+
+        service.sync_with_backend().await.unwrap();
+        context.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual_sync_date_configuration = context
+            .local_configuration_repository()
+            .get_by_name(LAST_SYNC_DATE_CONFIGURATION_NAME)
+            .await
+            .unwrap()
+            .unwrap();
+        let actual_date = DateTime::parse_from_rfc3339(&actual_sync_date_configuration.value)
+            .unwrap()
+            .with_timezone(&Utc);
+
+        assert!((Utc::now() - actual_date) <= Duration::seconds(5));
+    }
+
+    #[tokio::test]
+    pub async fn sync_with_backend_local_unsynced_file_snet_file() {
+        // Arrange
+
+        let (mut context, mut backend_client) = create_test_dependencies().await;
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(ROOT_FOLDER_ID),
+            FileSystemItemName::new_unchecked("name".to_string()),
+        );
+        context.file_repository().create(&file).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: Vec::new(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            // The count should be 2 due to the root folder
+            .withf(move |value| value.len() == 2)
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
+        // Act & Assert
+
+        service.sync_with_backend().await.unwrap();
+    }
+
+    #[tokio::test]
+    pub async fn sync_with_backend_local_file_already_synced_did_not_sned_file() {
+        // Arrange
+
+        let (mut context, mut backend_client) = create_test_dependencies().await;
+
+        context
+            .local_configuration_repository()
+            .upsert(&LocalConfiguration {
+                name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
+                value: Utc::now().to_rfc3339(),
+            })
+            .await
+            .unwrap();
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now() - Duration::seconds(10),
+            Some(ROOT_FOLDER_ID),
+            FileSystemItemName::new_unchecked("name".to_string()),
+        );
+        context.file_repository().create(&file).await.unwrap();
+        context.save_changes().await.unwrap();
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: Vec::new(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            // The count should be 1 due to the root folder.
+            .withf(move |value| value.len() == 1)
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
+        // Act & Assert
+
+        service.sync_with_backend().await.unwrap();
+    }
+
+    #[tokio::test]
+    pub async fn sync_with_backend_overwritten_change_from_backend_did_not_send_change() {
+        // Arrange
+
+        let (mut context, mut backend_client) = create_test_dependencies().await;
+        let folder_id = Guid::new_v4();
+
+        context
+            .folder_repository()
+            .create(&Folder::new_unchecked(
+                folder_id,
+                Utc::now(),
+                Utc::now(),
+                None,
+                FileSystemItemName::new_unchecked("test".to_string()),
+            ))
+            .await
+            .unwrap();
+
+        let synced_entities: Vec<SyncedEntity> = vec![
+            SyncedEntity {
+                user_id: Guid::new_v4(),
+                entity_id: folder_id,
+                entity_type: EntityType::Folder,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: generated_code::Folder {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    name: "test".into(),
+                    parent_id: Some(ROOT_FOLDER_ID.into()),
+                }
+                .into_base64()
+            }
+        ];
+
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: synced_entities.clone(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            // The count should be 1 due to the root folder, the created folder should not be sent.
+            .withf(move |value| value.len() == 1)
+            .returning(move |_| Ok(()));
+
+        let service = create_sync_service(&context, backend_client);
+
+        // Act & Assert
+
+        service.sync_with_backend().await.unwrap();
+        context.save_changes().await.unwrap();
+    }
 }

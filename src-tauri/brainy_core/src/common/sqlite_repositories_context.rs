@@ -55,7 +55,10 @@ impl SqliteRepositoriesContext {
     /// are automatically applied!
     pub async fn new_with_migration(path: &str) -> Result<Self, SqliteRepositoriesContextError> {
         let url = format!("{path}?mode=rwc");
-        let options = SqliteConnectOptions::from_str(&url)?;
+        let options = SqliteConnectOptions::from_str(&url)?
+            // Since there is a single client, we can allow read uncommitted.
+            .pragma("read_uncommitted", "TRUE")
+            .optimize_on_close(true, None);
         let pool = SqlitePoolOptions::new().connect_with(options).await?;
         sqlx::migrate!("./db/").run(&pool).await?;
 
@@ -122,6 +125,23 @@ impl RepositoriesContext for SqliteRepositoriesContext {
         if let Err(err) = old_tx.commit().await {
             return Err(RepositoriesContextError::UnknownError(err.to_string()));
         }
+        Ok(())
+    }
+
+    async fn disable_foregin_key_contraint_for_current_transaction(
+        &self,
+    ) -> Result<(), RepositoriesContextError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let result = sqlx::query("PRAGMA defer_foreign_keys = ON")
+            .fetch_optional(&mut *tx)
+            .await;
+
+        if let Err(err) = result {
+            return Err(RepositoriesContextError::UnknownError(err.to_string()));
+        }
+
         Ok(())
     }
 }

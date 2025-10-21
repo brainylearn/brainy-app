@@ -1,14 +1,10 @@
--- Since there is a single client, we can allow read uncommitted.
-PRAGMA read_uncommitted = TRUE;
-
 CREATE TABLE folders(
     id                          TEXT        NOT NULL        PRIMARY KEY,
     created_date                TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     modified_date               TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     name                        TEXT        NOT NULL,
     parent_id                   TEXT,
-    FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
-    UNIQUE (name, parent_id)
+    FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE INDEX folders_modified_date_index ON folders(modified_date);
@@ -25,8 +21,7 @@ CREATE TABLE files(
     modified_date               TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     name                        TEXT        NOT NULL,
     parent_id                   TEXT        NOT NULL,
-    FOREIGN KEY(parent_id) REFERENCES folders(id) ON DELETE CASCADE,
-    UNIQUE (name, parent_id)
+    FOREIGN KEY (parent_id) REFERENCES folders(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE INDEX files_modified_date_index ON files(modified_date);
@@ -43,7 +38,7 @@ CREATE TABLE cells(
     cell_index                  INTEGER     NOT NULL,
     file_id                     TEXT        NOT NULL,
     searchable_content          TEXT        NOT NULL,
-    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE INDEX cells_file_id ON cells(file_id);
@@ -97,8 +92,8 @@ CREATE TABLE repetitions(
     state                       TEXT        NOT NULL,
     last_review                 TEXT    ,
     additional_content          TEXT,
-    FOREIGN KEY(file_id) REFERENCES files(id) ON DELETE CASCADE,
-    FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE CASCADE
+    FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (cell_id) REFERENCES cells(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE INDEX repetitions_cell_id_index ON repetitions(cell_id);
@@ -115,7 +110,7 @@ CREATE TABLE reviews(
     study_time                  INTEGER     NOT NULL,
     date                        TEXT        NOT NULL,
     rating                      TEXT        NOT NULL,
-    FOREIGN KEY(cell_id) REFERENCES cells(id) ON DELETE SET NULL
+    FOREIGN KEY (cell_id) REFERENCES cells(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE INDEX reviews_date ON reviews(date);

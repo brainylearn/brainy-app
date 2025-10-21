@@ -31,7 +31,7 @@ impl SyncRepository for SqliteSyncRepository {
     async fn apply_deleted_entity(
         &self,
         deleted_entity: DeletedEntity,
-    ) -> Result<(), RepositoryError> {
+    ) -> Result<u64, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
@@ -64,11 +64,10 @@ impl SyncRepository for SqliteSyncRepository {
         .execute(&mut *tx)
         .await;
 
-        if let Err(err) = result {
-            return Err(RepositoryError::UnknownError(err.to_string()));
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
-
-        Ok(())
     }
 
     async fn get_all_deleted_entities_on_or_after(
@@ -99,7 +98,7 @@ impl SyncRepository for SqliteSyncRepository {
         &self,
         folder: &Folder,
         modified_date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError> {
+    ) -> Result<u64, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
@@ -128,18 +127,17 @@ impl SyncRepository for SqliteSyncRepository {
         .execute(&mut *tx)
         .await;
 
-        if let Err(err) = result {
-            return Err(RepositoryError::UnknownError(err.to_string()));
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
-
-        Ok(())
     }
 
     async fn upsert_file_with_modified_date_if_modified_before(
         &self,
         file: &File,
         modified_date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError> {
+    ) -> Result<u64, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
@@ -168,18 +166,17 @@ impl SyncRepository for SqliteSyncRepository {
         .execute(&mut *tx)
         .await;
 
-        if let Err(err) = result {
-            return Err(RepositoryError::UnknownError(err.to_string()));
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
-
-        Ok(())
     }
 
     async fn upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
         &self,
         cell: &Cell,
         modified_date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError> {
+    ) -> Result<u64, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
         let id = cell.id();
@@ -223,18 +220,17 @@ impl SyncRepository for SqliteSyncRepository {
         .execute(&mut *tx)
         .await;
 
-        if let Err(err) = result {
-            return Err(RepositoryError::UnknownError(err.to_string()));
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
-
-        Ok(())
     }
 
     async fn upsert_repetition_with_modified_date_if_modified_before(
         &self,
         repetition: &Repetition,
         modified_date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError> {
+    ) -> Result<u64, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
@@ -307,18 +303,17 @@ impl SyncRepository for SqliteSyncRepository {
         .execute(&mut *tx)
         .await;
 
-        if let Err(err) = result {
-            return Err(RepositoryError::UnknownError(err.to_string()));
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
-
-        Ok(())
     }
 
     async fn upsert_review_with_modified_date_if_modified_before(
         &self,
         review: &Review,
         modified_date: DateTime<Utc>,
-    ) -> Result<(), RepositoryError> {
+    ) -> Result<u64, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
@@ -360,10 +355,9 @@ impl SyncRepository for SqliteSyncRepository {
         .execute(&mut *tx)
         .await;
 
-        if let Err(err) = result {
-            return Err(RepositoryError::UnknownError(err.to_string()));
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
-
-        Ok(())
     }
 }

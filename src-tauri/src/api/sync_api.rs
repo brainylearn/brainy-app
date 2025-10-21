@@ -14,19 +14,12 @@ pub async fn sync(
     sync_service: State<'_, Arc<SyncService>>,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
-
-    while sync_service.fetch_and_process_next_sync_page().await? {
-        log::info!("Fetching and processing next sync page...");
-        context.save_changes().await?;
-    }
-
+    // TODO: always release, abort transaction
+    context
+        .disable_foregin_key_contraint_for_current_transaction()
+        .await?;
+    sync_service.sync_with_backend().await?;
     context.save_changes().await?;
 
-    sync_service.send_unsynced_entities().await?;
-
     Ok(())
-
-    // TODO: send to server changes (all entities including deleted entitites) (exclude fetched
-    // entities)
-    // TODO: unit test repositories for filtering on modified date to send to backend
 }

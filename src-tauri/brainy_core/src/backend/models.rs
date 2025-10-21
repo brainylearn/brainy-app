@@ -6,20 +6,20 @@ use crate::{
     sync::entities::synced_entity::{EntityType, SyncedEntity},
 };
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct ProblemDetails {
     pub detail: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignInDto {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UserInformnationDto {
     pub id: Guid,
@@ -29,7 +29,7 @@ pub struct UserInformnationDto {
     pub email: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SignUpDto {
     pub username: String,
@@ -39,21 +39,21 @@ pub struct SignUpDto {
     pub last_name: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateUserInformationDto {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncedEntitiesPageDto {
     pub synced_entities: Vec<SyncedEntity>,
     pub has_more: bool,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncEntityDto {
     pub entity_id: Guid,
