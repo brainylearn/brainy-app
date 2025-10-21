@@ -205,6 +205,45 @@ impl FolderRepository for SqliteFolderRepository {
         }
     }
 
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        folder: &Folder,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let folder_id = folder.id();
+        let folder_name = folder.name().to_string();
+        let parent_id = folder.parent_id();
+        let created_date = folder.created_date();
+        let result = sqlx::query!(
+            r#"INSERT INTO folders(
+                id,
+                name,
+                parent_id,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, datetime($4), datetime($5))
+            ON CONFLICT(id) DO UPDATE
+            SET id = $1, name = $2, parent_id = $3, modified_date = datetime($4), created_date = datetime($5)
+            WHERE modified_date <= datetime($4)
+            "#,
+            folder_id,
+            folder_name,
+            parent_id,
+            modified_date,
+            created_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();

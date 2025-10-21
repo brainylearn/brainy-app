@@ -180,8 +180,8 @@ impl SyncService {
                 #[cfg(debug_assertions)]
                 log::info!("Parsed entity {:#?}", entity);
 
-                self.sync_repository
-                    .upsert_folder_with_modified_date_if_modified_before(
+                self.folder_repository
+                    .upsert_with_modified_date_if_modified_before(
                         &entity,
                         folder.modified_date.unwrap().into_datetime(),
                     )
@@ -200,8 +200,8 @@ impl SyncService {
                 #[cfg(debug_assertions)]
                 log::info!("Parsed entity {:#?}", entity);
 
-                self.sync_repository
-                    .upsert_file_with_modified_date_if_modified_before(
+                self.file_repository
+                    .upsert_with_modified_date_if_modified_before(
                         &entity,
                         file.modified_date.unwrap().into_datetime(),
                     )
@@ -224,7 +224,7 @@ impl SyncService {
                 #[cfg(debug_assertions)]
                 log::info!("Parsed entity {:#?}", entity);
 
-                self.sync_repository
+                self.cell_repository
                     .upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
                         &entity,
                         cell.modified_date.unwrap().into_datetime(),
@@ -254,7 +254,7 @@ impl SyncService {
                 #[cfg(debug_assertions)]
                 log::info!("Parsed entity {:#?}", entity);
 
-                self.sync_repository
+                self.cell_repository
                     .upsert_repetition_with_modified_date_if_modified_before(
                         &entity,
                         repetition.modified_date.unwrap().into_datetime(),
@@ -276,8 +276,8 @@ impl SyncService {
                 #[cfg(debug_assertions)]
                 log::info!("Parsed entity {:#?}", entity);
 
-                self.sync_repository
-                    .upsert_review_with_modified_date_if_modified_before(
+                self.review_repository
+                    .upsert_with_modified_date_if_modified_before(
                         &entity,
                         review.modified_date.unwrap().into_datetime(),
                     )
@@ -1079,21 +1079,19 @@ mod tests {
             .await
             .unwrap();
 
-        let synced_entities: Vec<SyncedEntity> = vec![
-            SyncedEntity {
-                user_id: Guid::new_v4(),
-                entity_id: folder_id,
-                entity_type: EntityType::Folder,
-                created_date: Utc::now(),
-                last_sync_date: Utc::now(),
-                data: generated_code::Folder {
-                    modified_date: Some(Utc::now().into_timestamp()),
-                    name: "test".into(),
-                    parent_id: Some(ROOT_FOLDER_ID.into()),
-                }
-                .into_base64()
+        let synced_entities: Vec<SyncedEntity> = vec![SyncedEntity {
+            user_id: Guid::new_v4(),
+            entity_id: folder_id,
+            entity_type: EntityType::Folder,
+            created_date: Utc::now(),
+            last_sync_date: Utc::now(),
+            data: generated_code::Folder {
+                modified_date: Some(Utc::now().into_timestamp()),
+                name: "test".into(),
+                parent_id: Some(ROOT_FOLDER_ID.into()),
             }
-        ];
+            .into_base64(),
+        }];
 
         backend_client
             .expect_get_synced_entities_after_ordered_by_created_date()

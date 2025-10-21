@@ -31,6 +31,7 @@ pub trait RepositoriesContext: Send + Sync {
     /// All changes are put automatically inside a transaction, this this
     /// method commit the transactio.
     async fn save_changes(&mut self) -> Result<(), RepositoriesContextError>;
+    async fn rollback(&mut self) -> Result<(), RepositoriesContextError>;
     async fn disable_foregin_key_contraint_for_current_transaction(
         &self,
     ) -> Result<(), RepositoriesContextError>;

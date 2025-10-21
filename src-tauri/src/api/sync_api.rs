@@ -14,12 +14,21 @@ pub async fn sync(
     sync_service: State<'_, Arc<SyncService>>,
 ) -> Result<(), ApiError> {
     let mut context = context.lock().await;
-    // TODO: always release, abort transaction
     context
         .disable_foregin_key_contraint_for_current_transaction()
         .await?;
-    sync_service.sync_with_backend().await?;
-    context.save_changes().await?;
+
+    let result = sync_service.sync_with_backend().await;
+    if let Err(err) = result {
+        context.rollback().await?;
+        return Err(ApiError(err.to_string()));
+    }
+
+    let result = context.save_changes().await;
+    if let Err(err) = result {
+        context.rollback().await?;
+        return Err(ApiError(err.to_string()));
+    }
 
     Ok(())
 }

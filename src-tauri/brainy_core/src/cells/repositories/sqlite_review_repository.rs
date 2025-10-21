@@ -96,6 +96,58 @@ impl ReviewRepository for SqliteReviewRepository {
             Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
         }
     }
+
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        review: &Review,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = review.id();
+        let cell_id = review.cell_id();
+        let study_time = review.study_time();
+        let date = review.date();
+        let rating = review.rating();
+        let created_date = review.created_date();
+
+        let result = sqlx::query!(
+            r#"INSERT INTO reviews(
+                id,
+                cell_id,
+                study_time,
+                date,
+                rating,
+                modified_date,
+                created_date) 
+            VALUES ($1, $2, $3, $4, $5, datetime($6), datetime($7))
+            ON CONFLICT(id) DO UPDATE SET
+                id = $1,
+                cell_id = $2,
+                study_time = $3,
+                date = $4,
+                rating = $5,
+                modified_date = datetime($6),
+                created_date = datetime($7)
+            WHERE modified_date <= datetime($6)
+            "#,
+            id,
+            cell_id,
+            study_time,
+            date,
+            rating,
+            modified_date,
+            created_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
 }
 
 mod review_row {

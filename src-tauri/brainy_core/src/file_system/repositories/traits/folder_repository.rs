@@ -24,6 +24,11 @@ pub trait FolderRepository: Send + Sync {
     ) -> Result<bool, RepositoryError>;
     async fn create(&self, folder: &Folder) -> Result<(), RepositoryError>;
     async fn update(&self, folder: &Folder) -> Result<(), RepositoryError>;
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        folder: &Folder,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError>;
     /// Note that deleting the folders deletes all subfolders and files inside
     /// it recursively, including the cells and all repetitions associated
     /// with the files.

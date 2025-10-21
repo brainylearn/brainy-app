@@ -330,6 +330,143 @@ impl CellRepository for SqliteCellRepository {
         self.upsert_repetitions(tx, cell.repetitions()).await
     }
 
+    async fn upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
+        &self,
+        cell: &Cell,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+        let id = cell.id();
+        let content = cell.content();
+        let cell_type = cell.cell_type();
+        let file_id = cell.file_id();
+        let index = cell.index();
+        let searchable_content = cell.searchable_content();
+        let created_date = cell.created_date();
+
+        let result = sqlx::query!(
+            r#"INSERT INTO cells(
+                id,
+                file_id,
+                content,
+                cell_type,
+                cell_index,
+                searchable_content,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, $4, $5, $6, datetime($7), datetime($8))
+            ON CONFLICT(id) DO UPDATE
+            SET id = $1,
+                file_id = $2,
+                content = $3,
+                cell_type = $4,
+                cell_index = $5,
+                searchable_content = $6,
+                modified_date = datetime($7),
+                created_date = datetime($8)
+            WHERE modified_date <= datetime($7)"#,
+            id,
+            file_id,
+            content,
+            cell_type,
+            index,
+            searchable_content,
+            modified_date,
+            created_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
+    async fn upsert_repetition_with_modified_date_if_modified_before(
+        &self,
+        repetition: &Repetition,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = repetition.id();
+        let file_id = repetition.file_id();
+        let cell_id = repetition.cell_id();
+        let due = repetition.due();
+        let stability = repetition.stability();
+        let difficulty = repetition.difficulty();
+        let elapsed_days = repetition.elapsed_days();
+        let scheduled_days = repetition.scheduled_days();
+        let reps = repetition.reps();
+        let lapses = repetition.lapses();
+        let state = repetition.state();
+        let last_review = repetition.last_review();
+        let additional_content = repetition.additional_content();
+        let created_date = repetition.created_date();
+
+        let result = sqlx::query!(
+            r#"INSERT INTO repetitions(
+                id,
+                file_id,
+                cell_id,
+                due,
+                stability,
+                difficulty,
+                elapsed_days,
+                scheduled_days,
+                reps,
+                lapses,
+                state,
+                last_review,
+                additional_content,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, datetime($14), datetime($15))
+            ON CONFLICT(id) DO UPDATE SET
+                file_id = $2,
+                cell_id = $3,
+                due = $4,
+                stability = $5,
+                difficulty = $6,
+                elapsed_days = $7,
+                scheduled_days = $8,
+                reps = $9,
+                lapses = $10,
+                state = $11,
+                last_review = $12,
+                additional_content = $13,
+                modified_date = datetime($14),
+                created_date = datetime($15)
+            WHERE modified_date <= datetime($14)
+            "#,
+            id,
+            file_id,
+            cell_id,
+            due,
+            stability,
+            difficulty,
+            elapsed_days,
+            scheduled_days,
+            reps,
+            lapses,
+            state,
+            last_review,
+            additional_content,
+            modified_date,
+            created_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
     async fn move_cells_indices_starting_from(
         &self,
         file_id: Guid,

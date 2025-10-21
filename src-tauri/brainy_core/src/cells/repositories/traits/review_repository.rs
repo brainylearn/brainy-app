@@ -10,4 +10,10 @@ pub trait ReviewRepository: Send + Sync {
         &self,
         modified_date: DateTime<Utc>,
     ) -> Result<Vec<Review>, RepositoryError>;
+
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        review: &Review,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError>;
 }

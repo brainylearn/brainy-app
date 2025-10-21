@@ -22,6 +22,11 @@ pub trait FileRepository: Send + Sync {
     ) -> Result<bool, RepositoryError>;
     async fn create(&self, file: &File) -> Result<(), RepositoryError>;
     async fn update(&self, file: &File) -> Result<(), RepositoryError>;
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        file: &File,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError>;
     /// Note that deleting the file deletes the cells and all repetitions
     /// associated with it.
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;
