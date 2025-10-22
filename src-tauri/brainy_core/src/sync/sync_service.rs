@@ -128,6 +128,8 @@ impl SyncService {
             })
             .await?;
 
+        log::info!("Sync is completed.");
+
         Ok(())
     }
 
@@ -461,14 +463,16 @@ impl SyncService {
             synced_entities.push(dto);
         }
 
-        #[cfg(debug_assertions)]
-        log::info!("Sending these entities to sync:\n {:#?}", synced_entities);
-
         synced_entities.retain(|entity| !excluded_entitiies.contains(&entity.entity_id));
 
-        self.backend_client
-            .send_synced_entities(&synced_entities)
-            .await?;
+        if !synced_entities.is_empty() {
+            #[cfg(debug_assertions)]
+            log::info!("Sending these entities to sync:\n{:#?}", synced_entities);
+
+            self.backend_client
+                .send_synced_entities(&synced_entities)
+                .await?;
+        }
 
         Ok(())
     }
