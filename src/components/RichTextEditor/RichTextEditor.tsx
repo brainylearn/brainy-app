@@ -50,7 +50,7 @@ function RichTextEditor({ editable: initialEditable, ...props }: Props) {
 		<>
 			{props.title && <p className={styles.title}>{props.title}</p>}
 			<div className={styles.innerEditor}>
-				{!initialEditable && !editable && (
+				{!editable && (
 					<div className={`${styles.editor}`}>
 						<div
 							tabIndex={0}
@@ -113,8 +113,7 @@ function TiptapEditor({
 				},
 			},
 		},
-		// TODO: performance issues? if so find way to update editor after sync
-		[content],
+		[],
 	);
 
 	useEffect(() => {

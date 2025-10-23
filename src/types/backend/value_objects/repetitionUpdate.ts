@@ -1,6 +1,6 @@
-export type RepetitionState = "new" | "learning" | "relearning" | "review";
+import { RepetitionState } from "../entity/repetition";
 
-export default interface Repetition {
+export default interface RepetitionUpdate {
 	id: string;
 	fileId: string;
 	cellId: string;

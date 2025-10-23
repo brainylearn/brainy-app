@@ -8,7 +8,6 @@ use crate::{
     cells::{
         entities::{
             cell::{Cell, CellType},
-            repetition::Repetition,
             review::{Rating, Review},
         },
         models::cell_deletion_request::CellDeletionRequest,
@@ -16,6 +15,7 @@ use crate::{
             cell_repository::{CellRepository, MoveDirection},
             review_repository::ReviewRepository,
         },
+        value_objects::repetition_update::RepetitionUpdate,
     },
     common::repository_error::RepositoryError,
 };
@@ -103,25 +103,25 @@ impl CellService {
 
     pub async fn register_review(
         &self,
-        new_repetition: Repetition,
+        repetition_update: RepetitionUpdate,
         rating: Rating,
         study_time: u32,
     ) -> Result<(), CellServiceError> {
         log::info!(
             "Registering review for repetition with id {}, and rating {rating:?}, and study time of {study_time} seconds.",
-            new_repetition.id
+            repetition_update.id
         );
 
         let mut cell = self
             .cell_repository
-            .get_by_id(new_repetition.cell_id)
+            .get_by_id(repetition_update.cell_id)
             .await?;
         if let Some(element) = cell
             .repetitions
             .iter_mut()
-            .find(|r| r.id == new_repetition.id)
+            .find(|r| r.id == repetition_update.id)
         {
-            *element = new_repetition;
+            repetition_update.apply_update(element);
         } else {
             panic!("Cannot find repetition with specified id!");
         }
@@ -407,7 +407,7 @@ pub mod tests {
         context.cell_repository().create(&cell).await.unwrap();
         context.save_changes().await.unwrap();
 
-        let new_repetition = Repetition {
+        let repetition_update = RepetitionUpdate {
             id: cell.repetitions()[0].id,
             cell_id: cell.id(),
             file_id: cell.file_id(),
@@ -418,7 +418,7 @@ pub mod tests {
         // Act
 
         service
-            .register_review(new_repetition.clone(), Rating::Hard, 10)
+            .register_review(repetition_update.clone(), Rating::Hard, 10)
             .await
             .unwrap();
         context.save_changes().await.unwrap();
@@ -431,7 +431,10 @@ pub mod tests {
             .await
             .unwrap();
 
-        assert_eq!(actual.repetitions()[0].stability, new_repetition.stability);
+        assert_eq!(
+            actual.repetitions()[0].stability,
+            repetition_update.stability
+        );
 
         let home_statistics = context
             .cell_repository()

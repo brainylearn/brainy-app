@@ -24,7 +24,6 @@ function Searcher({ onError, onEditButtonClick }: Props) {
 	const searchParamsSearchText =
 		searchParams.get(searchTextQueryParameter) ?? "";
 
-	// TODO: sync is not updating global search ??
 	const retrieveSearchResult = useCallback(async () => {
 		try {
 			const result = await searchCells(searchParamsSearchText);
