@@ -8,8 +8,12 @@ import useGlobalKey from "../../../hooks/useGlobalKey";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSyncing } from "../../../stores/sync/syncSelector";
 import { sync } from "../../../stores/sync/syncActions";
+import Toast from "../../../components/Toast/Toast";
+import { useEffect, useState } from "react";
+import { defaultGlobalSyncEvenetManager } from "../../../stores/sync/manager/syncEventManager";
 
 export default function SyncRow() {
+	const [showToast, setShowToast] = useState(false);
 	const dispatch = useAppDispatch();
 	const isSyncing = useAppSelector(selectIsSyncing);
 
@@ -20,9 +24,23 @@ export default function SyncRow() {
 		}
 	});
 
-	// TODO: give success message, a popup that hides automatically
+	useEffect(() => {
+		const cb = () => {
+			setShowToast(true);
+			return Promise.resolve();
+		};
+		defaultGlobalSyncEvenetManager.addPostSyncListener(cb);
+		return () => defaultGlobalSyncEvenetManager.removePostSyncListener(cb);
+	}, []);
+
 	return (
 		<>
+			{showToast && (
+				<Toast
+					onHide={() => setShowToast(false)}
+					text="✅ Sync completed"
+				/>
+			)}
 			{isSyncing && (
 				<Dialog className={styles.syncBox}>
 					<Spinner />
