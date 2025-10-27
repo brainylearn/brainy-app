@@ -19,9 +19,6 @@
 
 .editor {
 	min-height: calc(1.4rem + 4 * var(--small-padding));
-}
-
-.editor div {
 	padding: var(--small-padding) var(--default-padding);
 	outline: none;
 
@@ -35,7 +32,7 @@
 	}
 }
 
-.bubble-menu {
+.floating-menu {
 	background-color: var(--default-background-color);
 	border-radius: var(--default-border-radius);
 	box-shadow: var(--default-box-shadow);
@@ -66,4 +63,8 @@
 .vertical-border {
 	height: 1.6rem;
 	border-right: 1px solid var(--hover-border-color);
+}
+
+.underline {
+	text-decoration: underline;
 }

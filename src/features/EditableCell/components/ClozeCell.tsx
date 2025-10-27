@@ -1,4 +1,4 @@
-import { ChainedCommands, Editor } from "@tiptap/core";
+import { ChainedCommands } from "@tiptap/core";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import {
 	mdiDotsHorizontal,
@@ -8,13 +8,14 @@ import {
 import Cell from "../../../types/backend/entity/cell";
 import clozeMark from "../utils/clozeMark";
 import { clozeMarkName } from "../config/constants";
+import { LexicalEditor } from "lexical";
 
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
 	eagerLoadRichTextEditor: boolean;
 	onUpdate: (content: string) => void;
-	onFocus: (editor: Editor) => void;
+	onFocus: (editor: LexicalEditor) => void;
 }
 
 const regexp = /<cloze[^>]*index="(\d+)"[^>]*>/g;
@@ -61,7 +62,7 @@ function ClozeCell({
 			]}
 			content={cell.content}
 			autofocus={autofocus}
-			onUpdate={onUpdate}
+			onChange={onUpdate}
 			onFocus={onFocus}
 		/>
 	);

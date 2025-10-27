@@ -1,16 +1,16 @@
-import { Editor } from "@tiptap/react";
 import Cell from "../../../types/backend/entity/cell";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import ClozeCell from "./ClozeCell";
 import FlashCardCell from "./FlashCardCell";
 import TrueFalseCell from "./TrueFalseCell";
+import { LexicalEditor } from "lexical";
 
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
 	eagerLoadRichTextEditor: boolean;
 	onUpdate: (content: string) => void;
-	onFocus: (editor: Editor) => void;
+	onFocus: (editor: LexicalEditor) => void;
 }
 
 function EditableCell({
@@ -37,7 +37,7 @@ function EditableCell({
 					content={cell.content}
 					autofocus={autofocus}
 					eagerLoadRichTextEditor={eagerLoadRichTextEditor}
-					onUpdate={onUpdate}
+					onChange={onUpdate}
 					onFocus={onFocus}
 				/>
 			);

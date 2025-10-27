@@ -1,16 +1,16 @@
-import { Editor } from "@tiptap/react";
 import Cell from "../../../types/backend/entity/cell";
 import TrueFalse from "../../../types/backend/value_objects/trueFalse";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import styles from "./styles.module.css";
 import { useRef, useState } from "react";
+import { LexicalEditor } from "lexical";
 
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
 	eagerLoadRichTextEditor: boolean;
 	onUpdate: (content: string) => void;
-	onFocus: (editor: Editor) => void;
+	onFocus: (editor: LexicalEditor) => void;
 }
 
 export function TrueFalseCell({
@@ -49,7 +49,7 @@ export function TrueFalseCell({
 			<RichTextEditor
 				title="Question"
 				content={trueFalse.question}
-				onUpdate={handleQuestionUpdate}
+				onChange={handleQuestionUpdate}
 				autofocus={autofocus}
 				onFocus={onFocus}
 				eagerLoadRichTextEditor={eagerLoadRichTextEditor}

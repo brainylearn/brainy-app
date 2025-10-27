@@ -3,14 +3,14 @@ import Cell from "../../../types/backend/entity/cell";
 import FlashCard from "../../../types/backend/value_objects/flashCard";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import styles from "./styles.module.css";
-import { Editor } from "@tiptap/react";
+import { LexicalEditor } from "lexical";
 
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
 	eagerLoadRichTextEditor: boolean;
 	onUpdate: (content: string) => void;
-	onFocus: (editor: Editor) => void;
+	onFocus: (editor: LexicalEditor) => void;
 }
 
 function FlashCardCell({
@@ -56,7 +56,7 @@ function FlashCardCell({
 			<RichTextEditor
 				title="Question"
 				content={flashCard.question}
-				onUpdate={handleQuestionUpdate}
+				onChange={handleQuestionUpdate}
 				autofocus={autofocus && !isAnswerEditorFocused}
 				onFocus={e => {
 					setIsAnswerEditorFocused(false);
@@ -68,7 +68,7 @@ function FlashCardCell({
 				title="Answer"
 				content={flashCard.answer}
 				autofocus={autofocus && isAnswerEditorFocused}
-				onUpdate={handleAnswerUpdate}
+				onChange={handleAnswerUpdate}
 				onFocus={e => {
 					setIsAnswerEditorFocused(true);
 					onFocus(e);

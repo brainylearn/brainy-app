@@ -1,64 +1,57 @@
-import {
-	BubbleMenu,
-	useEditor,
-	EditorContent,
-	AnyExtension,
-	Editor,
-} from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
+import { AnyExtension } from "@tiptap/react";
 import styles from "./styles.module.css";
-import Underline from "@tiptap/extension-underline";
-import Subscript from "@tiptap/extension-subscript";
-import Superscript from "@tiptap/extension-superscript";
-import ImageResize from "tiptap-extension-resize-image";
-import BubbleMenuCommand, { Command } from "./Command";
-import { defaultCommands } from "./defaultCommands";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import {
+	InitialConfigType,
+	LexicalComposer,
+} from "@lexical/react/LexicalComposer";
+import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
+import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
+import { FloatingMenuPlugin } from "./Plugins/FloatingMenuPlugin/FloatingMenuPlugin";
+import { ListPlugin } from "@lexical/react/LexicalListPlugin";
+import { ListItemNode, ListNode } from "@lexical/list";
+import FocusBlurPlugin from "./Plugins/FocusBlurPlugin";
+import { LexicalEditor } from "lexical";
+import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenu";
 
-const extensions = [
-	StarterKit,
-	ImageResize.configure({
-		allowBase64: true,
-	}),
-	Underline,
-	Subscript,
-	Superscript,
-];
+// TODO:  image resizer
 
-interface Props {
+interface IProps {
 	content: string;
 	title?: string;
 	extraExtensions?: AnyExtension[];
-	commands?: Command[];
+    // TODO: rename
+	commands?: IFloatingMenuButton[];
 	autofocus?: boolean;
 	/** TiptapEditor is slow on rendering, therefor showing a div element
 	 * instead until there is a need to render the actual editor (e.g. user interaction).
 	 */
 	eagerLoadRichTextEditor: boolean;
-	onUpdate: (html: string) => void;
-	onFocus?: (editor: Editor) => void;
+	onChange: (html: string) => void;
+	onFocus?: (editor: LexicalEditor) => void;
 	onBlur?: () => void;
 }
 
-function RichTextEditor({ eagerLoadRichTextEditor, ...props }: Props) {
-	const [showTiptapEditor, setShowTiptapEditor] = useState(
-		eagerLoadRichTextEditor,
-	);
+function RichTextEditor({ eagerLoadRichTextEditor, ...props }: IProps) {
+	const [showEditor, setShowEditor] = useState(eagerLoadRichTextEditor);
 	const [
 		previousEagerLoadRichTextEditor,
 		setPreviousEagerLoadRichTextEditor,
 	] = useState<boolean | null>(null);
 	if (previousEagerLoadRichTextEditor !== eagerLoadRichTextEditor) {
 		setPreviousEagerLoadRichTextEditor(eagerLoadRichTextEditor);
-		if (eagerLoadRichTextEditor) setShowTiptapEditor(true);
+		if (eagerLoadRichTextEditor) setShowEditor(true);
 	}
 
 	return (
 		<>
 			{props.title && <p className={styles.title}>{props.title}</p>}
 			<div className={styles.innerEditor}>
-				{showTiptapEditor && <TiptapEditor {...props} />}
-				{!showTiptapEditor && (
+				{showEditor && <TiptapEditor {...props} />}
+				{!showEditor && (
 					<div className={`${styles.editor}`}>
 						<div
 							tabIndex={0}
@@ -68,8 +61,8 @@ function RichTextEditor({ eagerLoadRichTextEditor, ...props }: Props) {
 									? props.content
 									: "&nbsp;",
 							}}
-							onMouseEnter={() => setShowTiptapEditor(true)}
-							onFocus={() => setShowTiptapEditor(true)}
+							onMouseEnter={() => setShowEditor(true)}
+							onFocus={() => setShowEditor(true)}
 						/>
 					</div>
 				)}
@@ -82,10 +75,10 @@ interface TiptapEditorProps {
 	content: string;
 	title?: string;
 	extraExtensions?: AnyExtension[];
-	commands?: Command[];
+	commands?: ICommand[];
 	autofocus?: boolean;
-	onUpdate: (html: string) => void;
-	onFocus?: (editor: Editor) => void;
+	onChange: (html: string) => void;
+	onFocus?: (editor: LexicalEditor) => void;
 	onBlur?: () => void;
 }
 
@@ -94,69 +87,40 @@ function TiptapEditor({
 	extraExtensions,
 	commands,
 	autofocus,
-	onUpdate,
+	onChange,
 	onFocus,
 	onBlur,
 }: TiptapEditorProps) {
-	const editor = useEditor(
-		{
-			extensions: [...extensions, ...(extraExtensions ?? [])],
-			content: content,
-			onUpdate: e => {
-				if (e.editor.getHTML() !== content)
-					onUpdate(e.editor.getHTML());
-			},
-			onFocus: onFocus ? e => onFocus(e.editor) : undefined,
-			onBlur,
-			editorProps: {
-				handleKeyDown: (_, e) => {
-					// Do not insert new lines when clicking Ctrl + Enter.
-					if (e.ctrlKey && e.key === "Enter") {
-						return true;
-					}
-					return false;
-				},
-				transformPastedText(text) {
-					return text.trim();
-				},
+	const initialConfig: InitialConfigType = {
+		namespace: "BrainyEditor",
+		onError: console.error,
+		nodes: [ListNode, ListItemNode],
+		theme: {
+			text: {
+				underline: styles.underline,
 			},
 		},
-		[],
-	);
+	};
 
-	useEffect(() => {
-		if (autofocus && editor) editor.commands.focus();
-	}, [autofocus, editor]);
-
+	// TODO: cloze, testing, refactoring, styling (body is scrollable in long file), etc..
 	return (
-		<>
-			{editor && (
-				<BubbleMenu
-					editor={editor}
-					tippyOptions={{ duration: 100 }}
-					className={styles.bubbleMenu}>
-					{commands?.map(c => (
-						<BubbleMenuCommand
-							key={c.name}
-							command={c}
-							editor={editor}
-						/>
-					))}
-					{commands && commands.length > 0 && (
-						<div className={styles.verticalBorder} />
-					)}
-
-					{defaultCommands.map(c => (
-						<BubbleMenuCommand
-							key={c.name}
-							command={c}
-							editor={editor}
-						/>
-					))}
-				</BubbleMenu>
-			)}
-			<EditorContent editor={editor} className={styles.editor} />
-		</>
+		<LexicalComposer initialConfig={initialConfig}>
+			<RichTextPlugin
+				contentEditable={
+					<ContentEditable
+						className={styles.editor}
+						aria-placeholder={"Enter some text..."}
+						placeholder={<></>}
+					/>
+				}
+				ErrorBoundary={LexicalErrorBoundary}
+			/>
+			<HistoryPlugin />
+			{autofocus && <AutoFocusPlugin />}
+			<FloatingMenuPlugin />
+			<ListPlugin />
+			<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
+		</LexicalComposer>
 	);
 }
 

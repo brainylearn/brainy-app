@@ -10,11 +10,11 @@ import Icon from "@mdi/react";
 import FocusTools from "./FocusTools";
 import Repetition from "../../../types/backend/entity/repetition";
 import NewCellTypeSelector from "./NewCellTypeSelector";
-import { Editor as TipTapEditor } from "@tiptap/react";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import { CELL_ID_DRAG_FORMAT } from "../config/constants";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSyncing } from "../../../stores/sync/syncSelector";
+import { LexicalEditor } from "lexical";
 
 interface Props {
 	cell: Cell;
@@ -61,15 +61,13 @@ function CellBlock(
 		boolean | null
 	>(null);
 	const isSyncing = useAppSelector(selectIsSyncing);
-	const tipTapEditorRef = useRef<TipTapEditor>(null);
+	const editorRef = useRef<LexicalEditor>(null);
 
 	useGlobalKey(e => {
-		if (e.key === "Escape") {
-			if (isSelected) tipTapEditorRef.current?.commands.focus();
-		} else if (e.ctrlKey && e.shiftKey && e.key === "Enter") {
+		if (e.ctrlKey && e.shiftKey && e.key === "Enter") {
 			setShowInsertNewCell(!showInsertNewCell);
 		} else if (e.ctrlKey && e.key === " ") {
-			if (isSelected) tipTapEditorRef.current?.commands.focus();
+			if (isSelected) editorRef.current?.focus();
 		}
 	});
 
@@ -100,12 +98,12 @@ function CellBlock(
 
 	const handleFocusToolsInsertNewCellClick = () => {
 		setShowInsertNewCell(!showInsertNewCell);
-		if (showInsertNewCell) tipTapEditorRef.current?.commands.focus();
+		if (showInsertNewCell) editorRef.current?.focus();
 	};
 
 	const handleClick = () => {
-		if (isSelected && tipTapEditorRef.current) {
-			tipTapEditorRef.current.commands.focus();
+		if (isSelected && editorRef.current) {
+			editorRef.current.focus();
 		}
 		onClick(cell.id);
 	};
@@ -165,7 +163,7 @@ function CellBlock(
 				cell={cell}
 				autofocus={(autoFocusEditor ?? false) && !isSyncing}
 				onUpdate={onUpdate}
-				onFocus={editor => (tipTapEditorRef.current = editor)}
+				onFocus={editor => (editorRef.current = editor)}
 				eagerLoadRichTextEditor={isSelected}
 			/>
 		</div>
