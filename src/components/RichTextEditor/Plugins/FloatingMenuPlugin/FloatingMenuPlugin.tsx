@@ -22,24 +22,32 @@ export function FloatingMenuPlugin() {
 		const editorRootElementRect = editor
 			.getRootElement()
 			?.getBoundingClientRect();
+        const refRect = ref.current?.getBoundingClientRect();
 
 		if (
 			!domRangeRect ||
-			!ref.current ||
+			!refRect ||
 			isPointerDown ||
 			!editorRootElementRect
 		) {
 			return setCoordinates(null);
 		}
 
+        let x = Math.max(
+            0,
+            // Centering the x position relevant to the selection position,
+            // and ensuring it does not overflow the left side.
+            domRangeRect.left -
+                editorRootElementRect.left -
+                refRect.width / 2,
+        );
+
+        // Ensuring that the floating menu does not overflow the right side.
+        if (x + refRect.width > editorRootElementRect.width) {
+            x = editorRootElementRect.width - refRect.width;
+        }
 		const newCoordinates = {
-			x:
-				Math.max(
-					0,
-					domRangeRect.left -
-						editorRootElementRect.left -
-						ref.current.getBoundingClientRect().width / 2,
-				),
+			x,
 			y: domRangeRect.top - editorRootElementRect.top - 10,
 		};
 		setCoordinates(newCoordinates);
