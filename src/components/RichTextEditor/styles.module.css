@@ -1,7 +1,7 @@
-.inner-editor {
+.container {
+	position: relative;
 	border: 1px solid var(--border-color);
 	border-radius: var(--default-border-radius);
-	overflow: hidden;
 	transition: all var(--default-transition-time);
 }
 
@@ -33,6 +33,8 @@
 }
 
 .floating-menu {
+	position: absolute;
+	transform: translateY(-100%);
 	background-color: var(--default-background-color);
 	border-radius: var(--default-border-radius);
 	box-shadow: var(--default-box-shadow);
@@ -43,6 +45,7 @@
 	justify-items: center;
 	gap: 2px;
 	width: fit-content;
+	z-index: 3;
 
 	& > button {
 		color: var(--text-color);
@@ -63,8 +66,4 @@
 .vertical-border {
 	height: 1.6rem;
 	border-right: 1px solid var(--hover-border-color);
-}
-
-.underline {
-	text-decoration: underline;
 }

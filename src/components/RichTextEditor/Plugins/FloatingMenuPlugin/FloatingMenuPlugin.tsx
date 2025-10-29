@@ -1,57 +1,56 @@
-import { computePosition } from "@floating-ui/dom";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import {
-	$getSelection,
-	$isRangeSelection,
-	COMMAND_PRIORITY_LOW,
-} from "lexical";
+import { $getSelection, $isRangeSelection } from "lexical";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import FloatingMenu, {
 	FloatingMenuCoordinates as FloatingMenuCoordinates,
 } from "./FloatingMenu";
 import { usePointerInteractions } from "./hooks/usePointerInteractions";
-import {
-	$insertList,
-	$removeList,
-	INSERT_ORDERED_LIST_COMMAND,
-	INSERT_UNORDERED_LIST_COMMAND,
-	REMOVE_LIST_COMMAND,
-} from "@lexical/list";
-
-const DOM_ELEMENT = document.body;
 
 export function FloatingMenuPlugin() {
-    const [editor] = useLexicalComposerContext();
+	const [editor] = useLexicalComposerContext();
 	const [coordinates, setCoordinates] =
-		useState<FloatingMenuCoordinates>(undefined);
-    const ref = useRef<HTMLDivElement>(null);
+		useState<FloatingMenuCoordinates>(null);
+	const ref = useRef<HTMLDivElement>(null);
 
 	const { isPointerDown, isPointerReleased } = usePointerInteractions();
 
 	const calculatePosition = useCallback(() => {
 		const domSelection = getSelection();
-		const domRange =
-			domSelection?.rangeCount !== 0 && domSelection?.getRangeAt(0);
+		const domRangeRect =
+			domSelection?.rangeCount !== 0 &&
+			domSelection?.getRangeAt(0)?.getBoundingClientRect();
+		const editorRootElementRect = editor
+			.getRootElement()
+			?.getBoundingClientRect();
 
-		if (!domRange || !ref.current || isPointerDown)
-			return setCoordinates(undefined);
+		if (
+			!domRangeRect ||
+			!ref.current ||
+			isPointerDown ||
+			!editorRootElementRect
+		) {
+			return setCoordinates(null);
+		}
 
-		computePosition(domRange, ref.current, { placement: "top" })
-			.then(pos => {
-				setCoordinates({ x: Math.max(0, pos.x), y: pos.y - 10 });
-			})
-			.catch(() => {
-				setCoordinates(undefined);
-			});
-	}, [isPointerDown]);
+		const newCoordinates = {
+			x:
+				Math.max(
+					0,
+					domRangeRect.left -
+						editorRootElementRect.left -
+						ref.current.getBoundingClientRect().width / 2,
+				),
+			y: domRangeRect.top - editorRootElementRect.top - 10,
+		};
+		setCoordinates(newCoordinates);
+	}, [editor, isPointerDown]);
 
 	const $handleSelectionChange = useCallback(() => {
 		if (
 			editor.isComposing() ||
 			editor.getRootElement() !== document.activeElement
 		) {
-			setCoordinates(undefined);
+			setCoordinates(null);
 			return;
 		}
 
@@ -63,7 +62,7 @@ export function FloatingMenuPlugin() {
 		) {
 			calculatePosition();
 		} else {
-			setCoordinates(undefined);
+			setCoordinates(null);
 		}
 	}, [editor, calculatePosition]);
 
@@ -76,8 +75,7 @@ export function FloatingMenuPlugin() {
 		return unregisterListener;
 	}, [editor, $handleSelectionChange]);
 
-	const show = coordinates !== undefined;
-
+	const show = coordinates !== null;
 	useEffect(() => {
 		if (!show && isPointerReleased) {
 			editor.getEditorState().read(() => $handleSelectionChange());
@@ -87,51 +85,5 @@ export function FloatingMenuPlugin() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isPointerReleased, $handleSelectionChange, editor]);
 
-	useEffect(() => {
-        // TODO: move to own plugin
-		const unregisterListeners: (() => void)[] = [];
-		unregisterListeners.push(
-			editor.registerCommand(
-				INSERT_UNORDERED_LIST_COMMAND,
-				() => {
-					$insertList("bullet");
-					return true;
-				},
-				COMMAND_PRIORITY_LOW,
-			),
-		);
-
-		unregisterListeners.push(
-			editor.registerCommand(
-				INSERT_ORDERED_LIST_COMMAND,
-				() => {
-					$insertList("number");
-					return true;
-				},
-				COMMAND_PRIORITY_LOW,
-			),
-		);
-
-		unregisterListeners.push(
-			editor.registerCommand(
-				REMOVE_LIST_COMMAND,
-				() => {
-					$removeList();
-					return true;
-				},
-				COMMAND_PRIORITY_LOW,
-			),
-		);
-
-		return () => {
-			for (const unregisterListener of unregisterListeners) {
-				unregisterListener();
-			}
-		};
-	}, [editor]);
-
-	return createPortal(
-		<FloatingMenu ref={ref} editor={editor} coordinates={coordinates} />,
-		DOM_ELEMENT,
-	);
+	return <FloatingMenu ref={ref} editor={editor} coordinates={coordinates} />;
 }

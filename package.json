@@ -15,6 +15,7 @@
 		"format": "prettier . --write"
 	},
 	"dependencies": {
+		"@lexical/html": "^0.37.0",
 		"@lexical/list": "^0.37.0",
 		"@lexical/react": "^0.37.0",
 		"@mdi/js": "7.4.47",

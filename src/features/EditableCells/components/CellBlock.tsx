@@ -83,7 +83,10 @@ function CellBlock(
 	};
 
 	const handleDragOver = (e: React.DragEvent) => {
-		if (isDragging || !e.dataTransfer.types.some(t => t === CELL_ID_DRAG_FORMAT)) {
+		if (
+			isDragging ||
+			!e.dataTransfer.types.some(t => t === CELL_ID_DRAG_FORMAT)
+		) {
 			return;
 		}
 		e.preventDefault();

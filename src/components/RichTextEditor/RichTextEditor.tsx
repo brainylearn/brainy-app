@@ -14,8 +14,11 @@ import { FloatingMenuPlugin } from "./Plugins/FloatingMenuPlugin/FloatingMenuPlu
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { ListItemNode, ListNode } from "@lexical/list";
 import FocusBlurPlugin from "./Plugins/FocusBlurPlugin";
-import { LexicalEditor } from "lexical";
+import { LexicalEditor, $getRoot, EditorState } from "lexical";
 import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenu";
+import ListCommandsPlugin from "./Plugins/ListCommandsPlugin";
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 
 // TODO:  image resizer
 
@@ -23,7 +26,7 @@ interface IProps {
 	content: string;
 	title?: string;
 	extraExtensions?: AnyExtension[];
-    // TODO: rename
+	// TODO: rename
 	commands?: IFloatingMenuButton[];
 	autofocus?: boolean;
 	/** TiptapEditor is slow on rendering, therefor showing a div element
@@ -49,7 +52,7 @@ function RichTextEditor({ eagerLoadRichTextEditor, ...props }: IProps) {
 	return (
 		<>
 			{props.title && <p className={styles.title}>{props.title}</p>}
-			<div className={styles.innerEditor}>
+			<div className={styles.container}>
 				{showEditor && <TiptapEditor {...props} />}
 				{!showEditor && (
 					<div className={`${styles.editor}`}>
@@ -75,7 +78,7 @@ interface TiptapEditorProps {
 	content: string;
 	title?: string;
 	extraExtensions?: AnyExtension[];
-	commands?: ICommand[];
+	commands?: IFloatingMenuButton[];
 	autofocus?: boolean;
 	onChange: (html: string) => void;
 	onFocus?: (editor: LexicalEditor) => void;
@@ -97,12 +100,27 @@ function TiptapEditor({
 		nodes: [ListNode, ListItemNode],
 		theme: {
 			text: {
-				underline: styles.underline,
+				underline: "underline",
+				bold: "bold",
+				italic: "italic",
 			},
+		},
+		editorState: editor => {
+			const parser = new DOMParser();
+			const dom = parser.parseFromString(content, "text/html");
+			const nodes = $generateNodesFromDOM(editor, dom);
+			$getRoot().append(...nodes);
 		},
 	};
 
-	// TODO: cloze, testing, refactoring, styling (body is scrollable in long file), etc..
+	const handleChange = (editorState: EditorState, editor: LexicalEditor) => {
+		editorState.read(() => {
+			const html = $generateHtmlFromNodes(editor);
+			onChange(html);
+		});
+	};
+
+	// TODO: cloze, testing, refactoring, styling, etc..
 	return (
 		<LexicalComposer initialConfig={initialConfig}>
 			<RichTextPlugin
@@ -116,9 +134,11 @@ function TiptapEditor({
 				ErrorBoundary={LexicalErrorBoundary}
 			/>
 			<HistoryPlugin />
+			<OnChangePlugin onChange={handleChange} />
 			{autofocus && <AutoFocusPlugin />}
 			<FloatingMenuPlugin />
 			<ListPlugin />
+			<ListCommandsPlugin />
 			<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
 		</LexicalComposer>
 	);

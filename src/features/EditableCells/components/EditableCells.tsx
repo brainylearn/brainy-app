@@ -48,6 +48,7 @@ function EditableCells({
 	onEditButtonClick,
 }: Props) {
 	const [selectedCellId, setSelectedCellId] = useState<string | null>(() => {
+		// TODO: nothing gets selected at start
 		if (cells.some(c => c.id === editCellId)) return editCellId;
 		else if (cells.length > 0) return cells[0].id;
 		return null;
