@@ -47,12 +47,7 @@ function EditableCells({
 	onCellsUpdateSave,
 	onEditButtonClick,
 }: Props) {
-	const [selectedCellId, setSelectedCellId] = useState<string | null>(() => {
-		// TODO: nothing gets selected at start
-		if (cells.some(c => c.id === editCellId)) return editCellId;
-		else if (cells.length > 0) return cells[0].id;
-		return null;
-	});
+	const [selectedCellId, setSelectedCellId] = useState<string | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const selectedCellRef = useRef<HTMLDivElement>(null);
 	const containerScrollTopBeforeSync = useRef(0);
@@ -60,6 +55,11 @@ function EditableCells({
 	const isSyncing = useAppSelector(selectIsSyncing);
 	const enableFileSpecificFunctionality =
 		fileMode === "single" && !searchText;
+
+    if (!selectedCellId) {
+        if (cells.some(c => c.id === editCellId)) setSelectedCellId(editCellId);
+		else if (cells.length > 0) setSelectedCellId(cells[0].id);
+    }
 
 	const { saveChanges, onCellContentUpdate, ignoreCell } = useAutoSave({
 		cells,
