@@ -191,7 +191,7 @@ function EditableCells({
 
 	const handleDrop = async (e: React.DragEvent, index: number) => {
 		const dragCellId = e.dataTransfer.getData(CELL_ID_DRAG_FORMAT);
-		if (dragCellId === null) return;
+		if (!dragCellId) return;
 		const draggedCellIndex = cells.findIndex(c => c.id === dragCellId);
 		if (index === draggedCellIndex) return;
 		await executeRequest(async () => await moveCell(dragCellId, index));
