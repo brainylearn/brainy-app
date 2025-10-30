@@ -18,6 +18,7 @@ export type FloatingMenuCoordinates = { x: number; y: number } | null;
 interface IProps {
 	editor: ReturnType<typeof useLexicalComposerContext>[0];
 	coordinates: FloatingMenuCoordinates;
+	additionalFloatingMenuButtons?: IFloatingMenuButton[];
 }
 
 export interface IFloatingMenuButton {
@@ -29,11 +30,13 @@ export interface IFloatingMenuButton {
 }
 
 function FloatingMenu(
-	{ editor, coordinates }: IProps,
+	{ editor, coordinates, additionalFloatingMenuButtons }: IProps,
 	ref: ForwardedRef<HTMLDivElement>,
 ) {
 	const [state, setState] = useState<Record<string, boolean>>({});
-	const [isEditorFocused, setIsEditorFocused] = useState(false);
+	const [isEditorFocused, setIsEditorFocused] = useState(() => {
+  return editor.getRootElement() == document.activeElement;
+});
 	const [isFloatingMenuFocused, setIsFloatingMenuFocused] = useState(false);
 
 	useEffect(() => {
@@ -42,8 +45,13 @@ function FloatingMenu(
 				editorState.read(() => {
 					const selection = $getSelection();
 					if (!$isRangeSelection(selection)) return;
+                    setIsEditorFocused(true);
 
 					for (const command of defaultButtons) {
+						state[command.name] = command.isActive(selection);
+					}
+
+					for (const command of additionalFloatingMenuButtons ?? []) {
 						state[command.name] = command.isActive(selection);
 					}
 					setState(state);
@@ -74,11 +82,12 @@ function FloatingMenu(
 			unregisterBlurListener();
 			unregisterFocusListener();
 		};
-	}, [editor, state]);
+	}, [editor, state, additionalFloatingMenuButtons]);
 
 	const shouldShow =
 		(isEditorFocused || isFloatingMenuFocused) && coordinates;
 
+	// TODO: refactor(move command to own component)
 	return (
 		<div
 			ref={ref}
@@ -87,19 +96,35 @@ function FloatingMenu(
 			style={{
 				top: `${coordinates?.y}px`,
 				left: `${coordinates?.x}px`,
-                visibility: shouldShow ? "visible" : "hidden",
-                opacity: shouldShow ? 1 : 0,
+				visibility: shouldShow ? "visible" : "hidden",
+				opacity: shouldShow ? 1 : 0,
 			}}
 			onFocus={() => setIsFloatingMenuFocused(true)}
 			onBlur={() => setIsFloatingMenuFocused(false)}>
-			{defaultButtons.map(command => (
+			{additionalFloatingMenuButtons?.map(current => (
 				<button
-					key={command.name}
-					onClick={() => command.onClick(editor, state[command.name])}
-					className={`transparent ${state[command.name] && styles.activeButton}`}
-					title={command.title}
-					aria-label={command.title}>
-					<Icon path={command.icon} size={1} />
+					key={current.name}
+					onClick={() => current.onClick(editor, state[current.name])}
+					className={`transparent ${state[current.name] && styles.activeButton}`}
+					title={current.title}
+					aria-label={current.title}>
+					<Icon path={current.icon} size={1} />
+				</button>
+			))}
+
+			{additionalFloatingMenuButtons &&
+				additionalFloatingMenuButtons.length > 0 && (
+					<div className={styles.verticalBorder} />
+				)}
+
+			{defaultButtons.map(current => (
+				<button
+					key={current.name}
+					onClick={() => current.onClick(editor, state[current.name])}
+					className={`transparent ${state[current.name] && styles.activeButton}`}
+					title={current.title}
+					aria-label={current.title}>
+					<Icon path={current.icon} size={1} />
 				</button>
 			))}
 		</div>

@@ -56,10 +56,10 @@ function EditableCells({
 	const enableFileSpecificFunctionality =
 		fileMode === "single" && !searchText;
 
-    if (!selectedCellId) {
-        if (cells.some(c => c.id === editCellId)) setSelectedCellId(editCellId);
+	if (!selectedCellId) {
+		if (cells.some(c => c.id === editCellId)) setSelectedCellId(editCellId);
 		else if (cells.length > 0) setSelectedCellId(cells[0].id);
-    }
+	}
 
 	const { saveChanges, onCellContentUpdate, ignoreCell } = useAutoSave({
 		cells,

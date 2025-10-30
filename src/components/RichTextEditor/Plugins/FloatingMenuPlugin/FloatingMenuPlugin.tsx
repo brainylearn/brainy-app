@@ -3,10 +3,15 @@ import { $getSelection, $isRangeSelection } from "lexical";
 import { useCallback, useEffect, useRef, useState } from "react";
 import FloatingMenu, {
 	FloatingMenuCoordinates as FloatingMenuCoordinates,
+	IFloatingMenuButton,
 } from "./FloatingMenu";
 import { usePointerInteractions } from "./hooks/usePointerInteractions";
 
-export function FloatingMenuPlugin() {
+interface IProps {
+	additionalFloatingMenuButtons?: IFloatingMenuButton[];
+}
+
+export function FloatingMenuPlugin({ additionalFloatingMenuButtons }: IProps) {
 	const [editor] = useLexicalComposerContext();
 	const [coordinates, setCoordinates] =
 		useState<FloatingMenuCoordinates>(null);
@@ -22,7 +27,7 @@ export function FloatingMenuPlugin() {
 		const editorRootElementRect = editor
 			.getRootElement()
 			?.getBoundingClientRect();
-        const refRect = ref.current?.getBoundingClientRect();
+		const refRect = ref.current?.getBoundingClientRect();
 
 		if (
 			!domRangeRect ||
@@ -33,19 +38,17 @@ export function FloatingMenuPlugin() {
 			return setCoordinates(null);
 		}
 
-        let x = Math.max(
-            0,
-            // Centering the x position relevant to the selection position,
-            // and ensuring it does not overflow the left side.
-            domRangeRect.left -
-                editorRootElementRect.left -
-                refRect.width / 2,
-        );
+		let x = Math.max(
+			0,
+			// Centering the x position relevant to the selection position,
+			// and ensuring it does not overflow the left side.
+			domRangeRect.left - editorRootElementRect.left - refRect.width / 2,
+		);
 
-        // Ensuring that the floating menu does not overflow the right side.
-        if (x + refRect.width > editorRootElementRect.width) {
-            x = editorRootElementRect.width - refRect.width;
-        }
+		// Ensuring that the floating menu does not overflow the right side.
+		if (x + refRect.width > editorRootElementRect.width) {
+			x = editorRootElementRect.width - refRect.width;
+		}
 		const newCoordinates = {
 			x,
 			y: domRangeRect.top - editorRootElementRect.top - 10,
@@ -93,5 +96,12 @@ export function FloatingMenuPlugin() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isPointerReleased, $handleSelectionChange, editor]);
 
-	return <FloatingMenu ref={ref} editor={editor} coordinates={coordinates} />;
+	return (
+		<FloatingMenu
+			ref={ref}
+			editor={editor}
+			coordinates={coordinates}
+			additionalFloatingMenuButtons={additionalFloatingMenuButtons}
+		/>
+	);
 }

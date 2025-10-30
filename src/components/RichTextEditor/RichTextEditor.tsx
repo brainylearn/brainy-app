@@ -1,6 +1,5 @@
-import { AnyExtension } from "@tiptap/react";
 import styles from "./styles.module.css";
-import { useState } from "react";
+import { JSX, useState } from "react";
 import {
 	InitialConfigType,
 	LexicalComposer,
@@ -9,26 +8,33 @@ import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
-import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { FloatingMenuPlugin } from "./Plugins/FloatingMenuPlugin/FloatingMenuPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { ListItemNode, ListNode } from "@lexical/list";
 import FocusBlurPlugin from "./Plugins/FocusBlurPlugin";
-import { LexicalEditor, $getRoot, EditorState } from "lexical";
+import {
+	LexicalEditor,
+	$getRoot,
+	EditorState,
+	LexicalNode,
+	Klass,
+} from "lexical";
 import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenu";
 import ListCommandsPlugin from "./Plugins/ListCommandsPlugin";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
+import AutoFocusPlugin from "./Plugins/AutoFocusPlugin";
 
 // TODO:  image resizer
 
 interface IProps {
 	content: string;
 	title?: string;
-	extraExtensions?: AnyExtension[];
-	// TODO: rename
-	commands?: IFloatingMenuButton[];
+	extraNodes?: Klass<LexicalNode>[];
+	plugins?: JSX.Element[];
+	additionalFloatingMenuButtons?: IFloatingMenuButton[];
 	autofocus?: boolean;
+	// TODO: update comment
 	/** TiptapEditor is slow on rendering, therefor showing a div element
 	 * instead until there is a need to render the actual editor (e.g. user interaction).
 	 */
@@ -77,8 +83,9 @@ function RichTextEditor({ eagerLoadRichTextEditor, ...props }: IProps) {
 interface TiptapEditorProps {
 	content: string;
 	title?: string;
-	extraExtensions?: AnyExtension[];
-	commands?: IFloatingMenuButton[];
+	extraNodes?: Klass<LexicalNode>[];
+	additionalFloatingMenuButtons?: IFloatingMenuButton[];
+	plugins?: JSX.Element[];
 	autofocus?: boolean;
 	onChange: (html: string) => void;
 	onFocus?: (editor: LexicalEditor) => void;
@@ -87,9 +94,10 @@ interface TiptapEditorProps {
 
 function TiptapEditor({
 	content,
-	extraExtensions,
-	commands,
+	extraNodes,
+	additionalFloatingMenuButtons,
 	autofocus,
+	plugins,
 	onChange,
 	onFocus,
 	onBlur,
@@ -97,7 +105,7 @@ function TiptapEditor({
 	const initialConfig: InitialConfigType = {
 		namespace: "BrainyEditor",
 		onError: console.error,
-		nodes: [ListNode, ListItemNode],
+		nodes: [ListNode, ListItemNode, ...(extraNodes ?? [])],
 		theme: {
 			text: {
 				underline: "underline",
@@ -135,11 +143,14 @@ function TiptapEditor({
 			/>
 			<HistoryPlugin />
 			<OnChangePlugin onChange={handleChange} />
-			{autofocus && <AutoFocusPlugin />}
-			<FloatingMenuPlugin />
+			<FloatingMenuPlugin
+				additionalFloatingMenuButtons={additionalFloatingMenuButtons}
+			/>
+            <AutoFocusPlugin autofocus={autofocus ?? false} />
 			<ListPlugin />
 			<ListCommandsPlugin />
 			<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
+			{plugins}
 		</LexicalComposer>
 	);
 }

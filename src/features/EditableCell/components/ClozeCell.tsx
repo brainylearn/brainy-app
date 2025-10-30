@@ -1,4 +1,3 @@
-import { ChainedCommands } from "@tiptap/core";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import {
 	mdiDotsHorizontal,
@@ -6,7 +5,12 @@ import {
 	mdiNumericPositive1,
 } from "@mdi/js";
 import Cell from "../../../types/backend/entity/cell";
-import clozeMark from "../utils/clozeMark";
+import clozeMark, {
+    $isClozeNode,
+	ClozeNode,
+	ClozePlugin,
+	TOGGLE_CLOZE_NODE,
+} from "../utils/clozeMark";
 import { clozeMarkName } from "../config/constants";
 import { LexicalEditor } from "lexical";
 
@@ -27,43 +31,55 @@ function ClozeCell({
 	onUpdate,
 	onFocus,
 }: Props) {
-	const handleToggleCloze = (commands: ChainedCommands) => {
-		const matches = cell.content.matchAll(regexp);
-		let newClozeIndex = 1;
-		for (const match of matches) {
-			newClozeIndex = Math.max(newClozeIndex, Number(match[1]));
-		}
-		return commands.toggleCloze(newClozeIndex);
+	const handleToggleCloze = (editor: LexicalEditor, isActive: boolean) => {
+		// TODO:
 	};
 
 	return (
 		<RichTextEditor
-			extraExtensions={[clozeMark]}
+			extraNodes={[ClozeNode]}
 			eagerLoadRichTextEditor={eagerLoadRichTextEditor}
-			commands={[
+			additionalFloatingMenuButtons={[
 				{
 					name: clozeMarkName,
 					icon: mdiDotsHorizontal,
 					title: "Cloze",
-					onClick: handleToggleCloze,
+					onClick: editor =>
+						editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined),
+					isActive: (selection) => {
+                        let allCloze = true;
+                        for (const node of selection.getNodes()) {
+                            let anyCloze = false;
+                            let current = node.getParent();
+                            while (current !== null) {
+                                anyCloze = anyCloze || $isClozeNode(current);
+                                current = current.getParent();
+                            }
+                            allCloze = allCloze && anyCloze;
+                        }
+
+                        return allCloze
+                    },
 				},
-				{
-					name: "Cloze+1",
-					icon: mdiNumericPositive1,
-					title: "Increase cloze group number",
-					onClick: c => c.increaseClozeIndex(),
-				},
-				{
-					name: "Cloze-1",
-					icon: mdiNumericNegative1,
-					title: "Decrease cloze group number",
-					onClick: c => c.decreaseClozeIndex(),
-				},
+				// TODO:
+				// {
+				// 	name: "Cloze+1",
+				// 	icon: mdiNumericPositive1,
+				// 	title: "Increase cloze group number",
+				// 	onClick: c => c.increaseClozeIndex(),
+				// },
+				// {
+				// 	name: "Cloze-1",
+				// 	icon: mdiNumericNegative1,
+				// 	title: "Decrease cloze group number",
+				// 	onClick: c => c.decreaseClozeIndex(),
+				// },
 			]}
 			content={cell.content}
 			autofocus={autofocus}
 			onChange={onUpdate}
 			onFocus={onFocus}
+			plugins={[<ClozePlugin key={1} />]}
 		/>
 	);
 }
