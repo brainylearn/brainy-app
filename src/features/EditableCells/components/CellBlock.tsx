@@ -166,7 +166,6 @@ function CellBlock(
 				autofocus={(autoFocusEditor ?? false) && !isSyncing}
 				onUpdate={onUpdate}
 				onFocus={editor => (editorRef.current = editor)}
-				eagerLoadRichTextEditor={isSelected}
 			/>
 		</div>
 	);

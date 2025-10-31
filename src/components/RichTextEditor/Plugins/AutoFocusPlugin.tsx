@@ -2,16 +2,15 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { useEffect } from "react";
 
 interface IProps {
-    autofocus: boolean;
+	autofocus: boolean;
 }
 
 export default function AutoFocusPlugin({ autofocus }: IProps) {
-    const [editor] = useLexicalComposerContext();
+	const [editor] = useLexicalComposerContext();
 
-    useEffect(() => {
-        if (autofocus)
-        editor.focus();
-    }, [editor, autofocus]);
+	useEffect(() => {
+		if (autofocus) editor.focus();
+	}, [editor, autofocus]);
 
-    return null;
+	return null;
 }

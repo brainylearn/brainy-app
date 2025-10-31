@@ -35,8 +35,8 @@ function FloatingMenu(
 ) {
 	const [state, setState] = useState<Record<string, boolean>>({});
 	const [isEditorFocused, setIsEditorFocused] = useState(() => {
-  return editor.getRootElement() == document.activeElement;
-});
+		return editor.getRootElement() == document.activeElement;
+	});
 	const [isFloatingMenuFocused, setIsFloatingMenuFocused] = useState(false);
 
 	useEffect(() => {
@@ -45,7 +45,7 @@ function FloatingMenu(
 				editorState.read(() => {
 					const selection = $getSelection();
 					if (!$isRangeSelection(selection)) return;
-                    setIsEditorFocused(true);
+					setIsEditorFocused(true);
 
 					for (const command of defaultButtons) {
 						state[command.name] = command.isActive(selection);

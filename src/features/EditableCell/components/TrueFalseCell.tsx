@@ -8,18 +8,11 @@ import { LexicalEditor } from "lexical";
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
-	eagerLoadRichTextEditor: boolean;
 	onUpdate: (content: string) => void;
 	onFocus: (editor: LexicalEditor) => void;
 }
 
-export function TrueFalseCell({
-	cell,
-	autofocus,
-	eagerLoadRichTextEditor,
-	onUpdate,
-	onFocus,
-}: Props) {
+export function TrueFalseCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 	const trueFalse = JSON.parse(cell.content) as TrueFalse;
 	const question = useRef(trueFalse.question);
 	const [isTrue, setIsTrue] = useState(trueFalse.isTrue);
@@ -52,7 +45,6 @@ export function TrueFalseCell({
 				onChange={handleQuestionUpdate}
 				autofocus={autofocus}
 				onFocus={onFocus}
-				eagerLoadRichTextEditor={eagerLoadRichTextEditor}
 			/>
 			<div className={styles.buttonsRow}>
 				<button
