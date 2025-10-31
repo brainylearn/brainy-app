@@ -19,11 +19,11 @@ import {
 	LexicalNode,
 	Klass,
 } from "lexical";
-import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenu";
 import ListCommandsPlugin from "./Plugins/ListCommandsPlugin";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import AutoFocusPlugin from "./Plugins/AutoFocusPlugin";
+import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenuButton";
 
 // TODO: support images and image resizer
 

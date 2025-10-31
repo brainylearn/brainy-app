@@ -6,15 +6,13 @@ import {
 } from "@mdi/js";
 import Cell from "../../../types/backend/entity/cell";
 import {
-	$isAllSelectionInCloze,
-	ClozeNode,
 	ClozePlugin,
 	DECREASE_CLOZE_GROUP_NUMBER,
 	INCREASE_CLOZE_GROUP_NUMBER,
 	TOGGLE_CLOZE_NODE,
-} from "../utils/clozeMark";
-import { clozeMarkName } from "../config/constants";
+} from "../plugins/clozePlugin";
 import { LexicalEditor } from "lexical";
+import { $isSelectionInsideCloze, ClozeNode } from "../plugins/clozeNode";
 
 interface Props {
 	cell: Cell;
@@ -29,12 +27,12 @@ function ClozeCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 			extraNodes={[ClozeNode]}
 			additionalFloatingMenuButtons={[
 				{
-					name: clozeMarkName,
+					name: "Toggle Cloze",
 					icon: mdiDotsHorizontal,
-					title: "Cloze",
+					title: "Toggle Cloze",
 					onClick: editor =>
 						editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined),
-					isActive: $isAllSelectionInCloze,
+					isActive: $isSelectionInsideCloze,
 				},
 				{
 					name: "Cloze+1",

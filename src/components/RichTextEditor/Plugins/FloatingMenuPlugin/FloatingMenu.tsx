@@ -6,12 +6,10 @@ import {
 	BLUR_COMMAND,
 	COMMAND_PRIORITY_LOW,
 	FOCUS_COMMAND,
-	LexicalEditor,
-	RangeSelection,
 } from "lexical";
 import styles from "../../styles.module.css";
 import { defaultButtons } from "./defaultButtons";
-import Icon from "@mdi/react";
+import FloatingMenuButton, { IFloatingMenuButton } from "./FloatingMenuButton";
 
 export type FloatingMenuCoordinates = { x: number; y: number } | null;
 
@@ -19,14 +17,6 @@ interface IProps {
 	editor: ReturnType<typeof useLexicalComposerContext>[0];
 	coordinates: FloatingMenuCoordinates;
 	additionalFloatingMenuButtons?: IFloatingMenuButton[];
-}
-
-export interface IFloatingMenuButton {
-	icon: string;
-	name: string;
-	title: string;
-	onClick: (editor: LexicalEditor, isActive: boolean) => void;
-	isActive: (selection: RangeSelection) => boolean;
 }
 
 function FloatingMenu(
@@ -87,7 +77,6 @@ function FloatingMenu(
 	const shouldShow =
 		(isEditorFocused || isFloatingMenuFocused) && coordinates;
 
-	// TODO: refactor(move command to own component)
 	return (
 		<div
 			ref={ref}
@@ -102,14 +91,12 @@ function FloatingMenu(
 			onFocus={() => setIsFloatingMenuFocused(true)}
 			onBlur={() => setIsFloatingMenuFocused(false)}>
 			{additionalFloatingMenuButtons?.map(current => (
-				<button
+				<FloatingMenuButton
 					key={current.name}
-					onClick={() => current.onClick(editor, state[current.name])}
-					className={`transparent ${state[current.name] && styles.activeButton}`}
-					title={current.title}
-					aria-label={current.title}>
-					<Icon path={current.icon} size={1} />
-				</button>
+					editor={editor}
+					floatingButtonProps={current}
+					state={state}
+				/>
 			))}
 
 			{additionalFloatingMenuButtons &&
@@ -118,14 +105,12 @@ function FloatingMenu(
 				)}
 
 			{defaultButtons.map(current => (
-				<button
+				<FloatingMenuButton
 					key={current.name}
-					onClick={() => current.onClick(editor, state[current.name])}
-					className={`transparent ${state[current.name] && styles.activeButton}`}
-					title={current.title}
-					aria-label={current.title}>
-					<Icon path={current.icon} size={1} />
-				</button>
+					editor={editor}
+					floatingButtonProps={current}
+					state={state}
+				/>
 			))}
 		</div>
 	);

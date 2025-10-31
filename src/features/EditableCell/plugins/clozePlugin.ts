@@ -4,186 +4,20 @@ import {
 	$isTextNode,
 	COMMAND_PRIORITY_EDITOR,
 	createCommand,
-	DOMExportOutput,
 	LexicalCommand,
 	LexicalNode,
-	NodeKey,
 	RangeSelection,
 	TextNode,
 } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "react";
+import { $unwrapMarkNode, $wrapSelectionInMarkNode } from "@lexical/mark";
 import {
-	$unwrapMarkNode,
-	$wrapSelectionInMarkNode,
-	MarkNode,
-} from "@lexical/mark";
-
-export class ClozeNode extends MarkNode {
-	index: number;
-
-	static getType(): string {
-		return "cloze";
-	}
-
-	constructor(key: NodeKey | undefined = undefined) {
-		super(undefined, key);
-		this.index = 1;
-	}
-
-	canInsertTextBefore() {
-		return true as unknown as false;
-	}
-	canInsertTextAfter() {
-		return true as unknown as false;
-	}
-
-	static clone(node: ClozeNode): MarkNode {
-		const clone = $createClozeNode(node.index);
-		clone.__key = node.__key;
-		return clone;
-	}
-
-	createDOM(): HTMLElement {
-		const element = document.createElement("cloze");
-		element.classList.add("cloze-mark");
-		element.setAttribute("index", this.index.toString());
-		return element;
-	}
-
-	updateDOM(): boolean {
-		return false;
-	}
-
-	exportDOM(): DOMExportOutput {
-		const element = document.createElement("cloze");
-		element.classList.add("cloze-mark");
-		element.setAttribute("index", this.index.toString());
-		return { element };
-	}
-
-	excludeFromCopy() {
-		return false;
-	}
-
-	static importDOM(): null {
-		return {
-			cloze: () => {
-				return {
-					conversion: (element: HTMLElement) => {
-						const index = element.getAttribute("index");
-						return { node: $createClozeNode(Number(index)) };
-					},
-					priority: 0,
-				};
-			},
-			// This is necessary due to the return type of MarkNode super class.
-		} as unknown as null;
-	}
-}
-
-export function $createClozeNode(index: number): ClozeNode {
-	const node = new ClozeNode();
-	node.index = index;
-	return node;
-}
-
-export function $isClozeNode(
-	node: LexicalNode | null | undefined,
-): node is ClozeNode {
-	return node instanceof ClozeNode;
-}
-
-export function $isAllSelectionInCloze(selection: RangeSelection): boolean {
-	let allCloze = true;
-	for (const node of selection.getNodes()) {
-		let anyCloze = false;
-		let current = node.getParent();
-		while (current !== null) {
-			anyCloze = anyCloze || $isClozeNode(current);
-			current = current.getParent();
-		}
-		allCloze = allCloze && anyCloze;
-	}
-
-	return allCloze;
-}
-
-function skipWhitespace(selection: RangeSelection) {
-	const [startPoint, endPoint] = selection.isBackward()
-		? [selection.focus, selection.anchor]
-		: [selection.anchor, selection.focus];
-
-	let currentStartNode = $isTextNode(startPoint.getNode())
-		? startPoint.getNode()
-		: null;
-	let currentStartOffset = startPoint.offset;
-
-	while (currentStartNode) {
-		const textContent = currentStartNode.getTextContent();
-
-		if (currentStartOffset < textContent.length) {
-			const char = textContent[currentStartOffset];
-
-			if (/\s/.test(char)) {
-				currentStartOffset++;
-			} else {
-				break;
-			}
-		} else {
-			// Reached end of current node, try to move to next node
-			const nextSibling = currentStartNode.getNextSibling();
-			if (nextSibling) {
-				currentStartNode = $isTextNode(nextSibling)
-					? nextSibling
-					: null;
-				currentStartOffset = 0;
-			} else {
-				break;
-			}
-		}
-	}
-
-	let currentEndNode = $isTextNode(endPoint.getNode())
-		? endPoint.getNode()
-		: null;
-	let currentEndOffset = endPoint.offset;
-
-	while (currentEndNode) {
-		const textContent = currentEndNode.getTextContent();
-
-		if (currentEndOffset >= 0) {
-			const char = textContent[currentEndOffset] ?? " ";
-
-			if (/\s/.test(char)) {
-				currentEndOffset--;
-			} else {
-				break;
-			}
-		} else {
-			// Reached end of current node, try to move to next node
-			const prevSibling = currentEndNode.getPreviousSibling();
-			if (prevSibling) {
-				currentEndNode = $isTextNode(prevSibling)
-					? prevSibling
-					: null;
-				currentEndOffset = prevSibling.getTextContent().length;
-			} else {
-				break;
-			}
-		}
-	}
-
-	if (currentStartNode && currentEndNode && (currentStartNode.isBefore(currentEndNode) || (
-        currentStartNode.is(currentEndNode) && currentStartOffset < currentEndOffset
-                                                                                            )))
-		selection.setTextNodeRange(
-			currentStartNode as TextNode,
-			currentStartOffset,
-			currentEndNode as TextNode,
-			currentEndOffset + 1,
-		);
-}
+	$createClozeNode,
+	$isSelectionInsideCloze,
+	$isClozeNode,
+	ClozeNode,
+} from "./clozeNode";
 
 function $wrapAllSelectionWithCloze(selection: RangeSelection): ClozeNode {
 	skipWhitespace(selection);
@@ -237,7 +71,92 @@ function $wrapAllSelectionWithCloze(selection: RangeSelection): ClozeNode {
 	}
 }
 
-// TODO: move
+/**
+ * Skips the whitespace from selection, ensuring that the selection does not
+ * contain any leading or trailing whitespace.
+ */
+function skipWhitespace(selection: RangeSelection) {
+	const [startPoint, endPoint] = selection.isBackward()
+		? [selection.focus, selection.anchor]
+		: [selection.anchor, selection.focus];
+
+	let currentStartNode = $isTextNode(startPoint.getNode())
+		? startPoint.getNode()
+		: null;
+	let currentStartOffset = startPoint.offset;
+
+	while (currentStartNode) {
+		const textContent = currentStartNode.getTextContent();
+
+		if (currentStartOffset < textContent.length) {
+			const char = textContent[currentStartOffset];
+
+			if (/\s/.test(char)) {
+				currentStartOffset++;
+			} else {
+				break;
+			}
+		} else {
+			const nextSibling = currentStartNode.getNextSibling();
+			if (nextSibling) {
+				currentStartNode = $isTextNode(nextSibling)
+					? nextSibling
+					: null;
+				currentStartOffset = 0;
+			} else {
+				break;
+			}
+		}
+	}
+
+	let currentEndNode = $isTextNode(endPoint.getNode())
+		? endPoint.getNode()
+		: null;
+	let currentEndOffset = endPoint.offset;
+
+	while (currentEndNode) {
+		const textContent = currentEndNode.getTextContent();
+
+		if (currentEndOffset >= 0) {
+			const char = textContent[currentEndOffset] ?? " ";
+
+			if (/\s/.test(char)) {
+				currentEndOffset--;
+			} else {
+				break;
+			}
+		} else {
+			const prevSibling = currentEndNode.getPreviousSibling();
+			if (prevSibling) {
+				currentEndNode = $isTextNode(prevSibling) ? prevSibling : null;
+				currentEndOffset = prevSibling.getTextContent().length;
+			} else {
+				break;
+			}
+		}
+	}
+
+	if (!currentStartNode || !currentEndNode) {
+		return;
+	}
+
+	const isStartBeforeEnd =
+		currentStartNode.isBefore(currentEndNode) ||
+		(currentStartNode.is(currentEndNode) &&
+			currentStartOffset < currentEndOffset);
+
+	// If the selection is only white space the start of selection will be after
+	// the end, therefore skipping any change.
+	if (isStartBeforeEnd) {
+		selection.setTextNodeRange(
+			currentStartNode as TextNode,
+			currentStartOffset,
+			currentEndNode as TextNode,
+			// Plus one to take the last character (should be not-whitespace).
+			currentEndOffset + 1,
+		);
+	}
+}
 
 export const TOGGLE_CLOZE_NODE: LexicalCommand<void> = createCommand();
 export const INCREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
@@ -266,7 +185,7 @@ export function ClozePlugin() {
 						return;
 					}
 
-					if ($isAllSelectionInCloze(selection)) {
+					if ($isSelectionInsideCloze(selection)) {
 						for (const node of selection.extract()) {
 							let current = node.getParent();
 							while (current !== null) {

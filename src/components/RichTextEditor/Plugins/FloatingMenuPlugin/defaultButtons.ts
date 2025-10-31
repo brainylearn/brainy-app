@@ -14,7 +14,7 @@ import {
 	INSERT_UNORDERED_LIST_COMMAND,
 	REMOVE_LIST_COMMAND,
 } from "@lexical/list";
-import { IFloatingMenuButton } from "./FloatingMenu";
+import { IFloatingMenuButton } from "./FloatingMenuButton";
 
 export const defaultButtons: IFloatingMenuButton[] = [
 	{
