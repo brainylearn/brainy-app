@@ -6,18 +6,110 @@ import {
 	createCommand,
 	LexicalCommand,
 	LexicalNode,
+	PointType,
 	RangeSelection,
 	TextNode,
 } from "lexical";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { useEffect } from "react";
-import { $unwrapMarkNode, $wrapSelectionInMarkNode } from "@lexical/mark";
+import { $wrapSelectionInMarkNode } from "@lexical/mark";
 import {
 	$createClozeNode,
 	$isSelectionInsideCloze,
 	$isClozeNode,
 	ClozeNode,
 } from "./clozeNode";
+
+export const TOGGLE_CLOZE_NODE: LexicalCommand<void> = createCommand();
+export const INCREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
+	createCommand();
+export const DECREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
+	createCommand();
+
+// TODO: cannot have cursor before first character
+// Fix or not? seems like common problem
+export function ClozePlugin() {
+	const [editor] = useLexicalComposerContext();
+
+	useEffect(() => {
+		if (!editor.hasNodes([ClozeNode])) {
+			throw new Error("ClozeNode not registered on editor");
+		}
+
+		const unregisterToggleCloze = editor.registerCommand(
+			TOGGLE_CLOZE_NODE,
+			() => {
+				editor.update(() => {
+					const selection = $getSelection();
+					if (
+						!$isRangeSelection(selection) ||
+						selection.isCollapsed()
+					) {
+						return;
+					}
+
+					if ($isSelectionInsideCloze(selection)) {
+						$removeSelectionFromCloze(selection);
+					} else {
+						$wrapAllSelectionWithCloze(selection);
+					}
+				});
+				return true;
+			},
+			COMMAND_PRIORITY_EDITOR,
+		);
+
+		const unregisterIncreaseGroupNumber = editor.registerCommand(
+			INCREASE_CLOZE_GROUP_NUMBER,
+			() => {
+				editor.update(() => {
+					const selection = $getSelection();
+
+					if (
+						!$isRangeSelection(selection) ||
+						selection.isCollapsed()
+					) {
+						return;
+					}
+
+					const node = $wrapAllSelectionWithCloze(selection);
+					node.index++;
+				});
+				return true;
+			},
+			COMMAND_PRIORITY_EDITOR,
+		);
+
+		const unregisterDecreaseGroupNumber = editor.registerCommand(
+			DECREASE_CLOZE_GROUP_NUMBER,
+			() => {
+				editor.update(() => {
+					const selection = $getSelection();
+
+					if (
+						!$isRangeSelection(selection) ||
+						selection.isCollapsed()
+					) {
+						return;
+					}
+
+					const node = $wrapAllSelectionWithCloze(selection);
+					node.index = Math.max(node.index - 1, 1);
+				});
+				return true;
+			},
+			COMMAND_PRIORITY_EDITOR,
+		);
+
+		return () => {
+			unregisterToggleCloze();
+			unregisterIncreaseGroupNumber();
+			unregisterDecreaseGroupNumber();
+		};
+	}, [editor]);
+
+	return null;
+}
 
 function $wrapAllSelectionWithCloze(selection: RangeSelection): ClozeNode {
 	skipWhitespace(selection);
@@ -76,9 +168,8 @@ function $wrapAllSelectionWithCloze(selection: RangeSelection): ClozeNode {
  * contain any leading or trailing whitespace.
  */
 function skipWhitespace(selection: RangeSelection) {
-	const [startPoint, endPoint] = selection.isBackward()
-		? [selection.focus, selection.anchor]
-		: [selection.anchor, selection.focus];
+	const [startPoint, endPoint] =
+		getStartEndAndEndPointForSelection(selection);
 
 	let currentStartNode = $isTextNode(startPoint.getNode())
 		? startPoint.getNode()
@@ -158,102 +249,98 @@ function skipWhitespace(selection: RangeSelection) {
 	}
 }
 
-export const TOGGLE_CLOZE_NODE: LexicalCommand<void> = createCommand();
-export const INCREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
-	createCommand();
-export const DECREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
-	createCommand();
+function $removeSelectionFromCloze(selection: RangeSelection) {
+    const clozeNode = getClozeNode(selection);
+	if (!clozeNode) return;
 
-// TODO: cannot have cursor before first character
-export function ClozePlugin() {
-	const [editor] = useLexicalComposerContext();
+	const [startPoint, endPoint] =
+		getStartEndAndEndPointForSelection(selection);
+	const selectionNodes: LexicalNode[] = [];
+    const afterSelectionClozeNode = $createClozeNode(clozeNode.index);
 
-	useEffect(() => {
-		if (!editor.hasNodes([ClozeNode])) {
-			throw new Error("ClozeNode not registered on editor");
+    // We have already passed selection if the start node is the cloze node.
+	let passedSelectionStart = startPoint.getNode().is(clozeNode);
+	let passedSelectionEnd = false;
+
+	for (const child of clozeNode.getChildren()) {
+		if (passedSelectionEnd) {
+			afterSelectionClozeNode.append(child);
+		} else if (
+			!passedSelectionStart &&
+			child.is(startPoint.getNode()) &&
+			!passedSelectionEnd &&
+			child.is(endPoint.getNode())
+		) {
+			passedSelectionStart = true;
+			passedSelectionEnd = true;
+
+			if ($isTextNode(child)) {
+				const textNodes = child.splitText(
+					startPoint.offset,
+					endPoint.offset,
+				);
+                // Selected all texts.
+                if (textNodes.length == 1) selectionNodes.push(textNodes[0]);
+				// Text after selection start.
+				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
+				// Text after selection end.
+				if (textNodes.length > 2) afterSelectionClozeNode.append(textNodes[2]);
+			}
+		} else if (!passedSelectionStart && child.is(startPoint.getNode())) {
+			passedSelectionStart = true;
+
+			if ($isTextNode(child)) {
+				const textNodes = child.splitText(startPoint.offset);
+				// Text after selection start.
+				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
+				else if (
+					textNodes.length == 1 &&
+					startPoint.offset !== child.getTextContentSize()
+				)
+					selectionNodes.push(textNodes[0]);
+			}
+		} else if (!passedSelectionEnd && child.is(endPoint.getNode())) {
+			passedSelectionEnd = true;
+
+			if ($isTextNode(child)) {
+				const textNodes = child.splitText(endPoint.offset);
+				// Text before selection ends.
+				if (textNodes.length > 0) selectionNodes.push(textNodes[0]);
+				// Text after selection ends.
+				if (textNodes.length > 1) afterSelectionClozeNode.append(textNodes[1]);
+			}
+		} else if (passedSelectionStart) {
+			selectionNodes.push(child);
 		}
+	}
 
-		const unregisterToggleCloze = editor.registerCommand(
-			TOGGLE_CLOZE_NODE,
-			() => {
-				editor.update(() => {
-					const selection = $getSelection();
-					if (
-						!$isRangeSelection(selection) ||
-						selection.isCollapsed()
-					) {
-						return;
-					}
+	if (!afterSelectionClozeNode.isEmpty()) clozeNode.insertAfter(afterSelectionClozeNode);
+	selectionNodes.reverse().forEach(node => clozeNode.insertAfter(node));
+	if (clozeNode.isEmpty()) clozeNode.remove();
+}
 
-					if ($isSelectionInsideCloze(selection)) {
-						for (const node of selection.extract()) {
-							let current = node.getParent();
-							while (current !== null) {
-								if ($isClozeNode(current)) {
-									// TODO: should split the text, maybe https://lexical.dev/docs/api/modules/lexical#splitnode
-									$unwrapMarkNode(current);
-									break;
-								}
-								current = current.getParent();
-							}
-						}
-					} else {
-						$wrapAllSelectionWithCloze(selection);
-					}
-				});
-				return true;
-			},
-			COMMAND_PRIORITY_EDITOR,
-		);
+function getClozeNode(selection: RangeSelection): ClozeNode | null {
+	let clozeNode: ClozeNode | null = null;
+	for (const node of selection.getNodes()) {
+		let current = node.getParent();
+		while (current !== null) {
+			if ($isClozeNode(current)) {
+				clozeNode = current;
+				break;
+			}
 
-		const unregisterIncreaseGroupNumber = editor.registerCommand(
-			INCREASE_CLOZE_GROUP_NUMBER,
-			() => {
-				editor.update(() => {
-					const selection = $getSelection();
+			if (clozeNode) break;
 
-					if (
-						!$isRangeSelection(selection) ||
-						selection.isCollapsed()
-					) {
-						return;
-					}
+			current = current.getParent();
+		}
+	}
+    return clozeNode
+}
 
-					const node = $wrapAllSelectionWithCloze(selection);
-					node.index++;
-				});
-				return true;
-			},
-			COMMAND_PRIORITY_EDITOR,
-		);
-
-		const unregisterDecreaseGroupNumber = editor.registerCommand(
-			DECREASE_CLOZE_GROUP_NUMBER,
-			() => {
-				editor.update(() => {
-					const selection = $getSelection();
-
-					if (
-						!$isRangeSelection(selection) ||
-						selection.isCollapsed()
-					) {
-						return;
-					}
-
-					const node = $wrapAllSelectionWithCloze(selection);
-					node.index = Math.max(node.index - 1, 1);
-				});
-				return true;
-			},
-			COMMAND_PRIORITY_EDITOR,
-		);
-
-		return () => {
-			unregisterToggleCloze();
-			unregisterIncreaseGroupNumber();
-			unregisterDecreaseGroupNumber();
-		};
-	}, [editor]);
-
-	return null;
+function getStartEndAndEndPointForSelection(
+	selection: RangeSelection,
+): [PointType, PointType] {
+	return selection.isBackward()
+		? [selection.focus, selection.anchor]
+		: [selection.anchor, selection.focus];
 }

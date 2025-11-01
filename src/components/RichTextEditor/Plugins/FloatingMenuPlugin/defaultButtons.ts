@@ -16,6 +16,7 @@ import {
 } from "@lexical/list";
 import { IFloatingMenuButton } from "./FloatingMenuButton";
 
+// TODO: check shortcuts!
 export const defaultButtons: IFloatingMenuButton[] = [
 	{
 		name: "bold",

@@ -76,7 +76,7 @@ function RichTextEditor({
 		});
 	};
 
-	// TODO: testing, refactoring, etc..
+    // TODO: sync shortcut is same as redo shortcut
 	return (
 		<>
 			{title && <p className={styles.title}>{title}</p>}

@@ -35,6 +35,7 @@ function ClozeCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 					isActive: $isSelectionInsideCloze,
 				},
 				{
+                    // TODO: should be visibile only within cloze
 					name: "Cloze+1",
 					icon: mdiNumericPositive1,
 					title: "Increase cloze group number",
@@ -54,6 +55,7 @@ function ClozeCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 							DECREASE_CLOZE_GROUP_NUMBER,
 							undefined,
 						),
+                    // TODO: should be visibile only within cloze
 					isActive: () => false,
 				},
 			]}
