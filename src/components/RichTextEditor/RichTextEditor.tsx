@@ -26,8 +26,6 @@ import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenuBu
 import DefaultShortcutPlugin from "./Plugins/DefaultShortcutsPlugin";
 import ListCommandsPluginHandler from "./Plugins/ListCommandsPluginHandler/ListCommandsPluginHandler";
 
-// TODO: support images and image resizer
-
 interface IProps {
 	content: string;
 	title?: string;

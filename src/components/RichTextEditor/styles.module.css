@@ -55,8 +55,16 @@
 	}
 }
 
+:global(body.dark) .floating-menu {
+	background-color: var(--light-default-background-color) !important;
+}
+
 .active-button {
 	background-color: var(--grey-background-color-shade-10) !important;
+}
+
+:global(body.dark) .active-button {
+	background-color: var(--default-background-color);
 }
 
 .active-button:hover {
@@ -65,5 +73,6 @@
 
 .vertical-border {
 	height: 1.6rem;
-	border-right: 1px solid var(--hover-border-color);
+	border-right: 1px solid var(--text-color);
+	margin: 0 4px;
 }

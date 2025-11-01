@@ -3,7 +3,9 @@ import {
 	$isRangeSelection,
 	$isTextNode,
 	COMMAND_PRIORITY_EDITOR,
+	COMMAND_PRIORITY_NORMAL,
 	createCommand,
+	KEY_DOWN_COMMAND,
 	LexicalCommand,
 	LexicalNode,
 	PointType,
@@ -26,8 +28,6 @@ export const INCREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
 export const DECREASE_CLOZE_GROUP_NUMBER: LexicalCommand<void> =
 	createCommand();
 
-// TODO: cannot have cursor before first character
-// Fix or not? seems like common problem
 export function ClozePlugin() {
 	const [editor] = useLexicalComposerContext();
 
@@ -101,10 +101,31 @@ export function ClozePlugin() {
 			COMMAND_PRIORITY_EDITOR,
 		);
 
+		const unregisterKeyDown = editor.registerCommand(
+			KEY_DOWN_COMMAND,
+			event => {
+				const { ctrlKey, metaKey, shiftKey, key } = event;
+
+				if (
+					(ctrlKey || metaKey) &&
+					shiftKey &&
+					key.toLowerCase() === "c"
+				) {
+					event.preventDefault();
+					editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined);
+					return true;
+				}
+
+				return false;
+			},
+			COMMAND_PRIORITY_NORMAL,
+		);
+
 		return () => {
 			unregisterToggleCloze();
 			unregisterIncreaseGroupNumber();
 			unregisterDecreaseGroupNumber();
+			unregisterKeyDown();
 		};
 	}, [editor]);
 

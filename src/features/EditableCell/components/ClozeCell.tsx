@@ -29,7 +29,7 @@ function ClozeCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 				{
 					name: "Toggle Cloze",
 					icon: mdiDotsHorizontal,
-					title: "Toggle Cloze",
+					title: "Toggle Cloze (Ctrl + Shift + C)",
 					onClick: editor =>
 						editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined),
 					isActive: $isSelectionInsideCloze,

@@ -68,7 +68,9 @@ export default function ListCommandsPluginHandler() {
 									REMOVE_LIST_COMMAND,
 									undefined,
 								);
-								return true;
+								// Only return if type the same, if not switch with the new type.
+								if (current.getListType() === type) return true;
+								break;
 							}
 							current = current.getParent();
 						}

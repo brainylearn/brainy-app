@@ -28,7 +28,7 @@ function FloatingMenu(
 		{},
 	);
 	const [isEditorFocused, setIsEditorFocused] = useState(() => {
-		return editor.getRootElement() == document.activeElement;
+		return editor.getRootElement() === document.activeElement;
 	});
 	const [isFloatingMenuFocused, setIsFloatingMenuFocused] = useState(false);
 
