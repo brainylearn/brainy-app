@@ -27,7 +27,7 @@ interface Props {
 	onClick: (id: string) => void;
 	onError: (error: string) => void;
 	onDrop: (e: React.DragEvent) => void;
-	onUpdate: (content: string) => void;
+	onChange: (content: string) => void;
 	onDelete: () => void;
 	onInsertNewCell: (cellType: CellType) => void;
 	onResetRepetitions: () => void;
@@ -46,7 +46,7 @@ function CellBlock(
 		onSelect,
 		onClick,
 		onDrop,
-		onUpdate,
+		onChange,
 		onDelete,
 		onInsertNewCell,
 		onResetRepetitions,
@@ -164,7 +164,7 @@ function CellBlock(
 			<EditableCell
 				cell={cell}
 				autofocus={(autoFocusEditor ?? false) && !isSyncing}
-				onUpdate={onUpdate}
+				onChange={onChange}
 				onFocus={editor => (editorRef.current = editor)}
 			/>
 		</div>

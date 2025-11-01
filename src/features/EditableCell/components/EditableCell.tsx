@@ -8,18 +8,18 @@ import { LexicalEditor } from "lexical";
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
-	onUpdate: (content: string) => void;
+	onChange: (content: string) => void;
 	onFocus: (editor: LexicalEditor) => void;
 }
 
-function EditableCell({ cell, autofocus, onUpdate, onFocus }: Props) {
+function EditableCell({ cell, autofocus, onChange, onFocus }: Props) {
 	switch (cell.cellType) {
 		case "FlashCard":
 			return (
 				<FlashCardCell
 					cell={cell}
 					autofocus={autofocus}
-					onUpdate={onUpdate}
+					onChange={onChange}
 					onFocus={onFocus}
 				/>
 			);
@@ -28,7 +28,7 @@ function EditableCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 				<RichTextEditor
 					content={cell.content}
 					autofocus={autofocus}
-					onChange={onUpdate}
+					onChange={onChange}
 					onFocus={onFocus}
 				/>
 			);
@@ -37,7 +37,7 @@ function EditableCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 				<ClozeCell
 					cell={cell}
 					autofocus={autofocus}
-					onUpdate={onUpdate}
+					onChange={onChange}
 					onFocus={onFocus}
 				/>
 			);
@@ -46,7 +46,7 @@ function EditableCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 				<TrueFalseCell
 					cell={cell}
 					autofocus={autofocus}
-					onUpdate={onUpdate}
+					onChange={onChange}
 					onFocus={onFocus}
 				/>
 			);

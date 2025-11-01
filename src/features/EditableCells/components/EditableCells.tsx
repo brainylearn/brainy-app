@@ -56,6 +56,7 @@ function EditableCells({
 	const enableFileSpecificFunctionality =
 		fileMode === "single" && !searchText;
 
+    // Ensuring that a cell is selected at start.
 	if (!selectedCellId) {
 		if (cells.some(c => c.id === editCellId)) setSelectedCellId(editCellId);
 		else if (cells.length > 0) setSelectedCellId(cells[0].id);
@@ -129,6 +130,7 @@ function EditableCells({
 			0 <= selectedCellIndex + number &&
 			selectedCellIndex + number < cells.length
 		) {
+            // TODO: focus is incorrect
 			await saveChanges();
 			await executeRequest(async () => {
 				await moveCell(
@@ -256,7 +258,7 @@ function EditableCells({
 						repetitions={cell.repetitions}
 						onError={onError}
 						onDrop={e => void handleDrop(e, i)}
-						onUpdate={content =>
+						onChange={content =>
 							onCellContentUpdate(cell.id, content)
 						}
 						onDelete={() => void handleCellDeleteConfirm()}

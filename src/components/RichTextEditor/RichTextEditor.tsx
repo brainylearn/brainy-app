@@ -55,6 +55,7 @@ function RichTextEditor({
 		nodes: [ListNode, ListItemNode, ...(extraNodes ?? [])],
 		theme: {
 			text: {
+                // Global class names in index.xml.
 				underline: "underline",
 				bold: "bold",
 				italic: "italic",

@@ -3,9 +3,9 @@ import { $getSelection, $isRangeSelection } from "lexical";
 import { useCallback, useEffect, useRef, useState } from "react";
 import FloatingMenu, {
 	FloatingMenuCoordinates as FloatingMenuCoordinates,
-	IFloatingMenuButton,
 } from "./FloatingMenu";
 import { usePointerInteractions } from "./hooks/usePointerInteractions";
+import { IFloatingMenuButton } from "./FloatingMenuButton";
 
 interface IProps {
 	additionalFloatingMenuButtons?: IFloatingMenuButton[];

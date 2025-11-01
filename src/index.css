@@ -275,7 +275,7 @@ body.dark .overlay {
 	color: var(--review-color);
 }
 
-/* Classes for the Lexical editor */
+/* Global classes for the Lexical editor */
 .underline {
 	text-decoration: underline;
 }

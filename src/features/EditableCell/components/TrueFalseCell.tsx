@@ -8,18 +8,18 @@ import { LexicalEditor } from "lexical";
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
-	onUpdate: (content: string) => void;
+	onChange: (content: string) => void;
 	onFocus: (editor: LexicalEditor) => void;
 }
 
-export function TrueFalseCell({ cell, autofocus, onUpdate, onFocus }: Props) {
+export function TrueFalseCell({ cell, autofocus, onChange, onFocus }: Props) {
 	const trueFalse = JSON.parse(cell.content) as TrueFalse;
 	const question = useRef(trueFalse.question);
 	const [isTrue, setIsTrue] = useState(trueFalse.isTrue);
 
-	const handleQuestionUpdate = (html: string) => {
+	const handleQuestionChange = (html: string) => {
 		question.current = html;
-		onUpdate(
+		onChange(
 			JSON.stringify({
 				question: html,
 				isTrue: isTrue,
@@ -27,9 +27,9 @@ export function TrueFalseCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 		);
 	};
 
-	const handleTrueFalseUpdate = (isTrue: boolean) => {
+	const handleTrueFalseChange = (isTrue: boolean) => {
 		setIsTrue(isTrue);
-		onUpdate(
+		onChange(
 			JSON.stringify({
 				question: question.current,
 				isTrue,
@@ -42,7 +42,7 @@ export function TrueFalseCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 			<RichTextEditor
 				title="Question"
 				content={trueFalse.question}
-				onChange={handleQuestionUpdate}
+				onChange={handleQuestionChange}
 				autofocus={autofocus}
 				onFocus={onFocus}
 			/>
@@ -51,7 +51,7 @@ export function TrueFalseCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 					className={`transparent ${isTrue && styles.checked}`}
 					onClick={e => {
 						e.stopPropagation();
-						handleTrueFalseUpdate(true);
+						handleTrueFalseChange(true);
 					}}>
 					True
 				</button>
@@ -59,7 +59,7 @@ export function TrueFalseCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 					className={`transparent ${!isTrue && styles.checked}`}
 					onClick={e => {
 						e.stopPropagation();
-						handleTrueFalseUpdate(false);
+						handleTrueFalseChange(false);
 					}}>
 					False
 				</button>

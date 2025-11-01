@@ -51,7 +51,7 @@ export function ClozePlugin() {
 					if ($isSelectionInsideCloze(selection)) {
 						$removeSelectionFromCloze(selection);
 					} else {
-						$wrapAllSelectionWithCloze(selection);
+						$wrapSelectionInCloze(selection);
 					}
 				});
 				return true;
@@ -72,8 +72,8 @@ export function ClozePlugin() {
 						return;
 					}
 
-					const node = $wrapAllSelectionWithCloze(selection);
-					node.index++;
+					const cloze = $wrapSelectionInCloze(selection);
+					cloze.index++;
 				});
 				return true;
 			},
@@ -93,8 +93,8 @@ export function ClozePlugin() {
 						return;
 					}
 
-					const node = $wrapAllSelectionWithCloze(selection);
-					node.index = Math.max(node.index - 1, 1);
+					const cloze = $wrapSelectionInCloze(selection);
+					cloze.index = Math.max(cloze.index - 1, 1);
 				});
 				return true;
 			},
@@ -132,18 +132,21 @@ export function ClozePlugin() {
 	return null;
 }
 
-function $wrapAllSelectionWithCloze(selection: RangeSelection): ClozeNode {
+/** Wrap selections with a single cloze, if the selection contains one,
+  * or more cloze already, they are merged into a single cloze.
+  */
+function $wrapSelectionInCloze(selection: RangeSelection): ClozeNode {
 	skipWhitespace(selection);
 	const allNodes: LexicalNode[] = [];
 	let clozeIndex: number | null = null;
 
 	for (const node of selection.extract()) {
 		let current = node.getParent();
-		let added = false;
+		let addedNode = false;
 
 		while (current !== null) {
 			if ($isClozeNode(current)) {
-				added = true;
+				addedNode = true;
 				clozeIndex ??= current.index;
 				allNodes.push(current);
 				break;
@@ -152,7 +155,7 @@ function $wrapAllSelectionWithCloze(selection: RangeSelection): ClozeNode {
 			current = current.getParent();
 		}
 
-		if (!added) allNodes.push(node);
+		if (!addedNode) allNodes.push(node);
 	}
 
 	if (clozeIndex !== null) {
@@ -264,7 +267,7 @@ function skipWhitespace(selection: RangeSelection) {
 			currentStartNode as TextNode,
 			currentStartOffset,
 			currentEndNode as TextNode,
-			// Plus one to take the last character (should be not-whitespace).
+			// Plus one to take the last character (should be non-whitespace).
 			currentEndOffset + 1,
 		);
 	}
@@ -315,6 +318,7 @@ function $removeSelectionFromCloze(selection: RangeSelection) {
 				const textNodes = child.splitText(startPoint.offset);
 				// Text after selection start.
 				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
+                // Selected everything.
 				else if (
 					textNodes.length == 1 &&
 					startPoint.offset !== child.getTextContentSize()

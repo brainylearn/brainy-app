@@ -8,11 +8,11 @@ import { LexicalEditor } from "lexical";
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
-	onUpdate: (content: string) => void;
+	onChange: (content: string) => void;
 	onFocus: (editor: LexicalEditor) => void;
 }
 
-function FlashCardCell({ cell, autofocus, onUpdate, onFocus }: Props) {
+function FlashCardCell({ cell, autofocus, onChange, onFocus }: Props) {
 	const flashCard = JSON.parse(cell.content) as FlashCard;
 	const question = useRef(flashCard.question);
 	const answer = useRef(flashCard.answer);
@@ -24,9 +24,9 @@ function FlashCardCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 		answer.current = flashCard.answer;
 	}, [cell.content]);
 
-	const handleQuestionUpdate = (html: string) => {
+	const handleQuestionChange = (html: string) => {
 		question.current = html;
-		onUpdate(
+		onChange(
 			JSON.stringify({
 				question: html,
 				answer: answer.current,
@@ -34,9 +34,9 @@ function FlashCardCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 		);
 	};
 
-	const handleAnswerUpdate = (html: string) => {
+	const handleAnswerChange = (html: string) => {
 		answer.current = html;
-		onUpdate(
+		onChange(
 			JSON.stringify({
 				question: question.current,
 				answer: html,
@@ -49,7 +49,7 @@ function FlashCardCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 			<RichTextEditor
 				title="Question"
 				content={flashCard.question}
-				onChange={handleQuestionUpdate}
+				onChange={handleQuestionChange}
 				autofocus={autofocus && !isAnswerEditorFocused}
 				onFocus={e => {
 					setIsAnswerEditorFocused(false);
@@ -60,7 +60,7 @@ function FlashCardCell({ cell, autofocus, onUpdate, onFocus }: Props) {
 				title="Answer"
 				content={flashCard.answer}
 				autofocus={autofocus && isAnswerEditorFocused}
-				onChange={handleAnswerUpdate}
+				onChange={handleAnswerChange}
 				onFocus={e => {
 					setIsAnswerEditorFocused(true);
 					onFocus(e);
