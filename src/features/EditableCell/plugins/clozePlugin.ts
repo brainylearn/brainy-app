@@ -250,15 +250,15 @@ function skipWhitespace(selection: RangeSelection) {
 }
 
 function $removeSelectionFromCloze(selection: RangeSelection) {
-    const clozeNode = getClozeNode(selection);
+	const clozeNode = getClozeNode(selection);
 	if (!clozeNode) return;
 
 	const [startPoint, endPoint] =
 		getStartEndAndEndPointForSelection(selection);
 	const selectionNodes: LexicalNode[] = [];
-    const afterSelectionClozeNode = $createClozeNode(clozeNode.index);
+	const afterSelectionClozeNode = $createClozeNode(clozeNode.index);
 
-    // We have already passed selection if the start node is the cloze node.
+	// We have already passed selection if the start node is the cloze node.
 	let passedSelectionStart = startPoint.getNode().is(clozeNode);
 	let passedSelectionEnd = false;
 
@@ -279,12 +279,13 @@ function $removeSelectionFromCloze(selection: RangeSelection) {
 					startPoint.offset,
 					endPoint.offset,
 				);
-                // Selected all texts.
-                if (textNodes.length == 1) selectionNodes.push(textNodes[0]);
+				// Selected all texts.
+				if (textNodes.length == 1) selectionNodes.push(textNodes[0]);
 				// Text after selection start.
 				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
 				// Text after selection end.
-				if (textNodes.length > 2) afterSelectionClozeNode.append(textNodes[2]);
+				if (textNodes.length > 2)
+					afterSelectionClozeNode.append(textNodes[2]);
 			}
 		} else if (!passedSelectionStart && child.is(startPoint.getNode())) {
 			passedSelectionStart = true;
@@ -307,14 +308,16 @@ function $removeSelectionFromCloze(selection: RangeSelection) {
 				// Text before selection ends.
 				if (textNodes.length > 0) selectionNodes.push(textNodes[0]);
 				// Text after selection ends.
-				if (textNodes.length > 1) afterSelectionClozeNode.append(textNodes[1]);
+				if (textNodes.length > 1)
+					afterSelectionClozeNode.append(textNodes[1]);
 			}
 		} else if (passedSelectionStart) {
 			selectionNodes.push(child);
 		}
 	}
 
-	if (!afterSelectionClozeNode.isEmpty()) clozeNode.insertAfter(afterSelectionClozeNode);
+	if (!afterSelectionClozeNode.isEmpty())
+		clozeNode.insertAfter(afterSelectionClozeNode);
 	selectionNodes.reverse().forEach(node => clozeNode.insertAfter(node));
 	if (clozeNode.isEmpty()) clozeNode.remove();
 }
@@ -334,7 +337,7 @@ function getClozeNode(selection: RangeSelection): ClozeNode | null {
 			current = current.getParent();
 		}
 	}
-    return clozeNode
+	return clozeNode;
 }
 
 function getStartEndAndEndPointForSelection(

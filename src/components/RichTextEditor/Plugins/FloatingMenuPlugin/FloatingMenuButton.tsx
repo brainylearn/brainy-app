@@ -8,31 +8,36 @@ export interface IFloatingMenuButton {
 	title: string;
 	onClick: (editor: LexicalEditor, isActive: boolean) => void;
 	isActive: (selection: RangeSelection) => boolean;
+	isVisible?: (selection: RangeSelection) => boolean;
 }
 
 interface IProps {
 	editor: LexicalEditor;
 	floatingButtonProps: IFloatingMenuButton;
-	state: Record<string, boolean>;
+	activeState: Record<string, boolean>;
+	visibleState: Record<string, boolean>;
 }
 
 export default function FloatingMenuButton({
 	editor,
 	floatingButtonProps,
-	state,
+	activeState,
+	visibleState,
 }: IProps) {
 	return (
-		<button
-			onClick={() =>
-				floatingButtonProps.onClick(
-					editor,
-					state[floatingButtonProps.name],
-				)
-			}
-			className={`transparent ${state[floatingButtonProps.name] && styles.activeButton}`}
-			title={floatingButtonProps.title}
-			aria-label={floatingButtonProps.title}>
-			<Icon path={floatingButtonProps.icon} size={1} />
-		</button>
+		visibleState[floatingButtonProps.name] && (
+			<button
+				onClick={() =>
+					floatingButtonProps.onClick(
+						editor,
+						activeState[floatingButtonProps.name],
+					)
+				}
+				className={`transparent ${activeState[floatingButtonProps.name] && styles.activeButton}`}
+				title={floatingButtonProps.title}
+				aria-label={floatingButtonProps.title}>
+				<Icon path={floatingButtonProps.icon} size={1} />
+			</button>
+		)
 	);
 }

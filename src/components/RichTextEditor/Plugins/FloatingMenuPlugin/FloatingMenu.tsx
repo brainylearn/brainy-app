@@ -23,7 +23,10 @@ function FloatingMenu(
 	{ editor, coordinates, additionalFloatingMenuButtons }: IProps,
 	ref: ForwardedRef<HTMLDivElement>,
 ) {
-	const [state, setState] = useState<Record<string, boolean>>({});
+	const [activeState, setActiveState] = useState<Record<string, boolean>>({});
+	const [visibleState, setVisibleState] = useState<Record<string, boolean>>(
+		{},
+	);
 	const [isEditorFocused, setIsEditorFocused] = useState(() => {
 		return editor.getRootElement() == document.activeElement;
 	});
@@ -37,14 +40,22 @@ function FloatingMenu(
 					if (!$isRangeSelection(selection)) return;
 					setIsEditorFocused(true);
 
-					for (const command of defaultButtons) {
-						state[command.name] = command.isActive(selection);
+					const newActiveState: Record<string, boolean> = {};
+					const newVisibleState: Record<string, boolean> = {};
+
+					for (const command of [
+						...defaultButtons,
+						...(additionalFloatingMenuButtons ?? []),
+					]) {
+						newActiveState[command.name] =
+							command.isActive(selection);
+						newVisibleState[command.name] = command.isVisible
+							? command.isVisible(selection)
+							: true;
 					}
 
-					for (const command of additionalFloatingMenuButtons ?? []) {
-						state[command.name] = command.isActive(selection);
-					}
-					setState(state);
+					setActiveState(newActiveState);
+					setVisibleState(newVisibleState);
 				});
 			},
 		);
@@ -72,7 +83,7 @@ function FloatingMenu(
 			unregisterBlurListener();
 			unregisterFocusListener();
 		};
-	}, [editor, state, additionalFloatingMenuButtons]);
+	}, [editor, additionalFloatingMenuButtons]);
 
 	const shouldShow =
 		(isEditorFocused || isFloatingMenuFocused) && coordinates;
@@ -95,7 +106,8 @@ function FloatingMenu(
 					key={current.name}
 					editor={editor}
 					floatingButtonProps={current}
-					state={state}
+					activeState={activeState}
+					visibleState={visibleState}
 				/>
 			))}
 
@@ -109,7 +121,8 @@ function FloatingMenu(
 					key={current.name}
 					editor={editor}
 					floatingButtonProps={current}
-					state={state}
+					activeState={activeState}
+					visibleState={visibleState}
 				/>
 			))}
 		</div>
