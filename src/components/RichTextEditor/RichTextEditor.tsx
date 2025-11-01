@@ -21,10 +21,10 @@ import {
 } from "lexical";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import AutoFocusPlugin from "./Plugins/AutoFocusPlugin";
 import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenuButton";
 import DefaultShortcutPlugin from "./Plugins/DefaultShortcutsPlugin";
 import ListCommandsPluginHandler from "./Plugins/ListCommandsPluginHandler/ListCommandsPluginHandler";
+import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 
 interface IProps {
 	content: string;
@@ -38,7 +38,7 @@ interface IProps {
 	onBlur?: () => void;
 }
 
-function RichTextEditor({
+export default function RichTextEditor({
 	title,
 	content,
 	extraNodes,
@@ -55,7 +55,7 @@ function RichTextEditor({
 		nodes: [ListNode, ListItemNode, ...(extraNodes ?? [])],
 		theme: {
 			text: {
-                // Global class names in index.xml.
+				// Global class names in index.xml.
 				underline: "underline",
 				bold: "bold",
 				italic: "italic",
@@ -98,7 +98,7 @@ function RichTextEditor({
 							additionalFloatingMenuButtons
 						}
 					/>
-					<AutoFocusPlugin autofocus={autofocus ?? false} />
+					{autofocus && <AutoFocusPlugin />}
 					<ListPlugin />
 					<ListCommandsPluginHandler />
 					<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
@@ -109,5 +109,3 @@ function RichTextEditor({
 		</>
 	);
 }
-
-export default RichTextEditor;

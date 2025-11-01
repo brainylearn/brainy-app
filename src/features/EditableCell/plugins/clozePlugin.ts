@@ -133,8 +133,8 @@ export function ClozePlugin() {
 }
 
 /** Wrap selections with a single cloze, if the selection contains one,
-  * or more cloze already, they are merged into a single cloze.
-  */
+ * or more cloze already, they are merged into a single cloze.
+ */
 function $wrapSelectionInCloze(selection: RangeSelection): ClozeNode {
 	skipWhitespace(selection);
 	const allNodes: LexicalNode[] = [];
@@ -318,7 +318,7 @@ function $removeSelectionFromCloze(selection: RangeSelection) {
 				const textNodes = child.splitText(startPoint.offset);
 				// Text after selection start.
 				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
-                // Selected everything.
+				// Selected everything.
 				else if (
 					textNodes.length == 1 &&
 					startPoint.offset !== child.getTextContentSize()

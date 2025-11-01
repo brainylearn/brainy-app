@@ -56,7 +56,7 @@ function EditableCells({
 	const enableFileSpecificFunctionality =
 		fileMode === "single" && !searchText;
 
-    // Ensuring that a cell is selected at start.
+	// Ensuring that a cell is selected at start.
 	if (!selectedCellId) {
 		if (cells.some(c => c.id === editCellId)) setSelectedCellId(editCellId);
 		else if (cells.length > 0) setSelectedCellId(cells[0].id);
@@ -241,7 +241,7 @@ function EditableCells({
 						key={
 							// Using isSyncing directly in key to re-force reconstruction
 							// of the editors.
-							cell.id + isSyncing
+							i + cell.id + isSyncing
 						}
 						ref={
 							cell.id === selectedCellId ? selectedCellRef : null
