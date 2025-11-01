@@ -227,7 +227,7 @@ function skipWhitespace(selection: RangeSelection) {
 	let currentEndNode = $isTextNode(endPoint.getNode())
 		? endPoint.getNode()
 		: null;
-	let currentEndOffset = endPoint.offset;
+	let currentEndOffset = endPoint.offset - 1;
 
 	while (currentEndNode) {
 		const textContent = currentEndNode.getTextContent();
@@ -244,7 +244,7 @@ function skipWhitespace(selection: RangeSelection) {
 			const prevSibling = currentEndNode.getPreviousSibling();
 			if (prevSibling) {
 				currentEndNode = $isTextNode(prevSibling) ? prevSibling : null;
-				currentEndOffset = prevSibling.getTextContent().length;
+				currentEndOffset = prevSibling.getTextContent().length - 1;
 			} else {
 				break;
 			}
