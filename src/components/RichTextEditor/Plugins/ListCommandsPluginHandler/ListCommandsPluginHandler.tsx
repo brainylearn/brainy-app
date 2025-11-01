@@ -1,15 +1,21 @@
 import { useEffect } from "react";
 import {
 	$insertList,
+	$isListNode,
 	$removeList,
 	INSERT_ORDERED_LIST_COMMAND,
 	INSERT_UNORDERED_LIST_COMMAND,
 	REMOVE_LIST_COMMAND,
 } from "@lexical/list";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { COMMAND_PRIORITY_LOW } from "lexical";
+import {
+	$getSelection,
+	$isRangeSelection,
+	COMMAND_PRIORITY_LOW,
+} from "lexical";
+import { TOGGLE_LIST } from "./CustomListCommands";
 
-export default function ListCommandsPlugin() {
+export default function ListCommandsPluginHandler() {
 	const [editor] = useLexicalComposerContext();
 
 	useEffect(() => {
@@ -47,6 +53,40 @@ export default function ListCommandsPlugin() {
 			),
 		);
 
+		unregisterListeners.push(
+			editor.registerCommand(
+				TOGGLE_LIST,
+				type => {
+					const selection = $getSelection();
+					if (!$isRangeSelection(selection)) return true;
+
+					for (const node of selection.getNodes()) {
+						let current = node.getParent();
+						while (current !== null) {
+							if ($isListNode(current)) {
+								editor.dispatchCommand(
+									REMOVE_LIST_COMMAND,
+									undefined,
+								);
+								return true;
+							}
+							current = current.getParent();
+						}
+					}
+
+					editor.dispatchCommand(
+						type === "bullet"
+							? INSERT_UNORDERED_LIST_COMMAND
+							: INSERT_ORDERED_LIST_COMMAND,
+						undefined,
+					);
+
+					return true;
+				},
+				COMMAND_PRIORITY_LOW,
+			),
+		);
+
 		return () => {
 			for (const unregisterListener of unregisterListeners) {
 				unregisterListener();
@@ -54,5 +94,5 @@ export default function ListCommandsPlugin() {
 		};
 	}, [editor]);
 
-	return <></>;
+	return null;
 }

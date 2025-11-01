@@ -8,15 +8,10 @@ import {
 	mdiFormatUnderline,
 } from "@mdi/js";
 import { FORMAT_TEXT_COMMAND } from "lexical";
-import {
-	$isListNode,
-	INSERT_ORDERED_LIST_COMMAND,
-	INSERT_UNORDERED_LIST_COMMAND,
-	REMOVE_LIST_COMMAND,
-} from "@lexical/list";
+import { $isListNode } from "@lexical/list";
 import { IFloatingMenuButton } from "./FloatingMenuButton";
+import { TOGGLE_LIST } from "../ListCommandsPluginHandler/CustomListCommands";
 
-// TODO: check shortcuts!
 export const defaultButtons: IFloatingMenuButton[] = [
 	{
 		name: "bold",
@@ -42,39 +37,10 @@ export const defaultButtons: IFloatingMenuButton[] = [
 		isActive: selection => selection.hasFormat("underline"),
 	},
 	{
-		name: "orderedList",
-		title: "Ordered list (Ctrl + Shift + 7)",
-		icon: mdiFormatListNumbered,
-		onClick: (editor, isActive) =>
-			editor.dispatchCommand(
-				isActive ? REMOVE_LIST_COMMAND : INSERT_ORDERED_LIST_COMMAND,
-				undefined,
-			),
-		isActive: selection => {
-			for (const node of selection.getNodes()) {
-				let current = node.getParent();
-				while (current !== null) {
-					if (
-						$isListNode(current) &&
-						current.getListType() === "number"
-					) {
-						return true;
-					}
-					current = current.getParent();
-				}
-			}
-			return false;
-		},
-	},
-	{
 		name: "bulletList",
-		title: "Bullet list (Ctrl + Shift + 8)",
+		title: "Bullet list (Ctrl + ,)",
 		icon: mdiFormatListBulleted,
-		onClick: (editor, isActive) =>
-			editor.dispatchCommand(
-				isActive ? REMOVE_LIST_COMMAND : INSERT_UNORDERED_LIST_COMMAND,
-				undefined,
-			),
+		onClick: editor => editor.dispatchCommand(TOGGLE_LIST, "bullet"),
 		isActive: selection => {
 			for (const node of selection.getNodes()) {
 				let current = node.getParent();
@@ -92,19 +58,40 @@ export const defaultButtons: IFloatingMenuButton[] = [
 		},
 	},
 	{
-		name: "subscript",
-		title: "Subscript (Ctrl + ,)",
-		icon: mdiFormatSubscript,
-		onClick: editor =>
-			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript"),
-		isActive: selection => selection.hasFormat("subscript"),
+		name: "orderedList",
+		title: "Ordered list (Ctrl + .)",
+		icon: mdiFormatListNumbered,
+		onClick: editor => editor.dispatchCommand(TOGGLE_LIST, "number"),
+		isActive: selection => {
+			for (const node of selection.getNodes()) {
+				let current = node.getParent();
+				while (current !== null) {
+					if (
+						$isListNode(current) &&
+						current.getListType() === "number"
+					) {
+						return true;
+					}
+					current = current.getParent();
+				}
+			}
+			return false;
+		},
 	},
 	{
 		name: "superscript",
-		title: "Superscript (Ctrl + .)",
+		title: "Superscript (Ctrl + =)",
 		icon: mdiFormatSuperscript,
 		onClick: editor =>
 			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "superscript"),
 		isActive: selection => selection.hasFormat("superscript"),
+	},
+	{
+		name: "subscript",
+		title: "Subscript (Ctrl + Shift + =)",
+		icon: mdiFormatSubscript,
+		onClick: editor =>
+			editor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript"),
+		isActive: selection => selection.hasFormat("subscript"),
 	},
 ];

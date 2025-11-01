@@ -19,11 +19,12 @@ import {
 	LexicalNode,
 	Klass,
 } from "lexical";
-import ListCommandsPlugin from "./Plugins/ListCommandsPlugin";
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from "@lexical/html";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import AutoFocusPlugin from "./Plugins/AutoFocusPlugin";
 import { IFloatingMenuButton } from "./Plugins/FloatingMenuPlugin/FloatingMenuButton";
+import DefaultShortcutPlugin from "./Plugins/DefaultShortcutsPlugin";
+import ListCommandsPluginHandler from "./Plugins/ListCommandsPluginHandler/ListCommandsPluginHandler";
 
 // TODO: support images and image resizer
 
@@ -76,7 +77,6 @@ function RichTextEditor({
 		});
 	};
 
-	// TODO: sync shortcut is same as redo shortcut
 	return (
 		<>
 			{title && <p className={styles.title}>{title}</p>}
@@ -101,8 +101,9 @@ function RichTextEditor({
 					/>
 					<AutoFocusPlugin autofocus={autofocus ?? false} />
 					<ListPlugin />
-					<ListCommandsPlugin />
+					<ListCommandsPluginHandler />
 					<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
+					<DefaultShortcutPlugin />
 					{plugins}
 				</LexicalComposer>
 			</div>
