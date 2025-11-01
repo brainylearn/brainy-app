@@ -3,15 +3,16 @@
 	border: 1px solid var(--border-color);
 	border-radius: var(--default-border-radius);
 	transition: all var(--default-transition-time);
+
+    &:hover {
+        border-color: var(--hover-border-color);
+    }
+
+    &:focus-within {
+        border-color: var(--primary-color);
+    }
 }
 
-.inner-editor:hover {
-	border-color: var(--hover-border-color);
-}
-
-.inner-editor:focus-within {
-	border-color: var(--primary-color);
-}
 
 .title {
 	padding-left: var(--default-padding);

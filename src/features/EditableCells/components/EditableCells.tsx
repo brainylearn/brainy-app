@@ -130,7 +130,6 @@ function EditableCells({
 			0 <= selectedCellIndex + number &&
 			selectedCellIndex + number < cells.length
 		) {
-            // TODO: focus is incorrect
 			await saveChanges();
 			await executeRequest(async () => {
 				await moveCell(
@@ -240,7 +239,7 @@ function EditableCells({
 					}>
 					<CellBlock
 						key={
-							// Using isSyncing directly in key to reforce reconstruction
+							// Using isSyncing directly in key to re-force reconstruction
 							// of the editors.
 							cell.id + isSyncing
 						}
