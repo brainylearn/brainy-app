@@ -55,6 +55,9 @@ body {
 	--side-bar-background-color: var(--surface-background-color-tint-10);
 
 	--red-color: #e71d36;
+	--red-color-shade-10: #db172f;
+	--red-color-shade-20: #ca152c;
+
 	--green-color: #0faa77;
 
 	--new-color: var(--primary-color-shade-20);
@@ -310,6 +313,14 @@ button.grey-button:focus {
 button.red {
 	background-color: var(--red-color);
 	color: #fff;
+}
+
+button.red:hover {
+	background-color: var(--red-color-shade-10);
+}
+
+button.red:active {
+	background-color: var(--red-color-shade-20);
 }
 
 button.red:focus {
