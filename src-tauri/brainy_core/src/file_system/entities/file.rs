@@ -1,6 +1,11 @@
 use chrono::{DateTime, Utc};
 
-use crate::{Guid, file_system::value_objects::file_system_item_name::FileSystemItemName};
+use crate::{
+    Guid,
+    file_system::value_objects::{
+        file_system_item_name::FileSystemItemName, item_fsrs_profile::ItemFsrsProfile,
+    },
+};
 
 #[derive(Debug, Clone)]
 pub struct File {
@@ -9,6 +14,7 @@ pub struct File {
     modified_date: DateTime<Utc>,
     parent_id: Option<Guid>,
     name: FileSystemItemName,
+    fsrs_profile: ItemFsrsProfile,
 }
 
 impl File {
@@ -16,6 +22,7 @@ impl File {
         id: Option<Guid>,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
+        fsrs_profile: ItemFsrsProfile,
     ) -> File {
         File {
             id: id.unwrap_or(Guid::new_v4()),
@@ -23,16 +30,18 @@ impl File {
             modified_date: Utc::now(),
             parent_id,
             name,
+            fsrs_profile,
         }
     }
 
-    /// Used for unit testing, or repositories when reconsturcting a file.
+    /// Used for unit testing, or repositories when reconstructing a file.
     pub fn new_unchecked(
         id: Guid,
         created_date: DateTime<Utc>,
         modified_date: DateTime<Utc>,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
+        fsrs_profile: ItemFsrsProfile,
     ) -> File {
         File {
             id,
@@ -40,6 +49,7 @@ impl File {
             modified_date,
             parent_id,
             name,
+            fsrs_profile,
         }
     }
 
@@ -70,6 +80,10 @@ impl File {
     pub(in crate::file_system) fn set_parent_id(&mut self, parent_id: Option<Guid>) {
         self.parent_id = parent_id;
     }
+
+    pub fn fsrs_profile(&self) -> &ItemFsrsProfile {
+        &self.fsrs_profile
+    }
 }
 
 #[cfg(test)]
@@ -84,7 +98,12 @@ pub mod tests {
 
         // Act
 
-        let actual = File::new(Some(id), None, "test".try_into().unwrap());
+        let actual = File::new(
+            Some(id),
+            None,
+            "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
+        );
 
         // Assert
 
@@ -104,6 +123,7 @@ pub mod tests {
             None,
             Some(Guid::new_v4()),
             FileSystemItemName::new_unchecked("test".to_string()),
+            ItemFsrsProfile::Inherit,
         );
 
         // Assert

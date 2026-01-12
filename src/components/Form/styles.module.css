@@ -27,7 +27,8 @@
 		padding: var(--spacing-2);
 
 		& input,
-		& select {
+		& select,
+		& textarea {
 			font-size: 1.4rem;
 		}
 		& label {

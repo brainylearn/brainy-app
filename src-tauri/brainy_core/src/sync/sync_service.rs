@@ -29,7 +29,9 @@ use crate::{
         repositories::traits::{
             file_repository::FileRepository, folder_repository::FolderRepository,
         },
-        value_objects::file_system_item_name::FileSystemItemName,
+        value_objects::{
+            file_system_item_name::FileSystemItemName, item_fsrs_profile::ItemFsrsProfile,
+        },
     },
     generated_code::{self},
     local_configurations::{
@@ -184,6 +186,8 @@ impl SyncService {
                     folder.modified_date.unwrap().into_datetime(),
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
+                    // TODO:
+                    ItemFsrsProfile::Inherit,
                 );
 
                 #[cfg(debug_assertions)]
@@ -204,6 +208,8 @@ impl SyncService {
                     file.modified_date.unwrap().into_datetime(),
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
+                    // TODO:
+                    ItemFsrsProfile::Inherit,
                 );
 
                 #[cfg(debug_assertions)]
@@ -687,6 +693,7 @@ mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
         context
@@ -778,6 +785,7 @@ mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("name".to_string()),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();
@@ -841,6 +849,7 @@ mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();
@@ -982,6 +991,7 @@ mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();
@@ -1095,6 +1105,7 @@ mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             FileSystemItemName::new_unchecked("name".to_string()),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
         context.save_changes().await.unwrap();
@@ -1142,6 +1153,7 @@ mod tests {
             Utc::now() - Duration::seconds(10),
             Some(ROOT_FOLDER_ID),
             FileSystemItemName::new_unchecked("name".to_string()),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
         context.save_changes().await.unwrap();
@@ -1183,6 +1195,7 @@ mod tests {
                 Utc::now(),
                 None,
                 FileSystemItemName::new_unchecked("test".to_string()),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();

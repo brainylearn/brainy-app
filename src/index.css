@@ -123,6 +123,7 @@ body.no-transition * {
 }
 
 input::placeholder,
+textarea::placeholder,
 button:disabled {
 	color: var(--placeholder-color);
 }
@@ -130,6 +131,7 @@ button:disabled {
 button,
 button:hover,
 input,
+textarea,
 select,
 a {
 	color: inherit;
@@ -166,6 +168,7 @@ button.link:active {
 
 .input,
 input,
+textarea,
 select {
 	border-radius: var(--default-border-radius);
 	outline: none;
@@ -184,12 +187,14 @@ input[type="checkbox"] {
 
 .input:hover,
 input:hover,
+textarea:hover,
 select:hover {
 	border-color: var(--hover-border-color);
 }
 
 .input:focus,
 input:focus,
+textarea:focus,
 select:focus {
 	border-color: var(--primary-color);
 }

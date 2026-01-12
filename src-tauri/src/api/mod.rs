@@ -2,6 +2,7 @@ mod auth_api;
 mod cell_api;
 mod export_import_api;
 mod file_system_api;
+mod fsrs_api;
 mod repetition_api;
 mod review_api;
 mod search_api;
@@ -38,6 +39,8 @@ pub use auth_api::{
 };
 
 pub use user_api::{delete_user, get_user_information, update_user_information};
+
+pub use fsrs_api::{get_all_fsrs_profiles, get_file_fsrs_profile, get_folder_fsrs_profile};
 
 pub use sync_api::sync;
 

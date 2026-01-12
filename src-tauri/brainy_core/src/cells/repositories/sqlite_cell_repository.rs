@@ -900,7 +900,7 @@ pub mod tests {
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
         },
-        file_system::entities::file::File,
+        file_system::{entities::file::File, value_objects::item_fsrs_profile::ItemFsrsProfile},
     };
 
     use super::*;
@@ -917,6 +917,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -972,6 +973,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -1018,6 +1020,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -1097,6 +1100,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -1144,6 +1148,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -1191,6 +1196,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -1243,6 +1249,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 
@@ -1334,6 +1341,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         let file2 = File::new_unchecked(
             Guid::new_v4(),
@@ -1341,6 +1349,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test2".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file1).await.unwrap();
         context.file_repository().create(&file2).await.unwrap();
@@ -1451,6 +1460,7 @@ pub mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
+            ItemFsrsProfile::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
 

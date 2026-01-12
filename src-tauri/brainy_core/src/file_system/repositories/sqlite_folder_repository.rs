@@ -39,6 +39,7 @@ impl FolderRepository for SqliteFolderRepository {
                 created_date as "created_date: _",
                 modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
+                fsrs_profile_id as "fsrs_profile_id: _",
                 name
             FROM folders
             WHERE id = $1"#,
@@ -61,6 +62,7 @@ impl FolderRepository for SqliteFolderRepository {
                 created_date as "created_date: _",
                 modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
+                fsrs_profile_id as "fsrs_profile_id: _",
                 name
             FROM folders"#,
         )
@@ -81,6 +83,7 @@ impl FolderRepository for SqliteFolderRepository {
                 created_date as "created_date: _",
                 modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
+                fsrs_profile_id as "fsrs_profile_id: _",
                 name
             FROM folders
             WHERE parent_id = $1"#,
@@ -106,6 +109,7 @@ impl FolderRepository for SqliteFolderRepository {
                 created_date as "created_date: _",
                 modified_date as "modified_date: _",
                 parent_id as "parent_id: _",
+                fsrs_profile_id as "fsrs_profile_id: _",
                 name
             FROM folders
             WHERE modified_date >= datetime($1)"#,
@@ -262,6 +266,8 @@ impl FolderRepository for SqliteFolderRepository {
 mod folder_row {
     use chrono::{DateTime, Utc};
 
+    use crate::file_system::value_objects::item_fsrs_profile::ItemFsrsProfile;
+
     use super::*;
 
     pub(super) struct FolderRow {
@@ -270,16 +276,23 @@ mod folder_row {
         pub modified_date: DateTime<Utc>,
         pub parent_id: Option<Guid>,
         pub name: String,
+        pub fsrs_profile_id: Option<Guid>,
     }
 
     impl From<FolderRow> for Folder {
         fn from(value: FolderRow) -> Self {
+            let fsrs_profile = if let Some(id) = value.fsrs_profile_id {
+                ItemFsrsProfile::Id(id)
+            } else {
+                ItemFsrsProfile::Inherit
+            };
             Folder::new_unchecked(
                 value.id,
                 value.created_date,
                 value.modified_date,
                 value.parent_id,
                 FileSystemItemName::new_unchecked(value.name),
+                fsrs_profile,
             )
         }
     }
@@ -293,7 +306,7 @@ pub mod tests {
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
         },
-        file_system::entities::file::File,
+        file_system::{entities::file::File, value_objects::item_fsrs_profile::ItemFsrsProfile},
     };
 
     use super::*;
@@ -310,6 +323,7 @@ pub mod tests {
                 None,
                 Some(ROOT_FOLDER_ID),
                 "folder".try_into().unwrap(),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();
@@ -342,6 +356,7 @@ pub mod tests {
                 Some(parent_id),
                 Some(ROOT_FOLDER_ID),
                 "folder".try_into().unwrap(),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();
@@ -351,6 +366,7 @@ pub mod tests {
                 None,
                 Some(parent_id),
                 "sub folder".try_into().unwrap(),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();
@@ -360,6 +376,7 @@ pub mod tests {
                 None,
                 Some(parent_id),
                 "file".try_into().unwrap(),
+                ItemFsrsProfile::Inherit,
             ))
             .await
             .unwrap();

@@ -183,6 +183,10 @@ pub async fn run() -> Result<(), String> {
             delete_user,
             // Sync
             sync,
+            // FSRS
+            get_all_fsrs_profiles,
+            get_file_fsrs_profile,
+            get_folder_fsrs_profile,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

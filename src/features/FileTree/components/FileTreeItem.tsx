@@ -134,13 +134,13 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 				onClick: showDeleteDialog,
 				shortcut: "DEL",
 			},
-			{
-				iconName: mdiTuneVariant,
-				text: "FSRS Profile",
-				onClick: () => setIsFsrsDialogShown(true),
-			},
 		);
 	}
+	actions.push({
+		iconName: mdiTuneVariant,
+		text: "FSRS Profile",
+		onClick: () => setIsFsrsDialogShown(true),
+	});
 
 	actions.push({
 		iconName: mdiExport,
@@ -343,7 +343,11 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 			)}
 
 			{isFsrsDialogShown && (
-				<FsrsDialog onClose={() => setIsFsrsDialogShown(false)} />
+				<FsrsDialog
+					onClose={() => setIsFsrsDialogShown(false)}
+					id={id}
+					isFolder={folder !== null}
+				/>
 			)}
 
 			{(!folder || isRoot || folder.isVisible) && (

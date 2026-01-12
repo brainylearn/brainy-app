@@ -150,4 +150,18 @@
 	width: 52rem;
 	display: flex;
 	flex-direction: column;
+
+	.choose-profile-row {
+		display: flex;
+		width: 100%;
+		gap: var(--spacing-2);
+
+		& select {
+			width: 100%;
+		}
+	}
+
+	& textarea {
+		resize: none;
+	}
 }
