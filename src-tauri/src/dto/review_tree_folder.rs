@@ -116,7 +116,7 @@ impl ReviewTreeFolder {
 #[cfg(test)]
 pub mod tests {
     use brainy_core::{
-        ROOT_FOLDER_ID, file_system::value_objects::item_fsrs_profile::ItemFsrsProfile,
+        ROOT_FOLDER_ID, file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice,
     };
     use chrono::Utc;
 
@@ -134,7 +134,7 @@ pub mod tests {
                 Utc::now(),
                 None,
                 "root".try_into().unwrap(),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ),
             Folder::new_unchecked(
                 parent_folder_id,
@@ -142,7 +142,7 @@ pub mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 "parent folder".try_into().unwrap(),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ),
         ];
 
@@ -153,7 +153,7 @@ pub mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 "file".try_into().unwrap(),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ),
             File::new_unchecked(
                 Guid::new_v4(),
@@ -161,7 +161,7 @@ pub mod tests {
                 Utc::now(),
                 Some(parent_folder_id),
                 "file".try_into().unwrap(),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ),
         ];
 

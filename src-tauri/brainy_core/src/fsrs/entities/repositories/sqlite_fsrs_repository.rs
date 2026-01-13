@@ -27,7 +27,8 @@ impl SqliteFsrsRepository {
     }
 }
 
-// TODO: fsrs profile should not be deletable if there is a folder or a file referencing it
+// TODO: everything should switch to inherit when profile is delete, maybe also add that default
+// should not be deleted too
 #[async_trait]
 impl FsrsRepository for SqliteFsrsRepository {
     // TODO: unit test

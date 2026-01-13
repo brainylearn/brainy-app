@@ -13,7 +13,9 @@ use crate::{
         repositories::{
             sqlite_file_repository::file_row::FileRow, traits::file_repository::FileRepository,
         },
-        value_objects::file_system_item_name::FileSystemItemName,
+        value_objects::{
+            file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
+        },
     },
 };
 
@@ -185,6 +187,12 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let modified_date = file.modified_date();
+        // TODO: update unit test
+        let fsrs_profile_choice = if let FsrsProfileChoice::Id(id) = file.fsrs_profile_choice() {
+            Some(id)
+        } else {
+            None
+        };
 
         let result = sqlx::query!(
             "UPDATE files SET
@@ -192,13 +200,15 @@ impl FileRepository for SqliteFileRepository {
                 created_date = datetime($2),
                 modified_date = datetime($3),
                 name = $4,
-                parent_id = $5
+                parent_id = $5,
+                fsrs_profile_id = $6
             WHERE id = $1",
             file_id,
             created_date,
             modified_date,
             file_name,
-            parent_id
+            parent_id,
+            fsrs_profile_choice
         )
         .execute(&mut *tx)
         .await;
@@ -271,7 +281,9 @@ pub mod tests {
             sqlite_repositories_context::SqliteRepositoriesContext,
             traits::repositories_context::RepositoriesContext,
         },
-        file_system::{entities::file::File, value_objects::item_fsrs_profile::ItemFsrsProfile},
+        file_system::{
+            entities::file::File, value_objects::fsrs_profile_choice::FsrsProfileChoice,
+        },
     };
 
     use super::*;
@@ -288,7 +300,7 @@ pub mod tests {
                 None,
                 Some(ROOT_FOLDER_ID),
                 "file".try_into().unwrap(),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ))
             .await
             .unwrap();
@@ -320,7 +332,7 @@ pub mod tests {
                 Some(file_id),
                 Some(ROOT_FOLDER_ID),
                 "file".try_into().unwrap(),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ))
             .await
             .unwrap();
@@ -345,7 +357,7 @@ pub mod tests {
 mod file_row {
     use chrono::{DateTime, Utc};
 
-    use crate::file_system::value_objects::item_fsrs_profile::ItemFsrsProfile;
+    use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
 
     use super::*;
 
@@ -361,9 +373,9 @@ mod file_row {
     impl From<FileRow> for File {
         fn from(value: FileRow) -> Self {
             let fsrs_profile = if let Some(id) = value.fsrs_profile_id {
-                ItemFsrsProfile::Id(id)
+                FsrsProfileChoice::Id(id)
             } else {
-                ItemFsrsProfile::Inherit
+                FsrsProfileChoice::Inherit
             };
             File::new_unchecked(
                 value.id,

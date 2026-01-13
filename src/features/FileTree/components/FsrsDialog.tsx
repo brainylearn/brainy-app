@@ -16,11 +16,16 @@ import {
 	getAllFsrsProfiles,
 	getFileFsrsProfile,
 	getFolderFsrsProfile,
-	getParentProfileForFile,
-	getParentProfileForFolder,
+	getFsrsProfileChoiceForFile,
+	getFsrsProfileChoiceForFolder,
+	getParentFsrsProfileForFile,
+	getParentFsrsProfileForFolder,
+	setFsrsProfileChoiceForFile,
+	setFsrsProfileChoiceForFolder,
 	updateProfile,
 } from "../../../api/fsrsApi";
 import { ROOT_FOLDER_ID } from "../../../config/constants";
+import { FsrsProfileChoice } from "../../../types/backend/value_objects/fsrsProfileChoice";
 
 interface Props {
 	id: string;
@@ -32,19 +37,12 @@ interface Props {
 export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [errorMessage, setErrorMessage] = useState("");
-	const [chosenProfile, setChosenProfile] = useState("");
+	const [chosenProfile, setChosenProfile] = useState<FsrsProfileChoice>({
+		type: "inherit",
+	});
 	const [profileState, setProfileState] = useState<FsrsProfile | null>();
 
 	const isRoot = id === ROOT_FOLDER_ID;
-
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		// TODO: update chosen profile for file
-		// TODO: error handling
-
-		await updateProfile(profileState!);
-		onClose();
-	};
 
 	const executeRequest = useCallback(
 		async (cb: () => Promise<void>): Promise<void> => {
@@ -58,6 +56,22 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 		[],
 	);
 
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		// TODO: validation for weights, etc...
+
+		await executeRequest(async () => {
+			await updateProfile(profileState!);
+
+			if (isFolder) {
+				await setFsrsProfileChoiceForFolder(id, chosenProfile);
+			} else {
+				await setFsrsProfileChoiceForFile(id, chosenProfile);
+			}
+			onClose();
+		});
+	};
+
 	useEffect(() => {
 		void (async () => {
 			setAllFsrsProfiles(await getAllFsrsProfiles());
@@ -65,22 +79,32 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 				? await getFolderFsrsProfile(id)
 				: await getFileFsrsProfile(id);
 
-			setChosenProfile(itemProfile.id);
+			const profileChoice = isFolder
+				? await getFsrsProfileChoiceForFolder(id)
+				: await getFsrsProfileChoiceForFile(id);
+
+			setChosenProfile(profileChoice);
 			setProfileState(itemProfile);
 		})();
 	}, [executeRequest, isFolder, id]);
 
-	const handleChangeProfile = async (newValue: string) => {
+	const handleChangeProfileChoice = async (newValue: string) => {
 		if (newValue === "inherit") {
 			const itemProfile = isFolder
-				? await getParentProfileForFolder(id)
-				: await getParentProfileForFile(id);
+				? await getParentFsrsProfileForFolder(id)
+				: await getParentFsrsProfileForFile(id);
 			setProfileState(itemProfile);
+			setChosenProfile({
+				type: "inherit",
+			});
 		} else {
 			const itemProfile = allFsrsProfiles.find(p => p.id === newValue);
 			setProfileState(itemProfile);
+			setChosenProfile({
+				type: "id",
+				content: newValue,
+			});
 		}
-		setChosenProfile(newValue);
 	};
 
 	const handleCloneProfile = async () => {
@@ -95,7 +119,10 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 
 		setAllFsrsProfiles(await getAllFsrsProfiles());
 		setProfileState(profile);
-		setChosenProfile(profile.id);
+		setChosenProfile({
+			type: "id",
+			content: profile.id,
+		});
 	};
 
 	return (
@@ -113,9 +140,13 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 									<div className={styles.chooseProfileRow}>
 										<select
 											id="profile"
-											value={chosenProfile}
+											value={
+												chosenProfile.type === "inherit"
+													? chosenProfile.type
+													: chosenProfile.content
+											}
 											onChange={e =>
-												void handleChangeProfile(
+												void handleChangeProfileChoice(
 													e.target.value,
 												)
 											}
@@ -148,6 +179,9 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 										<button
 											className="red"
 											type="button"
+											disabled={
+												chosenProfile.type === "inherit"
+											}
 											title="Delete profile">
 											<Icon
 												path={mdiDeleteOutline}
@@ -172,7 +206,9 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 												name: e.target.value,
 											})
 										}
-										readOnly={chosenProfile === "inherit"}
+										readOnly={
+											chosenProfile.type === "inherit"
+										}
 										required
 									/>
 								),
@@ -185,7 +221,9 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 										id="request-retention"
 										type="number"
 										step="any"
-										readOnly={chosenProfile === "inherit"}
+										readOnly={
+											chosenProfile.type === "inherit"
+										}
 										value={profileState.requestRetention}
 										onChange={e =>
 											setProfileState({
@@ -207,7 +245,9 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 										id="maximum-interval"
 										type="number"
 										step="any"
-										readOnly={chosenProfile === "inherit"}
+										readOnly={
+											chosenProfile.type === "inherit"
+										}
 										value={profileState.maximumInterval}
 										onChange={e =>
 											setProfileState({
@@ -227,11 +267,13 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 								children: (
 									<textarea
 										id="weights"
-										placeholder="TODO:"
+										placeholder="0.212 1.2931 2.3065 8.2956 6.4133 0.8334 3.0194 0.001 1.8722 0.1666 0.796 1.4835 0.0614 0.2629 1.6483 0.6014 1.8729 0.5425 0.0912 0.0658 0.1542"
 										rows={3}
-										readOnly={chosenProfile === "inherit"}
+										readOnly={
+											chosenProfile.type === "inherit"
+										}
 										value={profileState.weights.join(" ")}
-										// TODO: better validation
+										// TODO: fix weights writing
 										onChange={e =>
 											setProfileState({
 												...profileState,

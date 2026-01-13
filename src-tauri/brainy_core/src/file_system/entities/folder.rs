@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use crate::{
     Guid,
     file_system::value_objects::{
-        file_system_item_name::FileSystemItemName, item_fsrs_profile::ItemFsrsProfile,
+        file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
     },
 };
 
@@ -14,7 +14,7 @@ pub struct Folder {
     modified_date: DateTime<Utc>,
     parent_id: Option<Guid>,
     name: FileSystemItemName,
-    fsrs_profile: ItemFsrsProfile,
+    fsrs_profile_choice: FsrsProfileChoice,
 }
 
 impl Folder {
@@ -22,7 +22,7 @@ impl Folder {
         id: Option<Guid>,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
-        fsrs_profile: ItemFsrsProfile,
+        fsrs_profile_choice: FsrsProfileChoice,
     ) -> Folder {
         Folder {
             id: id.unwrap_or(Guid::new_v4()),
@@ -30,7 +30,7 @@ impl Folder {
             modified_date: Utc::now(),
             parent_id,
             name,
-            fsrs_profile,
+            fsrs_profile_choice,
         }
     }
 
@@ -41,7 +41,7 @@ impl Folder {
         modified_date: DateTime<Utc>,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
-        fsrs_profile: ItemFsrsProfile,
+        fsrs_profile_choice: FsrsProfileChoice,
     ) -> Self {
         Folder {
             id,
@@ -49,7 +49,7 @@ impl Folder {
             modified_date,
             parent_id,
             name,
-            fsrs_profile,
+            fsrs_profile_choice,
         }
     }
 
@@ -81,8 +81,12 @@ impl Folder {
         self.parent_id = parent_id;
     }
 
-    pub fn fsrs_profile(&self) -> &ItemFsrsProfile {
-        &self.fsrs_profile
+    pub fn fsrs_profile_choice(&self) -> &FsrsProfileChoice {
+        &self.fsrs_profile_choice
+    }
+
+    pub fn set_fsrs_profile_choice(&mut self, fsrs_profile_choice: FsrsProfileChoice) {
+        self.fsrs_profile_choice = fsrs_profile_choice;
     }
 }
 
@@ -102,7 +106,7 @@ pub mod tests {
             Some(id),
             None,
             "test".try_into().unwrap(),
-            ItemFsrsProfile::Inherit,
+            FsrsProfileChoice::Inherit,
         );
 
         // Assert
@@ -123,7 +127,7 @@ pub mod tests {
             None,
             Some(Guid::new_v4()),
             FileSystemItemName::new_unchecked("test".to_string()),
-            ItemFsrsProfile::Inherit,
+            FsrsProfileChoice::Inherit,
         );
 
         // Assert

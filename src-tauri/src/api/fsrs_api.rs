@@ -5,7 +5,7 @@ use brainy_core::{
     common::{
         repository_error::RepositoryError, traits::repositories_context::RepositoriesContext,
     },
-    file_system::value_objects::item_fsrs_profile::ItemFsrsProfile,
+    file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice,
     fsrs::entities::fsrs_profile::FsrsProfile,
 };
 use tauri::State;
@@ -31,7 +31,7 @@ pub async fn get_file_fsrs_profile(
     let file = context.file_repository().get_by_id(id).await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        file.fsrs_profile().clone(),
+        *file.fsrs_profile_choice(),
         file.parent_id(),
     )
     .await?;
@@ -47,7 +47,7 @@ pub async fn get_folder_fsrs_profile(
     let folder = context.folder_repository().get_by_id(id).await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        folder.fsrs_profile().clone(),
+        *folder.fsrs_profile_choice(),
         folder.parent_id(),
     )
     .await?;
@@ -55,7 +55,27 @@ pub async fn get_folder_fsrs_profile(
 }
 
 #[tauri::command]
-pub async fn get_parent_profile_for_folder(
+pub async fn get_fsrs_profile_choice_for_folder(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+) -> Result<FsrsProfileChoice, ApiError> {
+    let context = context.lock().await;
+    let folder = context.folder_repository().get_by_id(id).await?;
+    Ok(*folder.fsrs_profile_choice())
+}
+
+#[tauri::command]
+pub async fn get_fsrs_profile_choice_for_file(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+) -> Result<FsrsProfileChoice, ApiError> {
+    let context = context.lock().await;
+    let file = context.file_repository().get_by_id(id).await?;
+    Ok(*file.fsrs_profile_choice())
+}
+
+#[tauri::command]
+pub async fn get_parent_fsrs_profile_for_folder(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
     id: Guid,
 ) -> Result<FsrsProfile, ApiError> {
@@ -67,7 +87,7 @@ pub async fn get_parent_profile_for_folder(
         .await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        parent.fsrs_profile().clone(),
+        *parent.fsrs_profile_choice(),
         parent.parent_id(),
     )
     .await?;
@@ -75,7 +95,7 @@ pub async fn get_parent_profile_for_folder(
 }
 
 #[tauri::command]
-pub async fn get_parent_profile_for_file(
+pub async fn get_parent_fsrs_profile_for_file(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
     id: Guid,
 ) -> Result<FsrsProfile, ApiError> {
@@ -87,7 +107,7 @@ pub async fn get_parent_profile_for_file(
         .await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        parent.fsrs_profile().clone(),
+        *parent.fsrs_profile_choice(),
         parent.parent_id(),
     )
     .await?;
@@ -97,19 +117,19 @@ pub async fn get_parent_profile_for_file(
 // TODO: unit test
 async fn get_fsrs_profile_recursively_for_item(
     context: &dyn RepositoriesContext,
-    mut fsrs_profile: ItemFsrsProfile,
+    mut fsrs_profile_choice: FsrsProfileChoice,
     mut parent_id: Option<Guid>,
 ) -> Result<FsrsProfile, RepositoryError> {
-    while ItemFsrsProfile::Inherit == fsrs_profile {
+    while FsrsProfileChoice::Inherit == fsrs_profile_choice {
         let parent = context
             .folder_repository()
             .get_by_id(parent_id.unwrap())
             .await?;
-        fsrs_profile = parent.fsrs_profile().clone();
+        fsrs_profile_choice = *parent.fsrs_profile_choice();
         parent_id = parent.parent_id();
     }
 
-    if let ItemFsrsProfile::Id(id) = fsrs_profile {
+    if let FsrsProfileChoice::Id(id) = fsrs_profile_choice {
         let result = context.fsrs_repository().get_by_id(id).await?;
         return Ok(result);
     }
@@ -144,6 +164,34 @@ pub async fn update_profile(
     let profile = FsrsProfile::new(Some(id), name, request_retention, maximum_interval, weights);
     let context = context.lock().await;
     context.fsrs_repository().update(&profile).await?;
+    context.save_changes().await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_fsrs_profile_choice_for_folder(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+    fsrs_profile_choice: FsrsProfileChoice,
+) -> Result<(), ApiError> {
+    let context = context.lock().await;
+    let mut folder = context.folder_repository().get_by_id(id).await?;
+    folder.set_fsrs_profile_choice(fsrs_profile_choice);
+    context.folder_repository().update(&folder).await?;
+    context.save_changes().await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_fsrs_profile_choice_for_file(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+    fsrs_profile_choice: FsrsProfileChoice,
+) -> Result<(), ApiError> {
+    let context = context.lock().await;
+    let mut file = context.file_repository().get_by_id(id).await?;
+    file.set_fsrs_profile_choice(fsrs_profile_choice);
+    context.file_repository().update(&file).await?;
     context.save_changes().await?;
     Ok(())
 }

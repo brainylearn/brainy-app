@@ -187,10 +187,14 @@ pub async fn run() -> Result<(), String> {
             get_all_fsrs_profiles,
             get_file_fsrs_profile,
             get_folder_fsrs_profile,
-            get_parent_profile_for_file,
-            get_parent_profile_for_folder,
+            get_parent_fsrs_profile_for_file,
+            get_parent_fsrs_profile_for_folder,
             create_profile,
             update_profile,
+            get_fsrs_profile_choice_for_file,
+            get_fsrs_profile_choice_for_folder,
+            set_fsrs_profile_choice_for_file,
+            set_fsrs_profile_choice_for_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

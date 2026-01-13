@@ -30,7 +30,7 @@ use crate::{
             file_repository::FileRepository, folder_repository::FolderRepository,
         },
         value_objects::{
-            file_system_item_name::FileSystemItemName, item_fsrs_profile::ItemFsrsProfile,
+            file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
         },
     },
     generated_code::{self},
@@ -187,7 +187,7 @@ impl SyncService {
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
                     // TODO:
-                    ItemFsrsProfile::Inherit,
+                    FsrsProfileChoice::Inherit,
                 );
 
                 #[cfg(debug_assertions)]
@@ -209,7 +209,7 @@ impl SyncService {
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
                     // TODO:
-                    ItemFsrsProfile::Inherit,
+                    FsrsProfileChoice::Inherit,
                 );
 
                 #[cfg(debug_assertions)]
@@ -693,7 +693,7 @@ mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             "test".try_into().unwrap(),
-            ItemFsrsProfile::Inherit,
+            FsrsProfileChoice::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
         context
@@ -785,7 +785,7 @@ mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("name".to_string()),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ))
             .await
             .unwrap();
@@ -849,7 +849,7 @@ mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ))
             .await
             .unwrap();
@@ -991,7 +991,7 @@ mod tests {
                 Utc::now(),
                 Some(ROOT_FOLDER_ID),
                 FileSystemItemName::new_unchecked("old name".to_string()),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ))
             .await
             .unwrap();
@@ -1105,7 +1105,7 @@ mod tests {
             Utc::now(),
             Some(ROOT_FOLDER_ID),
             FileSystemItemName::new_unchecked("name".to_string()),
-            ItemFsrsProfile::Inherit,
+            FsrsProfileChoice::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
         context.save_changes().await.unwrap();
@@ -1153,7 +1153,7 @@ mod tests {
             Utc::now() - Duration::seconds(10),
             Some(ROOT_FOLDER_ID),
             FileSystemItemName::new_unchecked("name".to_string()),
-            ItemFsrsProfile::Inherit,
+            FsrsProfileChoice::Inherit,
         );
         context.file_repository().create(&file).await.unwrap();
         context.save_changes().await.unwrap();
@@ -1195,7 +1195,7 @@ mod tests {
                 Utc::now(),
                 None,
                 FileSystemItemName::new_unchecked("test".to_string()),
-                ItemFsrsProfile::Inherit,
+                FsrsProfileChoice::Inherit,
             ))
             .await
             .unwrap();
