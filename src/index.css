@@ -401,3 +401,8 @@ h1 {
 ::-webkit-scrollbar-thumb:active {
 	background: var(--primary-color-shade-10);
 }
+
+::selection {
+	background-color: var(--primary-color);
+	color: #fff;
+}
