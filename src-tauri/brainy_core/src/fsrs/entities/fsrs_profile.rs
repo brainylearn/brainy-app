@@ -15,18 +15,38 @@ pub struct FsrsProfile {
 
 impl FsrsProfile {
     pub fn new(
-        id: Guid,
+        id: Option<Guid>,
         name: String,
         request_retention: f64,
         maximum_interval: f64,
         weights: Vec<f64>,
     ) -> Self {
         Self {
-            id,
+            id: id.unwrap_or(Guid::new_v4()),
             name,
             request_retention,
             maximum_interval,
             weights,
         }
+    }
+
+    pub fn id(&self) -> Guid {
+        self.id
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn request_retention(&self) -> f64 {
+        self.request_retention
+    }
+
+    pub fn maximum_interval(&self) -> f64 {
+        self.maximum_interval
+    }
+
+    pub fn weights(&self) -> &[f64] {
+        &self.weights
     }
 }

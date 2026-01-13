@@ -1,11 +1,11 @@
-use std::{os::unix::process::parent_id, sync::Arc};
+use std::sync::Arc;
 
 use brainy_core::{
     Guid,
     common::{
         repository_error::RepositoryError, traits::repositories_context::RepositoriesContext,
     },
-    file_system::{entities::folder::Folder, value_objects::item_fsrs_profile::ItemFsrsProfile},
+    file_system::value_objects::item_fsrs_profile::ItemFsrsProfile,
     fsrs::entities::fsrs_profile::FsrsProfile,
 };
 use tauri::State;
@@ -54,6 +54,46 @@ pub async fn get_folder_fsrs_profile(
     Ok(result)
 }
 
+#[tauri::command]
+pub async fn get_parent_profile_for_folder(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+) -> Result<FsrsProfile, ApiError> {
+    let context = context.lock().await;
+    let folder = context.folder_repository().get_by_id(id).await?;
+    let parent = context
+        .folder_repository()
+        .get_by_id(folder.parent_id().unwrap())
+        .await?;
+    let result = get_fsrs_profile_recursively_for_item(
+        &*context,
+        parent.fsrs_profile().clone(),
+        parent.parent_id(),
+    )
+    .await?;
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_parent_profile_for_file(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+) -> Result<FsrsProfile, ApiError> {
+    let context = context.lock().await;
+    let file = context.file_repository().get_by_id(id).await?;
+    let parent = context
+        .folder_repository()
+        .get_by_id(file.parent_id().unwrap())
+        .await?;
+    let result = get_fsrs_profile_recursively_for_item(
+        &*context,
+        parent.fsrs_profile().clone(),
+        parent.parent_id(),
+    )
+    .await?;
+    Ok(result)
+}
+
 // TODO: unit test
 async fn get_fsrs_profile_recursively_for_item(
     context: &dyn RepositoriesContext,
@@ -75,4 +115,35 @@ async fn get_fsrs_profile_recursively_for_item(
     }
 
     unreachable!()
+}
+
+#[tauri::command]
+pub async fn create_profile(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    name: String,
+    request_retention: f64,
+    maximum_interval: f64,
+    weights: Vec<f64>,
+) -> Result<FsrsProfile, ApiError> {
+    let profile = FsrsProfile::new(None, name, request_retention, maximum_interval, weights);
+    let context = context.lock().await;
+    context.fsrs_repository().create(&profile).await?;
+    context.save_changes().await?;
+    Ok(profile)
+}
+
+#[tauri::command]
+pub async fn update_profile(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+    name: String,
+    request_retention: f64,
+    maximum_interval: f64,
+    weights: Vec<f64>,
+) -> Result<(), ApiError> {
+    let profile = FsrsProfile::new(Some(id), name, request_retention, maximum_interval, weights);
+    let context = context.lock().await;
+    context.fsrs_repository().update(&profile).await?;
+    context.save_changes().await?;
+    Ok(())
 }

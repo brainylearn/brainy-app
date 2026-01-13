@@ -40,7 +40,10 @@ pub use auth_api::{
 
 pub use user_api::{delete_user, get_user_information, update_user_information};
 
-pub use fsrs_api::{get_all_fsrs_profiles, get_file_fsrs_profile, get_folder_fsrs_profile};
+pub use fsrs_api::{
+    create_profile, get_all_fsrs_profiles, get_file_fsrs_profile, get_folder_fsrs_profile,
+    get_parent_profile_for_file, get_parent_profile_for_folder, update_profile,
+};
 
 pub use sync_api::sync;
 

@@ -73,6 +73,84 @@ impl FsrsRepository for SqliteFsrsRepository {
             Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
         }
     }
+
+    // TODO: unit test
+    async fn create(&self, fsrs_profile: &FsrsProfile) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = fsrs_profile.id();
+        let name = fsrs_profile.name();
+        let request_retention = fsrs_profile.request_retention();
+        let maximum_interval = fsrs_profile.maximum_interval();
+        let weights = fsrs_profile
+            .weights()
+            .iter()
+            .map(|val| val.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        let result = sqlx::query!(
+            "INSERT INTO fsrs_profiles(
+                id,
+                name,
+                request_retention,
+                maximum_interval,
+                weights)
+            VALUES ($1, $2, $3, $4, $5)",
+            id,
+            name,
+            request_retention,
+            maximum_interval,
+            weights
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
+    // TODO: unit test
+    async fn update(&self, fsrs_profile: &FsrsProfile) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = fsrs_profile.id();
+        let name = fsrs_profile.name();
+        let request_retention = fsrs_profile.request_retention();
+        let maximum_interval = fsrs_profile.maximum_interval();
+        let weights = fsrs_profile
+            .weights()
+            .iter()
+            .map(|val| val.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        let result = sqlx::query!(
+            "UPDATE fsrs_profiles SET
+                id = $1,
+                name = $2,
+                request_retention = $3,
+                maximum_interval = $4,
+                weights = $5
+            WHERE id = $1",
+            id,
+            name,
+            request_retention,
+            maximum_interval,
+            weights
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
 }
 
 mod fsrs_profile_row {
@@ -96,7 +174,7 @@ mod fsrs_profile_row {
                 .map(|v| v.parse().unwrap())
                 .collect();
             FsrsProfile::new(
-                value.id,
+                Some(value.id),
                 value.name,
                 value.request_retention,
                 value.maximum_interval,

@@ -5,16 +5,20 @@ import Form, {
 	FormHeader,
 	FormRows,
 } from "../../../components/Form/Form";
-import { mdiPlusBoxOutline, mdiTuneVariant } from "@mdi/js";
+import { mdiDeleteOutline, mdiPlusBoxOutline, mdiTuneVariant } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useCallback, useEffect, useState } from "react";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
 import FsrsProfile from "../../../types/backend/entity/fsrsProfile";
 import {
+	createProfile,
 	getAllFsrsProfiles,
 	getFileFsrsProfile,
 	getFolderFsrsProfile,
+	getParentProfileForFile,
+	getParentProfileForFolder,
+	updateProfile,
 } from "../../../api/fsrsApi";
 import { ROOT_FOLDER_ID } from "../../../config/constants";
 
@@ -24,6 +28,7 @@ interface Props {
 	onClose: () => void;
 }
 
+// TODO: unit test
 export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -32,8 +37,12 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 
 	const isRoot = id === ROOT_FOLDER_ID;
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		// TODO: update chosen profile for file
+		// TODO: error handling
+
+		await updateProfile(profileState!);
 		onClose();
 	};
 
@@ -56,17 +65,42 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 				? await getFolderFsrsProfile(id)
 				: await getFileFsrsProfile(id);
 
-			// TODO: change return type
-			setChosenProfile(
-				itemProfile === "inherit" ? "inherit" : itemProfile.id,
-			);
-			// TODO: get profile endpoint
+			setChosenProfile(itemProfile.id);
+			setProfileState(itemProfile);
 		})();
 	}, [executeRequest, isFolder, id]);
 
+	const handleChangeProfile = async (newValue: string) => {
+		if (newValue === "inherit") {
+			const itemProfile = isFolder
+				? await getParentProfileForFolder(id)
+				: await getParentProfileForFile(id);
+			setProfileState(itemProfile);
+		} else {
+			const itemProfile = allFsrsProfiles.find(p => p.id === newValue);
+			setProfileState(itemProfile);
+		}
+		setChosenProfile(newValue);
+	};
+
+	const handleCloneProfile = async () => {
+		if (!profileState) return;
+
+		const profile = await createProfile({
+			name: profileState.name + " clone",
+			maximumInterval: profileState.maximumInterval,
+			requestRetention: profileState.requestRetention,
+			weights: profileState.weights,
+		});
+
+		setAllFsrsProfiles(await getAllFsrsProfiles());
+		setProfileState(profile);
+		setChosenProfile(profile.id);
+	};
+
 	return (
 		<Dialog onHide={onClose} focusTrap className={styles.fsrsDialog}>
-			<Form onSubmit={handleSubmit}>
+			<Form onSubmit={e => void handleSubmit(e)}>
 				<FormHeader icon={mdiTuneVariant} title="FSRS Profile" />
 
 				{profileState && (
@@ -81,7 +115,9 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 											id="profile"
 											value={chosenProfile}
 											onChange={e =>
-												setChosenProfile(e.target.value)
+												void handleChangeProfile(
+													e.target.value,
+												)
 											}
 											autoFocus>
 											{!isRoot && (
@@ -100,9 +136,21 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 										<button
 											className="transparent"
 											type="button"
-											title="Clone profile">
+											title="Clone profile"
+											onClick={() =>
+												void handleCloneProfile()
+											}>
 											<Icon
 												path={mdiPlusBoxOutline}
+												size={1}
+											/>
+										</button>
+										<button
+											className="red"
+											type="button"
+											title="Delete profile">
+											<Icon
+												path={mdiDeleteOutline}
 												size={1}
 											/>
 										</button>
@@ -136,6 +184,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 									<input
 										id="request-retention"
 										type="number"
+										step="any"
 										readOnly={chosenProfile === "inherit"}
 										value={profileState.requestRetention}
 										onChange={e =>
@@ -157,6 +206,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 									<input
 										id="maximum-interval"
 										type="number"
+										step="any"
 										readOnly={chosenProfile === "inherit"}
 										value={profileState.maximumInterval}
 										onChange={e =>
@@ -180,7 +230,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 										placeholder="TODO:"
 										rows={3}
 										readOnly={chosenProfile === "inherit"}
-										value={profileState.maximumInterval}
+										value={profileState.weights.join(" ")}
 										// TODO: better validation
 										onChange={e =>
 											setProfileState({
