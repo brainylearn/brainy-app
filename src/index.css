@@ -260,7 +260,12 @@ button.primary:not(:disabled):focus {
 	box-shadow: var(--default-box-shadow);
 }
 
+button.primary:hover {
+	opacity: 0.9;
+}
+
 button.primary:active {
+	opacity: 1;
 	background-color: var(--primary-color-shade-10);
 }
 
