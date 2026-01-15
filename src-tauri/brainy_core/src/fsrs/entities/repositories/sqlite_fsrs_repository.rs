@@ -11,7 +11,7 @@ use crate::{
         fsrs_profile::FsrsProfile,
         repositories::{
             sqlite_fsrs_repository::fsrs_profile_row::FsrsProfileRow,
-            traits::fsrs_repository::FsrsRepository,
+            traits::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
         },
     },
 };
@@ -27,8 +27,6 @@ impl SqliteFsrsRepository {
     }
 }
 
-// TODO: everything should switch to inherit when profile is delete, maybe also add that default
-// should not be deleted too
 #[async_trait]
 impl FsrsRepository for SqliteFsrsRepository {
     // TODO: unit test
@@ -146,6 +144,21 @@ impl FsrsRepository for SqliteFsrsRepository {
         )
         .execute(&mut *tx)
         .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
+    async fn delete_by_id(&self, request: DeleteFsrsRequest) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = request.id();
+        let result = sqlx::query!("DELETE FROM fsrs_profiles WHERE id = $1", id)
+            .execute(&mut *tx)
+            .await;
 
         match result {
             Ok(_) => Ok(()),

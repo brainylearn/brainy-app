@@ -6,7 +6,7 @@ use brainy_core::{
         repository_error::RepositoryError, traits::repositories_context::RepositoriesContext,
     },
     file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice,
-    fsrs::entities::fsrs_profile::FsrsProfile,
+    fsrs::{entities::fsrs_profile::FsrsProfile, fsrs_service::FsrsService},
 };
 use tauri::State;
 use tokio::sync::Mutex;
@@ -192,6 +192,18 @@ pub async fn set_fsrs_profile_choice_for_file(
     let mut file = context.file_repository().get_by_id(id).await?;
     file.set_fsrs_profile_choice(fsrs_profile_choice);
     context.file_repository().update(&file).await?;
+    context.save_changes().await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_fsrs_profile(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    fsrs_service: State<'_, Arc<FsrsService>>,
+    id: Guid,
+) -> Result<(), ApiError> {
+    let context = context.lock().await;
+    fsrs_service.delete_by_id(id).await?;
     context.save_changes().await?;
     Ok(())
 }

@@ -13,6 +13,7 @@ import Alert from "../../../components/Alert/Alert";
 import FsrsProfile from "../../../types/backend/entity/fsrsProfile";
 import {
 	createProfile,
+	deleteFsrsProfile,
 	getAllFsrsProfiles,
 	getFileFsrsProfile,
 	getFolderFsrsProfile,
@@ -26,6 +27,7 @@ import {
 } from "../../../api/fsrsApi";
 import { ROOT_FOLDER_ID } from "../../../config/constants";
 import { FsrsProfileChoice } from "../../../types/backend/value_objects/fsrsProfileChoice";
+import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 
 interface Props {
 	id: string;
@@ -40,6 +42,8 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	const [chosenProfile, setChosenProfile] = useState<FsrsProfileChoice>({
 		type: "inherit",
 	});
+	const [showDeleteProfileDialog, setShowDeleteProfileDialog] =
+		useState(false);
 	const [profileState, setProfileState] = useState<FsrsProfile | null>();
 
 	const isRoot = id === ROOT_FOLDER_ID;
@@ -70,6 +74,14 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 			}
 			onClose();
 		});
+	};
+
+	const handleDelete = async () => {
+		if (chosenProfile.type === "inherit") return;
+		await deleteFsrsProfile(chosenProfile.content);
+		setAllFsrsProfiles(await getAllFsrsProfiles());
+		setChosenProfile({ type: "inherit" });
+		setShowDeleteProfileDialog(false);
 	};
 
 	useEffect(() => {
@@ -126,178 +138,204 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	};
 
 	return (
-		<Dialog onHide={onClose} focusTrap className={styles.fsrsDialog}>
-			<Form onSubmit={e => void handleSubmit(e)}>
-				<FormHeader icon={mdiTuneVariant} title="FSRS Profile" />
+		<>
+			<Dialog onHide={onClose} focusTrap className={styles.fsrsDialog}>
+				<Form onSubmit={e => void handleSubmit(e)}>
+					<FormHeader icon={mdiTuneVariant} title="FSRS Profile" />
 
-				{profileState && (
-					<FormRows
-						rows={[
-							{
-								label: "Profile",
-								labelHtmlFor: "profile",
-								children: (
-									<div className={styles.chooseProfileRow}>
-										<select
-											id="profile"
-											value={
+					{profileState && (
+						<FormRows
+							rows={[
+								{
+									label: "Profile",
+									labelHtmlFor: "profile",
+									children: (
+										<div
+											className={styles.chooseProfileRow}>
+											<select
+												id="profile"
+												value={
+													chosenProfile.type ===
+													"inherit"
+														? chosenProfile.type
+														: chosenProfile.content
+												}
+												onChange={e =>
+													void handleChangeProfileChoice(
+														e.target.value,
+													)
+												}
+												autoFocus>
+												{!isRoot && (
+													<option value="inherit">
+														Inherit from parent
+													</option>
+												)}
+												{allFsrsProfiles.map(
+													profile => (
+														<option
+															value={profile.id}
+															key={profile.id}>
+															{profile.name}
+														</option>
+													),
+												)}
+											</select>
+											<button
+												className="transparent"
+												type="button"
+												title="Clone profile"
+												onClick={() =>
+													void handleCloneProfile()
+												}>
+												<Icon
+													path={mdiPlusBoxOutline}
+													size={1}
+												/>
+											</button>
+											<button
+												className="red"
+												type="button"
+												disabled={
+													chosenProfile.type ===
+														"inherit" ||
+													allFsrsProfiles.length === 1
+												}
+												onClick={() =>
+													setShowDeleteProfileDialog(
+														true,
+													)
+												}
+												title="Delete profile">
+												<Icon
+													path={mdiDeleteOutline}
+													size={1}
+												/>
+											</button>
+										</div>
+									),
+								},
+								{
+									label: "Name",
+									labelHtmlFor: "name",
+									children: (
+										<input
+											id="name"
+											type="text"
+											minLength={1}
+											value={profileState.name}
+											onChange={e =>
+												setProfileState({
+													...profileState,
+													name: e.target.value,
+												})
+											}
+											readOnly={
 												chosenProfile.type === "inherit"
-													? chosenProfile.type
-													: chosenProfile.content
+											}
+											required
+										/>
+									),
+								},
+								{
+									label: "Request retention",
+									labelHtmlFor: "request-retention",
+									children: (
+										<input
+											id="request-retention"
+											type="number"
+											step="any"
+											readOnly={
+												chosenProfile.type === "inherit"
+											}
+											value={
+												profileState.requestRetention
 											}
 											onChange={e =>
-												void handleChangeProfileChoice(
-													e.target.value,
-												)
+												setProfileState({
+													...profileState,
+													requestRetention: Number(
+														e.target.value,
+													),
+												})
 											}
-											autoFocus>
-											{!isRoot && (
-												<option value="inherit">
-													Inherit from parent
-												</option>
-											)}
-											{allFsrsProfiles.map(profile => (
-												<option
-													value={profile.id}
-													key={profile.id}>
-													{profile.name}
-												</option>
-											))}
-										</select>
-										<button
-											className="transparent"
-											type="button"
-											title="Clone profile"
-											onClick={() =>
-												void handleCloneProfile()
-											}>
-											<Icon
-												path={mdiPlusBoxOutline}
-												size={1}
-											/>
-										</button>
-										<button
-											className="red"
-											type="button"
-											disabled={
+											required
+										/>
+									),
+								},
+								{
+									label: "Maximum interval",
+									labelHtmlFor: "maximum-interval",
+									children: (
+										<input
+											id="maximum-interval"
+											type="number"
+											step="any"
+											readOnly={
 												chosenProfile.type === "inherit"
 											}
-											title="Delete profile">
-											<Icon
-												path={mdiDeleteOutline}
-												size={1}
-											/>
-										</button>
-									</div>
-								),
-							},
-							{
-								label: "Name",
-								labelHtmlFor: "name",
-								children: (
-									<input
-										id="name"
-										type="text"
-										minLength={1}
-										value={profileState.name}
-										onChange={e =>
-											setProfileState({
-												...profileState,
-												name: e.target.value,
-											})
-										}
-										readOnly={
-											chosenProfile.type === "inherit"
-										}
-										required
-									/>
-								),
-							},
-							{
-								label: "Request retention",
-								labelHtmlFor: "request-retention",
-								children: (
-									<input
-										id="request-retention"
-										type="number"
-										step="any"
-										readOnly={
-											chosenProfile.type === "inherit"
-										}
-										value={profileState.requestRetention}
-										onChange={e =>
-											setProfileState({
-												...profileState,
-												requestRetention: Number(
-													e.target.value,
-												),
-											})
-										}
-										required
-									/>
-								),
-							},
-							{
-								label: "Maximum interval",
-								labelHtmlFor: "maximum-interval",
-								children: (
-									<input
-										id="maximum-interval"
-										type="number"
-										step="any"
-										readOnly={
-											chosenProfile.type === "inherit"
-										}
-										value={profileState.maximumInterval}
-										onChange={e =>
-											setProfileState({
-												...profileState,
-												maximumInterval: Number(
-													e.target.value,
-												),
-											})
-										}
-										required
-									/>
-								),
-							},
-							{
-								label: "Weights",
-								labelHtmlFor: "weights",
-								children: (
-									<textarea
-										id="weights"
-										placeholder="0.212 1.2931 2.3065 8.2956 6.4133 0.8334 3.0194 0.001 1.8722 0.1666 0.796 1.4835 0.0614 0.2629 1.6483 0.6014 1.8729 0.5425 0.0912 0.0658 0.1542"
-										rows={3}
-										readOnly={
-											chosenProfile.type === "inherit"
-										}
-										value={profileState.weights.join(" ")}
-										// TODO: fix weights writing
-										onChange={e =>
-											setProfileState({
-												...profileState,
-												weights: e.target.value
-													.split(" ")
-													.map(w => Number(w)),
-											})
-										}
-										required
-									/>
-								),
-							},
-						]}
-					/>
-				)}
+											value={profileState.maximumInterval}
+											onChange={e =>
+												setProfileState({
+													...profileState,
+													maximumInterval: Number(
+														e.target.value,
+													),
+												})
+											}
+											required
+										/>
+									),
+								},
+								{
+									label: "Weights",
+									labelHtmlFor: "weights",
+									children: (
+										<textarea
+											id="weights"
+											placeholder="0.212 1.2931 2.3065 8.2956 6.4133 0.8334 3.0194 0.001 1.8722 0.1666 0.796 1.4835 0.0614 0.2629 1.6483 0.6014 1.8729 0.5425 0.0912 0.0658 0.1542"
+											rows={3}
+											readOnly={
+												chosenProfile.type === "inherit"
+											}
+											value={profileState.weights.join(
+												" ",
+											)}
+											// TODO: fix weights writing
+											onChange={e =>
+												setProfileState({
+													...profileState,
+													weights: e.target.value
+														.split(" ")
+														.map(w => Number(w)),
+												})
+											}
+											required
+										/>
+									),
+								},
+							]}
+						/>
+					)}
 
-				{errorMessage && (
-					<Alert type="error" onClose={() => setErrorMessage("")}>
-						<p>{errorMessage}</p>
-					</Alert>
-				)}
+					{errorMessage && (
+						<Alert type="error" onClose={() => setErrorMessage("")}>
+							<p>{errorMessage}</p>
+						</Alert>
+					)}
 
-				<FormButtons onClose={onClose} submitText="Save" />
-			</Form>
-		</Dialog>
+					<FormButtons onClose={onClose} submitText="Save" />
+				</Form>
+			</Dialog>
+			{showDeleteProfileDialog && (
+				<ConfirmationDialog
+					title="Delete FSRS profile?"
+					icon={mdiDeleteOutline}
+					text="Are you sure you want to delete the FSRS profile?"
+					onCancel={() => setShowDeleteProfileDialog(false)}
+					onConfirm={() => void handleDelete()}
+				/>
+			)}
+		</>
 	);
 }

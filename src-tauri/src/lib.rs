@@ -15,6 +15,7 @@ use brainy_core::{
         traits::repositories_context::RepositoriesContext,
     },
     file_system::file_system_service::FileSystemService,
+    fsrs::fsrs_service::FsrsService,
     settings::{Settings, get_settings_dir},
     sync::sync_service::SyncService,
 };
@@ -93,6 +94,11 @@ pub async fn run() -> Result<(), String> {
                 repositories_context.sync_repository(),
                 repositories_context.local_configuration_repository(),
                 cell_service.clone(),
+            )));
+
+            app.manage(Arc::new(FsrsService::new(
+                repositories_context.folder_repository(),
+                repositories_context.fsrs_repository(),
             )));
 
             let backup_service = BackupService::new(
@@ -195,6 +201,7 @@ pub async fn run() -> Result<(), String> {
             get_fsrs_profile_choice_for_folder,
             set_fsrs_profile_choice_for_file,
             set_fsrs_profile_choice_for_folder,
+            delete_fsrs_profile,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

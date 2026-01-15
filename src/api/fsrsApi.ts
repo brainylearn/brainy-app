@@ -68,3 +68,7 @@ export function createProfile(profile: {
 export function updateProfile(profile: FsrsProfile): Promise<void> {
 	return invoke("update_profile", { ...profile });
 }
+
+export function deleteFsrsProfile(id: string): Promise<void> {
+	return invoke("delete_fsrs_profile", { id });
+}
