@@ -9,3 +9,17 @@ pub enum FsrsProfileChoice {
     Inherit,
     Id(Guid),
 }
+
+pub trait ToOptionWithId {
+    fn to_option(&self) -> Option<Guid>;
+}
+
+impl ToOptionWithId for &FsrsProfileChoice {
+    fn to_option(&self) -> Option<Guid> {
+        if let &FsrsProfileChoice::Id(id) = self {
+            Some(*id)
+        } else {
+            None
+        }
+    }
+}

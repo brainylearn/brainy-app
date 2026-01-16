@@ -15,7 +15,7 @@ use crate::{
             traits::folder_repository::FolderRepository,
         },
         value_objects::{
-            file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
+            file_system_item_name::FileSystemItemName, fsrs_profile_choice::ToOptionWithId,
         },
     },
 };
@@ -188,12 +188,7 @@ impl FolderRepository for SqliteFolderRepository {
         let parent_id = folder.parent_id();
         let created_date = folder.created_date();
         let modified_date = folder.modified_date();
-        // TODO: update unit test
-        let fsrs_profile_choice = if let FsrsProfileChoice::Id(id) = folder.fsrs_profile_choice() {
-            Some(id)
-        } else {
-            None
-        };
+        let fsrs_profile_choice = folder.fsrs_profile_choice().to_option();
 
         let result = sqlx::query!(
             "UPDATE folders SET

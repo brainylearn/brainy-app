@@ -39,7 +39,6 @@ impl FsrsService {
         }
     }
 
-    // TODO: unit test
     pub async fn delete_by_id(&self, id: Guid) -> Result<(), FsrsServiceError> {
         let mut root = self.folder_repository.get_by_id(ROOT_FOLDER_ID).await?;
 
@@ -62,5 +61,75 @@ impl FsrsService {
             .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::{
+        DEFAULT_FSRS_PROFILE_ID,
+        common::{
+            sqlite_repositories_context::SqliteRepositoriesContext,
+            traits::repositories_context::RepositoriesContext,
+        },
+        fsrs::entities::fsrs_profile::FsrsProfile,
+    };
+
+    use super::*;
+
+    async fn create_test_dependencies() -> (SqliteRepositoriesContext, FsrsService) {
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+        let service = FsrsService::new(context.folder_repository(), context.fsrs_repository());
+
+        (context, service)
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_only_one_profile_returned_error() {
+        // Arrange
+
+        let (_, service) = create_test_dependencies().await;
+
+        // Act
+
+        let result = service.delete_by_id(DEFAULT_FSRS_PROFILE_ID).await;
+
+        // Assert
+
+        assert_eq!(result, Err(FsrsServiceError::CannotDeleteLastProfile));
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_delete_root_profile_updated_root_profile_and_delete_profile() {
+        // Arrange
+
+        let (context, service) = create_test_dependencies().await;
+
+        let profile =
+            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        context.fsrs_repository().create(&profile).await.unwrap();
+
+        // Act
+
+        service.delete_by_id(DEFAULT_FSRS_PROFILE_ID).await.unwrap();
+
+        // Assert
+
+        let root = context
+            .folder_repository()
+            .get_by_id(ROOT_FOLDER_ID)
+            .await
+            .unwrap();
+        assert_eq!(
+            root.fsrs_profile_choice().clone(),
+            FsrsProfileChoice::Id(profile.id())
+        );
+
+        let all_profiles = context
+            .fsrs_repository()
+            .get_all_fsrs_profiles()
+            .await
+            .unwrap();
+        assert_eq!(1, all_profiles.len());
     }
 }

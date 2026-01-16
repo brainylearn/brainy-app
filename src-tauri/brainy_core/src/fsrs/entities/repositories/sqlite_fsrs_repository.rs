@@ -196,9 +196,12 @@ mod fsrs_profile_row {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::common::{
-        sqlite_repositories_context::SqliteRepositoriesContext,
-        traits::repositories_context::RepositoriesContext,
+    use crate::{
+        DEFAULT_FSRS_PROFILE_ID,
+        common::{
+            sqlite_repositories_context::SqliteRepositoriesContext,
+            traits::repositories_context::RepositoriesContext,
+        },
     };
 
     use super::*;
@@ -258,7 +261,7 @@ pub mod tests {
         assert!(
             actual
                 .iter()
-                .any(|item| item.id() == uuid::uuid!("00000000-0000-0000-0000-000000000001"))
+                .any(|item| item.id() == DEFAULT_FSRS_PROFILE_ID)
         );
     }
 

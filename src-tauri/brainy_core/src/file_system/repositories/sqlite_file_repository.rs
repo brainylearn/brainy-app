@@ -14,7 +14,7 @@ use crate::{
             sqlite_file_repository::file_row::FileRow, traits::file_repository::FileRepository,
         },
         value_objects::{
-            file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
+            file_system_item_name::FileSystemItemName, fsrs_profile_choice::ToOptionWithId,
         },
     },
 };
@@ -187,12 +187,7 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let modified_date = file.modified_date();
-        // TODO: update unit test
-        let fsrs_profile_choice = if let FsrsProfileChoice::Id(id) = file.fsrs_profile_choice() {
-            Some(id)
-        } else {
-            None
-        };
+        let fsrs_profile_choice = file.fsrs_profile_choice().to_option();
 
         let result = sqlx::query!(
             "UPDATE files SET
