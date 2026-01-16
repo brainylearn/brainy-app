@@ -145,7 +145,7 @@ pub async fn create_profile(
     maximum_interval: f64,
     weights: Vec<f64>,
 ) -> Result<FsrsProfile, ApiError> {
-    let profile = FsrsProfile::new(None, name, request_retention, maximum_interval, weights);
+    let profile = FsrsProfile::new(None, name, request_retention, maximum_interval, weights)?;
     let context = context.lock().await;
     context.fsrs_repository().create(&profile).await?;
     context.save_changes().await?;
@@ -161,7 +161,7 @@ pub async fn update_profile(
     maximum_interval: f64,
     weights: Vec<f64>,
 ) -> Result<(), ApiError> {
-    let profile = FsrsProfile::new(Some(id), name, request_retention, maximum_interval, weights);
+    let profile = FsrsProfile::new(Some(id), name, request_retention, maximum_interval, weights)?;
     let context = context.lock().await;
     context.fsrs_repository().update(&profile).await?;
     context.save_changes().await?;

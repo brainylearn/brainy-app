@@ -29,7 +29,6 @@ impl SqliteFsrsRepository {
 
 #[async_trait]
 impl FsrsRepository for SqliteFsrsRepository {
-    // TODO: unit test
     async fn get_by_id(&self, id: Guid) -> Result<FsrsProfile, RepositoryError> {
         let row = sqlx::query_as!(
             FsrsProfileRow,
@@ -52,7 +51,6 @@ impl FsrsRepository for SqliteFsrsRepository {
         }
     }
 
-    // TODO: unit test
     async fn get_all_fsrs_profiles(&self) -> Result<Vec<FsrsProfile>, RepositoryError> {
         let rows = sqlx::query_as!(
             FsrsProfileRow,
@@ -73,7 +71,6 @@ impl FsrsRepository for SqliteFsrsRepository {
         }
     }
 
-    // TODO: unit test
     async fn create(&self, fsrs_profile: &FsrsProfile) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
@@ -112,7 +109,6 @@ impl FsrsRepository for SqliteFsrsRepository {
         }
     }
 
-    // TODO: unit test
     async fn update(&self, fsrs_profile: &FsrsProfile) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
@@ -187,13 +183,114 @@ mod fsrs_profile_row {
                 .split(' ')
                 .map(|v| v.parse().unwrap())
                 .collect();
-            FsrsProfile::new(
-                Some(value.id),
+            FsrsProfile::new_unchecked(
+                value.id,
                 value.name,
                 value.request_retention,
                 value.maximum_interval,
                 weights,
             )
         }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::common::{
+        sqlite_repositories_context::SqliteRepositoriesContext,
+        traits::repositories_context::RepositoriesContext,
+    };
+
+    use super::*;
+
+    #[tokio::test]
+    pub async fn get_by_id_valid_input_returned_profile() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let profile =
+            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        context.fsrs_repository().create(&profile).await.unwrap();
+
+        // Act
+
+        let actual = context
+            .fsrs_repository()
+            .get_by_id(profile.id())
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!("test".to_string(), actual.name());
+        assert_eq!(1f64, actual.request_retention());
+    }
+
+    #[tokio::test]
+    pub async fn get_all_fsrs_profiles_valid_input_returned_all_profiles() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let profile1 =
+            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        context.fsrs_repository().create(&profile1).await.unwrap();
+
+        let profile2 =
+            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        context.fsrs_repository().create(&profile2).await.unwrap();
+
+        // Act
+
+        let actual = context
+            .fsrs_repository()
+            .get_all_fsrs_profiles()
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(3, actual.len());
+        assert!(actual.iter().any(|item| item.id() == profile1.id()));
+        assert!(actual.iter().any(|item| item.id() == profile2.id()));
+        // Default profile, always created.
+        assert!(
+            actual
+                .iter()
+                .any(|item| item.id() == uuid::uuid!("00000000-0000-0000-0000-000000000001"))
+        );
+    }
+
+    #[tokio::test]
+    pub async fn update_valid_input_updated_profile() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let profile =
+            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        context.fsrs_repository().create(&profile).await.unwrap();
+
+        let updated_profile =
+            FsrsProfile::new_unchecked(profile.id(), "new name".into(), 2f64, 2f64, vec![1f64]);
+
+        // Act
+
+        context
+            .fsrs_repository()
+            .update(&updated_profile)
+            .await
+            .unwrap();
+
+        // Assert
+
+        let actual = context
+            .fsrs_repository()
+            .get_by_id(profile.id())
+            .await
+            .unwrap();
+        assert_eq!("new name".to_string(), actual.name());
+        assert_eq!(2f64, actual.request_retention());
     }
 }
