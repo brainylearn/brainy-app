@@ -6,7 +6,7 @@ use crate::Guid;
 #[serde(rename_all = "camelCase")]
 pub struct FsrsProfile {
     id: Guid,
-    // TODO: value object here? at least validate the name length
+    // TODO: value object here? at least validate the name length, verify weights too
     name: String,
     request_retention: f64,
     maximum_interval: f64,

@@ -32,22 +32,22 @@ import {
 } from "../../../types/backend/value_objects/fsrsProfileChoice";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 
+interface FsrsDialogState {
+	profileChoice: FsrsProfileChoice;
+	profile: Omit<FsrsProfile, "weights"> & { weights: string };
+}
+
 interface Props {
 	id: string;
 	isFolder: boolean;
 	onClose: () => void;
 }
 
-// TODO: unit test
+// TODO: unit test: updating, deleting a profile then updating, creating a new profile then editing
 export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [errorMessage, setErrorMessage] = useState("");
-	const [chosenProfile, setChosenProfile] = useState<FsrsProfileChoice>({
-		type: "inherit",
-	});
-	const [profileState, setProfileState] = useState<
-		(Omit<FsrsProfile, "weights"> & { weights: string }) | null
-	>();
+	const [state, setState] = useState<FsrsDialogState | null>(null);
 	const [showDeleteProfileDialog, setShowDeleteProfileDialog] =
 		useState(false);
 
@@ -65,19 +65,22 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 		[],
 	);
 
-	const setChosenProfileAndState = (
-		chosenProfile: FsrsProfileChoice,
-		state: FsrsProfile,
+	const setStateHelper = (
+		profileChoice: FsrsProfileChoice,
+		fsrsProfile: FsrsProfile,
 	) => {
-		setChosenProfile(chosenProfile);
-		setProfileState({
-			...state,
-			weights: state.weights.join(" "),
+		setState({
+			profileChoice,
+			profile: {
+				...fsrsProfile,
+				weights: fsrsProfile.weights.join(" "),
+			},
 		});
 	};
 
 	/** Loads all profiles, set the choice and the state for this components
-	 * by calling the backend for getting these values. */
+	 * by calling the backend for getting these values.
+	 */
 	const loadComponentState = useCallback(async () => {
 		setAllFsrsProfiles(await getAllFsrsProfiles());
 		const profileChoice = isFolder
@@ -88,7 +91,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 			? await getFolderFsrsProfile(id)
 			: await getFileFsrsProfile(id);
 
-		setChosenProfileAndState(profileChoice, itemProfile);
+		setStateHelper(profileChoice, itemProfile);
 	}, [id, isFolder]);
 
 	useEffect(() => {
@@ -96,11 +99,12 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	}, [loadComponentState]);
 
 	const verifyWeightsAndGetAsNumbers = (): number[] | null => {
-		const weightsAsNumber = profileState?.weights
+		const weightsAsNumber = state?.profile?.weights
 			.split(" ")
 			.map(w => Number(w))
 			.filter(w => !isNaN(w));
-		if (weightsAsNumber?.length != 21) {
+
+		if (weightsAsNumber?.length !== 21) {
 			setErrorMessage("Please enter 21 weights separated by space!");
 			return null;
 		}
@@ -116,21 +120,23 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 
 		await executeRequest(async () => {
 			await updateProfile({
-				...profileState!,
+				...state!.profile,
 				weights: weightsAsNumber,
 			});
 
 			if (isFolder) {
-				await setFsrsProfileChoiceForFolder(id, chosenProfile);
+				await setFsrsProfileChoiceForFolder(id, state!.profileChoice);
 			} else {
-				await setFsrsProfileChoiceForFile(id, chosenProfile);
+				await setFsrsProfileChoiceForFile(id, state!.profileChoice);
 			}
 			onClose();
 		});
 	};
 
 	const handleDelete = async () => {
-		await deleteFsrsProfile((chosenProfile as FsrsProfileChoiceId).content);
+		await deleteFsrsProfile(
+			(state?.profileChoice as FsrsProfileChoiceId).content,
+		);
 		await loadComponentState();
 		setShowDeleteProfileDialog(false);
 	};
@@ -140,7 +146,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 			const itemProfile = isFolder
 				? await getParentFsrsProfileForFolder(id)
 				: await getParentFsrsProfileForFile(id);
-			setChosenProfileAndState(
+			setStateHelper(
 				{
 					type: "inherit",
 				},
@@ -148,7 +154,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 			);
 		} else {
 			const itemProfile = allFsrsProfiles.find(p => p.id === newValue);
-			setChosenProfileAndState(
+			setStateHelper(
 				{
 					type: "id",
 					content: newValue,
@@ -159,19 +165,28 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	};
 
 	const handleCloneProfile = async () => {
-		if (!profileState) return;
+		if (!state?.profile) return;
 
 		const weightsAsNumber = verifyWeightsAndGetAsNumbers();
 		if (weightsAsNumber === null) return;
 
-		const profile = await createProfile({
-			name: profileState.name + " clone",
-			maximumInterval: profileState.maximumInterval,
-			requestRetention: profileState.requestRetention,
-			weights: weightsAsNumber,
+		await executeRequest(async () => {
+			const profile = await createProfile({
+				name: state?.profile.name + " clone",
+				maximumInterval: state?.profile.maximumInterval,
+				requestRetention: state?.profile.requestRetention,
+				weights: weightsAsNumber,
+			});
+
+			setAllFsrsProfiles(await getAllFsrsProfiles());
+			setStateHelper(
+				{
+					type: "id",
+					content: profile.id,
+				},
+				profile,
+			);
 		});
-		await loadComponentState();
-		await changeProfileChoice(profile.id);
 	};
 
 	return (
@@ -180,7 +195,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 				<Form onSubmit={e => void handleSubmit(e)}>
 					<FormHeader icon={mdiTuneVariant} title="FSRS Profile" />
 
-					{profileState && (
+					{state?.profile && (
 						<FormRows
 							rows={[
 								{
@@ -192,10 +207,12 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 											<select
 												id="profile"
 												value={
-													chosenProfile.type ===
+													state.profileChoice.type ===
 													"inherit"
-														? chosenProfile.type
-														: chosenProfile.content
+														? state.profileChoice
+																.type
+														: state.profileChoice
+																.content
 												}
 												onChange={e =>
 													void changeProfileChoice(
@@ -237,7 +254,7 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 												className="red"
 												type="button"
 												disabled={
-													chosenProfile.type ===
+													state.profileChoice.type ===
 														"inherit" ||
 													allFsrsProfiles.length === 1
 												}
@@ -263,15 +280,20 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 											id="name"
 											type="text"
 											minLength={1}
-											value={profileState.name}
+											value={state.profile.name}
 											onChange={e =>
-												setProfileState({
-													...profileState,
-													name: e.target.value,
+												setState({
+													profileChoice:
+														state.profileChoice,
+													profile: {
+														...state.profile,
+														name: e.target.value,
+													},
 												})
 											}
 											readOnly={
-												chosenProfile.type === "inherit"
+												state.profileChoice.type ===
+												"inherit"
 											}
 											required
 										/>
@@ -286,17 +308,23 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 											type="number"
 											step="any"
 											readOnly={
-												chosenProfile.type === "inherit"
+												state.profileChoice.type ===
+												"inherit"
 											}
 											value={
-												profileState.requestRetention
+												state.profile.requestRetention
 											}
 											onChange={e =>
-												setProfileState({
-													...profileState,
-													requestRetention: Number(
-														e.target.value,
-													),
+												setState({
+													profileChoice:
+														state.profileChoice,
+													profile: {
+														...state.profile,
+														requestRetention:
+															Number(
+																e.target.value,
+															),
+													},
 												})
 											}
 											required
@@ -312,15 +340,22 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 											type="number"
 											step="any"
 											readOnly={
-												chosenProfile.type === "inherit"
+												state.profileChoice.type ===
+												"inherit"
 											}
-											value={profileState.maximumInterval}
+											value={
+												state.profile.maximumInterval
+											}
 											onChange={e =>
-												setProfileState({
-													...profileState,
-													maximumInterval: Number(
-														e.target.value,
-													),
+												setState({
+													profileChoice:
+														state.profileChoice,
+													profile: {
+														...state.profile,
+														maximumInterval: Number(
+															e.target.value,
+														),
+													},
 												})
 											}
 											required
@@ -336,13 +371,18 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 											placeholder="0.212 1.2931 2.3065 8.2956 6.4133 0.8334 3.0194 0.001 1.8722 0.1666 0.796 1.4835 0.0614 0.2629 1.6483 0.6014 1.8729 0.5425 0.0912 0.0658 0.1542"
 											rows={3}
 											readOnly={
-												chosenProfile.type === "inherit"
+												state.profileChoice.type ===
+												"inherit"
 											}
-											value={profileState.weights}
+											value={state.profile.weights}
 											onChange={e =>
-												setProfileState({
-													...profileState,
-													weights: e.target.value,
+												setState({
+													profileChoice:
+														state.profileChoice,
+													profile: {
+														...state.profile,
+														weights: e.target.value,
+													},
 												})
 											}
 											required
