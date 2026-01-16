@@ -36,6 +36,7 @@ const params = generatorParameters({
 		0.0912, 0.0658, 0.1542,
 	],
 });
+// TODO: use prpfoile
 const fsrs = new FSRS(params);
 
 function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {

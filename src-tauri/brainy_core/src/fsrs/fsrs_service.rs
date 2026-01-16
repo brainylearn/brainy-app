@@ -3,7 +3,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::{
-    Guid,
+    Guid, ROOT_FOLDER_ID,
     common::repository_error::RepositoryError,
     file_system::{
         repositories::traits::folder_repository::FolderRepository,
@@ -41,7 +41,7 @@ impl FsrsService {
 
     // TODO: unit test
     pub async fn delete_by_id(&self, id: Guid) -> Result<(), FsrsServiceError> {
-        let mut root = self.folder_repository.get_by_id(id).await?;
+        let mut root = self.folder_repository.get_by_id(ROOT_FOLDER_ID).await?;
 
         let all_profiles = self.fsrs_repository.get_all_fsrs_profiles().await?;
 
