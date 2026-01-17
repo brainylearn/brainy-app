@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -7,6 +8,8 @@ use crate::Guid;
 #[serde(rename_all = "camelCase")]
 pub struct FsrsProfile {
     id: Guid,
+    created_date: DateTime<Utc>,
+    modified_date: DateTime<Utc>,
     name: String,
     request_retention: f64,
     maximum_interval: f64,
@@ -38,6 +41,8 @@ impl FsrsProfile {
 
         Ok(Self {
             id: id.unwrap_or(Guid::new_v4()),
+            created_date: Utc::now(),
+            modified_date: Utc::now(),
             name,
             request_retention,
             maximum_interval,
@@ -48,6 +53,8 @@ impl FsrsProfile {
     /// Used for unit testing, or repositories when reconstructing the entity.
     pub fn new_unchecked(
         id: Guid,
+        created_date: DateTime<Utc>,
+        modified_date: DateTime<Utc>,
         name: String,
         request_retention: f64,
         maximum_interval: f64,
@@ -55,6 +62,8 @@ impl FsrsProfile {
     ) -> Self {
         Self {
             id,
+            created_date,
+            modified_date,
             name,
             request_retention,
             maximum_interval,
@@ -64,6 +73,14 @@ impl FsrsProfile {
 
     pub fn id(&self) -> Guid {
         self.id
+    }
+
+    pub fn created_date(&self) -> DateTime<Utc> {
+        self.created_date
+    }
+
+    pub fn modified_date(&self) -> DateTime<Utc> {
+        self.modified_date
     }
 
     pub fn name(&self) -> &str {

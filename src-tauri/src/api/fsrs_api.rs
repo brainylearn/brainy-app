@@ -262,8 +262,15 @@ mod tests {
         // Arrange
 
         let context = SqliteRepositoriesContext::create_testing_context().await;
-        let profile =
-            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        let profile = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
         context.fsrs_repository().create(&profile).await.unwrap();
 
         let file = File::new_unchecked(

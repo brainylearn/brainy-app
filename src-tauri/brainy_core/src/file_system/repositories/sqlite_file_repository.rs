@@ -13,9 +13,7 @@ use crate::{
         repositories::{
             sqlite_file_repository::file_row::FileRow, traits::file_repository::FileRepository,
         },
-        value_objects::{
-            file_system_item_name::FileSystemItemName, fsrs_profile_choice::ToOptionWithId,
-        },
+        value_objects::file_system_item_name::FileSystemItemName,
     },
 };
 
@@ -154,7 +152,7 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let modified_date = file.modified_date();
-        let fsrs_profile_choice = file.fsrs_profile_choice().to_option();
+        let fsrs_profile_choice = Option::<Guid>::from(file.fsrs_profile_choice());
 
         let result = sqlx::query!(
             "INSERT INTO files(
@@ -190,7 +188,7 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let modified_date = file.modified_date();
-        let fsrs_profile_choice = file.fsrs_profile_choice().to_option();
+        let fsrs_profile_choice = Option::<Guid>::from(file.fsrs_profile_choice());
 
         let result = sqlx::query!(
             "UPDATE files SET
@@ -229,7 +227,7 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let created_date = file.created_date();
-        let fsrs_profile_choice = file.fsrs_profile_choice().to_option();
+        let fsrs_profile_choice = Option::<Guid>::from(file.fsrs_profile_choice());
 
         let result = sqlx::query!(
             r#"INSERT INTO files(

@@ -10,16 +10,21 @@ pub enum FsrsProfileChoice {
     Id(Guid),
 }
 
-pub trait ToOptionWithId {
-    fn to_option(&self) -> Option<Guid>;
-}
-
-impl ToOptionWithId for &FsrsProfileChoice {
-    fn to_option(&self) -> Option<Guid> {
-        if let &FsrsProfileChoice::Id(id) = self {
-            Some(*id)
+impl From<&FsrsProfileChoice> for Option<Guid> {
+    fn from(value: &FsrsProfileChoice) -> Self {
+        if let &FsrsProfileChoice::Id(id) = value {
+            Some(id)
         } else {
             None
+        }
+    }
+}
+
+impl From<Option<String>> for FsrsProfileChoice {
+    fn from(value: Option<String>) -> Self {
+        match value {
+            None => FsrsProfileChoice::Inherit,
+            Some(id) => FsrsProfileChoice::Id(Guid::parse_str(&id).expect("Expected an id")),
         }
     }
 }

@@ -66,6 +66,8 @@ impl FsrsService {
 
 #[cfg(test)]
 pub mod tests {
+    use chrono::Utc;
+
     use crate::{
         DEFAULT_FSRS_PROFILE_ID,
         common::{
@@ -105,8 +107,15 @@ pub mod tests {
 
         let (context, service) = create_test_dependencies().await;
 
-        let profile =
-            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        let profile = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
         context.fsrs_repository().create(&profile).await.unwrap();
 
         // Act

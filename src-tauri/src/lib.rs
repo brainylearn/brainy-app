@@ -93,6 +93,7 @@ pub async fn run() -> Result<(), String> {
                 repositories_context.review_repository(),
                 repositories_context.sync_repository(),
                 repositories_context.local_configuration_repository(),
+                repositories_context.fsrs_repository(),
                 cell_service.clone(),
             )));
 

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
@@ -34,6 +35,8 @@ impl FsrsRepository for SqliteFsrsRepository {
             FsrsProfileRow,
             r#"SELECT
                 id as "id: _",
+                created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 name,
                 request_retention as "request_retention: _",
                 maximum_interval as "maximum_interval: _",
@@ -56,6 +59,8 @@ impl FsrsRepository for SqliteFsrsRepository {
             FsrsProfileRow,
             r#"SELECT
                 id as "id: _",
+                created_date as "created_date: _",
+                modified_date as "modified_date: _",
                 name,
                 request_retention as "request_retention: _",
                 maximum_interval as "maximum_interval: _",
@@ -76,6 +81,8 @@ impl FsrsRepository for SqliteFsrsRepository {
         let tx = tx.as_mut();
 
         let id = fsrs_profile.id();
+        let created_date = fsrs_profile.created_date();
+        let modified_date = fsrs_profile.modified_date();
         let name = fsrs_profile.name();
         let request_retention = fsrs_profile.request_retention();
         let maximum_interval = fsrs_profile.maximum_interval();
@@ -89,12 +96,16 @@ impl FsrsRepository for SqliteFsrsRepository {
         let result = sqlx::query!(
             "INSERT INTO fsrs_profiles(
                 id,
+                created_date,
+                modified_date,
                 name,
                 request_retention,
                 maximum_interval,
                 weights)
-            VALUES ($1, $2, $3, $4, $5)",
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7)",
             id,
+            created_date,
+            modified_date,
             name,
             request_retention,
             maximum_interval,
@@ -114,6 +125,8 @@ impl FsrsRepository for SqliteFsrsRepository {
         let tx = tx.as_mut();
 
         let id = fsrs_profile.id();
+        let created_date = fsrs_profile.created_date();
+        let modified_date = fsrs_profile.modified_date();
         let name = fsrs_profile.name();
         let request_retention = fsrs_profile.request_retention();
         let maximum_interval = fsrs_profile.maximum_interval();
@@ -127,12 +140,16 @@ impl FsrsRepository for SqliteFsrsRepository {
         let result = sqlx::query!(
             "UPDATE fsrs_profiles SET
                 id = $1,
-                name = $2,
-                request_retention = $3,
-                maximum_interval = $4,
-                weights = $5
+                created_date = datetime($2),
+                modified_date = datetime($3),
+                name = $4,
+                request_retention = $5,
+                maximum_interval = $6,
+                weights = $7
             WHERE id = $1",
             id,
+            created_date,
+            modified_date,
             name,
             request_retention,
             maximum_interval,
@@ -161,15 +178,103 @@ impl FsrsRepository for SqliteFsrsRepository {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
     }
+
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        fsrs_profile: &FsrsProfile,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = fsrs_profile.id();
+        let created_date = fsrs_profile.created_date();
+        let name = fsrs_profile.name();
+        let request_retention = fsrs_profile.request_retention();
+        let maximum_interval = fsrs_profile.maximum_interval();
+        let weights = fsrs_profile
+            .weights()
+            .iter()
+            .map(|val| val.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        let result = sqlx::query!(
+            r#"INSERT INTO fsrs_profiles(
+                id,
+                created_date,
+                modified_date,
+                name,
+                request_retention,
+                maximum_interval,
+                weights)
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7)
+            ON CONFLICT(id) DO UPDATE
+            SET id = $1,
+                created_date = datetime($2),
+                modified_date = datetime($3),
+                name = $4,
+                request_retention = $5,
+                maximum_interval = $6,
+                weights = $7
+            WHERE modified_date <= datetime($3)
+            "#,
+            id,
+            created_date,
+            modified_date,
+            name,
+            request_retention,
+            maximum_interval,
+            weights
+        )
+        .execute(&mut *tx)
+        .await;
+
+        match result {
+            Ok(result) => Ok(result.rows_affected()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
+
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<FsrsProfile>, RepositoryError> {
+        let rows = sqlx::query_as!(
+            FsrsProfileRow,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                modified_date as "modified_date: _",
+                name,
+                request_retention as "request_retention: _",
+                maximum_interval as "maximum_interval: _",
+                weights
+            FROM fsrs_profiles
+            WHERE modified_date >= datetime($1)"#,
+            modified_date
+        )
+        .fetch_all(&*self.pool)
+        .await;
+
+        match rows {
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+            Ok(rows) => Ok(rows.into_iter().map(|row| row.into()).collect()),
+        }
+    }
 }
 
 mod fsrs_profile_row {
+    use chrono::{DateTime, Utc};
+
     use crate::Guid;
 
     use super::*;
 
     pub(super) struct FsrsProfileRow {
         pub id: Guid,
+        pub created_date: DateTime<Utc>,
+        pub modified_date: DateTime<Utc>,
         pub name: String,
         pub request_retention: f64,
         pub maximum_interval: f64,
@@ -185,6 +290,8 @@ mod fsrs_profile_row {
                 .collect();
             FsrsProfile::new_unchecked(
                 value.id,
+                value.created_date,
+                value.modified_date,
                 value.name,
                 value.request_retention,
                 value.maximum_interval,
@@ -196,6 +303,8 @@ mod fsrs_profile_row {
 
 #[cfg(test)]
 pub mod tests {
+    use chrono::Utc;
+
     use crate::{
         DEFAULT_FSRS_PROFILE_ID,
         common::{
@@ -212,8 +321,15 @@ pub mod tests {
 
         let context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let profile =
-            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        let profile = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
         context.fsrs_repository().create(&profile).await.unwrap();
 
         // Act
@@ -236,12 +352,26 @@ pub mod tests {
 
         let context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let profile1 =
-            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        let profile1 = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
         context.fsrs_repository().create(&profile1).await.unwrap();
 
-        let profile2 =
-            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        let profile2 = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
         context.fsrs_repository().create(&profile2).await.unwrap();
 
         // Act
@@ -271,12 +401,26 @@ pub mod tests {
 
         let context = SqliteRepositoriesContext::create_testing_context().await;
 
-        let profile =
-            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        let profile = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
         context.fsrs_repository().create(&profile).await.unwrap();
 
-        let updated_profile =
-            FsrsProfile::new_unchecked(profile.id(), "new name".into(), 2f64, 2f64, vec![1f64]);
+        let updated_profile = FsrsProfile::new_unchecked(
+            profile.id(),
+            Utc::now(),
+            Utc::now(),
+            "new name".into(),
+            2f64,
+            2f64,
+            vec![1f64],
+        );
 
         // Act
 

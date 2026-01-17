@@ -14,9 +14,7 @@ use crate::{
             sqlite_folder_repository::folder_row::FolderRow,
             traits::folder_repository::FolderRepository,
         },
-        value_objects::{
-            file_system_item_name::FileSystemItemName, fsrs_profile_choice::ToOptionWithId,
-        },
+        value_objects::file_system_item_name::FileSystemItemName,
     },
 };
 
@@ -155,7 +153,7 @@ impl FolderRepository for SqliteFolderRepository {
         let parent_id = folder.parent_id();
         let created_date = folder.created_date();
         let modified_date = folder.modified_date();
-        let fsrs_profile_choice = folder.fsrs_profile_choice().to_option();
+        let fsrs_profile_choice = Option::<Guid>::from(folder.fsrs_profile_choice());
 
         let result = sqlx::query!(
             "INSERT INTO folders(
@@ -191,7 +189,7 @@ impl FolderRepository for SqliteFolderRepository {
         let parent_id = folder.parent_id();
         let created_date = folder.created_date();
         let modified_date = folder.modified_date();
-        let fsrs_profile_choice = folder.fsrs_profile_choice().to_option();
+        let fsrs_profile_choice = Option::<Guid>::from(folder.fsrs_profile_choice());
 
         let result = sqlx::query!(
             "UPDATE folders SET
@@ -230,7 +228,7 @@ impl FolderRepository for SqliteFolderRepository {
         let folder_name = folder.name().to_string();
         let parent_id = folder.parent_id();
         let created_date = folder.created_date();
-        let fsrs_profile_choice = folder.fsrs_profile_choice().to_option();
+        let fsrs_profile_choice = Option::<Guid>::from(folder.fsrs_profile_choice());
 
         let result = sqlx::query!(
             r#"INSERT INTO folders(

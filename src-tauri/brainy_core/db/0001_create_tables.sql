@@ -1,5 +1,7 @@
 CREATE TABLE fsrs_profiles(
     id                          TEXT        NOT NULL        PRIMARY KEY,
+    created_date                TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
+    modified_date               TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     name                        TEXT        NOT NULL,
     request_retention           REAL        NOT NULL,
     maximum_interval            REAL        NOT NULL,
