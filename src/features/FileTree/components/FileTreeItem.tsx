@@ -344,9 +344,10 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 
 			{isFsrsDialogShown && (
 				<FsrsDialog
-					onClose={() => setIsFsrsDialogShown(false)}
 					id={id}
 					isFolder={folder !== null}
+					name={getFileName(fullPath)}
+					onClose={() => setIsFsrsDialogShown(false)}
 				/>
 			)}
 

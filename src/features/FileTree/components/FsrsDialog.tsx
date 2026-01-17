@@ -40,11 +40,11 @@ interface FsrsDialogState {
 interface Props {
 	id: string;
 	isFolder: boolean;
+	name: string;
 	onClose: () => void;
 }
 
-// TODO: show file name in header
-export default function FsrsDialog({ id, isFolder, onClose }: Props) {
+export default function FsrsDialog({ id, isFolder, name, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [errorMessage, setErrorMessage] = useState("");
 	const [state, setState] = useState<FsrsDialogState | null>(null);
@@ -193,7 +193,10 @@ export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 		<>
 			<Dialog onHide={onClose} focusTrap className={styles.fsrsDialog}>
 				<Form onSubmit={e => void handleSubmit(e)}>
-					<FormHeader icon={mdiTuneVariant} title="FSRS Profile" />
+					<FormHeader
+						icon={mdiTuneVariant}
+						title={`FSRS profile for ${name}`}
+					/>
 
 					{state?.profile && (
 						<FormRows

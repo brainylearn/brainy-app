@@ -51,7 +51,12 @@ describe("FsrsDialog", () => {
 		const onCloseMock = vi.fn();
 
 		renderWithProviders(
-			<FsrsDialog id={ITEM_ID} isFolder={true} onClose={onCloseMock} />,
+			<FsrsDialog
+				id={ITEM_ID}
+				isFolder={true}
+				onClose={onCloseMock}
+				name=""
+			/>,
 		);
 
 		// Act
@@ -112,7 +117,12 @@ describe("FsrsDialog", () => {
 		const onCloseMock = vi.fn();
 
 		renderWithProviders(
-			<FsrsDialog id={ITEM_ID} isFolder={true} onClose={onCloseMock} />,
+			<FsrsDialog
+				id={ITEM_ID}
+				isFolder={true}
+				onClose={onCloseMock}
+				name=""
+			/>,
 		);
 
 		// Act
@@ -162,7 +172,12 @@ describe("FsrsDialog", () => {
 		);
 
 		renderWithProviders(
-			<FsrsDialog id={ITEM_ID} isFolder={true} onClose={vi.fn()} />,
+			<FsrsDialog
+				id={ITEM_ID}
+				isFolder={true}
+				onClose={vi.fn()}
+				name=""
+			/>,
 		);
 
 		// Act
@@ -228,7 +243,12 @@ describe("FsrsDialog", () => {
 			.mockReturnValueOnce(Promise.resolve(FILLED_PROFILE));
 
 		renderWithProviders(
-			<FsrsDialog id={ITEM_ID} isFolder={true} onClose={vi.fn()} />,
+			<FsrsDialog
+				id={ITEM_ID}
+				isFolder={true}
+				onClose={vi.fn()}
+				name=""
+			/>,
 		);
 
 		// Act
