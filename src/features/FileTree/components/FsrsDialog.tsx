@@ -43,6 +43,7 @@ interface Props {
 	onClose: () => void;
 }
 
+// TODO: show file name in header
 export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [errorMessage, setErrorMessage] = useState("");

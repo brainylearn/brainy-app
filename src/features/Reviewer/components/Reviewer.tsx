@@ -7,11 +7,10 @@ import { FSRS, generatorParameters, Grade, Rating, RecordLog } from "ts-fsrs";
 import createCardFromCellRepetition from "../utils/createCardFromRepetition";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import createRepetitionFromCard from "../utils/createRepetitionFromCard";
-import Cell from "../../../types/backend/entity/cell";
 import Timer from "./Timer";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import FromRouteState from "../../../types/fromRouteState";
-import { getCellsForFiles } from "../../../api/cellApi";
+import { getCellsForFilesWithFsrsProfileIds } from "../../../api/cellApi";
 import errorToString from "../../../utils/errorToString";
 import gradeToRating from "../utils/gradeToRating";
 import { registerReview } from "../../../api/reviewApi";
@@ -22,6 +21,10 @@ import {
 	defaultGlobalSyncEventManager,
 	ListenerType,
 } from "../../../stores/sync/managers/syncEventManager";
+import FsrsProfile from "../../../types/backend/entity/fsrsProfile";
+import { getAllFsrsProfiles } from "../../../api/fsrsApi";
+import { CellWithFsrsProfileId } from "../../../types/backend/dto/cellWithFsrsProfileId";
+import Repetition from "../../../types/backend/entity/repetition";
 
 interface Props {
 	fileIds: string[];
@@ -29,21 +32,20 @@ interface Props {
 	onError: (message: string) => void;
 }
 
-const params = generatorParameters({
-	w: [
-		0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722,
-		0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425,
-		0.0912, 0.0658, 0.1542,
-	],
-});
-// TODO: use prpfoile
-const fsrs = new FSRS(params);
+export interface RepetitionWithFsrsProfileId {
+	repetition: Repetition;
+	fsrsProfileId: string;
+}
 
+// TODO: unit test
 function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 	const [showAnswer, setShowAnswer] = useState(false);
 	const [currentCellIndex, setCurrentCellIndex] = useState(0);
 	const [isSendingRequest, setIsSendingRequest] = useState(true);
-	const [cells, setCells] = useState<Cell[]>([]);
+	const [cellsWithFsrsProfileIds, setCellsWithFsrsProfileIds] = useState<
+		CellWithFsrsProfileId[]
+	>([]);
+	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const studyTime = useRef(0);
 	const navigate = useNavigate();
 	const startTime = useRef(new Date());
@@ -52,7 +54,10 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 	const loadCells = useCallback(async () => {
 		try {
 			setIsSendingRequest(true);
-			setCells(await getCellsForFiles(fileIds));
+			setAllFsrsProfiles(await getAllFsrsProfiles());
+			setCellsWithFsrsProfileIds(
+				await getCellsForFilesWithFsrsProfileIds(fileIds),
+			);
 			setCurrentCellIndex(0);
 			setShowAnswer(false);
 			setIsSendingRequest(false);
@@ -78,35 +83,55 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 
 	const dueToday = useMemo(() => {
 		return sortReviewerRepetitions(
-			cells
-				.map(c => c.repetitions)
+			cellsWithFsrsProfileIds
+				.map(c => {
+					return c.cell.repetitions.map(
+						r =>
+							({
+								repetition: r,
+								fsrsProfileId: c.fsrsProfileId,
+							}) as RepetitionWithFsrsProfileId,
+					);
+				})
 				.flat()
-				.filter(r => new Date(r.due) <= startTime.current),
+				.filter(r => new Date(r.repetition.due) <= startTime.current),
 		);
-	}, [cells]);
+	}, [cellsWithFsrsProfileIds]);
 
 	const recordLog: RecordLog | null = useMemo(() => {
 		if (dueToday.length === 0) return null;
 		const currentCard = createCardFromCellRepetition(
-			dueToday[currentCellIndex],
+			dueToday[currentCellIndex].repetition,
 		);
 
+		const profile = allFsrsProfiles.find(
+			p => p.id === dueToday[currentCellIndex].fsrsProfileId,
+		)!;
+
+		const params = generatorParameters({
+			w: profile.weights,
+			maximum_interval: profile.maximumInterval,
+			request_retention: profile.requestRetention,
+		});
+		const fsrs = new FSRS(params);
+
 		return fsrs.repeat(currentCard, startTime.current);
-	}, [dueToday, startTime, currentCellIndex]);
+	}, [dueToday, startTime, currentCellIndex, allFsrsProfiles]);
 
 	useGlobalKey(e => {
 		if (e.key === " ") {
 			setShowAnswer(true);
 		} else if (e.key.toLowerCase() === "e") {
 			onEditButtonClick(
-				dueToday[currentCellIndex].fileId,
-				dueToday[currentCellIndex].cellId,
+				dueToday[currentCellIndex].repetition.fileId,
+				dueToday[currentCellIndex].repetition.cellId,
 			);
 		}
 
 		if (!showAnswer) {
 			return;
 		}
+
 		if (e.key === "1") {
 			void handleGradeSubmit(Rating.Again);
 		} else if (e.key === "2") {
@@ -127,10 +152,10 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 			const card = recordLog[grade]?.card;
 			const newRepetition = createRepetitionFromCard(
 				card,
-				dueToday[currentCellIndex].id,
-				dueToday[currentCellIndex].fileId,
-				dueToday[currentCellIndex].cellId,
-				dueToday[currentCellIndex].additionalContent,
+				dueToday[currentCellIndex].repetition.id,
+				dueToday[currentCellIndex].repetition.fileId,
+				dueToday[currentCellIndex].repetition.cellId,
+				dueToday[currentCellIndex].repetition.additionalContent,
 			);
 			await registerReview(
 				newRepetition,
@@ -161,16 +186,20 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 		}
 	};
 
-	const isCurrentCellNew = dueToday[currentCellIndex]?.state === "new";
+	const isCurrentCellNew =
+		dueToday[currentCellIndex]?.repetition.state === "new";
 	const isCurrentCellLearning =
-		dueToday[currentCellIndex]?.state === "learning" ||
-		dueToday[currentCellIndex]?.state === "relearning";
-	const isCurrentCellReview = dueToday[currentCellIndex]?.state === "review";
+		dueToday[currentCellIndex]?.repetition.state === "learning" ||
+		dueToday[currentCellIndex]?.repetition.state === "relearning";
+	const isCurrentCellReview =
+		dueToday[currentCellIndex]?.repetition.state === "review";
 
 	const repetitionsCounts = useMemo(
 		() =>
 			accumulateRepetitionsCounts(
-				dueToday.filter((_, i) => i >= currentCellIndex),
+				dueToday
+					.filter((_, i) => i >= currentCellIndex)
+					.map(c => c.repetition),
 			),
 		[dueToday, currentCellIndex],
 	);
@@ -190,11 +219,14 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 				{dueToday[currentCellIndex] && (
 					<ReviewerCell
 						cell={
-							cells.find(
-								c => c.id === dueToday[currentCellIndex].cellId,
-							)!
+							cellsWithFsrsProfileIds.find(
+								c =>
+									c.cell.id ===
+									dueToday[currentCellIndex].repetition
+										.cellId,
+							)!.cell
 						}
-						repetition={dueToday[currentCellIndex]}
+						repetition={dueToday[currentCellIndex].repetition}
 						showAnswer={showAnswer}
 						key={currentCellIndex}
 					/>
@@ -208,8 +240,8 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 						className="row grey-button"
 						onClick={() =>
 							onEditButtonClick(
-								dueToday[currentCellIndex].fileId,
-								dueToday[currentCellIndex].cellId,
+								dueToday[currentCellIndex].repetition.fileId,
+								dueToday[currentCellIndex].repetition.cellId,
 							)
 						}
 						title="(e)">
@@ -258,7 +290,7 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 				)}
 
 				<Timer
-					key={dueToday[currentCellIndex]?.id ?? 0}
+					key={dueToday[currentCellIndex]?.repetition.id ?? 0}
 					onTimeUpdate={handleTimeUpdate}
 				/>
 			</div>

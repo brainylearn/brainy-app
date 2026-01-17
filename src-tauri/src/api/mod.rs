@@ -15,8 +15,8 @@ use std::error::Error;
 pub use repetition_api::{get_study_repetition_counts, reset_repetitions_for_cell};
 
 pub use cell_api::{
-    create_cell, delete_cell, get_cells_for_files, get_file_cells_ordered_by_index, move_cell,
-    update_cells_contents,
+    create_cell, delete_cell, get_cells_for_files_with_fsrs_profile_ids,
+    get_file_cells_ordered_by_index, move_cell, update_cells_contents,
 };
 
 pub use file_system_api::{
