@@ -104,7 +104,7 @@ pub async fn get_cells_for_files_with_fsrs_profile_ids(
 
         let fsrs_profile_id = get_fsrs_profile_id_for_item_recursively(
             &*context,
-            *file.fsrs_profile_choice(),
+            file.fsrs_profile_choice(),
             file.parent_id(),
         )
         .await?;
@@ -136,7 +136,7 @@ async fn get_fsrs_profile_id_for_item_recursively(
             .folder_repository()
             .get_by_id(parent_id.unwrap())
             .await?;
-        fsrs_profile_choice = *parent.fsrs_profile_choice();
+        fsrs_profile_choice = parent.fsrs_profile_choice();
         parent_id = parent.parent_id();
     }
 

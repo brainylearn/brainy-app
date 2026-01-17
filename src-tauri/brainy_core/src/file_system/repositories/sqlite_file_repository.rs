@@ -281,8 +281,6 @@ impl FileRepository for SqliteFileRepository {
 mod file_row {
     use chrono::{DateTime, Utc};
 
-    use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
-
     use super::*;
 
     pub(super) struct FileRow {
@@ -296,18 +294,13 @@ mod file_row {
 
     impl From<FileRow> for File {
         fn from(value: FileRow) -> Self {
-            let fsrs_profile = if let Some(id) = value.fsrs_profile_id {
-                FsrsProfileChoice::Id(id)
-            } else {
-                FsrsProfileChoice::Inherit
-            };
             File::new_unchecked(
                 value.id,
                 value.created_date,
                 value.modified_date,
                 value.parent_id,
                 FileSystemItemName::new_unchecked(value.name.clone()),
-                fsrs_profile,
+                value.fsrs_profile_id.into(),
             )
         }
     }

@@ -81,8 +81,8 @@ impl File {
         self.parent_id = parent_id;
     }
 
-    pub fn fsrs_profile_choice(&self) -> &FsrsProfileChoice {
-        &self.fsrs_profile_choice
+    pub fn fsrs_profile_choice(&self) -> FsrsProfileChoice {
+        self.fsrs_profile_choice
     }
 
     pub fn set_fsrs_profile_choice(&mut self, fsrs_profile_choice: FsrsProfileChoice) {

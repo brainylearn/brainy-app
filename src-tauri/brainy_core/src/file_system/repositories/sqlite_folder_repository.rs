@@ -282,8 +282,6 @@ impl FolderRepository for SqliteFolderRepository {
 mod folder_row {
     use chrono::{DateTime, Utc};
 
-    use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
-
     use super::*;
 
     pub(super) struct FolderRow {
@@ -297,18 +295,13 @@ mod folder_row {
 
     impl From<FolderRow> for Folder {
         fn from(value: FolderRow) -> Self {
-            let fsrs_profile = if let Some(id) = value.fsrs_profile_id {
-                FsrsProfileChoice::Id(id)
-            } else {
-                FsrsProfileChoice::Inherit
-            };
             Folder::new_unchecked(
                 value.id,
                 value.created_date,
                 value.modified_date,
                 value.parent_id,
                 FileSystemItemName::new_unchecked(value.name),
-                fsrs_profile,
+                value.fsrs_profile_id.into(),
             )
         }
     }

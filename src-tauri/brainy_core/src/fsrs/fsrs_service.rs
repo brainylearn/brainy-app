@@ -48,7 +48,7 @@ impl FsrsService {
             return Err(FsrsServiceError::CannotDeleteLastProfile);
         }
 
-        if let &FsrsProfileChoice::Id(root_profile_id) = root.fsrs_profile_choice()
+        if let FsrsProfileChoice::Id(root_profile_id) = root.fsrs_profile_choice()
             && id == root_profile_id
         {
             let new_profile = all_profiles.iter().find(|item| item.id() != id).unwrap();

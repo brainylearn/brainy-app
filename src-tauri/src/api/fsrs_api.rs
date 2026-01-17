@@ -31,7 +31,7 @@ pub async fn get_file_fsrs_profile(
     let file = context.file_repository().get_by_id(id).await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        *file.fsrs_profile_choice(),
+        file.fsrs_profile_choice(),
         file.parent_id(),
     )
     .await?;
@@ -47,7 +47,7 @@ pub async fn get_folder_fsrs_profile(
     let folder = context.folder_repository().get_by_id(id).await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        *folder.fsrs_profile_choice(),
+        folder.fsrs_profile_choice(),
         folder.parent_id(),
     )
     .await?;
@@ -61,7 +61,7 @@ pub async fn get_fsrs_profile_choice_for_folder(
 ) -> Result<FsrsProfileChoice, ApiError> {
     let context = context.lock().await;
     let folder = context.folder_repository().get_by_id(id).await?;
-    Ok(*folder.fsrs_profile_choice())
+    Ok(folder.fsrs_profile_choice())
 }
 
 #[tauri::command]
@@ -71,7 +71,7 @@ pub async fn get_fsrs_profile_choice_for_file(
 ) -> Result<FsrsProfileChoice, ApiError> {
     let context = context.lock().await;
     let file = context.file_repository().get_by_id(id).await?;
-    Ok(*file.fsrs_profile_choice())
+    Ok(file.fsrs_profile_choice())
 }
 
 #[tauri::command]
@@ -87,7 +87,7 @@ pub async fn get_parent_fsrs_profile_for_folder(
         .await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        *parent.fsrs_profile_choice(),
+        parent.fsrs_profile_choice(),
         parent.parent_id(),
     )
     .await?;
@@ -107,7 +107,7 @@ pub async fn get_parent_fsrs_profile_for_file(
         .await?;
     let result = get_fsrs_profile_recursively_for_item(
         &*context,
-        *parent.fsrs_profile_choice(),
+        parent.fsrs_profile_choice(),
         parent.parent_id(),
     )
     .await?;
@@ -124,7 +124,7 @@ async fn get_fsrs_profile_recursively_for_item(
             .folder_repository()
             .get_by_id(parent_id.unwrap())
             .await?;
-        fsrs_profile_choice = *parent.fsrs_profile_choice();
+        fsrs_profile_choice = parent.fsrs_profile_choice();
         parent_id = parent.parent_id();
     }
 
@@ -160,8 +160,14 @@ pub async fn update_profile(
     maximum_interval: f64,
     weights: Vec<f64>,
 ) -> Result<(), ApiError> {
-    let profile = FsrsProfile::new(Some(id), name, request_retention, maximum_interval, weights)?;
     let context = context.lock().await;
+
+    let mut profile = context.fsrs_repository().get_by_id(id).await?;
+    profile.set_name(name);
+    profile.set_request_retention(request_retention);
+    profile.set_maximum_interval(maximum_interval);
+    profile.set_weights(weights);
+
     context.fsrs_repository().update(&profile).await?;
     context.save_changes().await?;
     Ok(())
@@ -246,7 +252,7 @@ mod tests {
 
         let result = get_fsrs_profile_recursively_for_item(
             &context,
-            *file.fsrs_profile_choice(),
+            file.fsrs_profile_choice(),
             file.parent_id(),
         )
         .await
@@ -287,7 +293,7 @@ mod tests {
 
         let result = get_fsrs_profile_recursively_for_item(
             &context,
-            *file.fsrs_profile_choice(),
+            file.fsrs_profile_choice(),
             file.parent_id(),
         )
         .await

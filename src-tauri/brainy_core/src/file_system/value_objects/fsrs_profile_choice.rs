@@ -10,9 +10,9 @@ pub enum FsrsProfileChoice {
     Id(Guid),
 }
 
-impl From<&FsrsProfileChoice> for Option<Guid> {
-    fn from(value: &FsrsProfileChoice) -> Self {
-        if let &FsrsProfileChoice::Id(id) = value {
+impl From<FsrsProfileChoice> for Option<Guid> {
+    fn from(value: FsrsProfileChoice) -> Self {
+        if let FsrsProfileChoice::Id(id) = value {
             Some(id)
         } else {
             None
@@ -25,6 +25,15 @@ impl From<Option<String>> for FsrsProfileChoice {
         match value {
             None => FsrsProfileChoice::Inherit,
             Some(id) => FsrsProfileChoice::Id(Guid::parse_str(&id).expect("Expected an id")),
+        }
+    }
+}
+
+impl From<Option<Guid>> for FsrsProfileChoice {
+    fn from(value: Option<Guid>) -> Self {
+        match value {
+            None => FsrsProfileChoice::Inherit,
+            Some(id) => FsrsProfileChoice::Id(id),
         }
     }
 }

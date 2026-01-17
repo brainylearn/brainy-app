@@ -98,4 +98,20 @@ impl FsrsProfile {
     pub fn weights(&self) -> &[f64] {
         &self.weights
     }
+
+    pub fn set_name(&mut self, name: String) {
+        self.name = name;
+    }
+
+    pub fn set_request_retention(&mut self, request_retention: f64) {
+        self.request_retention = request_retention;
+    }
+
+    pub fn set_maximum_interval(&mut self, maximum_interval: f64) {
+        self.maximum_interval = maximum_interval;
+    }
+
+    pub fn set_weights(&mut self, weights: Vec<f64>) {
+        self.weights = weights;
+    }
 }
