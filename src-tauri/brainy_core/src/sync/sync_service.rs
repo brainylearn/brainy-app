@@ -735,14 +735,14 @@ mod tests {
         assert!(folders.iter().any(|f| f.name()
             == FileSystemItemName::new_unchecked("test".to_string())
             && f.parent_id() == Some(ROOT_FOLDER_ID)
-            && *f.fsrs_profile_choice() == FsrsProfileChoice::Inherit));
+            && f.fsrs_profile_choice() == FsrsProfileChoice::Inherit));
 
         let files = context.file_repository().get_all_files().await.unwrap();
         assert_eq!(1, files.len());
         assert!(files.iter().any(|f| f.name()
             == FileSystemItemName::new_unchecked("test".to_string())
             && f.parent_id() == Some(ROOT_FOLDER_ID)
-            && *f.fsrs_profile_choice() == FsrsProfileChoice::Id(fsrs_profile_id)
+            && f.fsrs_profile_choice() == FsrsProfileChoice::Id(fsrs_profile_id)
             && (f.modified_date() - file_modified_date) <= Duration::seconds(1)));
 
         let cells = context

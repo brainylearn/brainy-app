@@ -59,23 +59,23 @@ describe("FsrsDialog", () => {
 			/>,
 		);
 
+		await Promise.resolve();
+
 		// Act
 
-		await waitFor(async () => {
-			await userEvent.click(screen.getByText("Name"));
-			await userEvent.keyboard("{backspace>100}new name");
+		await userEvent.click(await screen.findByText("Name"));
+		await userEvent.keyboard("{backspace>100}new name");
 
-			await userEvent.click(screen.getByText("Request retention"));
-			await userEvent.keyboard("{ArrowRight>100}{backspace>100}8");
+		await userEvent.click(screen.getByText("Request retention"));
+		await userEvent.keyboard("{ArrowRight>100}{backspace>100}8");
 
-			await userEvent.click(screen.getByText("Maximum interval"));
-			await userEvent.keyboard("{ArrowRight>100}{backspace>100}24");
+		await userEvent.click(screen.getByText("Maximum interval"));
+		await userEvent.keyboard("{ArrowRight>100}{backspace>100}24");
 
-			await userEvent.click(screen.getByText("Weights"));
-			await userEvent.keyboard("1");
+		await userEvent.click(screen.getByText("Weights"));
+		await userEvent.keyboard("1");
 
-			await userEvent.click(screen.getByText("Save"));
-		});
+		await userEvent.click(screen.getByText("Save"));
 
 		// Assert
 
