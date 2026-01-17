@@ -142,7 +142,7 @@ impl SyncService {
         Ok(())
     }
 
-    /// This function fetches and proccess the next sync page.
+    /// This function fetches and process the next sync page.
     /// Returns whether there are more pages to sync or not.
     async fn fetch_and_process_next_sync_page(
         &self,

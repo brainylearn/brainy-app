@@ -43,7 +43,6 @@ interface Props {
 	onClose: () => void;
 }
 
-// TODO: unit test: updating, deleting a profile then updating, creating a new profile then editing
 export default function FsrsDialog({ id, isFolder, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [errorMessage, setErrorMessage] = useState("");

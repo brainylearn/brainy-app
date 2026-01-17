@@ -140,6 +140,12 @@ a {
 	color: inherit;
 }
 
+select {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 a,
 a:visited,
 button.link {
