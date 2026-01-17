@@ -99,7 +99,7 @@ impl SqliteRepositoriesContext {
         std::mem::replace(&mut *guard, new_tx)
     }
 
-    #[cfg(test)]
+    #[cfg(any(test, feature = "test-utils"))]
     /// Creates an in-memory context with migration for testing.
     pub async fn create_testing_context() -> Self {
         SqliteRepositoriesContext::new_with_migration("sqlite::memory:")

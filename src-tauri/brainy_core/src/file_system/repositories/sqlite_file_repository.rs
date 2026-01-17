@@ -154,6 +154,7 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let modified_date = file.modified_date();
+        let fsrs_profile_choice = file.fsrs_profile_choice().to_option();
 
         let result = sqlx::query!(
             "INSERT INTO files(
@@ -161,13 +162,15 @@ impl FileRepository for SqliteFileRepository {
                 created_date,
                 modified_date,
                 name,
-                parent_id)
-            VALUES ($1, datetime($2), datetime($3), $4, $5)",
+                parent_id,
+                fsrs_profile_id)
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6)",
             file_id,
             created_date,
             modified_date,
             file_name,
-            parent_id
+            parent_id,
+            fsrs_profile_choice
         )
         .execute(&mut *tx)
         .await;
@@ -226,23 +229,32 @@ impl FileRepository for SqliteFileRepository {
         let file_name = file.name().to_string();
         let parent_id = file.parent_id();
         let created_date = file.created_date();
+        let fsrs_profile_choice = file.fsrs_profile_choice().to_option();
+
         let result = sqlx::query!(
             r#"INSERT INTO files(
                 id,
                 name,
                 parent_id,
                 modified_date,
-                created_date)
-            VALUES ($1, $2, $3, datetime($4), datetime($5))
+                created_date,
+                fsrs_profile_id)
+            VALUES ($1, $2, $3, datetime($4), datetime($5), $6)
             ON CONFLICT(id) DO UPDATE
-            SET id = $1, name = $2, parent_id = $3, modified_date = datetime($4), created_date = datetime($5)
+            SET id = $1,
+                name = $2,
+                parent_id = $3,
+                modified_date = datetime($4),
+                created_date = datetime($5),
+                fsrs_profile_id = $6
             WHERE modified_date <= datetime($4)
             "#,
             file_id,
             file_name,
             parent_id,
             modified_date,
-            created_date
+            created_date,
+            fsrs_profile_choice
         )
         .execute(&mut *tx)
         .await;

@@ -114,7 +114,6 @@ pub async fn get_parent_fsrs_profile_for_file(
     Ok(result)
 }
 
-// TODO: unit test
 async fn get_fsrs_profile_recursively_for_item(
     context: &dyn RepositoriesContext,
     mut fsrs_profile_choice: FsrsProfileChoice,
@@ -206,4 +205,89 @@ pub async fn delete_fsrs_profile(
     fsrs_service.delete_by_id(id).await?;
     context.save_changes().await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use brainy_core::{
+        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
+        common::sqlite_repositories_context::SqliteRepositoriesContext,
+        file_system::entities::{file::File, folder::Folder},
+    };
+    use chrono::Utc;
+
+    #[tokio::test]
+    pub async fn get_fsrs_profile_recursively_for_item_nested_file_returns_profile_correctly() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+        let parent = Folder::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Inherit,
+        );
+        context.folder_repository().create(&parent).await.unwrap();
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(parent.id()),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Inherit,
+        );
+        context.file_repository().create(&file).await.unwrap();
+
+        // Act
+
+        let result = get_fsrs_profile_recursively_for_item(
+            &context,
+            *file.fsrs_profile_choice(),
+            file.parent_id(),
+        )
+        .await
+        .unwrap();
+
+        // Assert
+
+        assert_eq!(result.id(), DEFAULT_FSRS_PROFILE_ID);
+    }
+
+    #[tokio::test]
+    pub async fn get_fsrs_profile_recursively_for_item_file_with_custom_profile_returned_profile() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+        let profile =
+            FsrsProfile::new_unchecked(Guid::new_v4(), "test".into(), 1f64, 1f64, vec![1f64]);
+        context.fsrs_repository().create(&profile).await.unwrap();
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Id(profile.id()),
+        );
+        context.file_repository().create(&file).await.unwrap();
+
+        // Act
+
+        let result = get_fsrs_profile_recursively_for_item(
+            &context,
+            *file.fsrs_profile_choice(),
+            file.parent_id(),
+        )
+        .await
+        .unwrap();
+
+        // Assert
+
+        assert_eq!(result.id(), profile.id());
+    }
 }
