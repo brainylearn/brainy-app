@@ -48,7 +48,6 @@ use crate::{
     },
 };
 
-// TODO: update unit tests
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
 
 #[derive(Error, Debug, PartialEq, Eq)]
@@ -554,7 +553,7 @@ mod tests {
     use chrono::Duration;
 
     use crate::{
-        ROOT_FOLDER_ID,
+        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
         backend::{
             models::SyncedEntitiesPageDto, traits::brainy_backend_client::MockBrainyBackendClient,
         },
@@ -600,9 +599,25 @@ mod tests {
         let user_id = Guid::new_v4();
         let file_id = Guid::new_v4();
         let cell_id = Guid::new_v4();
+        let fsrs_profile_id = Guid::new_v4();
         let file_modified_date = Utc::now() - Duration::hours(8);
 
         let synced_entities: Vec<SyncedEntity> = vec![
+            SyncedEntity {
+                user_id,
+                entity_id: fsrs_profile_id,
+                entity_type: EntityType::FsrsProfile,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: generated_code::FsrsProfile {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    name: "test profile".into(),
+                    request_retention: 10f64,
+                    maximum_interval: 8f64,
+                    weights: vec![1f64],
+                }
+                .into_base64(),
+            },
             SyncedEntity {
                 user_id,
                 entity_id: Guid::new_v4(),
@@ -627,7 +642,7 @@ mod tests {
                     modified_date: Some(file_modified_date.into_timestamp()),
                     name: "test".into(),
                     parent_id: Some(ROOT_FOLDER_ID.into()),
-                    fsrs_profile_id: None,
+                    fsrs_profile_id: Some(fsrs_profile_id.to_string()),
                 }
                 .into_base64(),
             },
@@ -702,17 +717,32 @@ mod tests {
 
         // Assert
 
+        let fsrs_profiles = context
+            .fsrs_repository()
+            .get_all_fsrs_profiles()
+            .await
+            .unwrap();
+        // Default & new profile.
+        assert_eq!(2, fsrs_profiles.len());
+        assert!(
+            fsrs_profiles
+                .iter()
+                .any(|f| f.name() == "test profile" && f.request_retention() == 10f64)
+        );
+
         let folders = context.folder_repository().get_all_folders().await.unwrap();
         assert_eq!(2, folders.len());
         assert!(folders.iter().any(|f| f.name()
             == FileSystemItemName::new_unchecked("test".to_string())
-            && f.parent_id() == Some(ROOT_FOLDER_ID)));
+            && f.parent_id() == Some(ROOT_FOLDER_ID)
+            && *f.fsrs_profile_choice() == FsrsProfileChoice::Inherit));
 
         let files = context.file_repository().get_all_files().await.unwrap();
         assert_eq!(1, files.len());
         assert!(files.iter().any(|f| f.name()
             == FileSystemItemName::new_unchecked("test".to_string())
             && f.parent_id() == Some(ROOT_FOLDER_ID)
+            && *f.fsrs_profile_choice() == FsrsProfileChoice::Id(fsrs_profile_id)
             && (f.modified_date() - file_modified_date) <= Duration::seconds(1)));
 
         let cells = context
@@ -888,7 +918,7 @@ mod tests {
     }
 
     #[tokio::test]
-    pub async fn sync_with_backend_existing_entit_with_older_modified_date_locally_entity_updated()
+    pub async fn sync_with_backend_existing_entity_with_older_modified_date_locally_entity_updated()
     {
         // Arrange
 
@@ -958,6 +988,21 @@ mod tests {
                 }
                 .into_base64(),
             },
+            SyncedEntity {
+                user_id,
+                entity_id: DEFAULT_FSRS_PROFILE_ID,
+                entity_type: EntityType::FsrsProfile,
+                created_date: Utc::now(),
+                last_sync_date: Utc::now(),
+                data: generated_code::FsrsProfile {
+                    modified_date: Some(Utc::now().into_timestamp()),
+                    name: "new name".into(),
+                    request_retention: 10f64,
+                    maximum_interval: 8f64,
+                    weights: vec![1f64],
+                }
+                .into_base64(),
+            },
         ];
 
         backend_client
@@ -997,6 +1042,14 @@ mod tests {
             .unwrap();
         assert_eq!(1, cells.len());
         assert!(cells.iter().any(|c| c.content() == "new content"));
+
+        let fsrs_profiles = context
+            .fsrs_repository()
+            .get_all_fsrs_profiles()
+            .await
+            .unwrap();
+        assert_eq!(1, fsrs_profiles.len());
+        assert!(fsrs_profiles.iter().any(|c| c.name() == "new name"));
     }
 
     #[tokio::test]
@@ -1153,7 +1206,7 @@ mod tests {
     }
 
     #[tokio::test]
-    pub async fn sync_with_backend_local_unsynced_file_snet_file() {
+    pub async fn sync_with_backend_local_unsynced_file_sent_file() {
         // Arrange
 
         let (context, mut backend_client) = create_test_dependencies().await;
@@ -1180,8 +1233,8 @@ mod tests {
 
         backend_client
             .expect_send_synced_entities()
-            // The count should be 2 due to the root folder
-            .withf(move |value| value.len() == 2)
+            // The count should be 2 due to the root folder and default FSRS profile.
+            .withf(move |value| value.len() == 3)
             .returning(move |_| Ok(()));
 
         let service = create_sync_service(&context, backend_client);
@@ -1192,7 +1245,7 @@ mod tests {
     }
 
     #[tokio::test]
-    pub async fn sync_with_backend_local_file_already_synced_did_not_sned_file() {
+    pub async fn sync_with_backend_local_file_already_synced_did_not_send_file() {
         // Arrange
 
         let (context, mut backend_client) = create_test_dependencies().await;
@@ -1228,8 +1281,8 @@ mod tests {
 
         backend_client
             .expect_send_synced_entities()
-            // The count should be 1 due to the root folder.
-            .withf(move |value| value.len() == 1)
+            // The count should be 2 due to the root folder and default FSRS profile.
+            .withf(move |value| value.len() == 2)
             .returning(move |_| Ok(()));
 
         let service = create_sync_service(&context, backend_client);
@@ -1285,8 +1338,8 @@ mod tests {
 
         backend_client
             .expect_send_synced_entities()
-            // The count should be 1 due to the root folder, the created folder should not be sent.
-            .withf(move |value| value.len() == 1)
+            // The count should be 2 due to the root folder, and FSRS profile, the created folder should not be sent.
+            .withf(move |value| value.len() == 2)
             .returning(move |_| Ok(()));
 
         let service = create_sync_service(&context, backend_client);
