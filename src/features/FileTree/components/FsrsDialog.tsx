@@ -141,7 +141,7 @@ export default function FsrsDialog({ id, isFolder, name, onClose }: Props) {
 		setShowDeleteProfileDialog(false);
 	};
 
-	const changeProfileChoice = async (newValue: string) => {
+	const handleChangeProfileChoice = async (newValue: string) => {
 		if (newValue === "inherit") {
 			const itemProfile = isFolder
 				? await getParentFsrsProfileForFolder(id)
@@ -218,7 +218,7 @@ export default function FsrsDialog({ id, isFolder, name, onClose }: Props) {
 																.content
 												}
 												onChange={e =>
-													void changeProfileChoice(
+													void handleChangeProfileChoice(
 														e.target.value,
 													)
 												}
