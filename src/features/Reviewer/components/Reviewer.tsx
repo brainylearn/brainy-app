@@ -37,7 +37,6 @@ export interface RepetitionWithFsrsProfileId {
 	fsrsProfileId: string;
 }
 
-// TODO: unit test
 function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 	const [showAnswer, setShowAnswer] = useState(false);
 	const [currentCellIndex, setCurrentCellIndex] = useState(0);
@@ -255,19 +254,22 @@ function Reviewer({ fileIds, onEditButtonClick, onError }: Props) {
 						<div className={styles.countRow}>
 							<p
 								className={`new-color
-                                ${isCurrentCellNew && styles.underline}`}>
+                                ${isCurrentCellNew && styles.underline}`}
+								data-testid="new-count">
 								{repetitionsCounts.new}
 							</p>
 							<p>+</p>
 							<p
 								className={`learning-color
-                                ${isCurrentCellLearning && styles.underline}`}>
+                                ${isCurrentCellLearning && styles.underline}`}
+								data-testid="learning-count">
 								{repetitionsCounts.learning}
 							</p>
 							<p>+</p>
 							<p
 								className={`review-color
-                                ${isCurrentCellReview && styles.underline}`}>
+                                ${isCurrentCellReview && styles.underline}`}
+								data-testid="review-count">
 								{repetitionsCounts.review}
 							</p>
 						</div>
