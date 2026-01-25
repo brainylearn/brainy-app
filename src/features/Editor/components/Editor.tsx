@@ -10,6 +10,7 @@ import useGlobalKey from "../../../hooks/useGlobalKey";
 import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
 import EditableCells from "../../EditableCells/components/EditableCells";
+import AiBot from "./AiBot";
 
 interface Props {
 	initialSelectedCellId: string | null;
@@ -109,6 +110,8 @@ function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
 				autoFocusEditor={!isSearchInputFocused}
 				className={styles.editor}
 			/>
+
+			<AiBot />
 		</div>
 	);
 }
