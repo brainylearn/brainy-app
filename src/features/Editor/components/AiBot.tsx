@@ -7,17 +7,27 @@ import {
 } from "@mdi/js";
 import styles from "./styles.module.css";
 import { useState } from "react";
+import { Channel } from "@tauri-apps/api/core";
+import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
+import { streamAiResponse } from "../../../api/aiApi";
 
 // TODO: should be used for both editor and reviewer
-// TODO: rename and refactor
+// TODO: rename and refactor, and move to own folder
 // TODO: responsivity
 // TODO: unit test
 export default function AiBot() {
 	const [isOpen, setIsOpen] = useState(false);
+	const [userPrompt, setUserPrompt] = useState("");
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!userPrompt) return;
+
 		// TODO:
+		const onEvent = new Channel<StreamLlmResponseEvent>();
+		onEvent.onmessage = console.log;
+		void streamAiResponse("userPrompt", onEvent);
+		setUserPrompt("");
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -30,7 +40,6 @@ export default function AiBot() {
 				<div className={styles.aiChatPanel}>
 					<div className={styles.header}>
 						<p>AI Assistant</p>
-						{/*TODO: better on hover and click style*/}
 						<button onClick={() => setIsOpen(false)}>
 							<Icon path={mdiClose} size={1} />
 						</button>
@@ -48,6 +57,8 @@ export default function AiBot() {
 						<input
 							type="text"
 							placeholder="Ask any question, order to do anything"
+							value={userPrompt}
+							onChange={e => setUserPrompt(e.target.value)}
 						/>
 						<button className="transparent" title="Add attachment">
 							<Icon path={mdiAttachment} size={1} />

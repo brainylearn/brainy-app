@@ -1,3 +1,4 @@
+mod ai_api;
 mod auth_api;
 mod cell_api;
 mod export_import_api;
@@ -48,6 +49,8 @@ pub use fsrs_api::{
 };
 
 pub use sync_api::sync;
+
+pub use ai_api::stream_ai_response;
 
 #[derive(Serialize)]
 pub struct ApiError(String);

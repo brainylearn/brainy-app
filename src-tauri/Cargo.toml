@@ -22,6 +22,7 @@ async-trait = "0.1.89"
 brainy_core = { path = "./brainy_core" }
 chrono = { version = "0.4.43", features = ["serde"] }
 log = "0.4.29"
+ollama-rs = { version = "0.3.3", features = ["stream"] }
 prost = "0.14.3"
 prost-types = "0.14.3"
 reqwest = { version = "0.13.1" }
@@ -35,6 +36,7 @@ tauri-plugin-opener = "2.5.3"
 tauri-plugin-process = "2.3.1"
 thiserror = "2.0.17"
 tokio = { version = "1.49.0", features = ["full"] }
+tokio-stream = "0.1.18"
 uuid = { version = "1.19.0", features = [ "v4", "serde" ] }
 
 [dev-dependencies]

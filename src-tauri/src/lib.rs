@@ -19,6 +19,7 @@ use brainy_core::{
     settings::{Settings, get_settings_dir},
     sync::sync_service::SyncService,
 };
+use ollama_rs::Ollama;
 use reqwest::Url;
 use tauri::Manager;
 
@@ -116,6 +117,8 @@ pub async fn run() -> Result<(), String> {
 
             app.manage(Arc::new(Mutex::new(settings)));
 
+            app.manage(Arc::new(Ollama::new("http://localhost".to_string(), 11434)));
+
             #[cfg(dev)]
             {
                 let _ = app
@@ -203,6 +206,8 @@ pub async fn run() -> Result<(), String> {
             set_fsrs_profile_choice_for_file,
             set_fsrs_profile_choice_for_folder,
             delete_fsrs_profile,
+            // AI
+            stream_ai_response,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
