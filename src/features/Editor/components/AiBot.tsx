@@ -11,6 +11,7 @@ import { useState } from "react";
 // TODO: should be used for both editor and reviewer
 // TODO: rename and refactor
 // TODO: responsivity
+// TODO: unit test
 export default function AiBot() {
 	const [isOpen, setIsOpen] = useState(false);
 
@@ -19,8 +20,12 @@ export default function AiBot() {
 		// TODO:
 	};
 
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Escape") setIsOpen(false);
+	};
+
 	return (
-		<div className={styles.aiBotContainer}>
+		<div className={styles.aiBotContainer} onKeyDown={handleKeyDown}>
 			{isOpen && (
 				<div className={styles.aiChatPanel}>
 					<div className={styles.header}>
@@ -54,11 +59,13 @@ export default function AiBot() {
 				</div>
 			)}
 
-			<button
-				className={`primary ${styles.aiFloatingButton}`}
-				onClick={() => setIsOpen(!isOpen)}>
-				<Icon path={mdiRobotOutline} size={1.6} />
-			</button>
+			{!isOpen && (
+				<button
+					className={`primary ${styles.aiFloatingButton}`}
+					onClick={() => setIsOpen(true)}>
+					<Icon path={mdiRobotOutline} size={1.6} />
+				</button>
+			)}
 		</div>
 	);
 }
