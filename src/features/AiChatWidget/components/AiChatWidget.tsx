@@ -10,23 +10,52 @@ import { useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
 import { streamAiResponse } from "../../../api/aiApi";
+import Message from "../types/message";
+import Markdown from "react-markdown";
 
 // TODO: should be used for both editor and reviewer
-// TODO: rename and refactor, and move to own folder
 // TODO: responsivity
 // TODO: unit test
-export default function AiBot() {
+export default function AiChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
+	const [isSendingRequest, setIsSendingRequest] = useState(false);
+	const [messages, setMessages] = useState<Message[]>([]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!userPrompt) return;
 
-		// TODO:
+		setMessages([
+			...messages,
+			{
+				from: "human",
+				content: userPrompt,
+			},
+			{
+				from: "bot",
+				content: "",
+			},
+		]);
+
 		const onEvent = new Channel<StreamLlmResponseEvent>();
-		onEvent.onmessage = console.log;
-		void streamAiResponse("userPrompt", onEvent);
+		onEvent.onmessage = event => {
+			setMessages(messages => {
+				// TODO: handle start and error
+				const lastMessage = messages[messages.length - 1];
+				if (event.event === "inProgress") {
+					return [
+						...messages.slice(0, -1),
+						{
+							...lastMessage,
+							content: lastMessage.content + event.data,
+						},
+					];
+				}
+				return messages;
+			});
+		};
+		void streamAiResponse(userPrompt, onEvent);
 		setUserPrompt("");
 	};
 
@@ -34,10 +63,12 @@ export default function AiBot() {
 		if (e.key === "Escape") setIsOpen(false);
 	};
 
+	// TODO: make user input field expandable when writing
+	// TODO: add stop generating button
 	return (
-		<div className={styles.aiBotContainer} onKeyDown={handleKeyDown}>
+		<div className={styles.container} onKeyDown={handleKeyDown}>
 			{isOpen && (
-				<div className={styles.aiChatPanel}>
+				<div className={styles.chatPanel}>
 					<div className={styles.header}>
 						<p>AI Assistant</p>
 						<button onClick={() => setIsOpen(false)}>
@@ -46,11 +77,11 @@ export default function AiBot() {
 					</div>
 
 					<div className={styles.messages}>
-						<div className={styles.bot}>Message form the bot</div>
-
-						<div className={styles.human}>
-							Message form the human
-						</div>
+						{messages.map((message, i) => (
+							<div key={i} className={styles[message.from]}>
+								<Markdown>{message.content}</Markdown>
+							</div>
+						))}
 					</div>
 
 					<form onSubmit={handleSubmit}>
@@ -72,7 +103,7 @@ export default function AiBot() {
 
 			{!isOpen && (
 				<button
-					className={`primary ${styles.aiFloatingButton}`}
+					className={`primary ${styles.floatingButton}`}
 					onClick={() => setIsOpen(true)}>
 					<Icon path={mdiRobotOutline} size={1.6} />
 				</button>

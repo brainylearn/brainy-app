@@ -32,13 +32,13 @@ pub async fn stream_ai_response(
         Err(err) => return Err(ApiError(err.to_string())),
     };
 
+    // TODO: add started event
+
     while let Some(res) = stream.next().await {
         let responses = match res {
             Ok(responses) => responses,
             Err(err) => {
-                on_event
-                    .send(StreamLlmResponseEvent::Error(err.to_string()))
-                    .unwrap();
+                on_event.send(StreamLlmResponseEvent::Error(err.to_string()))?;
                 break;
             }
         };
@@ -49,7 +49,7 @@ pub async fn stream_ai_response(
         }
     }
 
-    on_event.send(StreamLlmResponseEvent::Finished).unwrap();
+    on_event.send(StreamLlmResponseEvent::Finished)?;
 
     Ok(())
 }
