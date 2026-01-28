@@ -32,8 +32,6 @@ pub async fn stream_ai_response(
         Err(err) => return Err(ApiError(err.to_string())),
     };
 
-    // TODO: add started event
-
     while let Some(res) = stream.next().await {
         let responses = match res {
             Ok(responses) => responses,

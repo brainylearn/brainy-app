@@ -4,6 +4,7 @@ import {
 	mdiClose,
 	mdiRobotOutline,
 	mdiSendVariantOutline,
+	mdiStopCircleOutline,
 } from "@mdi/js";
 import styles from "./styles.module.css";
 import { useState } from "react";
@@ -24,7 +25,7 @@ export default function AiChatWidget() {
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!userPrompt) return;
+		if (!userPrompt || isSendingRequest) return;
 
 		setMessages([
 			...messages,
@@ -38,12 +39,12 @@ export default function AiChatWidget() {
 			},
 		]);
 
+		setIsSendingRequest(true);
 		const onEvent = new Channel<StreamLlmResponseEvent>();
 		onEvent.onmessage = event => {
 			setMessages(messages => {
-				// TODO: handle start and error
-				const lastMessage = messages[messages.length - 1];
 				if (event.event === "inProgress") {
+					const lastMessage = messages[messages.length - 1];
 					return [
 						...messages.slice(0, -1),
 						{
@@ -51,7 +52,10 @@ export default function AiChatWidget() {
 							content: lastMessage.content + event.data,
 						},
 					];
+				} else if (event.event === "finished") {
+					setIsSendingRequest(false);
 				}
+				// TODO: error handling here and around the invoke
 				return messages;
 			});
 		};
@@ -94,9 +98,17 @@ export default function AiChatWidget() {
 						<button className="transparent" title="Add attachment">
 							<Icon path={mdiAttachment} size={1} />
 						</button>
-						<button className="transparent" title="Send">
-							<Icon path={mdiSendVariantOutline} size={1} />
-						</button>
+						{!isSendingRequest && (
+							<button className="transparent" title="Send">
+								<Icon path={mdiSendVariantOutline} size={1} />
+							</button>
+						)}
+
+						{isSendingRequest && (
+							<button className="transparent" title="Stop">
+								<Icon path={mdiStopCircleOutline} size={1} />
+							</button>
+						)}
 					</form>
 				</div>
 			)}
