@@ -4,6 +4,7 @@ mod dto;
 use std::{sync::Arc, time::Duration};
 
 use brainy_core::{
+    ai_integration::ai_service::AiService,
     backend::{
         brainy_backend_http_client::BrainyBackendHttpClient,
         traits::brainy_backend_client::BrainyBackendClient,
@@ -19,13 +20,14 @@ use brainy_core::{
     settings::{Settings, get_settings_dir},
     sync::sync_service::SyncService,
 };
-use ollama_rs::Ollama;
 use reqwest::Url;
 use tauri::Manager;
 
 use api::*;
 use tauri_plugin_window_state::StateFlags;
 use tokio::sync::Mutex;
+
+use langchain_rust::llm::ollama::client::Ollama;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
@@ -117,7 +119,9 @@ pub async fn run() -> Result<(), String> {
 
             app.manage(Arc::new(Mutex::new(settings)));
 
-            app.manage(Arc::new(Ollama::new("http://localhost".to_string(), 11434)));
+            // TODO: make it into a configuration
+            let model = Ollama::default().with_model("ministral-3:14b");
+            app.manage(Arc::new(AiService::new(Box::new(model))));
 
             #[cfg(dev)]
             {
@@ -208,6 +212,7 @@ pub async fn run() -> Result<(), String> {
             delete_fsrs_profile,
             // AI
             stream_ai_response,
+            generate_ai_response,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

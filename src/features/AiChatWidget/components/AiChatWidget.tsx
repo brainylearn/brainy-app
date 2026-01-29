@@ -7,26 +7,31 @@ import {
 	mdiStopCircleOutline,
 } from "@mdi/js";
 import styles from "./styles.module.css";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
 import { streamAiResponse } from "../../../api/aiApi";
 import Message from "../types/message";
 import Markdown from "react-markdown";
+import errorToString from "../../../utils/errorToString";
+import Alert from "../../../components/Alert/Alert";
+import Spinner from "../../../components/Spinner/Spinner";
 
-// TODO: should be used for both editor and reviewer
 // TODO: responsivity
 // TODO: unit test
 export default function AiChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
+	const [errorMessage, setErrorMessage] = useState("");
 	const [isSendingRequest, setIsSendingRequest] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
+	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
+	const sendMessage = async () => {
 		if (!userPrompt || isSendingRequest) return;
 
+		setErrorMessage("");
+		setIsSendingRequest(true);
 		setMessages([
 			...messages,
 			{
@@ -39,7 +44,6 @@ export default function AiChatWidget() {
 			},
 		]);
 
-		setIsSendingRequest(true);
 		const onEvent = new Channel<StreamLlmResponseEvent>();
 		onEvent.onmessage = event => {
 			setMessages(messages => {
@@ -54,23 +58,52 @@ export default function AiChatWidget() {
 					];
 				} else if (event.event === "finished") {
 					setIsSendingRequest(false);
+				} else if (event.event === "error") {
+					setErrorMessage(event.data);
+					setIsSendingRequest(false);
 				}
-				// TODO: error handling here and around the invoke
 				return messages;
 			});
 		};
-		void streamAiResponse(userPrompt, onEvent);
 		setUserPrompt("");
+
+		try {
+			await streamAiResponse(userPrompt, onEvent);
+		} catch (e) {
+			setErrorMessage(errorToString(e));
+			setIsSendingRequest(false);
+		}
 	};
 
-	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === "Escape") setIsOpen(false);
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		void sendMessage();
 	};
 
-	// TODO: make user input field expandable when writing
-	// TODO: add stop generating button
+	const handleTextAreaKeyDown = (
+		e: React.KeyboardEvent<HTMLTextAreaElement>,
+	) => {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			void sendMessage();
+		} else if (e.key === "Escape") {
+			setIsOpen(false);
+		}
+	};
+
+	useEffect(() => {
+		if (textAreaRef.current) {
+			textAreaRef.current.style.height = "auto";
+			textAreaRef.current.style.height =
+				textAreaRef.current.scrollHeight + "px";
+		}
+	}, [userPrompt]);
+
+	// TODO: make generating button work
+	// TODO: show loading text when generating
+	// TODO: keep scrolling down
 	return (
-		<div className={styles.container} onKeyDown={handleKeyDown}>
+		<div className={styles.container}>
 			{isOpen && (
 				<div className={styles.chatPanel}>
 					<div className={styles.header}>
@@ -82,18 +115,35 @@ export default function AiChatWidget() {
 
 					<div className={styles.messages}>
 						{messages.map((message, i) => (
-							<div key={i} className={styles[message.from]}>
+							<div
+								key={i}
+								className={`${styles.message} ${styles[message.from]}`}>
 								<Markdown>{message.content}</Markdown>
+								{/* TODO: better */}
+								{isSendingRequest &&
+									i === messages.length - 1 && (
+										<Spinner size={0.5} />
+									)}
 							</div>
 						))}
+
+						{errorMessage && (
+							<Alert
+								type="error"
+								onClose={() => setErrorMessage("")}>
+								{errorMessage}
+							</Alert>
+						)}
 					</div>
 
 					<form onSubmit={handleSubmit}>
-						<input
-							type="text"
-							placeholder="Ask any question, order to do anything"
+						<textarea
+							ref={textAreaRef}
+							placeholder="Ask a question"
 							value={userPrompt}
 							onChange={e => setUserPrompt(e.target.value)}
+							onKeyDown={handleTextAreaKeyDown}
+							rows={1}
 						/>
 						<button className="transparent" title="Add attachment">
 							<Icon path={mdiAttachment} size={1} />

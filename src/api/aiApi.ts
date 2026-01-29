@@ -10,3 +10,9 @@ export function streamAiResponse(
 		onEvent,
 	});
 }
+
+export function generateAiResponse(prompt: string): Promise<string> {
+	return invoke("generate_ai_response", {
+		prompt,
+	});
+}

@@ -1,53 +1,44 @@
 use std::sync::Arc;
 
-use ollama_rs::{Ollama, generation::completion::request::GenerationRequest};
-use serde::Serialize;
+use brainy_core::ai_integration::ai_service::{AiService, StreamLlmResponseEvent};
+use langchain_rust::schemas::Message;
 use tauri::{State, ipc::Channel};
-use tokio_stream::StreamExt;
 
 use crate::api::ApiError;
 
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase", tag = "event", content = "data")]
-pub enum StreamLlmResponseEvent {
-    InProgress(String),
-    Finished,
-    Error(String),
-}
-
 #[tauri::command]
 pub async fn stream_ai_response(
-    ollama: State<'_, Arc<Ollama>>,
+    ai_service: State<'_, Arc<AiService>>,
     on_event: Channel<StreamLlmResponseEvent>,
     prompt: String,
 ) -> Result<(), ApiError> {
-    // TODO: make it into a configuration
-    let model = "ministral-3:14b".to_string();
+    let result = ai_service
+        .stream(
+            &[Message::new_human_message(prompt)],
+            |event| match on_event.send(event) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err.to_string()),
+            },
+        )
+        .await;
 
-    let mut stream = match ollama
-        .generate_stream(GenerationRequest::new(model, prompt))
-        .await
-    {
-        Ok(stream) => stream,
-        Err(err) => return Err(ApiError(err.to_string())),
-    };
-
-    while let Some(res) = stream.next().await {
-        let responses = match res {
-            Ok(responses) => responses,
-            Err(err) => {
-                on_event.send(StreamLlmResponseEvent::Error(err.to_string()))?;
-                break;
-            }
-        };
-        for response in responses {
-            on_event
-                .send(StreamLlmResponseEvent::InProgress(response.response))
-                .unwrap();
-        }
+    match result {
+        Ok(()) => Ok(()),
+        Err(err) => Err(ApiError::new(err.to_string())),
     }
+}
 
-    on_event.send(StreamLlmResponseEvent::Finished)?;
+#[tauri::command]
+pub async fn generate_ai_response(
+    ai_service: State<'_, Arc<AiService>>,
+    prompt: String,
+) -> Result<String, ApiError> {
+    let result = ai_service
+        .generate(&[Message::new_human_message(prompt)])
+        .await;
 
-    Ok(())
+    match result {
+        Ok(result) => Ok(result),
+        Err(err) => Err(ApiError::new(err.to_string())),
+    }
 }
