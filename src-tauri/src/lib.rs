@@ -27,7 +27,7 @@ use api::*;
 use tauri_plugin_window_state::StateFlags;
 use tokio::sync::Mutex;
 
-use langchain_rust::llm::ollama::client::Ollama;
+use langchain_rust::llm::{client::GenerationOptions, ollama::client::Ollama};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
@@ -120,7 +120,9 @@ pub async fn run() -> Result<(), String> {
             app.manage(Arc::new(Mutex::new(settings)));
 
             // TODO: make it into a configuration
-            let model = Ollama::default().with_model("ministral-3:14b");
+            let model = Ollama::default()
+                .with_model("qwen3:4b-instruct-2507-q8_0")
+                .with_options(GenerationOptions::default().temperature(0.5f32));
             app.manage(Arc::new(AiService::new(Box::new(model))));
 
             #[cfg(dev)]

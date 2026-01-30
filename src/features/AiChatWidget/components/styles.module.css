@@ -50,7 +50,7 @@
 		background-color: var(--surface-background-color-tint-10);
 		padding: var(--spacing-4);
 		height: 32rem;
-		max-height: 60vh;
+		max-height: 50vh;
 		display: flex;
 		flex-direction: column;
 		gap: var(--spacing-4);
@@ -61,16 +61,22 @@
 
 		& .message {
 			background-color: var(--default-background-color);
-			max-width: 80%;
+			max-width: 90%;
 			padding: var(--spacing-2);
 			border-radius: var(--default-border-radius);
 			border: var(--default-border-width) solid var(--border-color);
 			word-break: break-all;
 		}
 
+		.spinner::after {
+			content: "⠋";
+			animation: spin 1s steps(10) infinite;
+			color: var(--primary-color);
+		}
+
 		& ol,
 		& ul {
-			margin: 0 var(--spacing-6);
+			margin: 0 var(--spacing-8);
 		}
 
 		& .human {
@@ -99,6 +105,44 @@
 			min-height: 3.6rem;
 			max-height: 8rem;
 		}
+	}
+}
+
+.spinner::after {
+	content: "⠋";
+	animation: spin 1s steps(10) infinite;
+}
+
+@keyframes spin {
+	0% {
+		content: "⠋";
+	}
+	10% {
+		content: "⠙";
+	}
+	20% {
+		content: "⠹";
+	}
+	30% {
+		content: "⠸";
+	}
+	40% {
+		content: "⠼";
+	}
+	50% {
+		content: "⠴";
+	}
+	60% {
+		content: "⠦";
+	}
+	70% {
+		content: "⠧";
+	}
+	80% {
+		content: "⠇";
+	}
+	90% {
+		content: "⠏";
 	}
 }
 

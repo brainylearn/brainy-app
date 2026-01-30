@@ -15,9 +15,8 @@ import Message from "../types/message";
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
-import Spinner from "../../../components/Spinner/Spinner";
+import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
 
-// TODO: responsivity
 // TODO: unit test
 export default function AiChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +25,7 @@ export default function AiChatWidget() {
 	const [isSendingRequest, setIsSendingRequest] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
 	const sendMessage = async () => {
 		if (!userPrompt || isSendingRequest) return;
@@ -99,9 +99,18 @@ export default function AiChatWidget() {
 		}
 	}, [userPrompt]);
 
-	// TODO: make generating button work
-	// TODO: show loading text when generating
-	// TODO: keep scrolling down
+	useEffect(() => {
+		if (!messagesContainerRef.current) return;
+
+		const container = messagesContainerRef.current;
+
+		const position = container.scrollTop + container.clientHeight;
+		if (container.scrollHeight - position < AUTO_SCROLL_THRESHOLD) {
+			container.scrollTop = container.scrollHeight;
+		}
+	}, [messages]);
+
+	// TODO: make stop generating button work
 	return (
 		<div className={styles.container}>
 			{isOpen && (
@@ -113,16 +122,15 @@ export default function AiChatWidget() {
 						</button>
 					</div>
 
-					<div className={styles.messages}>
+					<div className={styles.messages} ref={messagesContainerRef}>
 						{messages.map((message, i) => (
 							<div
 								key={i}
 								className={`${styles.message} ${styles[message.from]}`}>
 								<Markdown>{message.content}</Markdown>
-								{/* TODO: better */}
 								{isSendingRequest &&
 									i === messages.length - 1 && (
-										<Spinner size={0.5} />
+										<div className={styles.spinner}></div>
 									)}
 							</div>
 						))}
