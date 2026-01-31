@@ -27,8 +27,6 @@ use api::*;
 use tauri_plugin_window_state::StateFlags;
 use tokio::sync::Mutex;
 
-use langchain_rust::llm::{client::GenerationOptions, ollama::client::Ollama};
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
@@ -117,13 +115,11 @@ pub async fn run() -> Result<(), String> {
 
             app.manage(backend_client);
 
-            app.manage(Arc::new(Mutex::new(settings)));
+            let settings = Arc::new(Mutex::new(settings));
 
-            // TODO: make it into a configuration
-            let model = Ollama::default()
-                .with_model("qwen3:4b-instruct-2507-q8_0")
-                .with_options(GenerationOptions::default().temperature(0.5f32));
-            app.manage(Arc::new(AiService::new(Box::new(model))));
+            app.manage(settings.clone());
+
+            app.manage(Arc::new(AiService::new(settings)));
 
             #[cfg(dev)]
             {
@@ -214,7 +210,6 @@ pub async fn run() -> Result<(), String> {
             delete_fsrs_profile,
             // AI
             stream_ai_response,
-            generate_ai_response,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

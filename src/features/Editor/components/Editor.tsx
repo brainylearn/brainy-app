@@ -11,6 +11,8 @@ import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
 import EditableCells from "../../EditableCells/components/EditableCells";
 import AiChatWidget from "../../AiChatWidget/components/AiChatWidget";
+import useAppSelector from "../../../hooks/useAppSelector";
+import { selectSettings } from "../../../stores/settings/settingsSelector";
 
 interface Props {
 	initialSelectedCellId: string | null;
@@ -19,6 +21,7 @@ interface Props {
 }
 
 function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
+	const settings = useAppSelector(selectSettings);
 	const [searchText, setSearchText] = useState("");
 	const [repetitionCounts, setRepetitionCounts] =
 		useState<FileRepetitionCounts>({
@@ -111,7 +114,7 @@ function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
 				className={styles.editor}
 			/>
 
-			<AiChatWidget />
+			{settings?.enableAi && <AiChatWidget />}
 		</div>
 	);
 }
