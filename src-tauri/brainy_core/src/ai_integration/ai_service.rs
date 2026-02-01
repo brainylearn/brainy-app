@@ -11,7 +11,15 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
-use crate::{ai_integration::tools::create_flash_card::CreateFlashCard, settings::Settings};
+use crate::{
+    ai_integration::{
+        clients::multi_completion_client::{
+            MultiCompletionClient, multi_completion_model::MultiCompletionModel,
+        },
+        tools::create_flash_card::CreateFlashCard,
+    },
+    settings::Settings,
+};
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -76,24 +84,28 @@ impl AiService {
         Ok(())
     }
 
-    async fn get_agent(&self) -> Result<Agent<ollama::CompletionModel>, AiServiceError> {
+    async fn get_agent(&self) -> Result<Agent<MultiCompletionModel>, AiServiceError> {
         let settings = self.settings.lock().await;
         if !settings.enable_ai {
             return Err(AiServiceError::AiNotEnabled);
         }
 
-        match settings.ollama_model_name {
+        let (multi_client, model_name) = match settings.ollama_model_name {
             Some(ref model_name) => {
                 log::info!("Using the Ollama model with name '{model_name}'.");
-                let model = ollama::Client::from_val(Nothing);
-                Ok(model
-                    .agent(model_name)
-                    .temperature(0.5f64)
-                    // TODO: add it conditionally
-                    .tool(CreateFlashCard)
-                    .build())
+                (
+                    MultiCompletionClient::Ollama(ollama::Client::from_val(Nothing)),
+                    model_name,
+                )
             }
-            None => Err(AiServiceError::OllamaModelNameIsNotFilled),
-        }
+            None => return Err(AiServiceError::OllamaModelNameIsNotFilled),
+        };
+
+        Ok(multi_client
+            .agent(model_name)
+            .temperature(0.5f64)
+            // TODO: add it conditionally
+            .tool(CreateFlashCard)
+            .build())
     }
 }
