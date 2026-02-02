@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use brainy_core::ai_integration::ai_service::{AiService, StreamLlmResponseEvent};
+use brainy_core::ai_integration::{
+    ai_service::{AiService, StreamLlmResponseEvent},
+    ai_state::AiState,
+};
 use tauri::{State, ipc::Channel};
 
 use crate::api::ApiError;
@@ -22,4 +25,10 @@ pub async fn stream_ai_response(
         Ok(()) => Ok(()),
         Err(err) => Err(ApiError::new(err.to_string())),
     }
+}
+
+#[tauri::command]
+pub async fn stop_ai_generation(ai_state: State<'_, Arc<AiState>>) -> Result<(), ApiError> {
+    ai_state.cancel_generation();
+    Ok(())
 }

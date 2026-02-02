@@ -10,7 +10,7 @@ import styles from "./styles.module.css";
 import { useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
-import { streamAiResponse } from "../../../api/aiApi";
+import { stopAiGeneration, streamAiResponse } from "../../../api/aiApi";
 import Message from "../types/message";
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
@@ -110,7 +110,12 @@ export default function AiChatWidget() {
 		}
 	}, [messages]);
 
-	// TODO: make stop generating button work
+	useEffect(() => {
+		return () => {
+			void stopAiGeneration();
+		};
+	}, []);
+
 	return (
 		<div className={styles.container}>
 			{isOpen && (
@@ -163,7 +168,10 @@ export default function AiChatWidget() {
 						)}
 
 						{isSendingRequest && (
-							<button className="transparent" title="Stop">
+							<button
+								className="transparent"
+								title="Stop"
+								onClick={() => void stopAiGeneration()}>
 								<Icon path={mdiStopCircleOutline} size={1} />
 							</button>
 						)}

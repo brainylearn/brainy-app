@@ -114,6 +114,7 @@ function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
 				className={styles.editor}
 			/>
 
+			{/* TODO: unit test */}
 			{settings?.enableAi && <AiChatWidget />}
 		</div>
 	);

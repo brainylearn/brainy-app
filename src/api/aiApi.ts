@@ -11,8 +11,6 @@ export function streamAiResponse(
 	});
 }
 
-export function generateAiResponse(prompt: string): Promise<string> {
-	return invoke("generate_ai_response", {
-		prompt,
-	});
+export function stopAiGeneration(): Promise<void> {
+	return invoke("stop_ai_generation");
 }
