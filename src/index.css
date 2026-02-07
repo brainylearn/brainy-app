@@ -294,6 +294,10 @@ button.secondary:focus {
 	outline-color: var(--secondary-color-shade-10);
 }
 
+button.transparent {
+	color: var(--text-color);
+}
+
 button.transparent:not(:disabled):hover {
 	background-color: var(--surface-background-color);
 }
@@ -387,8 +391,8 @@ h1 {
 
 /* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
-	width: 0.8rem;
-	height: 0.8rem;
+	width: 0.6rem;
+	height: 0.6rem;
 }
 
 ::-webkit-scrollbar-track {

@@ -16,6 +16,7 @@ import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
 import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
+import Select from "../../../components/Select/Select";
 
 // TODO: unit test
 export default function AiChatWidget() {
@@ -24,6 +25,7 @@ export default function AiChatWidget() {
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isSendingRequest, setIsSendingRequest] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
+	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -68,8 +70,7 @@ export default function AiChatWidget() {
 		setUserPrompt("");
 
 		try {
-			// TODO:
-			await streamAiResponse(userPrompt, null, onEvent);
+			await streamAiResponse(userPrompt, selectedChatId, onEvent);
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 			setIsSendingRequest(false);
@@ -117,13 +118,34 @@ export default function AiChatWidget() {
 		};
 	}, []);
 
+	// TODO: get all chats
 	return (
 		<div className={styles.container}>
 			{isOpen && (
 				<div className={styles.chatPanel}>
 					<div className={styles.header}>
-						<p>AI Assistant</p>
-						<button onClick={() => setIsOpen(false)}>
+						<Select
+							onChange={setSelectedChatId}
+							options={[
+								{
+									value: null,
+									label: "New session",
+								},
+								{
+									value: "new-session-2",
+									label: "New session 2",
+								},
+								{
+									value: "new-session-3",
+									label: "New session 3",
+								},
+							]}
+							value={selectedChatId}
+							containerClassName={styles.select}
+						/>
+						<button
+							onClick={() => setIsOpen(false)}
+							className="transparent">
 							<Icon path={mdiClose} size={1} />
 						</button>
 					</div>

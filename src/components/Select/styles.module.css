@@ -1,0 +1,32 @@
+.container {
+	position: relative;
+}
+
+/* TODO: max height, overflow on text button and on options */
+.options {
+	position: absolute;
+	background-color: var(--default-background-color);
+	border-radius: var(--default-border-radius);
+	box-shadow: var(--default-box-shadow);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-2);
+	padding: var(--spacing-3);
+
+	& > button {
+		padding: var(--spacing-3) var(--spacing-4);
+
+		&.selected {
+			background-color: var(--surface-background-color);
+		}
+	}
+
+	bottom: calc(-1 * var(--spacing-1));
+	transform: translateY(100%);
+}
+
+.drop-down-button {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-3);
+}

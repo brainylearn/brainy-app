@@ -17,31 +17,24 @@
 	border-radius: var(--default-border-radius);
 
 	& .header {
-		background-color: var(--primary-color);
-		color: #fff;
+		background-color: var(--default-background-color);
 		display: flex;
 		gap: var(--spacing-4);
 		align-items: center;
 		justify-content: space-between;
 		padding: var(--spacing-2) var(--spacing-4);
 
-		border-left: var(--default-border-width) solid var(--primary-color);
+		border: var(--default-border-width) solid var(--border-color);
 
 		border-radius: var(--default-border-radius);
 		border-bottom-right-radius: 0;
 		border-bottom-left-radius: 0;
 
-		& button {
-			&:hover {
-				background-color: var(--primary-color-shade-10);
-			}
+		.select {
+			width: 100%;
 
-			&:active {
-				background-color: var(--primary-color-shade-20);
-			}
-
-			&:focus {
-				outline-color: #fff;
+			& * {
+				text-align: left;
 			}
 		}
 	}
