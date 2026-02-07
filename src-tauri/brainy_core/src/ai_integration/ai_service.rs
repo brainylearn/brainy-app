@@ -5,7 +5,7 @@ use rig::{
     client::{CompletionClient, Nothing, ProviderClient},
     completion::PromptError,
     providers::ollama,
-    streaming::{StreamedAssistantContent, StreamingPrompt},
+    streaming::{StreamedAssistantContent, StreamingChat},
 };
 use serde::Serialize;
 use thiserror::Error;
@@ -13,14 +13,18 @@ use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
 use crate::{
+    Guid,
     ai_integration::{
         ai_state::AiState,
         clients::multi_completion_client::{
             MultiCompletionClient, multi_completion_model::MultiCompletionModel,
         },
+        entities::chat::Chat,
+        repositories::traits::ai_repository::AiRepository,
         state_cancellation_hook::StateCancellationHook,
         tools::create_flash_card::CreateFlashCard,
     },
+    common::repository_error::RepositoryError,
     settings::Settings,
 };
 
@@ -34,6 +38,8 @@ pub enum StreamLlmResponseEvent {
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum AiServiceError {
+    #[error("{0}")]
+    UnknownRepositoryError(#[from] RepositoryError),
     #[error("Ai is not enabled in settings!")]
     AiNotEnabled,
     #[error("Ollama model name is not filled in settings!")]
@@ -51,23 +57,51 @@ impl From<String> for AiServiceError {
 pub struct AiService {
     settings: Arc<Mutex<Settings>>,
     state: Arc<AiState>,
+    ai_repository: Arc<dyn AiRepository>,
 }
 
 // TODO: unit test
 impl AiService {
-    pub fn new(settings: Arc<Mutex<Settings>>, state: Arc<AiState>) -> Self {
-        Self { settings, state }
+    pub fn new(
+        settings: Arc<Mutex<Settings>>,
+        state: Arc<AiState>,
+        ai_repository: Arc<dyn AiRepository>,
+    ) -> Self {
+        Self {
+            settings,
+            state,
+            ai_repository,
+        }
     }
 
-    pub async fn stream<F>(&self, prompt: String, on_event: F) -> Result<(), AiServiceError>
+    pub async fn stream<F>(
+        &self,
+        prompt: String,
+        chat_id: Option<Guid>,
+        on_event: F,
+    ) -> Result<(), AiServiceError>
     where
         F: Fn(StreamLlmResponseEvent) -> Result<(), String>,
     {
         let _ = self.state.start_generation().await;
 
+        let chat;
+        if let Some(chat_id) = chat_id {
+            chat = self.ai_repository.get_by_id(chat_id).await?;
+        } else {
+            // TODO: name
+            chat = Chat::new(None, "Test".into(), vec![]);
+        }
+
+        let messages = chat
+            .messages()
+            .iter()
+            .map(|message| message.clone().into())
+            .collect();
+
         let agent = self.get_agent().await?;
         let mut stream = agent
-            .stream_prompt(prompt)
+            .stream_chat(prompt, messages)
             .with_hook(StateCancellationHook::new(self.state.clone()))
             .await;
 
@@ -100,10 +134,23 @@ impl AiService {
 
         on_event(StreamLlmResponseEvent::Finished)?;
 
+        // TODO: add user message and ai and save them to chat
+
         Ok(())
     }
 
     async fn get_agent(&self) -> Result<Agent<MultiCompletionModel>, AiServiceError> {
+        let client = self.get_multi_completion_client().await?;
+        let model_name = self.get_model_name().await;
+
+        Ok(client
+            .agent(model_name)
+            .temperature(0.5f64)
+            .tool(CreateFlashCard)
+            .build())
+    }
+
+    async fn get_multi_completion_client(&self) -> Result<MultiCompletionClient, AiServiceError> {
         let settings = self.settings.lock().await;
         if !settings.enable_ai {
             return Err(AiServiceError::AiNotEnabled);
@@ -112,15 +159,15 @@ impl AiService {
         if settings.ollama_model_name.is_none() {
             return Err(AiServiceError::OllamaModelNameIsNotFilled);
         }
-        let model_name = settings.ollama_model_name.as_ref().unwrap();
 
-        log::info!("Using the Ollama model with name '{model_name}'.");
-        let multi_client = MultiCompletionClient::Ollama(ollama::Client::from_val(Nothing));
+        let client = MultiCompletionClient::Ollama(ollama::Client::from_val(Nothing));
+        Ok(client)
+    }
 
-        Ok(multi_client
-            .agent(model_name)
-            .temperature(0.5f64)
-            .tool(CreateFlashCard)
-            .build())
+    async fn get_model_name(&self) -> String {
+        let settings = self.settings.lock().await;
+        let model_name = settings.ollama_model_name.as_ref().unwrap().clone();
+        log::info!("Using the model with name '{model_name}'.");
+        model_name
     }
 }

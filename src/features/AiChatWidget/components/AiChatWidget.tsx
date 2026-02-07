@@ -68,7 +68,8 @@ export default function AiChatWidget() {
 		setUserPrompt("");
 
 		try {
-			await streamAiResponse(userPrompt, onEvent);
+			// TODO:
+			await streamAiResponse(userPrompt, null, onEvent);
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 			setIsSendingRequest(false);

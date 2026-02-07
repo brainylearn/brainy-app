@@ -3,11 +3,13 @@ import { StreamLlmResponseEvent } from "../types/backend/events/streamLlmRespons
 
 export function streamAiResponse(
 	prompt: string,
+	chatId: string | null,
 	onEvent: Channel<StreamLlmResponseEvent>,
 ): Promise<void> {
 	return invoke("stream_ai_response", {
 		prompt,
 		onEvent,
+		chatId,
 	});
 }
 

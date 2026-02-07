@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
-use brainy_core::ai_integration::{
-    ai_service::{AiService, StreamLlmResponseEvent},
-    ai_state::AiState,
+use brainy_core::{
+    Guid,
+    ai_integration::{
+        ai_service::{AiService, StreamLlmResponseEvent},
+        ai_state::AiState,
+    },
 };
 use tauri::{State, ipc::Channel};
 
@@ -13,9 +16,10 @@ pub async fn stream_ai_response(
     ai_service: State<'_, Arc<AiService>>,
     on_event: Channel<StreamLlmResponseEvent>,
     prompt: String,
+    chat_id: Option<Guid>,
 ) -> Result<(), ApiError> {
     let result = ai_service
-        .stream(prompt, |event| match on_event.send(event) {
+        .stream(prompt, chat_id, |event| match on_event.send(event) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         })

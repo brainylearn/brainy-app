@@ -173,3 +173,23 @@ CREATE TABLE local_configurations(
     name                        TEXT        NOT NULL        PRIMARY KEY,
     value                       TEXT        NOT NULL
 );
+
+-------------------------------------------------------------------------
+
+CREATE TABLE ai_chats(
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    name                        TEXT        NOT NULL
+);
+
+-------------------------------------------------------------------------
+
+CREATE TABLE ai_messages(
+    ai_chat_id                  TEXT        NOT NULL,
+    message_index               INTEGER     NOT NULL,
+    role                        TEXT        NOT NULL,
+    content                     TEXT,
+    PRIMARY KEY (ai_chat_id, message_index),
+    FOREIGN KEY (ai_chat_id) REFERENCES ai_chats(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE INDEX ai_messages_ai_chat_id_index ON ai_messages(ai_chat_id);

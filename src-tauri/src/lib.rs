@@ -109,10 +109,6 @@ pub async fn run() -> Result<(), String> {
                 settings_directory,
             );
 
-            app.manage(
-                Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
-            );
-
             app.manage(backend_client);
 
             let settings = Arc::new(Mutex::new(settings));
@@ -120,8 +116,16 @@ pub async fn run() -> Result<(), String> {
             app.manage(settings.clone());
 
             let ai_state = Arc::new(AiState::default());
-            app.manage(Arc::new(AiService::new(settings, ai_state.clone())));
+            app.manage(Arc::new(AiService::new(
+                settings,
+                ai_state.clone(),
+                repositories_context.ai_repository(),
+            )));
             app.manage(ai_state);
+
+            app.manage(
+                Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
+            );
 
             #[cfg(dev)]
             {
