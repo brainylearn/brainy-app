@@ -15,17 +15,11 @@ export interface Option {
 interface Props {
 	options: Option[];
 	value: string | null;
-	containerClassName?: string;
 	onChange: (value: string | null) => void;
 }
 
 // TODO: unit test
-export default function Select({
-	containerClassName,
-	options,
-	value,
-	onChange,
-}: Props) {
+export default function Select({ options, value, onChange }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -45,9 +39,7 @@ export default function Select({
 	};
 
 	return (
-		<div
-			className={`${styles.container} ${containerClassName}`}
-			ref={containerRef}>
+		<div className={`${styles.container}`} ref={containerRef}>
 			<button
 				onClick={() => setIsOpen(!isOpen)}
 				className={`transparent ${styles.dropDownButton}`}>

@@ -39,7 +39,8 @@ export default function AiChatWidget() {
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
-	const loadChatsWithMessages = async () => {
+	const loadChats = async () => {
+		// TODO: sort chats from newer to older
 		setChats(await getAllAiChats());
 		// TODO: get messages when opening or switching session
 	};
@@ -75,6 +76,16 @@ export default function AiChatWidget() {
 					];
 				} else if (event.event === "finished") {
 					setIsSendingRequest(false);
+				} else if (event.event === "createdChat") {
+					// TODO: fix messages
+					setChats(chats => {
+						let newValue = chats;
+						if (!newValue.some(chat => chat.id === event.data.id)) {
+							newValue = [event.data, ...chats];
+						}
+						return newValue;
+					});
+					setSelectedChatId(event.data.id);
 				} else if (event.event === "error") {
 					setErrorMessage(event.data);
 					setIsSendingRequest(false);
@@ -86,8 +97,6 @@ export default function AiChatWidget() {
 
 		try {
 			await streamAiResponse(userPrompt, selectedChatId, onEvent);
-			await loadChatsWithMessages();
-			// TODO: set select chat id to new session
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 			setIsSendingRequest(false);
@@ -137,7 +146,7 @@ export default function AiChatWidget() {
 
 	useEffect(() => {
 		void (async () => {
-			await loadChatsWithMessages();
+			await loadChats();
 		})();
 	}, []);
 
@@ -145,7 +154,7 @@ export default function AiChatWidget() {
 		await deleteAiChat(selectedChatId!);
 		setSelectedChatId(null);
 		setShowDeleteChatDialog(false);
-		await loadChatsWithMessages();
+		await loadChats();
 	};
 
 	return (
@@ -166,7 +175,6 @@ export default function AiChatWidget() {
 							<Select
 								onChange={setSelectedChatId}
 								value={selectedChatId}
-								containerClassName={styles.select}
 								options={[
 									{
 										value: null,

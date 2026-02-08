@@ -47,7 +47,7 @@ impl AiRepository for SqliteAiRepository {
         }
     }
 
-    async fn upsert_chat(&self, chat: Chat) -> Result<(), RepositoryError> {
+    async fn upsert_chat(&self, chat: &Chat) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 

@@ -29,14 +29,6 @@
 		border-radius: var(--default-border-radius);
 		border-bottom-right-radius: 0;
 		border-bottom-left-radius: 0;
-
-		.select {
-			width: 100%;
-
-			& * {
-				text-align: left;
-			}
-		}
 	}
 
 	& .messages {

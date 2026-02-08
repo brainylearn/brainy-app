@@ -16,17 +16,20 @@ use crate::api::ApiError;
 
 #[tauri::command]
 pub async fn stream_ai_response(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
     ai_service: State<'_, Arc<AiService>>,
     on_event: Channel<StreamLlmResponseEvent>,
     prompt: String,
     chat_id: Option<Guid>,
 ) -> Result<(), ApiError> {
+    let context = context.lock().await;
     let result = ai_service
         .stream(prompt, chat_id, |event| match on_event.send(event) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         })
         .await;
+    context.save_changes().await?;
 
     match result {
         Ok(()) => Ok(()),
@@ -56,5 +59,6 @@ pub async fn delete_ai_chat(
 ) -> Result<(), ApiError> {
     let context = context.lock().await;
     context.ai_repository().delete_chat(id).await?;
+    context.save_changes().await?;
     Ok(())
 }

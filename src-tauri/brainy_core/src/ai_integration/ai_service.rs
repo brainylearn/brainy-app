@@ -32,6 +32,7 @@ use crate::{
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum StreamLlmResponseEvent {
+    CreatedChat(Chat),
     InProgress(String),
     Finished,
     Error(String),
@@ -91,7 +92,8 @@ impl AiService {
             messages = self.ai_repository.get_chat_messages(chat_id).await?;
         } else {
             let chat = self.create_chat(&prompt).await?;
-            self.ai_repository.upsert_chat(chat).await?;
+            self.ai_repository.upsert_chat(&chat).await?;
+            on_event(StreamLlmResponseEvent::CreatedChat(chat))?;
             messages = Vec::new();
         }
 

@@ -1,3 +1,5 @@
+import Chat from "../entity/chat";
+
 export type StreamLlmResponseEvent =
 	| {
 			event: "inProgress";
@@ -9,4 +11,8 @@ export type StreamLlmResponseEvent =
 	| {
 			event: "error";
 			data: string;
+	  }
+	| {
+			event: "createdChat";
+			data: Chat;
 	  };
