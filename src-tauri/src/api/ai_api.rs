@@ -5,9 +5,12 @@ use brainy_core::{
     ai_integration::{
         ai_service::{AiService, StreamLlmResponseEvent},
         ai_state::AiState,
+        entities::chat::Chat,
     },
+    common::traits::repositories_context::RepositoriesContext,
 };
 use tauri::{State, ipc::Channel};
+use tokio::sync::Mutex;
 
 use crate::api::ApiError;
 
@@ -35,4 +38,13 @@ pub async fn stream_ai_response(
 pub async fn stop_ai_generation(ai_state: State<'_, Arc<AiState>>) -> Result<(), ApiError> {
     ai_state.cancel_generation();
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_all_ai_chats(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+) -> Result<Vec<Chat>, ApiError> {
+    let context = context.lock().await;
+    let chats = context.ai_repository().get_all_chats().await?;
+    Ok(chats)
 }

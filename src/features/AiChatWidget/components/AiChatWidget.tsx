@@ -10,13 +10,18 @@ import styles from "./styles.module.css";
 import { useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
-import { stopAiGeneration, streamAiResponse } from "../../../api/aiApi";
+import {
+	getAllAiChats,
+	stopAiGeneration,
+	streamAiResponse,
+} from "../../../api/aiApi";
 import Message from "../types/message";
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
 import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
 import Select from "../../../components/Select/Select";
+import Chat from "../../../types/backend/entity/chat";
 
 // TODO: unit test
 export default function AiChatWidget() {
@@ -25,9 +30,15 @@ export default function AiChatWidget() {
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isSendingRequest, setIsSendingRequest] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
+	const [chats, setChats] = useState<Chat[]>([]);
 	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+
+	const loadChatsWithMessages = async () => {
+		setChats(await getAllAiChats());
+		// TODO: get messages when opening or switching session
+	};
 
 	const sendMessage = async () => {
 		if (!userPrompt || isSendingRequest) return;
@@ -71,6 +82,8 @@ export default function AiChatWidget() {
 
 		try {
 			await streamAiResponse(userPrompt, selectedChatId, onEvent);
+			await loadChatsWithMessages();
+			// TODO: set select chat id to new session
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 			setIsSendingRequest(false);
@@ -118,7 +131,12 @@ export default function AiChatWidget() {
 		};
 	}, []);
 
-	// TODO: get all chats
+	useEffect(() => {
+		void (async () => {
+			await loadChatsWithMessages();
+		})();
+	}, []);
+
 	return (
 		<div className={styles.container}>
 			{isOpen && (
@@ -126,22 +144,18 @@ export default function AiChatWidget() {
 					<div className={styles.header}>
 						<Select
 							onChange={setSelectedChatId}
+							value={selectedChatId}
+							containerClassName={styles.select}
 							options={[
 								{
 									value: null,
 									label: "New session",
 								},
-								{
-									value: "new-session-2",
-									label: "New session 2",
-								},
-								{
-									value: "new-session-3",
-									label: "New session 3",
-								},
+								...chats.map(chat => ({
+									value: chat.id,
+									label: chat.title,
+								})),
 							]}
-							value={selectedChatId}
-							containerClassName={styles.select}
 						/>
 						<button
 							onClick={() => setIsOpen(false)}

@@ -20,6 +20,7 @@ use crate::{
             MultiCompletionClient, multi_completion_model::MultiCompletionModel,
         },
         entities::chat::Chat,
+        json_schemas::generate_title::GenerateTitle,
         repositories::traits::ai_repository::AiRepository,
         state_cancellation_hook::StateCancellationHook,
         tools::create_flash_card::CreateFlashCard,
@@ -85,16 +86,16 @@ impl AiService {
     {
         let _ = self.state.start_generation().await;
 
-        let chat;
+        let messages;
         if let Some(chat_id) = chat_id {
-            chat = self.ai_repository.get_by_id(chat_id).await?;
+            messages = self.ai_repository.get_chat_messages(chat_id).await?;
         } else {
-            // TODO: name
-            chat = Chat::new(None, "Test".into(), vec![]);
+            let chat = self.create_chat(&prompt).await?;
+            self.ai_repository.upsert_chat(chat).await?;
+            messages = Vec::new();
         }
 
-        let messages = chat
-            .messages()
+        let messages = messages
             .iter()
             .map(|message| message.clone().into())
             .collect();
@@ -137,6 +138,21 @@ impl AiService {
         // TODO: add user message and ai and save them to chat
 
         Ok(())
+    }
+
+    async fn create_chat(&self, prompt: &str) -> Result<Chat, AiServiceError> {
+        let response = match self.get_multi_completion_client().await?
+            .extractor::<GenerateTitle>(self.get_model_name().await)
+            .preamble("You are a chat naming assistant. Your task is to generate a concise, descriptive title for a conversation based on the user's first message. Be specific and descriptive.")
+            .build()
+            .extract(format!("User message: {}", prompt))
+            .await {
+                Ok(response) => response,
+                Err(err) => return Err(AiServiceError::UnknownError(err.to_string())),
+            };
+
+        log::info!("Generated title for chat is '{}'.", response.title);
+        Ok(Chat::new(None, response.title))
     }
 
     async fn get_agent(&self) -> Result<Agent<MultiCompletionModel>, AiServiceError> {

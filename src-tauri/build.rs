@@ -8,10 +8,11 @@ fn main() {
 fn setup_sqlx() {
     let current_directory = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let db_path = current_directory.join("temp.db");
+    let db_url = format!("sqlite:///{}?mode=rwc", db_path.display());
 
     let env_file = current_directory.join(".env");
     if !env_file.exists() {
-        let env_content = format!("DATABASE_URL=\"sqlite:///{}?mode=rwc\"", db_path.display());
+        let env_content = format!("DATABASE_URL=\"{0}\"", db_url);
         fs::write(&env_file, env_content).expect("Cannot write .env variable.");
         println!("✅ .env file created");
     }
@@ -22,7 +23,14 @@ fn setup_sqlx() {
     }
 
     let output = Command::new("sqlx")
-        .args(["migrate", "run", "--source", "brainy_core/db"])
+        .args([
+            "migrate",
+            "run",
+            "--source",
+            "brainy_core/db",
+            "--database-url",
+            &db_url,
+        ])
         .output()
         .expect("Could not run sqlx command, ensure that it is installed");
 
