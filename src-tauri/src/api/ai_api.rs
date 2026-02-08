@@ -48,3 +48,13 @@ pub async fn get_all_ai_chats(
     let chats = context.ai_repository().get_all_chats().await?;
     Ok(chats)
 }
+
+#[tauri::command]
+pub async fn delete_ai_chat(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+) -> Result<(), ApiError> {
+    let context = context.lock().await;
+    context.ai_repository().delete_chat(id).await?;
+    Ok(())
+}

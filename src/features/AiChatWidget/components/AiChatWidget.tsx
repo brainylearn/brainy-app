@@ -2,6 +2,7 @@ import Icon from "@mdi/react";
 import {
 	mdiAttachment,
 	mdiClose,
+	mdiDeleteOutline,
 	mdiRobotOutline,
 	mdiSendVariantOutline,
 	mdiStopCircleOutline,
@@ -11,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
 import {
+	deleteAiChat,
 	getAllAiChats,
 	stopAiGeneration,
 	streamAiResponse,
@@ -22,10 +24,12 @@ import Alert from "../../../components/Alert/Alert";
 import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
 import Select from "../../../components/Select/Select";
 import Chat from "../../../types/backend/entity/chat";
+import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 
 // TODO: unit test
 export default function AiChatWidget() {
 	const [isOpen, setIsOpen] = useState(false);
+	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
 	const [isSendingRequest, setIsSendingRequest] = useState(false);
@@ -137,92 +141,135 @@ export default function AiChatWidget() {
 		})();
 	}, []);
 
+	const handleDelete = async () => {
+		await deleteAiChat(selectedChatId!);
+		setSelectedChatId(null);
+		setShowDeleteChatDialog(false);
+		await loadChatsWithMessages();
+	};
+
 	return (
-		<div className={styles.container}>
-			{isOpen && (
-				<div className={styles.chatPanel}>
-					<div className={styles.header}>
-						<Select
-							onChange={setSelectedChatId}
-							value={selectedChatId}
-							containerClassName={styles.select}
-							options={[
-								{
-									value: null,
-									label: "New session",
-								},
-								...chats.map(chat => ({
-									value: chat.id,
-									label: chat.title,
-								})),
-							]}
-						/>
-						<button
-							onClick={() => setIsOpen(false)}
-							className="transparent">
-							<Icon path={mdiClose} size={1} />
-						</button>
-					</div>
-
-					<div className={styles.messages} ref={messagesContainerRef}>
-						{messages.map((message, i) => (
-							<div
-								key={i}
-								className={`${styles.message} ${styles[message.from]}`}>
-								<Markdown>{message.content}</Markdown>
-								{isSendingRequest &&
-									i === messages.length - 1 && (
-										<div className={styles.spinner}></div>
-									)}
+		<>
+			{showDeleteChatDialog && (
+				<ConfirmationDialog
+					title="Delete chat"
+					text="Are you sure you want to delete the selected chat"
+					icon={mdiDeleteOutline}
+					onCancel={() => setShowDeleteChatDialog(false)}
+					onConfirm={() => void handleDelete()}
+				/>
+			)}
+			<div className={styles.container}>
+				{isOpen && (
+					<div className={styles.chatPanel}>
+						<div className={styles.header}>
+							<Select
+								onChange={setSelectedChatId}
+								value={selectedChatId}
+								containerClassName={styles.select}
+								options={[
+									{
+										value: null,
+										label: "+ New chat",
+									},
+									...chats.map(chat => ({
+										value: chat.id,
+										label: chat.title,
+									})),
+								]}
+							/>
+							<div className="row">
+								<button
+									onClick={() =>
+										setShowDeleteChatDialog(true)
+									}
+									className="transparent"
+									title="Delete chat"
+									disabled={!selectedChatId}>
+									<Icon path={mdiDeleteOutline} size={1} />
+								</button>
+								<button
+									onClick={() => setIsOpen(false)}
+									className="transparent"
+									title="Close chat">
+									<Icon path={mdiClose} size={1} />
+								</button>
 							</div>
-						))}
+						</div>
 
-						{errorMessage && (
-							<Alert
-								type="error"
-								onClose={() => setErrorMessage("")}>
-								{errorMessage}
-							</Alert>
-						)}
-					</div>
+						<div
+							className={styles.messages}
+							ref={messagesContainerRef}>
+							{messages.map((message, i) => (
+								<div
+									key={i}
+									className={`${styles.message} ${styles[message.from]}`}>
+									<Markdown>{message.content}</Markdown>
+									{isSendingRequest &&
+										i === messages.length - 1 && (
+											<div
+												className={
+													styles.spinner
+												}></div>
+										)}
+								</div>
+							))}
 
-					<form onSubmit={handleSubmit}>
-						<textarea
-							ref={textAreaRef}
-							placeholder="Ask a question"
-							value={userPrompt}
-							onChange={e => setUserPrompt(e.target.value)}
-							onKeyDown={handleTextAreaKeyDown}
-							rows={1}
-						/>
-						<button className="transparent" title="Add attachment">
-							<Icon path={mdiAttachment} size={1} />
-						</button>
-						{!isSendingRequest && (
-							<button className="transparent" title="Send">
-								<Icon path={mdiSendVariantOutline} size={1} />
-							</button>
-						)}
+							{errorMessage && (
+								<Alert
+									type="error"
+									onClose={() => setErrorMessage("")}>
+									{errorMessage}
+								</Alert>
+							)}
+						</div>
 
-						{isSendingRequest && (
+						<form onSubmit={handleSubmit}>
+							<textarea
+								ref={textAreaRef}
+								placeholder="Ask a question"
+								value={userPrompt}
+								onChange={e => setUserPrompt(e.target.value)}
+								onKeyDown={handleTextAreaKeyDown}
+								rows={1}
+							/>
 							<button
 								className="transparent"
-								title="Stop"
-								onClick={() => void stopAiGeneration()}>
-								<Icon path={mdiStopCircleOutline} size={1} />
+								title="Add attachment">
+								<Icon path={mdiAttachment} size={1} />
 							</button>
-						)}
-					</form>
-				</div>
-			)}
+							{!isSendingRequest && (
+								<button className="transparent" title="Send">
+									<Icon
+										path={mdiSendVariantOutline}
+										size={1}
+									/>
+								</button>
+							)}
 
-			{!isOpen && (
-				<button
-					className={`primary ${styles.floatingButton}`}
-					onClick={() => setIsOpen(true)}>
-					<Icon path={mdiRobotOutline} size={1.6} />
-				</button>
-			)}
-		</div>
+							{isSendingRequest && (
+								<button
+									className="transparent"
+									title="Stop"
+									onClick={() => void stopAiGeneration()}>
+									<Icon
+										path={mdiStopCircleOutline}
+										size={1}
+									/>
+								</button>
+							)}
+						</form>
+					</div>
+				)}
+
+				{!isOpen && (
+					<button
+						className={`primary ${styles.floatingButton}`}
+						onClick={() => setIsOpen(true)}>
+						<Icon path={mdiRobotOutline} size={1.6} />
+					</button>
+				)}
+			</div>
+		</>
 	);
 }

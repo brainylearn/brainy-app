@@ -9,16 +9,16 @@ pub struct Chat {
 }
 
 impl Chat {
-    pub fn new(id: Option<Guid>, name: String) -> Self {
+    pub fn new(id: Option<Guid>, title: String) -> Self {
         Self {
             id: id.unwrap_or(Guid::new_v4()),
-            title: name,
+            title,
         }
     }
 
     /// Used for unit testing, or repositories when reconstructing a chat.
-    pub fn new_unchecked(id: Guid, name: String) -> Self {
-        Self { id, title: name }
+    pub fn new_unchecked(id: Guid, title: String) -> Self {
+        Self { id, title }
     }
 
     pub fn id(&self) -> Guid {

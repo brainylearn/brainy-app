@@ -21,3 +21,7 @@ export function stopAiGeneration(): Promise<void> {
 export function getAllAiChats(): Promise<Chat[]> {
 	return invoke("get_all_ai_chats");
 }
+
+export function deleteAiChat(id: string): Promise<string> {
+	return invoke("delete_ai_chat", { id });
+}

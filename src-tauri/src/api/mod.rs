@@ -50,7 +50,7 @@ pub use fsrs_api::{
 
 pub use sync_api::sync;
 
-pub use ai_api::{get_all_ai_chats, stop_ai_generation, stream_ai_response};
+pub use ai_api::{delete_ai_chat, get_all_ai_chats, stop_ai_generation, stream_ai_response};
 
 #[derive(Serialize)]
 pub struct ApiError(String);

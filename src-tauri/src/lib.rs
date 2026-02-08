@@ -218,6 +218,7 @@ pub async fn run() -> Result<(), String> {
             stream_ai_response,
             stop_ai_generation,
             get_all_ai_chats,
+            delete_ai_chat,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

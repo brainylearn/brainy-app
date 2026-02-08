@@ -117,6 +117,20 @@ impl AiRepository for SqliteAiRepository {
             Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
         }
     }
+
+    async fn delete_chat(&self, id: Guid) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let result = sqlx::query!("DELETE FROM ai_chats WHERE id = $1", id)
+            .execute(&mut *tx)
+            .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(RepositoryError::UnknownError(err.to_string())),
+        }
+    }
 }
 
 // TODO:
