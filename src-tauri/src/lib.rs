@@ -217,7 +217,7 @@ pub async fn run() -> Result<(), String> {
             // AI
             stream_ai_response,
             stop_ai_generation,
-            get_all_ai_chats,
+            get_all_ai_chats_sorted_by_date_desc,
             delete_ai_chat,
         ])
         .run(tauri::generate_context!())

@@ -19,7 +19,10 @@ use crate::{
         clients::multi_completion_client::{
             MultiCompletionClient, multi_completion_model::MultiCompletionModel,
         },
-        entities::chat::Chat,
+        entities::{
+            chat::Chat,
+            message::{Message, MessageRole},
+        },
         json_schemas::generate_title::GenerateTitle,
         repositories::traits::ai_repository::AiRepository,
         state_cancellation_hook::StateCancellationHook,
@@ -88,14 +91,29 @@ impl AiService {
         let _ = self.state.start_generation().await;
 
         let messages;
+        let current_chat_id;
         if let Some(chat_id) = chat_id {
-            messages = self.ai_repository.get_chat_messages(chat_id).await?;
+            messages = self
+                .ai_repository
+                .get_chat_messages_ordered(chat_id)
+                .await?;
+            current_chat_id = chat_id;
         } else {
             let chat = self.create_chat(&prompt).await?;
             self.ai_repository.upsert_chat(&chat).await?;
-            on_event(StreamLlmResponseEvent::CreatedChat(chat))?;
+            current_chat_id = chat.id();
             messages = Vec::new();
+            on_event(StreamLlmResponseEvent::CreatedChat(chat))?;
         }
+
+        self.ai_repository
+            .upsert_message(&Message::new(
+                None,
+                current_chat_id,
+                MessageRole::Human,
+                Some(prompt.clone()),
+            ))
+            .await?;
 
         let messages = messages
             .iter()
@@ -108,6 +126,9 @@ impl AiService {
             .with_hook(StateCancellationHook::new(self.state.clone()))
             .await;
 
+        let mut error_happened = false;
+        let mut complete_ai_response = String::new();
+
         while let Some(content) = stream.next().await {
             match content {
                 Ok(content) => {
@@ -115,6 +136,7 @@ impl AiService {
                         StreamedAssistantContent::Text(Text { text }),
                     ) = content
                     {
+                        complete_ai_response = format!("{complete_ai_response}{text}");
                         on_event(StreamLlmResponseEvent::InProgress(text))?;
                     }
                 }
@@ -130,6 +152,7 @@ impl AiService {
                     if should_call_callback {
                         on_event(StreamLlmResponseEvent::Error(err.to_string()))?;
                     }
+                    error_happened = true;
                     break;
                 }
             };
@@ -137,7 +160,16 @@ impl AiService {
 
         on_event(StreamLlmResponseEvent::Finished)?;
 
-        // TODO: add user message and ai and save them to chat
+        if !error_happened {
+            self.ai_repository
+                .upsert_message(&Message::new(
+                    None,
+                    current_chat_id,
+                    MessageRole::Assistant,
+                    Some(complete_ai_response),
+                ))
+                .await?;
+        }
 
         Ok(())
     }

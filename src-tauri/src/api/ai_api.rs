@@ -44,11 +44,14 @@ pub async fn stop_ai_generation(ai_state: State<'_, Arc<AiState>>) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn get_all_ai_chats(
+pub async fn get_all_ai_chats_sorted_by_date_desc(
     context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
 ) -> Result<Vec<Chat>, ApiError> {
     let context = context.lock().await;
-    let chats = context.ai_repository().get_all_chats().await?;
+    let chats = context
+        .ai_repository()
+        .get_all_chats_sorted_by_date_desc()
+        .await?;
     Ok(chats)
 }
 

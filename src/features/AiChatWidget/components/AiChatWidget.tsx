@@ -13,7 +13,7 @@ import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
 import {
 	deleteAiChat,
-	getAllAiChats,
+	getAllAiChatsSortedByDateDesc,
 	stopAiGeneration,
 	streamAiResponse,
 } from "../../../api/aiApi";
@@ -40,8 +40,7 @@ export default function AiChatWidget() {
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
 	const loadChats = async () => {
-		// TODO: sort chats from newer to older
-		setChats(await getAllAiChats());
+		setChats(await getAllAiChatsSortedByDateDesc());
 		// TODO: get messages when opening or switching session
 	};
 

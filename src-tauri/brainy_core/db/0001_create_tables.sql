@@ -178,17 +178,18 @@ CREATE TABLE local_configurations(
 
 CREATE TABLE ai_chats(
     id                          TEXT        NOT NULL        PRIMARY KEY,
+    created_date                TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     title                       TEXT        NOT NULL
 );
 
 -------------------------------------------------------------------------
 
 CREATE TABLE ai_messages(
+    id                          TEXT        NOT NULL        PRIMARY KEY,
+    created_date                TEXT        NOT NULL        DEFAULT CURRENT_TIMESTAMP,
     ai_chat_id                  TEXT        NOT NULL,
-    message_index               INTEGER     NOT NULL,
     role                        TEXT        NOT NULL,
     content                     TEXT,
-    PRIMARY KEY (ai_chat_id, message_index),
     FOREIGN KEY (ai_chat_id) REFERENCES ai_chats(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 

@@ -18,8 +18,8 @@ export function stopAiGeneration(): Promise<void> {
 	return invoke("stop_ai_generation");
 }
 
-export function getAllAiChats(): Promise<Chat[]> {
-	return invoke("get_all_ai_chats");
+export function getAllAiChatsSortedByDateDesc(): Promise<Chat[]> {
+	return invoke("get_all_ai_chats_sorted_by_date_desc");
 }
 
 export function deleteAiChat(id: string): Promise<string> {

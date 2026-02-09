@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use rig::{
     OneOrMany,
     agent::Text,
@@ -8,29 +9,68 @@ use crate::Guid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Message {
+    id: Guid,
+    created_date: DateTime<Utc>,
     chat_id: Guid,
-    message_index: i64,
     role: MessageRole,
     content: Option<String>,
 }
 
 impl Message {
-    pub(in crate::ai_integration) fn new(
+    pub fn new(
+        id: Option<Guid>,
         chat_id: Guid,
-        message_index: i64,
         role: MessageRole,
         content: Option<String>,
     ) -> Self {
         Self {
+            id: id.unwrap_or(Guid::new_v4()),
+            created_date: Utc::now(),
             chat_id,
-            message_index,
             role,
             content,
         }
     }
+
+    /// Used for unit testing, or repositories when reconstructing a message.
+    pub(in crate::ai_integration) fn new_unchecked(
+        id: Guid,
+        created_date: DateTime<Utc>,
+        chat_id: Guid,
+        role: MessageRole,
+        content: Option<String>,
+    ) -> Self {
+        Self {
+            id,
+            chat_id,
+            created_date,
+            role,
+            content,
+        }
+    }
+
+    pub fn id(&self) -> Guid {
+        self.id
+    }
+
+    pub fn created_date(&self) -> DateTime<Utc> {
+        self.created_date
+    }
+
+    pub fn chat_id(&self) -> Guid {
+        self.chat_id
+    }
+
+    pub fn role(&self) -> MessageRole {
+        self.role
+    }
+
+    pub fn content(&self) -> Option<&String> {
+        self.content.as_ref()
+    }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MessageRole {
     Human,
     Assistant,
