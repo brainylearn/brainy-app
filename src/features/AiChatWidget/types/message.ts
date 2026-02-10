@@ -1,4 +1,6 @@
 export default interface Message {
-	from: "bot" | "human";
-	content: string;
+	id: string;
+	chatId: string;
+	role: "human" | "assistant";
+	content: string | null;
 }

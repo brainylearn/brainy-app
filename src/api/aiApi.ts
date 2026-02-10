@@ -1,6 +1,7 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../types/backend/events/streamLlmResponseEvent";
 import Chat from "../types/backend/entity/chat";
+import Message from "../features/AiChatWidget/types/message";
 
 export function streamAiResponse(
 	prompt: string,
@@ -24,4 +25,8 @@ export function getAllAiChatsSortedByDateDesc(): Promise<Chat[]> {
 
 export function deleteAiChat(id: string): Promise<string> {
 	return invoke("delete_ai_chat", { id });
+}
+
+export function getChatMessagesOrdered(id: string): Promise<Message[]> {
+	return invoke("get_chat_messages_ordered", { id });
 }

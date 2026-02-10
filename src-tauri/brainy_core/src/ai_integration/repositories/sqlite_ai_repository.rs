@@ -197,7 +197,7 @@ mod file_row {
     use super::*;
 
     pub(super) const HUMAN_ROLE: &str = "human";
-    pub(super) const ASSISTANT_ROLE: &str = "human";
+    pub(super) const ASSISTANT_ROLE: &str = "assistant";
 
     pub(super) struct ChatRow {
         pub id: Guid,

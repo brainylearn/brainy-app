@@ -5,7 +5,7 @@ use brainy_core::{
     ai_integration::{
         ai_service::{AiService, StreamLlmResponseEvent},
         ai_state::AiState,
-        entities::chat::Chat,
+        entities::{chat::Chat, message::Message},
     },
     common::traits::repositories_context::RepositoriesContext,
 };
@@ -64,4 +64,17 @@ pub async fn delete_ai_chat(
     context.ai_repository().delete_chat(id).await?;
     context.save_changes().await?;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_chat_messages_ordered(
+    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    id: Guid,
+) -> Result<Vec<Message>, ApiError> {
+    let context = context.lock().await;
+    let messages = context
+        .ai_repository()
+        .get_chat_messages_ordered(id)
+        .await?;
+    Ok(messages)
 }

@@ -4,10 +4,12 @@ use rig::{
     agent::Text,
     message::{AssistantContent, UserContent},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::Guid;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Message {
     id: Guid,
     created_date: DateTime<Utc>,
@@ -70,7 +72,8 @@ impl Message {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub enum MessageRole {
     Human,
     Assistant,

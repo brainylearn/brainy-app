@@ -14,6 +14,7 @@ import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmR
 import {
 	deleteAiChat,
 	getAllAiChatsSortedByDateDesc,
+	getChatMessagesOrdered,
 	stopAiGeneration,
 	streamAiResponse,
 } from "../../../api/aiApi";
@@ -25,9 +26,17 @@ import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
 import Select from "../../../components/Select/Select";
 import Chat from "../../../types/backend/entity/chat";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
+import useAppSelector from "../../../hooks/useAppSelector";
+import { selectSettings } from "../../../stores/settings/settingsSelector";
+
+export default function AiChatWidget() {
+	/* TODO: unit test */
+	const settings = useAppSelector(selectSettings);
+	return settings?.enableAi ? <AiChatWidgetInner /> : null;
+}
 
 // TODO: unit test
-export default function AiChatWidget() {
+function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
@@ -39,9 +48,13 @@ export default function AiChatWidget() {
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
-	const loadChats = async () => {
-		setChats(await getAllAiChatsSortedByDateDesc());
-		// TODO: get messages when opening or switching session
+	const handleChangeSelectedChatId = async (newChatId: string | null) => {
+		if (newChatId === null) {
+			setMessages([]);
+		} else {
+			setMessages(await getChatMessagesOrdered(newChatId));
+		}
+		setSelectedChatId(newChatId);
 	};
 
 	const sendMessage = async () => {
@@ -52,11 +65,15 @@ export default function AiChatWidget() {
 		setMessages([
 			...messages,
 			{
-				from: "human",
+				chatId: selectedChatId ?? "tmp",
+				id: "tmp",
+				role: "human",
 				content: userPrompt,
 			},
 			{
-				from: "bot",
+				chatId: selectedChatId ?? "tmp",
+				id: "tmp",
+				role: "assistant",
 				content: "",
 			},
 		]);
@@ -75,8 +92,12 @@ export default function AiChatWidget() {
 					];
 				} else if (event.event === "finished") {
 					setIsSendingRequest(false);
+					void (async () => {
+						setMessages(
+							await getChatMessagesOrdered(selectedChatId!),
+						);
+					});
 				} else if (event.event === "createdChat") {
-					// TODO: fix messages
 					setChats(chats => {
 						let newValue = chats;
 						if (!newValue.some(chat => chat.id === event.data.id)) {
@@ -138,22 +159,26 @@ export default function AiChatWidget() {
 	}, [messages]);
 
 	useEffect(() => {
+		void (async () => {
+			setChats(await getAllAiChatsSortedByDateDesc());
+		})();
+
 		return () => {
 			void stopAiGeneration();
 		};
 	}, []);
 
 	useEffect(() => {
-		void (async () => {
-			await loadChats();
-		})();
-	}, []);
+		if (!messagesContainerRef.current) return;
+		messagesContainerRef.current.scrollTop =
+			messagesContainerRef.current.scrollHeight;
+	}, [selectedChatId]);
 
 	const handleDelete = async () => {
 		await deleteAiChat(selectedChatId!);
-		setSelectedChatId(null);
+		await handleChangeSelectedChatId(null);
 		setShowDeleteChatDialog(false);
-		await loadChats();
+		setChats(await getAllAiChatsSortedByDateDesc());
 	};
 
 	return (
@@ -172,7 +197,9 @@ export default function AiChatWidget() {
 					<div className={styles.chatPanel}>
 						<div className={styles.header}>
 							<Select
-								onChange={setSelectedChatId}
+								onChange={value =>
+									void handleChangeSelectedChatId(value)
+								}
 								value={selectedChatId}
 								options={[
 									{
@@ -210,7 +237,7 @@ export default function AiChatWidget() {
 							{messages.map((message, i) => (
 								<div
 									key={i}
-									className={`${styles.message} ${styles[message.from]}`}>
+									className={`${styles.message} ${styles[message.role]}`}>
 									<Markdown>{message.content}</Markdown>
 									{isSendingRequest &&
 										i === messages.length - 1 && (

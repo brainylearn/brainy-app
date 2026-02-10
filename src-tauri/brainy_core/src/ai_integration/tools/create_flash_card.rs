@@ -34,7 +34,6 @@ impl Tool for CreateFlashCard {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        // TODO:
         log::info!(
             "Inside tool!!!\nQuestion: {}\nAnswer: {}",
             args.question,
