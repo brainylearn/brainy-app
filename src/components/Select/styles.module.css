@@ -44,6 +44,6 @@
 		}
 	}
 
-	bottom: calc(-1 * var(--spacing-1));
+	bottom: 0;
 	transform: translateY(100%);
 }

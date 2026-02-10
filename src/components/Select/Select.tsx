@@ -5,28 +5,36 @@ import useGlobalKey from "../../hooks/useGlobalKey";
 import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import Icon from "@mdi/react";
 
-// TODO: use it everywhere
-
 export interface Option {
 	label: string;
-	value: string | null;
+	value: string;
 }
 
-interface Props {
+interface Props extends React.DetailedHTMLProps<
+	React.ButtonHTMLAttributes<HTMLButtonElement>,
+	HTMLButtonElement
+> {
 	options: Option[];
-	value: string | null;
-	onChange: (value: string | null) => void;
+	currentValue: string;
+	onChangeValue: (value: string) => void;
 }
 
 // TODO: unit test
-export default function Select({ options, value, onChange }: Props) {
+export default function Select({
+	options,
+	currentValue,
+	onChangeValue,
+	...props
+}: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const optionsButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const dropDownRef = useRef<HTMLButtonElement | null>(null);
 	const focusedIndex = useRef(0);
 
-	const selectedLabel = options.find(option => option.value === value)?.label;
+	const selectedLabel = options.find(
+		option => option.value === currentValue,
+	)?.label;
 
 	useOutsideClick(containerRef as React.RefObject<HTMLElement>, () => {
 		setIsOpen(false);
@@ -61,17 +69,19 @@ export default function Select({ options, value, onChange }: Props) {
 		}
 	};
 
-	const handleOptionClick = (value: string | null) => {
-		onChange(value);
+	const handleOptionClick = (value: string) => {
+		onChangeValue(value);
 		setIsOpen(false);
 	};
 
 	return (
 		<div className={`${styles.container}`} ref={containerRef}>
 			<button
+				{...props}
 				onClick={() => setIsOpen(!isOpen)}
 				ref={dropDownRef}
-				className={`transparent ${styles.dropDownButton}`}>
+				className={`select transparent ${styles.dropDownButton}`}
+				type="button">
 				<p>{selectedLabel}</p>
 				<Icon path={isOpen ? mdiChevronUp : mdiChevronDown} size={1} />
 			</button>
@@ -83,9 +93,10 @@ export default function Select({ options, value, onChange }: Props) {
 					{options.map((option, i) => (
 						<button
 							key={option.value}
-							className={`${option.value === value ? "primary" : "transparent"}`}
+							type="button"
+							className={`${option.value === currentValue ? "primary" : "transparent"}`}
 							onClick={() => handleOptionClick(option.value)}
-							autoFocus={i === 0}
+							autoFocus={option.value === currentValue}
 							ref={el => {
 								optionsButtonRefs.current[i] = el;
 							}}

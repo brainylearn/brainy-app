@@ -134,11 +134,13 @@ button:hover,
 input,
 textarea,
 select,
+.select,
 a {
 	color: inherit;
 }
 
-select {
+select,
+.select {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -176,7 +178,8 @@ button.link:active {
 .input,
 input,
 textarea,
-select {
+select,
+.select {
 	border-radius: var(--default-border-radius);
 	outline: none;
 	padding: var(--spacing-3) var(--spacing-4);
@@ -195,14 +198,16 @@ input[type="checkbox"] {
 .input:hover,
 input:hover,
 textarea:hover,
-select:hover {
+select:hover,
+.select:hover {
 	border-color: var(--hover-border-color);
 }
 
 .input:focus,
 input:focus,
 textarea:focus,
-select:focus {
+select:focus,
+.select:focus {
 	border-color: var(--primary-color);
 }
 

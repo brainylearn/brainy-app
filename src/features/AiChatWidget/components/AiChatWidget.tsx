@@ -35,6 +35,8 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
+const NEW_SESSION_VALUE = "new-session";
+
 // TODO: unit test
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -44,12 +46,13 @@ function AiChatWidgetInner() {
 	const [isSendingRequest, setIsSendingRequest] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [chats, setChats] = useState<Chat[]>([]);
-	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+	const [selectedChatId, setSelectedChatId] =
+		useState<string>(NEW_SESSION_VALUE);
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
-	const handleChangeSelectedChatId = async (newChatId: string | null) => {
-		if (newChatId === null) {
+	const handleChangeSelectedChatId = async (newChatId: string) => {
+		if (newChatId === NEW_SESSION_VALUE) {
 			setMessages([]);
 		} else {
 			setMessages(await getChatMessagesOrdered(newChatId));
@@ -94,7 +97,7 @@ function AiChatWidgetInner() {
 					setIsSendingRequest(false);
 					void (async () => {
 						setMessages(
-							await getChatMessagesOrdered(selectedChatId!),
+							await getChatMessagesOrdered(NEW_SESSION_VALUE),
 						);
 					});
 				} else if (event.event === "createdChat") {
@@ -116,7 +119,11 @@ function AiChatWidgetInner() {
 		setUserPrompt("");
 
 		try {
-			await streamAiResponse(userPrompt, selectedChatId, onEvent);
+			await streamAiResponse(
+				userPrompt,
+				selectedChatId === NEW_SESSION_VALUE ? null : selectedChatId,
+				onEvent,
+			);
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 			setIsSendingRequest(false);
@@ -175,8 +182,8 @@ function AiChatWidgetInner() {
 	}, [selectedChatId]);
 
 	const handleDelete = async () => {
-		await deleteAiChat(selectedChatId!);
-		await handleChangeSelectedChatId(null);
+		await deleteAiChat(selectedChatId);
+		await handleChangeSelectedChatId(NEW_SESSION_VALUE);
 		setShowDeleteChatDialog(false);
 		setChats(await getAllAiChatsSortedByDateDesc());
 	};
@@ -197,13 +204,13 @@ function AiChatWidgetInner() {
 					<div className={styles.chatPanel}>
 						<div className={styles.header}>
 							<Select
-								onChange={value =>
+								onChangeValue={value =>
 									void handleChangeSelectedChatId(value)
 								}
-								value={selectedChatId}
+								currentValue={selectedChatId}
 								options={[
 									{
-										value: null,
+										value: NEW_SESSION_VALUE,
 										label: "+ New chat",
 									},
 									...chats.map(chat => ({
