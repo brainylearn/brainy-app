@@ -30,14 +30,12 @@ import useAppSelector from "../../../hooks/useAppSelector";
 import { selectSettings } from "../../../stores/settings/settingsSelector";
 
 export default function AiChatWidget() {
-	/* TODO: unit test */
 	const settings = useAppSelector(selectSettings);
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
 const NEW_SESSION_VALUE = "new-session";
 
-// TODO: unit test
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
@@ -51,6 +49,7 @@ function AiChatWidgetInner() {
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
+	// TODO: unit test: show correct messages on change chat
 	const handleChangeSelectedChatId = async (newChatId: string) => {
 		if (newChatId === NEW_SESSION_VALUE) {
 			setMessages([]);
@@ -60,6 +59,7 @@ function AiChatWidgetInner() {
 		setSelectedChatId(newChatId);
 	};
 
+	// TODO: unit test: shows user message and updates assistant message
 	const sendMessage = async () => {
 		if (!userPrompt || isSendingRequest) return;
 
@@ -135,6 +135,7 @@ function AiChatWidgetInner() {
 		void sendMessage();
 	};
 
+	// TODO: unit test: enter with shift shortcut and escape key
 	const handleTextAreaKeyDown = (
 		e: React.KeyboardEvent<HTMLTextAreaElement>,
 	) => {
@@ -146,6 +147,7 @@ function AiChatWidgetInner() {
 		}
 	};
 
+	// TODO: unit test: this
 	useEffect(() => {
 		if (textAreaRef.current) {
 			textAreaRef.current.style.height = "auto";
@@ -154,6 +156,7 @@ function AiChatWidgetInner() {
 		}
 	}, [userPrompt]);
 
+	// TODO: unit test: auto scroll
 	useEffect(() => {
 		if (!messagesContainerRef.current) return;
 
@@ -165,6 +168,7 @@ function AiChatWidgetInner() {
 		}
 	}, [messages]);
 
+	// TODO: unit test: getting chats and stopping generation
 	useEffect(() => {
 		void (async () => {
 			setChats(await getAllAiChatsSortedByDateDesc());
@@ -175,12 +179,14 @@ function AiChatWidgetInner() {
 		};
 	}, []);
 
+	// TODO: unit test: this
 	useEffect(() => {
 		if (!messagesContainerRef.current) return;
 		messagesContainerRef.current.scrollTop =
 			messagesContainerRef.current.scrollHeight;
 	}, [selectedChatId]);
 
+	// TODO: unit test: this
 	const handleDelete = async () => {
 		await deleteAiChat(selectedChatId);
 		await handleChangeSelectedChatId(NEW_SESSION_VALUE);
@@ -188,6 +194,7 @@ function AiChatWidgetInner() {
 		setChats(await getAllAiChatsSortedByDateDesc());
 	};
 
+	// TODO: unit test: stop generation
 	return (
 		<>
 			{showDeleteChatDialog && (
@@ -309,7 +316,8 @@ function AiChatWidgetInner() {
 				{!isOpen && (
 					<button
 						className={`primary ${styles.floatingButton}`}
-						onClick={() => setIsOpen(true)}>
+						onClick={() => setIsOpen(true)}
+						title="Open AI assistant">
 						<Icon path={mdiRobotOutline} size={1.6} />
 					</button>
 				)}
