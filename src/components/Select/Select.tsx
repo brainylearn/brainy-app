@@ -80,7 +80,7 @@ export default function Select({
 				{...props}
 				onClick={() => setIsOpen(!isOpen)}
 				ref={dropDownRef}
-				className={`select transparent ${styles.dropDownButton}`}
+				className={`select ${styles.dropDownButton}`}
 				type="button">
 				<p>{selectedLabel}</p>
 				<Icon path={isOpen ? mdiChevronUp : mdiChevronDown} size={1} />

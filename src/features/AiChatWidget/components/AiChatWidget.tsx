@@ -273,6 +273,7 @@ function AiChatWidgetInner() {
 								onChange={e => setUserPrompt(e.target.value)}
 								onKeyDown={handleTextAreaKeyDown}
 								rows={1}
+								autoFocus
 							/>
 							<button
 								className="transparent"

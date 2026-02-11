@@ -22,13 +22,13 @@ pub async fn stream_ai_response(
     prompt: String,
     chat_id: Option<Guid>,
 ) -> Result<(), ApiError> {
-    let context = context.lock().await;
     let result = ai_service
         .stream(prompt, chat_id, |event| match on_event.send(event) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         })
         .await;
+    let context = context.lock().await;
     context.save_changes().await?;
 
     match result {

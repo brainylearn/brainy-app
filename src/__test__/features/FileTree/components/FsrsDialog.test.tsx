@@ -99,7 +99,7 @@ describe("FsrsDialog", () => {
 		vi.mocked(getAllFsrsProfiles).mockReturnValue(
 			Promise.resolve([
 				FILLED_PROFILE,
-				{ ...FILLED_PROFILE, id: "profile-2" },
+				{ ...FILLED_PROFILE, name: "profile-2", id: "profile-2" },
 			]),
 		);
 
@@ -128,10 +128,8 @@ describe("FsrsDialog", () => {
 		// Act
 
 		await waitFor(async () => {
-			await userEvent.selectOptions(
-				screen.getByRole("combobox"),
-				"profile-2",
-			);
+			await userEvent.click(screen.getByText(FILLED_PROFILE.name));
+			await userEvent.click(screen.getByText("profile-2"));
 			await userEvent.click(screen.getByText("Save"));
 		});
 
