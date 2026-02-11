@@ -19,7 +19,6 @@ interface Props extends React.DetailedHTMLProps<
 	onChangeValue: (value: string) => void;
 }
 
-// TODO: unit test
 export default function Select({
 	options,
 	currentValue,

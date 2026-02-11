@@ -11,7 +11,7 @@ import {
 import FsrsDialog from "../../../../features/FileTree/components/FsrsDialog.tsx";
 import FsrsProfile from "../../../../types/backend/entity/fsrsProfile.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders.tsx";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { FsrsProfileChoice } from "../../../../types/backend/valueObjects/fsrsProfileChoice.ts";
 
 vi.mock(import("../../../../api/fsrsApi.ts"));
@@ -127,11 +127,9 @@ describe("FsrsDialog", () => {
 
 		// Act
 
-		await waitFor(async () => {
-			await userEvent.click(screen.getByText(FILLED_PROFILE.name));
-			await userEvent.click(screen.getByText("profile-2"));
-			await userEvent.click(screen.getByText("Save"));
-		});
+		await userEvent.click(await screen.findByText(FILLED_PROFILE.name));
+		await userEvent.click(await screen.findByText("profile-2"));
+		await userEvent.click(await screen.findByText("Save"));
 
 		// Assert
 
@@ -180,12 +178,10 @@ describe("FsrsDialog", () => {
 
 		// Act
 
-		await waitFor(async () => {
-			await userEvent.click(screen.getByTitle("Clone profile"));
-			await userEvent.click(screen.getByText("Request retention"));
-			await userEvent.keyboard("{ArrowRight>100}{backspace>100}18");
-			await userEvent.click(screen.getByText("Save"));
-		});
+		await userEvent.click(await screen.findByTitle("Clone profile"));
+		await userEvent.click(await screen.findByText("Request retention"));
+		await userEvent.keyboard("{ArrowRight>100}{backspace>100}18");
+		await userEvent.click(await screen.findByText("Save"));
 
 		// Assert
 
@@ -251,13 +247,11 @@ describe("FsrsDialog", () => {
 
 		// Act
 
-		await waitFor(async () => {
-			await userEvent.click(screen.getByTitle("Delete profile"));
-			await userEvent.click(screen.getByText("Yes"));
-			await userEvent.click(screen.getByText("Request retention"));
-			await userEvent.keyboard("{ArrowRight>100}{backspace>100}18");
-			await userEvent.click(screen.getByText("Save"));
-		});
+		await userEvent.click(await screen.findByTitle("Delete profile"));
+		await userEvent.click(await screen.findByText("Yes"));
+		await userEvent.click(await screen.findByText("Request retention"));
+		await userEvent.keyboard("{ArrowRight>100}{backspace>100}18");
+		await userEvent.click(await screen.findByText("Save"));
 
 		// Assert
 

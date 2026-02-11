@@ -226,7 +226,9 @@ function AiChatWidgetInner() {
 									}
 									className="transparent"
 									title="Delete chat"
-									disabled={!selectedChatId}>
+									disabled={
+										selectedChatId === NEW_SESSION_VALUE
+									}>
 									<Icon path={mdiDeleteOutline} size={1} />
 								</button>
 								<button
