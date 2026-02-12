@@ -1,10 +1,29 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import AiChatWidget from "../../../../features/AiChatWidget/components/AiChatWidget";
 import Settings from "../../../../types/backend/model/settings";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
+import {
+	getAllAiChatsSortedByDateDesc,
+	getChatMessagesOrdered,
+	stopAiGeneration,
+	streamAiResponse,
+} from "../../../../api/aiApi.ts";
+import userEvent from "@testing-library/user-event";
+import Message from "../../../../features/AiChatWidget/types/message.ts";
+import { Channel } from "@tauri-apps/api/core";
+import { StreamLlmResponseEvent } from "../../../../types/backend/events/streamLlmResponseEvent.ts";
 
 vi.mock(import("../../../../api/aiApi.ts"));
-vi.mock(import("@tauri-apps/api/core"));
+
+vi.mock("@tauri-apps/api/core", () => {
+	class MockChannel {
+		onmessage: unknown = null;
+	}
+
+	return {
+		Channel: MockChannel,
+	};
+});
 
 function renderComponent({ enableAi = true }) {
 	return renderWithProviders(<AiChatWidget />, {
@@ -27,5 +46,172 @@ describe("AiChatWidget", () => {
 		// Assert
 
 		expect(screen.queryByTitle("Open AI assistant")).toBeNull();
+	});
+
+	it("Should get all chats initial", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+				{
+					id: "chat-2",
+					title: "chat 2",
+					createdDate: "date",
+				},
+				{
+					id: "chat-3",
+					title: "chat 3",
+					createdDate: "date",
+				},
+			]),
+		);
+		renderComponent({});
+
+		// Act
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByText("+ New chat"));
+
+		// Assert
+
+		expect(screen.findByText("chat 2")).not.toBeNull();
+		expect(screen.findByText("chat 3")).not.toBeNull();
+	});
+
+	it("Should get and show chat message when switching session", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+				{
+					id: "chat-2",
+					title: "chat 2",
+					createdDate: "date",
+				},
+			]),
+		);
+
+		vi.mocked(getChatMessagesOrdered).mockImplementation(id => {
+			if (id === "chat-1") {
+				return Promise.resolve([
+					{
+						id: "message-1",
+						chatId: "chat-1",
+						role: "human",
+						content: "message 1",
+					} as Message,
+				]);
+			} else {
+				return Promise.resolve([
+					{
+						id: "message-2",
+						chatId: "chat-2",
+						role: "human",
+						content: "message 2",
+					} as Message,
+				]);
+			}
+		});
+
+		renderComponent({});
+
+		// Act & Assert
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByText("+ New chat"));
+
+		await userEvent.click(await screen.findByText("chat 1"));
+		expect(screen.queryByText("message 1")).not.toBeNull();
+
+		await userEvent.click(await screen.findByText("chat 1"));
+		await userEvent.click(await screen.findByText("chat 2"));
+		expect(screen.queryByText("message 2")).not.toBeNull();
+	});
+
+	it("Should be able to show streamed responses", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([]),
+		);
+
+		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
+		vi.mocked(streamAiResponse).mockImplementation(
+			(prompt, chatId, onEvent) => {
+				if (prompt === "hello" && chatId === null) {
+					capturedOnEvent = onEvent;
+				}
+
+				return Promise.resolve();
+			},
+		);
+
+		renderComponent({});
+
+		// Act & Assert
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByRole("textbox"));
+		await userEvent.keyboard("hello{Enter}");
+		expect(await screen.findByRole("textbox")).toHaveTextContent("");
+		await screen.findByText("hello");
+
+		await waitFor(() => {
+			expect(capturedOnEvent).not.toBeNull();
+		});
+		capturedOnEvent!.onmessage({
+			event: "createdChat",
+			data: {
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		});
+		await screen.findByText("chat 1");
+
+		capturedOnEvent!.onmessage({
+			event: "inProgress",
+			data: "message from",
+		});
+		await screen.findByText("message from");
+		capturedOnEvent!.onmessage({
+			event: "inProgress",
+			data: " AI",
+		});
+		await screen.findByText("message from AI");
+
+		await screen.findByTitle("Stop");
+		capturedOnEvent!.onmessage({
+			event: "finished",
+		});
+		await screen.findByTitle("Send");
+	});
+
+	it("Should stop generation when unmounted", () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([]),
+		);
+
+		const { unmount } = renderComponent({});
+
+		// Act
+
+		unmount();
+
+		// Assert
+
+		expect(vi.mocked(stopAiGeneration)).toBeCalled();
 	});
 });

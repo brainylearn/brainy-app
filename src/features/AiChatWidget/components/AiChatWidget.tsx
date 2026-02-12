@@ -49,7 +49,6 @@ function AiChatWidgetInner() {
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
-	// TODO: unit test: show correct messages on change chat
 	const handleChangeSelectedChatId = async (newChatId: string) => {
 		if (newChatId === NEW_SESSION_VALUE) {
 			setMessages([]);
@@ -109,6 +108,7 @@ function AiChatWidgetInner() {
 						return newValue;
 					});
 					setSelectedChatId(event.data.id);
+					// TODO: unit test
 				} else if (event.event === "error") {
 					setErrorMessage(event.data);
 					setIsSendingRequest(false);
@@ -168,7 +168,6 @@ function AiChatWidgetInner() {
 		}
 	}, [messages]);
 
-	// TODO: unit test: getting chats and stopping generation
 	useEffect(() => {
 		void (async () => {
 			setChats(await getAllAiChatsSortedByDateDesc());

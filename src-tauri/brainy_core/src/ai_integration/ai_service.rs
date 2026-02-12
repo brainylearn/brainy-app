@@ -106,6 +106,7 @@ impl AiService {
             on_event(StreamLlmResponseEvent::CreatedChat(chat))?;
         }
 
+        // TODO: error handling does not sound with frontend
         self.ai_repository
             .upsert_message(&Message::new(
                 None,

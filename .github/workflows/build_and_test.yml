@@ -23,7 +23,6 @@ jobs:
             - name: Build Rust Project
               run: |
                   cd src-tauri
-                  ls
                   cargo build -vv
             - name: Run Rust Tests
               run: |
