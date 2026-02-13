@@ -30,7 +30,6 @@ impl SqliteAiRepository {
     }
 }
 
-// TODO: unit test
 #[async_trait]
 impl AiRepository for SqliteAiRepository {
     async fn get_all_chats_sorted_by_date_desc(&self) -> Result<Vec<Chat>, RepositoryError> {
@@ -235,5 +234,125 @@ mod file_row {
                 value.content,
             )
         }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use crate::common::{
+        sqlite_repositories_context::SqliteRepositoriesContext,
+        traits::repositories_context::RepositoriesContext,
+    };
+
+    use super::*;
+
+    #[tokio::test]
+    pub async fn get_all_chats_sorted_by_date_desc_multiple_chats_returned_all() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let chat1 = Chat::new(None, "First".to_string());
+        context.ai_repository().upsert_chat(&chat1).await.unwrap();
+        let chat2 = Chat::new(None, "Second".to_string());
+        context.ai_repository().upsert_chat(&chat2).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .ai_repository()
+            .get_all_chats_sorted_by_date_desc()
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(actual.len(), 2);
+        assert_eq!(actual[0].title(), "First");
+        assert_eq!(actual[1].title(), "Second");
+    }
+
+    #[tokio::test]
+    pub async fn get_chat_messages_ordered_multiple_messages_returned_all() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let chat = Chat::new(None, "Chat".to_string());
+        context.ai_repository().upsert_chat(&chat).await.unwrap();
+
+        context
+            .ai_repository()
+            .upsert_message(&Message::new(
+                None,
+                chat.id(),
+                MessageRole::Human,
+                Some("Human".to_string()),
+            ))
+            .await
+            .unwrap();
+        context
+            .ai_repository()
+            .upsert_message(&Message::new(
+                None,
+                chat.id(),
+                MessageRole::Assistant,
+                Some("Assistant".to_string()),
+            ))
+            .await
+            .unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = context
+            .ai_repository()
+            .get_chat_messages_ordered(chat.id())
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(actual.len(), 2);
+        assert_eq!(actual[0].role(), MessageRole::Human);
+        assert_eq!(actual[0].content(), Some(&"Human".to_string()));
+
+        assert_eq!(actual[1].role(), MessageRole::Assistant);
+        assert_eq!(actual[1].content(), Some(&"Assistant".to_string()));
+    }
+
+    #[tokio::test]
+    pub async fn delete_chat_valid_input_deleted_chat() {
+        // Arrange
+
+        let context = SqliteRepositoriesContext::create_testing_context().await;
+
+        let chat1 = Chat::new(None, "First".to_string());
+        context.ai_repository().upsert_chat(&chat1).await.unwrap();
+        let chat2 = Chat::new(None, "Second".to_string());
+        context.ai_repository().upsert_chat(&chat2).await.unwrap();
+
+        context.save_changes().await.unwrap();
+
+        // Act
+
+        context
+            .ai_repository()
+            .delete_chat(chat1.id())
+            .await
+            .unwrap();
+
+        // Assert
+
+        let actual = context
+            .ai_repository()
+            .get_all_chats_sorted_by_date_desc()
+            .await
+            .unwrap();
+        assert_eq!(actual.len(), 1);
+        assert_eq!(actual[0].title(), "Second");
     }
 }
