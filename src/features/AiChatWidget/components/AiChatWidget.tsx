@@ -58,7 +58,6 @@ function AiChatWidgetInner() {
 		setSelectedChatId(newChatId);
 	};
 
-	// TODO: unit test: shows user message and updates assistant message
 	const sendMessage = async () => {
 		if (!userPrompt || isSendingRequest) return;
 
@@ -135,7 +134,6 @@ function AiChatWidgetInner() {
 		void sendMessage();
 	};
 
-	// TODO: unit test: enter with shift shortcut and escape key
 	const handleTextAreaKeyDown = (
 		e: React.KeyboardEvent<HTMLTextAreaElement>,
 	) => {
@@ -147,7 +145,6 @@ function AiChatWidgetInner() {
 		}
 	};
 
-	// TODO: unit test: this
 	useEffect(() => {
 		if (textAreaRef.current) {
 			textAreaRef.current.style.height = "auto";
@@ -156,7 +153,6 @@ function AiChatWidgetInner() {
 		}
 	}, [userPrompt]);
 
-	// TODO: unit test: auto scroll
 	useEffect(() => {
 		if (!messagesContainerRef.current) return;
 
@@ -178,14 +174,12 @@ function AiChatWidgetInner() {
 		};
 	}, []);
 
-	// TODO: unit test: this
 	useEffect(() => {
 		if (!messagesContainerRef.current) return;
 		messagesContainerRef.current.scrollTop =
 			messagesContainerRef.current.scrollHeight;
 	}, [selectedChatId]);
 
-	// TODO: unit test: this
 	const handleDelete = async () => {
 		await deleteAiChat(selectedChatId);
 		await handleChangeSelectedChatId(NEW_SESSION_VALUE);
@@ -193,7 +187,6 @@ function AiChatWidgetInner() {
 		setChats(await getAllAiChatsSortedByDateDesc());
 	};
 
-	// TODO: unit test: stop generation
 	return (
 		<>
 			{showDeleteChatDialog && (
@@ -248,7 +241,8 @@ function AiChatWidgetInner() {
 
 						<div
 							className={styles.messages}
-							ref={messagesContainerRef}>
+							ref={messagesContainerRef}
+							data-testid="messages-container">
 							{messages.map((message, i) => (
 								<div
 									key={i}

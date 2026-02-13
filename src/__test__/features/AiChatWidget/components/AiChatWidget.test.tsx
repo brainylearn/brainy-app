@@ -138,7 +138,51 @@ describe("AiChatWidget", () => {
 		expect(screen.queryByText("message 2")).not.toBeNull();
 	});
 
-	it("Should be able to show streamed responses", async () => {
+	it("Should delete session correctly", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc)
+			.mockReturnValueOnce(
+				Promise.resolve([
+					{
+						id: "chat-1",
+						title: "chat 1",
+						createdDate: "date",
+					},
+					{
+						id: "chat-2",
+						title: "chat 2",
+						createdDate: "date",
+					},
+				]),
+			)
+			.mockReturnValueOnce(
+				Promise.resolve([
+					{
+						id: "chat-2",
+						title: "chat 2",
+						createdDate: "date",
+					},
+				]),
+			);
+
+		renderComponent({});
+
+		// Act & Assert
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByText("+ New chat"));
+
+		await userEvent.click(await screen.findByText("chat 1"));
+		await userEvent.click(await screen.findByTitle("Delete chat"));
+		await userEvent.click(await screen.findByText("Yes"));
+
+		await userEvent.click(await screen.findByText("+ New chat"));
+		await screen.findByText("chat 2");
+		expect(screen.queryByText("chat 1")).toBeNull();
+	});
+
+	it("Should show streamed responses correctly", async () => {
 		// Arrange
 
 		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
@@ -197,6 +241,27 @@ describe("AiChatWidget", () => {
 		await screen.findByTitle("Send");
 	});
 
+	it("Should be able to stop generating when streaming", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([]),
+		);
+
+		renderComponent({});
+
+		// Act
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByRole("textbox"));
+		await userEvent.keyboard("hello{Enter}");
+		await userEvent.click(screen.getByTitle("Stop"));
+
+		// Assert
+
+		expect(vi.mocked(stopAiGeneration)).toBeCalled();
+	});
+
 	it("Should stop generation when unmounted", () => {
 		// Arrange
 
@@ -213,5 +278,87 @@ describe("AiChatWidget", () => {
 		// Assert
 
 		expect(vi.mocked(stopAiGeneration)).toBeCalled();
+	});
+
+	it("Should hide the chat when Escape is pressed", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([]),
+		);
+
+		renderComponent({});
+
+		// Act
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByRole("textbox"));
+		await userEvent.keyboard("{Escape}");
+
+		// Assert
+
+		expect(screen.queryByRole("textbox")).toBeNull();
+	});
+
+	it("Should not send message when shift is pressed", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([]),
+		);
+
+		renderComponent({});
+
+		// Act
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByRole("textbox"));
+		await userEvent.keyboard("First{Shift>}{Enter}Second");
+
+		// Assert
+
+		expect(screen.queryByRole("textbox")).toHaveTextContent("First Second");
+	});
+
+	it("Should scroll to the bottom on changing chat", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+			]),
+		);
+
+		vi.mocked(getChatMessagesOrdered).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					role: "human",
+					content: "message 1",
+				} as Message,
+			]),
+		);
+
+		renderComponent({});
+
+		// Act
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		const element = await screen.findByTestId("messages-container");
+		Object.defineProperty(element, "scrollHeight", {
+			value: 10,
+		});
+
+		await userEvent.click(await screen.findByText("+ New chat"));
+		await userEvent.click(await screen.findByText("chat 1"));
+
+		// Assert
+
+		expect(element.scrollTop).toBe(10);
 	});
 });
