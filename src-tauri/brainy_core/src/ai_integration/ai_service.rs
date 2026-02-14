@@ -115,7 +115,6 @@ impl AiService {
             on_event(StreamLlmResponseEvent::CreatedChat(chat))?;
         }
 
-        // TODO: error handling does not sound with frontend + unit test
         self.ai_repository
             .upsert_message(&Message::new(
                 None,
@@ -133,6 +132,7 @@ impl AiService {
         let agent = self.get_agent().await?;
         let mut stream = agent
             .stream_chat(prompt, messages)
+            // TODO: unit test
             .with_hook(StateCancellationHook::new(self.state.clone()))
             .await;
 
@@ -150,6 +150,7 @@ impl AiService {
                         on_event(StreamLlmResponseEvent::InProgress(text))?;
                     }
                 }
+                // TODO: unit test
                 Err(err) => {
                     let mut should_call_callback = true;
 
@@ -161,15 +162,14 @@ impl AiService {
 
                     if should_call_callback {
                         on_event(StreamLlmResponseEvent::Error(err.to_string()))?;
+                        error_happened = true;
                     }
-                    error_happened = true;
                     break;
                 }
             };
         }
 
-        on_event(StreamLlmResponseEvent::Finished)?;
-
+        // Only save AI message when an error does not happen.
         if !error_happened {
             self.ai_repository
                 .upsert_message(&Message::new(
@@ -180,6 +180,8 @@ impl AiService {
                 ))
                 .await?;
         }
+
+        on_event(StreamLlmResponseEvent::Finished)?;
 
         Ok(())
     }

@@ -50,6 +50,11 @@ function AiChatWidgetInner() {
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 
 	const handleChangeSelectedChatId = async (newChatId: string) => {
+		if (newChatId !== selectedChatId) {
+			setErrorMessage("");
+			await stopAiGeneration();
+		}
+
 		if (newChatId === NEW_SESSION_VALUE) {
 			setMessages([]);
 		} else {
@@ -63,7 +68,7 @@ function AiChatWidgetInner() {
 
 		setErrorMessage("");
 		setIsSendingRequest(true);
-		setMessages([
+		setMessages(messages => [
 			...messages,
 			{
 				chatId: selectedChatId ?? "tmp",
@@ -80,9 +85,22 @@ function AiChatWidgetInner() {
 		]);
 
 		const onEvent = new Channel<StreamLlmResponseEvent>();
+		// Using a custom variable since the variable can be updated under stream
+		// while the state is still queued for update.
+		let updatedChatId = selectedChatId;
 		onEvent.onmessage = event => {
-			setMessages(messages => {
-				if (event.event === "inProgress") {
+			if (event.event === "createdChat") {
+				setChats(chats => {
+					let newValue = chats;
+					if (!newValue.some(chat => chat.id === event.data.id)) {
+						newValue = [event.data, ...chats];
+					}
+					return newValue;
+				});
+				setSelectedChatId(event.data.id);
+				updatedChatId = event.data.id;
+			} else if (event.event === "inProgress") {
+				setMessages(messages => {
 					const lastMessage = messages[messages.length - 1];
 					return [
 						...messages.slice(0, -1),
@@ -91,29 +109,13 @@ function AiChatWidgetInner() {
 							content: lastMessage.content + event.data,
 						},
 					];
-				} else if (event.event === "finished") {
-					setIsSendingRequest(false);
-					void (async () => {
-						setMessages(
-							await getChatMessagesOrdered(NEW_SESSION_VALUE),
-						);
-					});
-				} else if (event.event === "createdChat") {
-					setChats(chats => {
-						let newValue = chats;
-						if (!newValue.some(chat => chat.id === event.data.id)) {
-							newValue = [event.data, ...chats];
-						}
-						return newValue;
-					});
-					setSelectedChatId(event.data.id);
-					// TODO: unit test
-				} else if (event.event === "error") {
-					setErrorMessage(event.data);
-					setIsSendingRequest(false);
-				}
-				return messages;
-			});
+				});
+			} else if (event.event === "finished") {
+				setIsSendingRequest(false);
+				// TODO: unit test
+			} else if (event.event === "error") {
+				setErrorMessage(event.data);
+			}
 		};
 		setUserPrompt("");
 
@@ -126,6 +128,8 @@ function AiChatWidgetInner() {
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 			setIsSendingRequest(false);
+		} finally {
+			setMessages(await getChatMessagesOrdered(updatedChatId));
 		}
 	};
 
@@ -183,6 +187,7 @@ function AiChatWidgetInner() {
 	const handleDelete = async () => {
 		await deleteAiChat(selectedChatId);
 		await handleChangeSelectedChatId(NEW_SESSION_VALUE);
+		setErrorMessage("");
 		setShowDeleteChatDialog(false);
 		setChats(await getAllAiChatsSortedByDateDesc());
 	};
