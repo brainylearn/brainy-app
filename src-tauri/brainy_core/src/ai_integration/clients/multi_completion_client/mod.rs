@@ -4,10 +4,14 @@ pub mod multi_streaming_response;
 
 use rig::{client::CompletionClient, providers::ollama};
 
+#[cfg(test)]
+use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::clients::multi_completion_client::multi_completion_model::MultiCompletionModel;
 
 pub enum MultiCompletionClient {
     Ollama(ollama::Client),
+    #[cfg(test)]
+    Mock(MockClient),
 }
 
 impl CompletionClient for MultiCompletionClient {

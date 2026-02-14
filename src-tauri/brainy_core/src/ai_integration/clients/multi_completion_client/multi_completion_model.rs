@@ -9,6 +9,8 @@ use rig::{
 };
 use tokio_stream::StreamExt;
 
+#[cfg(test)]
+use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::clients::multi_completion_client::{
     MultiCompletionClient, multi_response::MultiResponse,
     multi_streaming_response::MultiStreamingResponse,
@@ -17,6 +19,8 @@ use crate::ai_integration::clients::multi_completion_client::{
 #[derive(Clone)]
 pub enum MultiCompletionModel {
     Ollama(ollama::CompletionModel),
+    #[cfg(test)]
+    Mock(MockClient),
 }
 
 impl CompletionModel for MultiCompletionModel {
@@ -30,6 +34,10 @@ impl CompletionModel for MultiCompletionModel {
         match client {
             MultiCompletionClient::Ollama(client) => {
                 MultiCompletionModel::Ollama(ollama::CompletionModel::make(client, model))
+            }
+            #[cfg(test)]
+            MultiCompletionClient::Mock(client) => {
+                MultiCompletionModel::Mock(MockClient::make(client, model))
             }
         }
     }
@@ -48,6 +56,10 @@ impl CompletionModel for MultiCompletionModel {
                     }
                 })
             }
+            #[cfg(test)]
+            MultiCompletionModel::Mock(completion_model) => {
+                MockClient::completion(completion_model, request).await
+            }
         }
     }
 
@@ -56,11 +68,16 @@ impl CompletionModel for MultiCompletionModel {
         request: CompletionRequest,
     ) -> Result<streaming::StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>
     {
-        let stream = match self {
-            Self::Ollama(completion_model) => completion_model.stream(request).await?,
-        };
-        let mapped_stream = Box::pin(stream.map(|result| result.map(to_raw_streaming_choice)));
-        Ok(StreamingCompletionResponse::stream(mapped_stream))
+        match self {
+            Self::Ollama(completion_model) => {
+                let stream = completion_model.stream(request).await?;
+                let mapped_stream =
+                    Box::pin(stream.map(|result| result.map(to_raw_streaming_choice)));
+                Ok(StreamingCompletionResponse::stream(mapped_stream))
+            }
+            #[cfg(test)]
+            Self::Mock(completion_model) => completion_model.stream(request).await,
+        }
     }
 }
 

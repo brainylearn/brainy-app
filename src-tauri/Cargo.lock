@@ -420,6 +420,7 @@ dependencies = [
 name = "brainy_core"
 version = "1.0.0"
 dependencies = [
+ "async-stream",
  "async-trait",
  "base64 0.22.1",
  "chrono",
