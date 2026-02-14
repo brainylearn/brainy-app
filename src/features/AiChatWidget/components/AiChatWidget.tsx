@@ -112,7 +112,6 @@ function AiChatWidgetInner() {
 				});
 			} else if (event.event === "finished") {
 				setIsSendingRequest(false);
-				// TODO: unit test
 			} else if (event.event === "error") {
 				setErrorMessage(event.data);
 			}

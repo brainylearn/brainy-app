@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import AiChatWidget from "../../../../features/AiChatWidget/components/AiChatWidget";
 import Settings from "../../../../types/backend/model/settings";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
@@ -190,13 +190,16 @@ describe("AiChatWidget", () => {
 		);
 
 		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
+		let finishedStreaming = false;
 		vi.mocked(streamAiResponse).mockImplementation(
-			(prompt, chatId, onEvent) => {
+			async (prompt, chatId, onEvent) => {
 				if (prompt === "hello" && chatId === null) {
 					capturedOnEvent = onEvent;
 				}
 
-				return Promise.resolve();
+				while (!finishedStreaming) {
+					await new Promise(resolve => setTimeout(resolve, 20));
+				}
 			},
 		);
 
@@ -210,9 +213,7 @@ describe("AiChatWidget", () => {
 		expect(await screen.findByRole("textbox")).toHaveTextContent("");
 		await screen.findByText("hello");
 
-		await waitFor(() => {
-			expect(capturedOnEvent).not.toBeNull();
-		});
+		expect(capturedOnEvent).not.toBeNull();
 		capturedOnEvent!.onmessage({
 			event: "createdChat",
 			data: {
@@ -238,7 +239,80 @@ describe("AiChatWidget", () => {
 		capturedOnEvent!.onmessage({
 			event: "finished",
 		});
+		finishedStreaming = true;
 		await screen.findByTitle("Send");
+	});
+
+	it("Should show error when streaming a response", async () => {
+		// Arrange
+
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([]),
+		);
+		vi.mocked(getChatMessagesOrdered).mockImplementation(id => {
+			if (id === "chat-1") {
+				return Promise.resolve([
+					{
+						id: "message-1",
+						chatId: "chat-1",
+						role: "human",
+						content: "retrieved message",
+					} as Message,
+				]);
+			}
+			return Promise.resolve([]);
+		});
+
+		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
+		let finishedStreaming = false;
+		vi.mocked(streamAiResponse).mockImplementation(
+			async (_, __, onEvent) => {
+				capturedOnEvent = onEvent;
+				while (!finishedStreaming) {
+					await new Promise(resolve => setTimeout(resolve, 20));
+				}
+			},
+		);
+
+		renderComponent({});
+
+		// Act & Assert
+
+		await userEvent.click(await screen.findByTitle("Open AI assistant"));
+		await userEvent.click(await screen.findByRole("textbox"));
+		await userEvent.keyboard("hello{Enter}");
+		expect(await screen.findByRole("textbox")).toHaveTextContent("");
+		await screen.findByText("hello");
+		expect(capturedOnEvent).not.toBeNull();
+
+		capturedOnEvent!.onmessage({
+			event: "createdChat",
+			data: {
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		});
+
+		capturedOnEvent!.onmessage({
+			event: "inProgress",
+			data: "Ai response",
+		});
+		await screen.findByText("Ai response");
+
+		capturedOnEvent!.onmessage({
+			event: "error",
+			data: "An error has happened",
+		});
+
+		finishedStreaming = true;
+		capturedOnEvent!.onmessage({
+			event: "finished",
+		});
+
+		await screen.findByText("An error has happened");
+		// Asserting that the chat retrieved that latest messages.
+		await screen.findByText("retrieved message");
 	});
 
 	it("Should be able to stop generating when streaming", async () => {
