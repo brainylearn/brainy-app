@@ -274,7 +274,7 @@ function AiChatWidgetInner() {
 						<form onSubmit={handleSubmit}>
 							<textarea
 								ref={textAreaRef}
-								placeholder="Ask a question"
+								placeholder="Type here to speak with AI"
 								value={userPrompt}
 								onChange={e => setUserPrompt(e.target.value)}
 								onKeyDown={handleTextAreaKeyDown}

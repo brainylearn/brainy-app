@@ -105,7 +105,8 @@ export default function Select({
 							}}
 							onFocus={() => {
 								focusedIndex.current = i;
-							}}>
+							}}
+							title={option.label}>
 							{option.label}
 						</button>
 					))}

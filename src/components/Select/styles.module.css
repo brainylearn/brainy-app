@@ -43,6 +43,10 @@
 	& > button {
 		padding: var(--spacing-3) var(--spacing-4);
 
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
 		&.selected {
 			background-color: var(--surface-background-color);
 		}
