@@ -82,7 +82,11 @@ export default function Select({
 				className={`select ${styles.dropDownButton}`}
 				type="button">
 				<p>{selectedLabel}</p>
-				<Icon path={isOpen ? mdiChevronUp : mdiChevronDown} size={1} />
+				<Icon
+					className={styles.icon}
+					path={isOpen ? mdiChevronUp : mdiChevronDown}
+					size={1}
+				/>
 			</button>
 
 			{isOpen && (
