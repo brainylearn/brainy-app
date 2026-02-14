@@ -103,7 +103,7 @@ function SideBar({ isExpanded, onExpand, onCollapse, onSettingsClick }: Props) {
 			<div className={styles.sideBarTopContainer}>
 				<div className={styles.header}>
 					<div className={styles.titleRow}>
-						<img src="icon.svg" />
+						<img src="icon.svg" alt="logo" />
 						<h2>Brainy</h2>
 					</div>
 
