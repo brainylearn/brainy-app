@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use async_stream::try_stream;
+use async_stream::stream;
 use rig::{
     completion::{self, CompletionError, CompletionModel, CompletionRequest, CompletionResponse},
     streaming::{RawStreamingChoice, StreamingCompletionResponse},
@@ -13,8 +13,11 @@ use crate::ai_integration::clients::multi_completion_client::{
 type CompletionFn =
     dyn Send + Sync + Fn(CompletionRequest) -> completion::CompletionResponse<MultiResponse>;
 
-type StreamFn =
-    dyn Send + Sync + Fn(CompletionRequest) -> Option<RawStreamingChoice<MultiStreamingResponse>>;
+type StreamFn = dyn Send
+    + Sync
+    + Fn(
+        CompletionRequest,
+    ) -> Result<Option<RawStreamingChoice<MultiStreamingResponse>>, CompletionError>;
 
 #[derive(Clone)]
 pub struct MockClient {
@@ -56,9 +59,17 @@ impl CompletionModel for MockClient {
 
         let stream_fn = Arc::clone(&self.stream_fn);
 
-        let stream = try_stream! {
-            while let Some(response) = stream_fn.as_ref().as_ref().unwrap()(request.clone()) {
-                yield response;
+        let stream = stream! {
+            loop {
+                let response = stream_fn.as_ref().as_ref().unwrap()(request.clone());
+                if let Ok(Some(response)) = response {
+                    yield Ok(response);
+                } else if let Err(err) = response {
+                    yield Err(err);
+                    break;
+                } else {
+                    break;
+                }
             }
         };
 
