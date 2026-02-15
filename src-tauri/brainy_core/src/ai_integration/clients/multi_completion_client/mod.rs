@@ -8,6 +8,7 @@ use rig::{client::CompletionClient, providers::ollama};
 use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::clients::multi_completion_client::multi_completion_model::MultiCompletionModel;
 
+/// Used for enum dispatching from multiple models.
 pub enum MultiCompletionClient {
     Ollama(ollama::Client),
     #[cfg(test)]

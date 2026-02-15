@@ -127,7 +127,7 @@ impl AiRepository for SqliteAiRepository {
         }
     }
 
-    async fn get_by_id(&self, id: Guid) -> Result<Chat, RepositoryError> {
+    async fn get_chat_by_id(&self, id: Guid) -> Result<Chat, RepositoryError> {
         let chat_row = sqlx::query_as!(
             ChatRow,
             r#"SELECT
