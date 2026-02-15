@@ -14,12 +14,14 @@ fn setup_sqlx() {
     if !env_file.exists() {
         let env_content = format!("DATABASE_URL=\"{0}\"", db_url);
         fs::write(&env_file, env_content).expect("Cannot write .env variable.");
-        println!("✅ .env file created");
+        println!("cargo:warning=✅ .env file created");
+    } else {
+        println!("cargo:warning=✅ .env already exists");
     }
 
     if db_path.exists() {
         fs::remove_file(&db_path).expect("Cannot remove database");
-        println!("✅ removed previous temp.db file");
+        println!("cargo:warning=✅ removed previous temp.db file");
     }
 
     let output = Command::new("sqlx")
@@ -35,12 +37,15 @@ fn setup_sqlx() {
         .expect("Could not run sqlx command, ensure that it is installed");
 
     if !output.status.success() {
-        eprintln!(
-            "Migration failed: {}",
+        println!(
+            "cargo:warning=Migration failed: {}",
             String::from_utf8_lossy(&output.stderr)
         );
         std::process::exit(1);
     } else {
-        println!("✅ migration is applied to {}", db_path.display());
+        println!(
+            "cargo:warning=✅ migration is applied to {}",
+            db_path.display()
+        );
     }
 }
