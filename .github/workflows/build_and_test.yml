@@ -25,7 +25,7 @@ jobs:
                   cd src-tauri
                   export DATABASE_URL="sqlite:///$(pwd)/temp.db?mode=rwc"
                   echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
-                  cargo build --workspace -vv
+                  cargo build -vv
             - name: Run Rust Tests
               run: |
                   cd src-tauri

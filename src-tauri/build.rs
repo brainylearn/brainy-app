@@ -10,9 +10,6 @@ fn setup_sqlx() {
     let db_path = current_directory.join("temp.db");
     let db_url = format!("sqlite:///{}?mode=rwc", db_path.display());
 
-    // Set this environment variable for the compilation.
-    println!("cargo:rustc-env=DATABASE_URL={}", db_url);
-
     let env_file = current_directory.join(".env");
     if !env_file.exists() {
         let env_content = format!("DATABASE_URL=\"{0}\"", db_url);
