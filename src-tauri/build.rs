@@ -38,16 +38,16 @@ fn setup_sqlx() {
         .output()
         .expect("Could not run sqlx command, ensure that it is installed");
 
-    if !output.status.success() {
+    if output.status.success() {
+        println!(
+            "cargo:warning=migration is applied to {}",
+            db_path.display()
+        );
+    } else {
         println!(
             "cargo:warning=Migration failed: {}",
             String::from_utf8_lossy(&output.stderr)
         );
         std::process::exit(1);
-    } else {
-        println!(
-            "cargo:warning=migration is applied to {}",
-            db_path.display()
-        );
     }
 }
