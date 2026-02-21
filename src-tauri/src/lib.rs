@@ -30,7 +30,7 @@ use crate::{
     backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES},
     cells::cell_service::CellService,
     common::{
-        injector::injector::Injector, sqlite_repositories_context::SqliteRepositoriesContext,
+        sqlite_repositories_context::SqliteRepositoriesContext,
         traits::repositories_context::RepositoriesContext, unit_of_work::UnitOfWork,
     },
     file_system::file_system_service::FileSystemService,
@@ -38,6 +38,7 @@ use crate::{
     settings::{Settings, get_settings_dir},
     sync::sync_service::SyncService,
 };
+use injector::{injector::Injector, register_scope};
 use reqwest::Url;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tauri::Manager;
@@ -124,33 +125,22 @@ pub async fn run() -> Result<(), String> {
         }));
     }
 
-    let mut injector = Injector::new();
+    let mut injector = Injector::default();
     let settings = Arc::new(Mutex::new(settings));
     injector.register_singleton(settings.clone());
     injector.register_singleton(backend_client.clone());
     injector.register_singleton(repositories_context.pool.clone());
+    injector.register_singleton(Arc::new(AiState::default()));
 
-    injector.register_factory::<DbTransaction>(|scope| {
+    register_scope!(injector, dyn AiRepository, SqliteAiRepository);
+    register_scope!(injector, AiService);
+    register_scope!(injector, UnitOfWork);
+
+    injector.register_scope_factory::<DbTransaction>(|scope| {
         Box::pin(async move {
             let pool = scope.resolve::<SqlitePool>().await;
             let tx = pool.begin().await.expect("Cannot create a new transaction");
             Arc::new(Mutex::new(tx))
-        })
-    });
-
-    injector.register_factory::<dyn AiRepository>(|scope| {
-        Box::pin(async move {
-            let pool = scope.resolve::<SqlitePool>().await;
-            let tx = scope.resolve::<DbTransaction>().await;
-            Arc::new(SqliteAiRepository::new(pool, tx)) as Arc<dyn AiRepository>
-        })
-    });
-
-    injector.register_factory(|scope| {
-        Box::pin(async move {
-            let pool = scope.resolve::<SqlitePool>().await;
-            let tx = scope.resolve::<DbTransaction>().await;
-            Arc::new(UnitOfWork::new(pool, tx))
         })
     });
 
@@ -212,11 +202,11 @@ pub async fn run() -> Result<(), String> {
                 ai_state.clone(),
                 repositories_context.ai_repository(),
                 #[cfg(test)]
-                MockClient {
+                Arc::new(MockClient {
                     model: None,
                     stream_fn: Arc::new(None),
                     completion_fn: Arc::new(None),
-                },
+                }),
             )));
             app.manage(ai_state);
 

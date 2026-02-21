@@ -1,7 +1,8 @@
 use crate::{
     backend::{models::UserInformationDto, traits::brainy_backend_client::BrainyBackendClient},
-    common::{api_error::ApiError, injector::injector::Injector},
+    common::api_error::ApiError,
 };
+use injector::injector::Injector;
 use tauri::State;
 
 #[tauri::command]

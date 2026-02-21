@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::{
     Guid,
     ai_integration::{
@@ -8,30 +6,30 @@ use crate::{
         entities::{chat::Chat, message::Message},
         repositories::traits::ai_repository::AiRepository,
     },
-    common::{
-        api_error::ApiError, injector::injector::Injector,
-        traits::repositories_context::RepositoriesContext, unit_of_work::UnitOfWork,
-    },
+    common::{api_error::ApiError, unit_of_work::UnitOfWork},
 };
+use injector::injector::Injector;
 use tauri::{State, ipc::Channel};
-use tokio::sync::Mutex;
 
 #[tauri::command]
 pub async fn stream_ai_response(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    ai_service: State<'_, Arc<AiService>>,
+    injector: State<'_, Injector>,
     on_event: Channel<StreamLlmResponseEvent>,
     prompt: String,
     chat_id: Option<Guid>,
 ) -> Result<(), ApiError> {
-    let result = ai_service
+    let scope = injector.start_scope();
+
+    let result = scope
+        .resolve::<AiService>()
+        .await
         .stream(prompt, chat_id, |event| match on_event.send(event) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         })
         .await;
-    let context = context.lock().await;
-    context.save_changes().await?;
+
+    scope.resolve::<UnitOfWork>().await.save_changes().await?;
 
     match result {
         Ok(()) => Ok(()),
@@ -40,8 +38,10 @@ pub async fn stream_ai_response(
 }
 
 #[tauri::command]
-pub async fn stop_ai_generation(ai_state: State<'_, Arc<AiState>>) -> Result<(), ApiError> {
-    ai_state.cancel_generation();
+pub async fn stop_ai_generation(injector: State<'_, Injector>) -> Result<(), ApiError> {
+    let scope = injector.start_scope();
+    let state = scope.resolve::<AiState>().await;
+    state.cancel_generation();
     Ok(())
 }
 

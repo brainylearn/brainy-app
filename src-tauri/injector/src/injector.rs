@@ -5,26 +5,45 @@ use std::{
     sync::Arc,
 };
 
-use crate::common::injector::injector_scope::InjectorScope;
+use crate::injector_scope::InjectorScope;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type FactoryFunction = dyn Send
     + Sync
     + for<'a> Fn(&'a InjectorScope<'a>) -> BoxFuture<'a, Box<dyn Any + Send + Sync>>;
 
+#[derive(Default)]
 pub struct Injector {
     singleton_registry: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
     scoped_factory_registry: HashMap<TypeId, Box<FactoryFunction>>,
 }
 
-impl Injector {
-    pub fn new() -> Self {
-        Self {
-            singleton_registry: HashMap::new(),
-            scoped_factory_registry: HashMap::new(),
-        }
-    }
+#[macro_export]
+macro_rules! register_scope {
+    // With interface: cast to Arc<$interface>
+    ($container:expr, $interface:ty, $implementation:ty) => {
+        $container.register_scope_factory::<$interface>(|scope| {
+            Box::pin(async move {
+                use $crate::injector_scope::ScopeInjectable;
+                let value = <$implementation>::from_injector_scope(scope).await;
+                std::sync::Arc::new(value) as std::sync::Arc<$interface>
+            })
+        })
+    };
 
+    // Without interface: no casting, registers as Arc<$implementation>
+    ($container:expr, $implementation:ty) => {
+        $container.register_scope_factory::<$implementation>(|scope| {
+            Box::pin(async move {
+                use $crate::injector_scope::ScopeInjectable;
+                let value = <$implementation>::from_injector_scope(scope).await;
+                std::sync::Arc::new(value)
+            })
+        })
+    };
+}
+
+impl Injector {
     pub fn singleton_registry(&self) -> &HashMap<TypeId, Box<dyn Any + Send + Sync>> {
         &self.singleton_registry
     }
@@ -38,7 +57,7 @@ impl Injector {
             .insert(TypeId::of::<T>(), Box::new(implementation));
     }
 
-    pub fn register_factory<T: Any + Send + Sync + ?Sized + 'static>(
+    pub fn register_scope_factory<T: Any + Send + Sync + ?Sized + 'static>(
         &mut self,
         factory: impl for<'a> Fn(&'a InjectorScope) -> BoxFuture<'a, Arc<T>> + Send + Sync + 'static,
     ) {

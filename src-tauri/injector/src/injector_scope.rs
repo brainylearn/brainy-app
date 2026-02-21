@@ -4,9 +4,10 @@ use std::{
     sync::Arc,
 };
 
+use async_trait::async_trait;
 use tokio::sync::Mutex;
 
-use crate::common::injector::injector::Injector;
+use crate::injector::Injector;
 
 pub struct InjectorScope<'a> {
     injector: &'a Injector,
@@ -61,4 +62,9 @@ impl<'a> InjectorScope<'a> {
 
         panic!("Could not resolve {}", type_name::<T>())
     }
+}
+
+#[async_trait]
+pub trait ScopeInjectable {
+    async fn from_injector_scope(scope: &InjectorScope<'_>) -> Self;
 }

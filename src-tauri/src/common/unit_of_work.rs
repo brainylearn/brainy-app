@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
+use injector_derive::ScopeInjectable;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
 use crate::common::traits::repositories_context::RepositoriesContextError;
 
+#[derive(ScopeInjectable)]
 pub struct UnitOfWork {
     pool: Arc<SqlitePool>,
     // TODO: use alias
