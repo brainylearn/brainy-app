@@ -6,7 +6,7 @@ use crate::{
         entities::{chat::Chat, message::Message},
         repositories::traits::ai_repository::AiRepository,
     },
-    common::{api_error::ApiError, unit_of_work::UnitOfWork},
+    common::{api_error::ApiError, unit_of_work::UnitOfWorkExt},
 };
 use injector::injector::Injector;
 use tauri::{State, ipc::Channel};
@@ -29,7 +29,7 @@ pub async fn stream_ai_response(
         })
         .await;
 
-    scope.resolve::<UnitOfWork>().await.save_changes().await?;
+    scope.save_db_changes().await?;
 
     match result {
         Ok(()) => Ok(()),
@@ -66,7 +66,7 @@ pub async fn delete_ai_chat(injector: State<'_, Injector>, id: Guid) -> Result<(
         .await
         .delete_chat(id)
         .await?;
-    scope.resolve::<UnitOfWork>().await.save_changes().await?;
+    scope.save_db_changes().await?;
     Ok(())
 }
 
@@ -95,6 +95,6 @@ pub async fn rename_ai_chat(
     let mut chat = ai_repository.get_chat_by_id(id).await?;
     chat.set_title(new_title);
     ai_repository.upsert_chat(&chat).await?;
-    scope.resolve::<UnitOfWork>().await.save_changes().await?;
+    scope.save_db_changes().await?;
     Ok(())
 }

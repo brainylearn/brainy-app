@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
+use injector::injector_scope::InjectorScope;
 use injector_derive::ScopeInjectable;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
@@ -29,7 +31,7 @@ impl UnitOfWork {
         Ok(())
     }
 
-    pub async fn rollback(&self) -> Result<(), RepositoriesContextError> {
+    pub async fn rollback_changes(&self) -> Result<(), RepositoriesContextError> {
         log::info!("Aborting transaction");
 
         let old_tx = self.replace_current_transaction_with_new_one().await;
@@ -69,4 +71,21 @@ async fn create_transaction(pool: &Arc<SqlitePool>) -> Transaction<'static, Sqli
     #[cfg(debug_assertions)]
     log::info!("Starting new transaction");
     pool.begin().await.expect("Cannot create a new transaction")
+}
+
+#[async_trait]
+pub trait UnitOfWorkExt {
+    async fn save_db_changes(&self) -> Result<(), RepositoriesContextError>;
+    async fn rollback_changes(&self) -> Result<(), RepositoriesContextError>;
+}
+
+#[async_trait]
+impl<'a> UnitOfWorkExt for InjectorScope<'a> {
+    async fn save_db_changes(&self) -> Result<(), RepositoriesContextError> {
+        self.resolve::<UnitOfWork>().await.save_changes().await
+    }
+
+    async fn rollback_changes(&self) -> Result<(), RepositoriesContextError> {
+        self.resolve::<UnitOfWork>().await.rollback_changes().await
+    }
 }
