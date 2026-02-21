@@ -37,7 +37,7 @@ use crate::{
             traits::{cell_repository::CellRepository, review_repository::ReviewRepository},
         },
     },
-    common::{sqlite_repositories_context::SqliteRepositoriesContext, unit_of_work::UnitOfWork},
+    common::utils::create_sqlite_pool::create_sqlite_pool,
     file_system::{
         file_system_service::FileSystemService,
         repositories::{
@@ -126,20 +126,8 @@ pub async fn run() -> Result<(), String> {
         .await
         .unwrap();
 
-    let repositories_context = SqliteRepositoriesContext::new_with_migration(&format!(
-        "sqlite:///{}",
-        settings.database_location
-    ))
-    .await
-    .unwrap();
-
     let mut tauri_builder =
         tauri::Builder::default().plugin(tauri_plugin_clipboard_manager::init());
-
-    let backend_url = Url::parse("http://localhost:5078").unwrap();
-    let backend_client =
-        BrainyBackendHttpClient::new(backend_url).expect("Cannot create backend client");
-    let backend_client = Arc::new(backend_client) as Arc<dyn BrainyBackendClient>;
 
     #[cfg(desktop)]
     {
@@ -151,11 +139,20 @@ pub async fn run() -> Result<(), String> {
         }));
     }
 
+    // TODO: move to own file
     let mut injector = Injector::default();
-    let settings = Arc::new(Mutex::new(settings));
-    injector.register_singleton(settings.clone());
-    injector.register_singleton(backend_client.clone());
-    injector.register_singleton(repositories_context.pool.clone());
+
+    let pool = create_sqlite_pool(&format!("sqlite:///{}", settings.database_location))
+        .await
+        .expect("Error connecting to Sqlite database");
+    injector.register_singleton(Arc::new(pool));
+
+    let backend_url = Url::parse("http://localhost:5078").unwrap();
+    injector.register_singleton::<dyn BrainyBackendClient>(Arc::new(
+        BrainyBackendHttpClient::new(backend_url).expect("Cannot create backend client"),
+    ));
+
+    injector.register_singleton(Arc::new(Mutex::new(settings)));
     injector.register_singleton(Arc::new(AiState::default()));
 
     register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
@@ -177,8 +174,6 @@ pub async fn run() -> Result<(), String> {
     register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);
     register_scope!(injector, AiService);
-
-    register_scope!(injector, UnitOfWork);
 
     injector.register_scope_factory::<DbTransaction>(|scope| {
         Box::pin(async move {

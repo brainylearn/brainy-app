@@ -1,5 +1,5 @@
 use crate::{
-    common::{api_error::ApiError, unit_of_work::UnitOfWorkExt},
+    common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
     sync::sync_service::SyncService,
 };
 use injector::injector::Injector;
@@ -13,21 +13,13 @@ pub async fn sync(injector: State<'_, Injector>) -> Result<(), ApiError> {
         .disable_foreign_key_constraint_for_current_transaction()
         .await?;
 
-    let result = scope
+    scope
         .resolve::<SyncService>()
         .await
         .sync_with_backend()
-        .await;
-    if let Err(err) = result {
-        scope.rollback_changes().await?;
-        return Err(err.into());
-    }
+        .await?;
 
-    let result = scope.save_db_changes().await;
-    if let Err(err) = result {
-        scope.rollback_changes().await?;
-        return Err(err.into());
-    }
+    scope.save_changes().await?;
 
     Ok(())
 }

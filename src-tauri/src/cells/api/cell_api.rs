@@ -5,7 +5,7 @@ use crate::{
         entities::cell::{Cell, CellType},
         repositories::traits::cell_repository::CellRepository,
     },
-    common::{repository_error::RepositoryError, unit_of_work::UnitOfWorkExt},
+    common::{repository_error::RepositoryError, unit_of_work_ext::UnitOfWorkExt},
     file_system::{
         repositories::traits::{
             file_repository::FileRepository, folder_repository::FolderRepository,
@@ -50,7 +50,7 @@ pub async fn create_cell(
         .await
         .create_cell(file_id, content, cell_type, index)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(id)
 }
 
@@ -62,7 +62,7 @@ pub async fn delete_cell(injector: State<'_, Injector>, id: Guid) -> Result<(), 
         .await
         .delete_by_id(id)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -79,7 +79,7 @@ pub async fn move_cell(
         .move_cell(id, new_index)
         .await
         .unwrap();
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -96,7 +96,7 @@ pub async fn update_cells_contents(
         cell.set_content(request.content);
         cell_repository.update(&cell).await?;
     }
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 

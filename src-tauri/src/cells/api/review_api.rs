@@ -5,7 +5,7 @@ use crate::{
         repositories::traits::cell_repository::CellRepository,
         value_objects::repetition_update::RepetitionUpdate,
     },
-    common::{api_error::ApiError, unit_of_work::UnitOfWorkExt},
+    common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
 };
 use injector::injector::Injector;
 use tauri::State;
@@ -36,6 +36,6 @@ pub async fn register_review(
         .await
         .register_review(repetition_update, rating, study_time)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }

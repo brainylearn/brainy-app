@@ -1,6 +1,8 @@
 use crate::{
     Guid,
-    common::{api_error::ApiError, repository_error::RepositoryError, unit_of_work::UnitOfWorkExt},
+    common::{
+        api_error::ApiError, repository_error::RepositoryError, unit_of_work_ext::UnitOfWorkExt,
+    },
     file_system::{
         repositories::traits::{
             file_repository::FileRepository, folder_repository::FolderRepository,
@@ -180,7 +182,7 @@ pub async fn create_profile(
         .await
         .create(&profile)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(profile)
 }
 
@@ -203,7 +205,7 @@ pub async fn update_profile(
     profile.set_weights(weights);
 
     fsrs_repository.update(&profile).await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -219,7 +221,7 @@ pub async fn set_fsrs_profile_choice_for_folder(
     let mut folder = folder_repository.get_by_id(id).await?;
     folder.set_fsrs_profile_choice(fsrs_profile_choice);
     folder_repository.update(&folder).await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -235,7 +237,7 @@ pub async fn set_fsrs_profile_choice_for_file(
     let mut file = file_repository.get_by_id(id).await?;
     file.set_fsrs_profile_choice(fsrs_profile_choice);
     file_repository.update(&file).await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -247,7 +249,7 @@ pub async fn delete_fsrs_profile(injector: State<'_, Injector>, id: Guid) -> Res
         .await
         .delete_by_id(id)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 

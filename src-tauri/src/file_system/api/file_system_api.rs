@@ -1,7 +1,7 @@
 use crate::{
     Guid,
     cells::repositories::traits::cell_repository::CellRepository,
-    common::{api_error::ApiError, unit_of_work::UnitOfWorkExt},
+    common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
     file_system::{
         file_system_service::FileSystemService,
         repositories::traits::{
@@ -55,7 +55,7 @@ pub async fn create_folder(
         .create_folder(parent_id, name.try_into()?)
         .await?;
 
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
 
     Ok(folder_id)
 }
@@ -74,7 +74,7 @@ pub async fn create_file(
         .create_file(parent_id, name.try_into()?)
         .await?;
 
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
 
     Ok(file_id)
 }
@@ -87,7 +87,7 @@ pub async fn delete_file(injector: State<'_, Injector>, file_id: Guid) -> Result
         .await
         .delete_by_id(file_id)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -99,7 +99,7 @@ pub async fn delete_folder(injector: State<'_, Injector>, folder_id: Guid) -> Re
         .await
         .delete_by_id(folder_id)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -115,7 +115,7 @@ pub async fn move_file(
         .await
         .move_file(file_id, destination_folder_id)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -131,7 +131,7 @@ pub async fn move_folder(
         .await
         .move_folder(folder_id, destination_folder_id)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -147,7 +147,7 @@ pub async fn rename_file(
         .await
         .rename_file(file_id, new_name.try_into()?)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }
 
@@ -163,6 +163,6 @@ pub async fn rename_folder(
         .await
         .rename_folder(folder_id, new_name.try_into()?)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
     Ok(())
 }

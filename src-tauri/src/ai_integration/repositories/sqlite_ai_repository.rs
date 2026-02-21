@@ -238,7 +238,7 @@ mod ai_row {
 pub mod tests {
     use injector::{injector::Injector, register_scope};
 
-    use crate::{common::unit_of_work::UnitOfWorkExt, test_utils::create_test_injector};
+    use crate::{common::unit_of_work_ext::UnitOfWorkExt, test_utils::create_test_injector};
 
     use super::*;
 
@@ -261,7 +261,7 @@ pub mod tests {
         let chat2 = Chat::new(None, "Second".to_string());
         repository.upsert_chat(&chat2).await.unwrap();
 
-        scope.save_db_changes().await.unwrap();
+        scope.save_changes().await.unwrap();
 
         // Act
 
@@ -307,7 +307,7 @@ pub mod tests {
             .await
             .unwrap();
 
-        scope.save_db_changes().await.unwrap();
+        scope.save_changes().await.unwrap();
 
         // Act
 
@@ -339,7 +339,7 @@ pub mod tests {
         let chat2 = Chat::new(None, "Second".to_string());
         repository.upsert_chat(&chat2).await.unwrap();
 
-        scope.save_db_changes().await.unwrap();
+        scope.save_changes().await.unwrap();
 
         // Act
 

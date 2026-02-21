@@ -6,7 +6,7 @@ use tokio::{fs, sync::Mutex};
 
 use crate::{
     DbTransaction, Guid,
-    common::{sqlite_repositories_context::SqliteRepositoriesContext, unit_of_work::UnitOfWork},
+    common::{unit_of_work_ext::UnitOfWork, utils::create_sqlite_pool::create_sqlite_pool},
 };
 
 pub async fn create_temp_directory() -> PathBuf {
@@ -18,8 +18,8 @@ pub async fn create_temp_directory() -> PathBuf {
 pub async fn create_test_injector() -> Injector {
     let mut injector = Injector::default();
 
-    let context = SqliteRepositoriesContext::create_testing_context().await;
-    injector.register_singleton(context.pool.clone());
+    let pool = create_sqlite_pool("sqlite::memory:").await.unwrap();
+    injector.register_singleton(Arc::new(pool));
     register_scope!(injector, UnitOfWork);
 
     // TODO: duplicated in lib.rs

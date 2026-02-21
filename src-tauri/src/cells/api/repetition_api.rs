@@ -2,7 +2,7 @@ use crate::Guid;
 use crate::cells::models::file_repetitions_count::FileRepetitionCounts;
 use crate::cells::repositories::traits::cell_repository::CellRepository;
 use crate::common::api_error::ApiError;
-use crate::common::unit_of_work::UnitOfWorkExt;
+use crate::common::unit_of_work_ext::UnitOfWorkExt;
 use injector::injector::Injector;
 use tauri::State;
 
@@ -33,7 +33,7 @@ pub async fn reset_repetitions_for_cell(
     let mut cell = cell_repository.get_by_id(cell_id).await?;
     cell.reset_repetitions();
     cell_repository.update(&cell).await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use crate::{
     Guid,
-    common::{api_error::ApiError, unit_of_work::UnitOfWorkExt},
+    common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
     file_system::{file_system_service::FileSystemService, models::exported_item::ExportedItem},
 };
 use injector::injector::Injector;
@@ -74,7 +74,7 @@ pub async fn import(
         .await
         .import_exported_item(import_into_folder_id, exported_item)
         .await?;
-    scope.save_db_changes().await?;
+    scope.save_changes().await?;
 
     Ok(())
 }
