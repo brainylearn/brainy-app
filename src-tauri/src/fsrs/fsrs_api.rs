@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     Guid,
     common::{
@@ -21,7 +23,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn get_all_fsrs_profiles(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
 ) -> Result<Vec<FsrsProfile>, ApiError> {
     let scope = injector.start_scope();
     let result = scope
@@ -34,7 +36,7 @@ pub async fn get_all_fsrs_profiles(
 
 #[tauri::command]
 pub async fn get_file_fsrs_profile(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<FsrsProfile, ApiError> {
     let scope = injector.start_scope();
@@ -52,7 +54,7 @@ pub async fn get_file_fsrs_profile(
 
 #[tauri::command]
 pub async fn get_folder_fsrs_profile(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<FsrsProfile, ApiError> {
     let scope = injector.start_scope();
@@ -73,7 +75,7 @@ pub async fn get_folder_fsrs_profile(
 
 #[tauri::command]
 pub async fn get_fsrs_profile_choice_for_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<FsrsProfileChoice, ApiError> {
     let scope = injector.start_scope();
@@ -87,7 +89,7 @@ pub async fn get_fsrs_profile_choice_for_folder(
 
 #[tauri::command]
 pub async fn get_fsrs_profile_choice_for_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<FsrsProfileChoice, ApiError> {
     let scope = injector.start_scope();
@@ -101,7 +103,7 @@ pub async fn get_fsrs_profile_choice_for_file(
 
 #[tauri::command]
 pub async fn get_parent_fsrs_profile_for_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<FsrsProfile, ApiError> {
     let scope = injector.start_scope();
@@ -122,7 +124,7 @@ pub async fn get_parent_fsrs_profile_for_folder(
 
 #[tauri::command]
 pub async fn get_parent_fsrs_profile_for_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<FsrsProfile, ApiError> {
     let scope = injector.start_scope();
@@ -169,7 +171,7 @@ async fn get_fsrs_profile_recursively_for_item(
 
 #[tauri::command]
 pub async fn create_profile(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     name: String,
     request_retention: f64,
     maximum_interval: f64,
@@ -188,7 +190,7 @@ pub async fn create_profile(
 
 #[tauri::command]
 pub async fn update_profile(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
     name: String,
     request_retention: f64,
@@ -211,7 +213,7 @@ pub async fn update_profile(
 
 #[tauri::command]
 pub async fn set_fsrs_profile_choice_for_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
     fsrs_profile_choice: FsrsProfileChoice,
 ) -> Result<(), ApiError> {
@@ -227,7 +229,7 @@ pub async fn set_fsrs_profile_choice_for_folder(
 
 #[tauri::command]
 pub async fn set_fsrs_profile_choice_for_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
     fsrs_profile_choice: FsrsProfileChoice,
 ) -> Result<(), ApiError> {
@@ -242,7 +244,10 @@ pub async fn set_fsrs_profile_choice_for_file(
 }
 
 #[tauri::command]
-pub async fn delete_fsrs_profile(injector: State<'_, Injector>, id: Guid) -> Result<(), ApiError> {
+pub async fn delete_fsrs_profile(
+    injector: State<'_, Arc<Injector>>,
+    id: Guid,
+) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<FsrsService>()

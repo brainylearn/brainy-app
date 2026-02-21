@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
     sync::sync_service::SyncService,
@@ -6,7 +8,7 @@ use injector::injector::Injector;
 use tauri::State;
 
 #[tauri::command]
-pub async fn sync(injector: State<'_, Injector>) -> Result<(), ApiError> {
+pub async fn sync(injector: State<'_, Arc<Injector>>) -> Result<(), ApiError> {
     let scope = injector.start_scope();
 
     scope

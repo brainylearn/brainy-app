@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     cells::{
         cell_service::CellService, entities::review::Rating,
@@ -12,7 +14,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn get_home_statistics(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
 ) -> Result<HomeStatistics, ApiError> {
     let scope = injector.start_scope();
     let result = scope
@@ -25,7 +27,7 @@ pub async fn get_home_statistics(
 
 #[tauri::command]
 pub async fn register_review(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     repetition_update: RepetitionUpdate,
     rating: Rating,
     study_time: u32,

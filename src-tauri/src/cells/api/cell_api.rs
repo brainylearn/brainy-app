@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     Guid,
     cells::{
@@ -24,7 +26,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn get_file_cells_ordered_by_index(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_id: Guid,
 ) -> Result<Vec<Cell>, ApiError> {
     let scope = injector.start_scope();
@@ -38,7 +40,7 @@ pub async fn get_file_cells_ordered_by_index(
 
 #[tauri::command]
 pub async fn create_cell(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_id: Guid,
     content: String,
     cell_type: CellType,
@@ -55,7 +57,7 @@ pub async fn create_cell(
 }
 
 #[tauri::command]
-pub async fn delete_cell(injector: State<'_, Injector>, id: Guid) -> Result<(), ApiError> {
+pub async fn delete_cell(injector: State<'_, Arc<Injector>>, id: Guid) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<CellService>()
@@ -68,7 +70,7 @@ pub async fn delete_cell(injector: State<'_, Injector>, id: Guid) -> Result<(), 
 
 #[tauri::command]
 pub async fn move_cell(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
     new_index: u32,
 ) -> Result<(), ApiError> {
@@ -85,7 +87,7 @@ pub async fn move_cell(
 
 #[tauri::command]
 pub async fn update_cells_contents(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     requests: Vec<UpdateCellRequest>,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
@@ -102,7 +104,7 @@ pub async fn update_cells_contents(
 
 #[tauri::command]
 pub async fn get_cells_for_files_with_fsrs_profile_ids(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_ids: Vec<Guid>,
 ) -> Result<Vec<CellWithFsrsProfileId>, ApiError> {
     let scope = injector.start_scope();

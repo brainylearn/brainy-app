@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     backend::{models::UpdatePasswordDto, traits::brainy_backend_client::BrainyBackendClient},
     common::api_error::ApiError,
@@ -7,7 +9,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn sign_in(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     username: String,
     password: String,
 ) -> Result<(), ApiError> {
@@ -22,7 +24,7 @@ pub async fn sign_in(
 
 #[tauri::command]
 pub async fn sign_up(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     username: String,
     password: String,
     email: String,
@@ -39,7 +41,7 @@ pub async fn sign_up(
 }
 
 #[tauri::command]
-pub async fn sign_out(injector: State<'_, Injector>) -> Result<(), ApiError> {
+pub async fn sign_out(injector: State<'_, Arc<Injector>>) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<dyn BrainyBackendClient>()
@@ -50,7 +52,7 @@ pub async fn sign_out(injector: State<'_, Injector>) -> Result<(), ApiError> {
 }
 
 #[tauri::command]
-pub async fn is_signed_in(injector: State<'_, Injector>) -> Result<bool, ApiError> {
+pub async fn is_signed_in(injector: State<'_, Arc<Injector>>) -> Result<bool, ApiError> {
     let scope = injector.start_scope();
     Ok(scope
         .resolve::<dyn BrainyBackendClient>()
@@ -60,7 +62,7 @@ pub async fn is_signed_in(injector: State<'_, Injector>) -> Result<bool, ApiErro
 
 #[tauri::command]
 pub async fn verify_user_email(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     verification_code: String,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
@@ -73,7 +75,9 @@ pub async fn verify_user_email(
 }
 
 #[tauri::command]
-pub async fn resend_email_verification_code(injector: State<'_, Injector>) -> Result<(), ApiError> {
+pub async fn resend_email_verification_code(
+    injector: State<'_, Arc<Injector>>,
+) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<dyn BrainyBackendClient>()
@@ -85,7 +89,7 @@ pub async fn resend_email_verification_code(injector: State<'_, Injector>) -> Re
 
 #[tauri::command]
 pub async fn update_password(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     old_password: String,
     new_password: String,
 ) -> Result<(), ApiError> {

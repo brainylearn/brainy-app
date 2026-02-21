@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     backend::{models::UserInformationDto, traits::brainy_backend_client::BrainyBackendClient},
     common::api_error::ApiError,
@@ -7,7 +9,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn get_user_information(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
 ) -> Result<UserInformationDto, ApiError> {
     let scope = injector.start_scope();
     let result = scope
@@ -20,7 +22,7 @@ pub async fn get_user_information(
 
 #[tauri::command]
 pub async fn update_user_information(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     first_name: Option<String>,
     last_name: Option<String>,
 ) -> Result<(), ApiError> {
@@ -34,7 +36,7 @@ pub async fn update_user_information(
 }
 
 #[tauri::command]
-pub async fn delete_user(injector: State<'_, Injector>) -> Result<(), ApiError> {
+pub async fn delete_user(injector: State<'_, Arc<Injector>>) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<dyn BrainyBackendClient>()

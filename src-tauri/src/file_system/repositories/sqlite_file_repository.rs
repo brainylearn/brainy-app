@@ -3,7 +3,6 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
-use sqlx::{Sqlite, Transaction};
 use tokio::sync::Mutex;
 
 use crate::{

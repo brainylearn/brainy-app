@@ -17,6 +17,7 @@ use crate::{
         traits::brainy_backend_client::BrainyBackendClient,
     },
     backup::{
+        backup_service::{BackupDirectory, BackupService},
         repositories::traits::backup_repository::BackupRepository,
         sqlite_backup_repository::SqliteBackupRepository,
     },
@@ -62,6 +63,7 @@ pub async fn create_injector() -> Injector {
     let settings_directory = get_settings_dir()
         .await
         .expect("Cannot get settings directory!");
+
     let settings = Settings::init_settings_and_get(settings_directory.clone())
         .await
         .unwrap();
@@ -78,26 +80,28 @@ pub async fn create_injector() -> Injector {
 
     injector.register_singleton(Arc::new(Mutex::new(settings)));
     injector.register_singleton(Arc::new(AiState::default()));
+    injector.register_singleton(Arc::new(BackupDirectory(settings_directory)));
 
-    register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
-    register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+    register_scope!(injector, dyn AiRepository, SqliteAiRepository);
+    register_scope!(injector, dyn BackupRepository, SqliteBackupRepository);
     register_scope!(injector, dyn CellRepository, SqliteCellRepository);
+    register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+    register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
+    register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
     register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
+    register_scope!(injector, dyn SyncRepository, SqliteSyncRepository);
     register_scope!(
         injector,
         dyn LocalConfigurationRepository,
         SqliteLocalConfigurationRepository
     );
-    register_scope!(injector, dyn SyncRepository, SqliteSyncRepository);
-    register_scope!(injector, dyn BackupRepository, SqliteBackupRepository);
-    register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
-    register_scope!(injector, dyn AiRepository, SqliteAiRepository);
 
-    register_scope!(injector, FileSystemService);
+    register_scope!(injector, AiService);
+    register_scope!(injector, BackupService);
     register_scope!(injector, CellService);
+    register_scope!(injector, FileSystemService);
     register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);
-    register_scope!(injector, AiService);
 
     injector.register_scope_factory::<Mutex<DbTransaction>>(|scope| {
         Box::pin(async move {

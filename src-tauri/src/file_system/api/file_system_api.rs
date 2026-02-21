@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     Guid,
     cells::repositories::traits::cell_repository::CellRepository,
@@ -16,7 +18,7 @@ use crate::file_system::dto::review_tree_folder::ReviewTreeFolder;
 
 #[tauri::command]
 pub async fn get_review_tree_folder_for_root(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
 ) -> Result<ReviewTreeFolder, ApiError> {
     let scope = injector.start_scope();
 
@@ -43,7 +45,7 @@ pub async fn get_review_tree_folder_for_root(
 
 #[tauri::command]
 pub async fn create_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     parent_id: Option<Guid>,
     name: String,
 ) -> Result<Guid, ApiError> {
@@ -62,7 +64,7 @@ pub async fn create_folder(
 
 #[tauri::command]
 pub async fn create_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     parent_id: Option<Guid>,
     name: String,
 ) -> Result<Guid, ApiError> {
@@ -80,7 +82,10 @@ pub async fn create_file(
 }
 
 #[tauri::command]
-pub async fn delete_file(injector: State<'_, Injector>, file_id: Guid) -> Result<(), ApiError> {
+pub async fn delete_file(
+    injector: State<'_, Arc<Injector>>,
+    file_id: Guid,
+) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<dyn FileRepository>()
@@ -92,7 +97,10 @@ pub async fn delete_file(injector: State<'_, Injector>, file_id: Guid) -> Result
 }
 
 #[tauri::command]
-pub async fn delete_folder(injector: State<'_, Injector>, folder_id: Guid) -> Result<(), ApiError> {
+pub async fn delete_folder(
+    injector: State<'_, Arc<Injector>>,
+    folder_id: Guid,
+) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<dyn FolderRepository>()
@@ -105,7 +113,7 @@ pub async fn delete_folder(injector: State<'_, Injector>, folder_id: Guid) -> Re
 
 #[tauri::command]
 pub async fn move_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_id: Guid,
     destination_folder_id: Option<Guid>,
 ) -> Result<(), ApiError> {
@@ -121,7 +129,7 @@ pub async fn move_file(
 
 #[tauri::command]
 pub async fn move_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     folder_id: Guid,
     destination_folder_id: Option<Guid>,
 ) -> Result<(), ApiError> {
@@ -137,7 +145,7 @@ pub async fn move_folder(
 
 #[tauri::command]
 pub async fn rename_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {
@@ -153,7 +161,7 @@ pub async fn rename_file(
 
 #[tauri::command]
 pub async fn rename_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     folder_id: Guid,
     new_name: String,
 ) -> Result<(), ApiError> {

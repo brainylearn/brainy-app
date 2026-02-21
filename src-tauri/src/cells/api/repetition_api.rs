@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::Guid;
 use crate::cells::models::file_repetitions_count::FileRepetitionCounts;
 use crate::cells::repositories::traits::cell_repository::CellRepository;
@@ -10,7 +12,7 @@ use tauri::State;
 /// than or equal to now.
 #[tauri::command]
 pub async fn get_study_repetition_counts(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_id: Guid,
 ) -> Result<FileRepetitionCounts, ApiError> {
     let scope = injector.start_scope();
@@ -24,7 +26,7 @@ pub async fn get_study_repetition_counts(
 
 #[tauri::command]
 pub async fn reset_repetitions_for_cell(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     cell_id: Guid,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();

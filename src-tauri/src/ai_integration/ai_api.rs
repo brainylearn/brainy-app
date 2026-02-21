@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     Guid,
     ai_integration::{
@@ -13,7 +15,7 @@ use tauri::{State, ipc::Channel};
 
 #[tauri::command]
 pub async fn stream_ai_response(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     on_event: Channel<StreamLlmResponseEvent>,
     prompt: String,
     chat_id: Option<Guid>,
@@ -38,7 +40,7 @@ pub async fn stream_ai_response(
 }
 
 #[tauri::command]
-pub async fn stop_ai_generation(injector: State<'_, Injector>) -> Result<(), ApiError> {
+pub async fn stop_ai_generation(injector: State<'_, Arc<Injector>>) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     let state = scope.resolve::<AiState>().await;
     state.cancel_generation();
@@ -47,7 +49,7 @@ pub async fn stop_ai_generation(injector: State<'_, Injector>) -> Result<(), Api
 
 #[tauri::command]
 pub async fn get_all_ai_chats_sorted_by_date_desc(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
 ) -> Result<Vec<Chat>, ApiError> {
     let scope = injector.start_scope();
     let chats = scope
@@ -59,7 +61,7 @@ pub async fn get_all_ai_chats_sorted_by_date_desc(
 }
 
 #[tauri::command]
-pub async fn delete_ai_chat(injector: State<'_, Injector>, id: Guid) -> Result<(), ApiError> {
+pub async fn delete_ai_chat(injector: State<'_, Arc<Injector>>, id: Guid) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
         .resolve::<dyn AiRepository>()
@@ -72,7 +74,7 @@ pub async fn delete_ai_chat(injector: State<'_, Injector>, id: Guid) -> Result<(
 
 #[tauri::command]
 pub async fn get_chat_messages_ordered(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
 ) -> Result<Vec<Message>, ApiError> {
     let scope = injector.start_scope();
@@ -86,7 +88,7 @@ pub async fn get_chat_messages_ordered(
 
 #[tauri::command]
 pub async fn rename_ai_chat(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     id: Guid,
     new_title: String,
 ) -> Result<(), ApiError> {

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{
     Guid,
     common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
@@ -12,7 +14,7 @@ use tokio::{
 
 #[tauri::command]
 pub async fn export_folder(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     folder_id: Guid,
     export_path: String,
 ) -> Result<(), ApiError> {
@@ -27,7 +29,7 @@ pub async fn export_folder(
 
 #[tauri::command]
 pub async fn export_file(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     file_id: Guid,
     export_path: String,
 ) -> Result<(), ApiError> {
@@ -56,7 +58,7 @@ async fn save_exported_item(
 
 #[tauri::command]
 pub async fn import(
-    injector: State<'_, Injector>,
+    injector: State<'_, Arc<Injector>>,
     import_item_path: String,
     import_into_folder_id: Guid,
 ) -> Result<(), ApiError> {

@@ -1,6 +1,7 @@
 use std::{path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
+use injector_derive::ScopeInjectable;
 use thiserror::Error;
 use tokio::fs;
 
@@ -26,25 +27,16 @@ const LAST_BACKUP_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
 const MAX_NUMBER_OF_BACKUPS: usize = 8;
 const DATETIME_FORMAT_IN_FILE_NAMES: &str = "%Y_%m_%d_%H_%M_%S";
 
+pub struct BackupDirectory(pub PathBuf);
+
+#[derive(ScopeInjectable)]
 pub struct BackupService {
     local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
     backup_repository: Arc<dyn BackupRepository>,
-    backup_directory: PathBuf,
+    backup_directory: Arc<BackupDirectory>,
 }
 
 impl BackupService {
-    pub fn new(
-        local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
-        backup_repository: Arc<dyn BackupRepository>,
-        directory: PathBuf,
-    ) -> Self {
-        Self {
-            local_configuration_repository,
-            backup_repository,
-            backup_directory: directory,
-        }
-    }
-
     /// This methods checks if the minimum time between backups have passed, and
     /// if so, it creates a new backup and saves it in the same directory as
     /// the settings. If the total number of backups exceeds [`MAX_NUMBER_OF_BACKUPS`]
@@ -85,7 +77,7 @@ impl BackupService {
             "{}.backup",
             Utc::now().format(DATETIME_FORMAT_IN_FILE_NAMES)
         );
-        let backup_path = self.backup_directory.join(backup_name);
+        let backup_path = self.backup_directory.0.join(backup_name);
         let backup_path_str = backup_path.to_string_lossy();
 
         log::info!("Creating a new backup at path {}", backup_path_str);
@@ -110,7 +102,7 @@ impl BackupService {
     async fn delete_extra_backups(&self) -> Result<(), BackupServiceError> {
         let mut current_backups = Vec::new();
 
-        let mut entries = match fs::read_dir(&self.backup_directory).await {
+        let mut entries = match fs::read_dir(&self.backup_directory.0).await {
             Ok(entries) => entries,
             Err(err) => {
                 return Err(BackupServiceError::CannotListEntriesInFolder(

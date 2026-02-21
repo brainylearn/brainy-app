@@ -11,6 +11,9 @@ mod sync;
 #[cfg(test)]
 mod test_utils;
 
+use std::sync::Arc;
+use std::time::Duration;
+
 use tauri::Manager;
 
 use ai_integration::ai_api::{
@@ -47,6 +50,7 @@ pub use file_system::api::export_import_api::{export_file, export_folder, import
 
 use tauri_plugin_window_state::StateFlags;
 
+use crate::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 use crate::common::utils::create_injector::create_injector;
 
 pub type Guid = uuid::Uuid;
@@ -75,7 +79,7 @@ pub async fn run() -> Result<(), String> {
         }));
     }
 
-    let injector = create_injector().await;
+    let injector = Arc::new(create_injector().await);
 
     tauri_builder
         .plugin(tauri_plugin_process::init())
@@ -88,7 +92,7 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
-            app.manage(injector);
+            app.manage(injector.clone());
 
             #[cfg(dev)]
             {
@@ -98,28 +102,20 @@ pub async fn run() -> Result<(), String> {
                     .set_title("Brainy - development");
             }
 
-            // TODO:
-            // let backup_service = BackupService::new(
-            //     repositories_context.local_configuration_repository(),
-            //     repositories_context.backup_repository(),
-            //     settings_directory,
-            // );
             // Starting backup service.
-            // tokio::spawn(async move {
-            //     let mut interval =
-            //         tokio::time::interval(Duration::from_mins(TIME_BETWEEN_BACKUPS_IN_MINUTES));
-            //
-            //     loop {
-            //         interval.tick().await;
-            //
-            //         if let Err(err) = backup_service.ensure_backup().await {
-            //             log::error!(
-            //                 "An error happened when saving a backup of your files {:?}",
-            //                 err
-            //             );
-            //         }
-            //     }
-            // });
+            tokio::spawn(async move {
+                let mut interval =
+                    tokio::time::interval(Duration::from_mins(TIME_BETWEEN_BACKUPS_IN_MINUTES));
+
+                loop {
+                    interval.tick().await;
+                    let scope = injector.start_scope();
+
+                    if let Err(err) = scope.resolve::<BackupService>().await.ensure_backup().await {
+                        log::error!("An error happened when creating a backup {:?}", err);
+                    }
+                }
+            });
 
             Ok(())
         })

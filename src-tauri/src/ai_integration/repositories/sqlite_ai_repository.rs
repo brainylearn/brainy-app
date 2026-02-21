@@ -28,7 +28,6 @@ pub struct SqliteAiRepository {
 #[async_trait]
 impl AiRepository for SqliteAiRepository {
     async fn get_all_chats_sorted_by_date_desc(&self) -> Result<Vec<Chat>, RepositoryError> {
-        log::warn!("called inside impls");
         let chat_rows = sqlx::query_as!(
             ChatRow,
             r#"SELECT
