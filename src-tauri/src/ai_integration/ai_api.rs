@@ -6,8 +6,12 @@ use crate::{
         ai_service::{AiService, StreamLlmResponseEvent},
         ai_state::AiState,
         entities::{chat::Chat, message::Message},
+        repositories::traits::ai_repository::AiRepository,
     },
-    common::{api_error::ApiError, traits::repositories_context::RepositoriesContext},
+    common::{
+        api_error::ApiError, injector::injector::Injector,
+        traits::repositories_context::RepositoriesContext, unit_of_work::UnitOfWork,
+    },
 };
 use tauri::{State, ipc::Channel};
 use tokio::sync::Mutex;
@@ -43,35 +47,38 @@ pub async fn stop_ai_generation(ai_state: State<'_, Arc<AiState>>) -> Result<(),
 
 #[tauri::command]
 pub async fn get_all_ai_chats_sorted_by_date_desc(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    injector: State<'_, Injector>,
 ) -> Result<Vec<Chat>, ApiError> {
-    let context = context.lock().await;
-    let chats = context
-        .ai_repository()
+    let scope = injector.start_scope();
+    let chats = scope
+        .resolve::<dyn AiRepository>()
+        .await
         .get_all_chats_sorted_by_date_desc()
         .await?;
     Ok(chats)
 }
 
 #[tauri::command]
-pub async fn delete_ai_chat(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
-    id: Guid,
-) -> Result<(), ApiError> {
-    let context = context.lock().await;
-    context.ai_repository().delete_chat(id).await?;
-    context.save_changes().await?;
+pub async fn delete_ai_chat(injector: State<'_, Injector>, id: Guid) -> Result<(), ApiError> {
+    let scope = injector.start_scope();
+    scope
+        .resolve::<dyn AiRepository>()
+        .await
+        .delete_chat(id)
+        .await?;
+    scope.resolve::<UnitOfWork>().await.save_changes().await?;
     Ok(())
 }
 
 #[tauri::command]
 pub async fn get_chat_messages_ordered(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    injector: State<'_, Injector>,
     id: Guid,
 ) -> Result<Vec<Message>, ApiError> {
-    let context = context.lock().await;
-    let messages = context
-        .ai_repository()
+    let scope = injector.start_scope();
+    let messages = scope
+        .resolve::<dyn AiRepository>()
+        .await
         .get_chat_messages_ordered(id)
         .await?;
     Ok(messages)
@@ -79,13 +86,15 @@ pub async fn get_chat_messages_ordered(
 
 #[tauri::command]
 pub async fn rename_ai_chat(
-    context: State<'_, Arc<Mutex<dyn RepositoriesContext>>>,
+    injector: State<'_, Injector>,
     id: Guid,
     new_title: String,
 ) -> Result<(), ApiError> {
-    let context = context.lock().await;
-    let mut chat = context.ai_repository().get_chat_by_id(id).await?;
+    let scope = injector.start_scope();
+    let ai_repository = scope.resolve::<dyn AiRepository>().await;
+    let mut chat = ai_repository.get_chat_by_id(id).await?;
     chat.set_title(new_title);
-    context.ai_repository().upsert_chat(&chat).await?;
+    ai_repository.upsert_chat(&chat).await?;
+    scope.resolve::<UnitOfWork>().await.save_changes().await?;
     Ok(())
 }

@@ -16,7 +16,13 @@ use std::{sync::Arc, time::Duration};
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
 use crate::{
-    ai_integration::{ai_service::AiService, ai_state::AiState},
+    ai_integration::{
+        ai_service::AiService,
+        ai_state::AiState,
+        repositories::{
+            sqlite_ai_repository::SqliteAiRepository, traits::ai_repository::AiRepository,
+        },
+    },
     backend::{
         brainy_backend_http_client::BrainyBackendHttpClient,
         traits::brainy_backend_client::BrainyBackendClient,
@@ -24,8 +30,8 @@ use crate::{
     backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES},
     cells::cell_service::CellService,
     common::{
-        sqlite_repositories_context::SqliteRepositoriesContext,
-        traits::repositories_context::RepositoriesContext,
+        injector::injector::Injector, sqlite_repositories_context::SqliteRepositoriesContext,
+        traits::repositories_context::RepositoriesContext, unit_of_work::UnitOfWork,
     },
     file_system::file_system_service::FileSystemService,
     fsrs::fsrs_service::FsrsService,
@@ -33,6 +39,7 @@ use crate::{
     sync::sync_service::SyncService,
 };
 use reqwest::Url;
+use sqlx::{Sqlite, SqlitePool, Transaction};
 use tauri::Manager;
 
 use ai_integration::ai_api::{
@@ -79,6 +86,8 @@ pub mod generated_code {
     include!(concat!(env!("OUT_DIR"), "/generated_code.rs"));
 }
 
+type DbTransaction = Mutex<Transaction<'static, Sqlite>>;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
@@ -115,6 +124,36 @@ pub async fn run() -> Result<(), String> {
         }));
     }
 
+    let mut injector = Injector::new();
+    let settings = Arc::new(Mutex::new(settings));
+    injector.register_singleton(settings.clone());
+    injector.register_singleton(backend_client.clone());
+    injector.register_singleton(repositories_context.pool.clone());
+
+    injector.register_factory::<DbTransaction>(|scope| {
+        Box::pin(async move {
+            let pool = scope.resolve::<SqlitePool>().await;
+            let tx = pool.begin().await.expect("Cannot create a new transaction");
+            Arc::new(Mutex::new(tx))
+        })
+    });
+
+    injector.register_factory::<dyn AiRepository>(|scope| {
+        Box::pin(async move {
+            let pool = scope.resolve::<SqlitePool>().await;
+            let tx = scope.resolve::<DbTransaction>().await;
+            Arc::new(SqliteAiRepository::new(pool, tx)) as Arc<dyn AiRepository>
+        })
+    });
+
+    injector.register_factory(|scope| {
+        Box::pin(async move {
+            let pool = scope.resolve::<SqlitePool>().await;
+            let tx = scope.resolve::<DbTransaction>().await;
+            Arc::new(UnitOfWork::new(pool, tx))
+        })
+    });
+
     tauri_builder
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -126,6 +165,8 @@ pub async fn run() -> Result<(), String> {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(move |app| {
+            app.manage(injector);
+
             let cell_service = Arc::new(CellService::new(
                 repositories_context.cell_repository(),
                 repositories_context.review_repository(),
@@ -162,8 +203,6 @@ pub async fn run() -> Result<(), String> {
             );
 
             app.manage(backend_client);
-
-            let settings = Arc::new(Mutex::new(settings));
 
             app.manage(settings.clone());
 

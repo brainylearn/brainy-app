@@ -40,7 +40,7 @@ use crate::{
 };
 
 pub struct SqliteRepositoriesContext {
-    pool: Arc<SqlitePool>,
+    pub pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
     folder_repository: Arc<SqliteFolderRepository>,
     file_repository: Arc<SqliteFileRepository>,
