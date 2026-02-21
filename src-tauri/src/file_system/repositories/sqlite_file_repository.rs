@@ -301,84 +301,87 @@ mod file_row {
     }
 }
 
-// TODO:
-// #[cfg(test)]
-// pub mod tests {
-//     use crate::{
-//         ROOT_FOLDER_ID,
-//         common::{
-//             sqlite_repositories_context::SqliteRepositoriesContext,
-//             traits::repositories_context::RepositoriesContext,
-//         },
-//         file_system::{
-//             entities::file::File, value_objects::fsrs_profile_choice::FsrsProfileChoice,
-//         },
-//     };
-//
-//     use super::*;
-//
-//     #[tokio::test]
-//     pub async fn get_all_files_valid_input_returned_all_files() {
-//         // Arrange
-//
-//         let context = SqliteRepositoriesContext::create_testing_context().await;
-//
-//         context
-//             .file_repository()
-//             .create(&File::new(
-//                 None,
-//                 Some(ROOT_FOLDER_ID),
-//                 "file".try_into().unwrap(),
-//                 FsrsProfileChoice::Inherit,
-//             ))
-//             .await
-//             .unwrap();
-//         context.save_changes().await.unwrap();
-//
-//         // Act
-//
-//         let actual = context.file_repository().get_all_files().await.unwrap();
-//
-//         // Assert
-//
-//         assert_eq!(1, actual.len());
-//         assert_eq!(
-//             FileSystemItemName::new_unchecked("file".to_string()),
-//             actual[0].name()
-//         );
-//     }
-//
-//     #[tokio::test]
-//     pub async fn delete_by_id_valid_input_deleted_file() {
-//         // Arrange
-//
-//         let context = SqliteRepositoriesContext::create_testing_context().await;
-//
-//         let file_id = Guid::new_v4();
-//         context
-//             .file_repository()
-//             .create(&File::new(
-//                 Some(file_id),
-//                 Some(ROOT_FOLDER_ID),
-//                 "file".try_into().unwrap(),
-//                 FsrsProfileChoice::Inherit,
-//             ))
-//             .await
-//             .unwrap();
-//         context.save_changes().await.unwrap();
-//
-//         // Act
-//
-//         context
-//             .file_repository()
-//             .delete_by_id(file_id)
-//             .await
-//             .unwrap();
-//         context.save_changes().await.unwrap();
-//
-//         // Assert
-//
-//         let actual = context.file_repository().get_all_files().await.unwrap();
-//         assert_eq!(0, actual.len());
-//     }
-// }
+#[cfg(test)]
+pub mod tests {
+    use injector::{injector::Injector, register_scope};
+
+    use crate::{
+        ROOT_FOLDER_ID,
+        common::unit_of_work_ext::UnitOfWorkExt,
+        file_system::{
+            entities::file::File, value_objects::fsrs_profile_choice::FsrsProfileChoice,
+        },
+        test_utils::create_test_injector,
+    };
+
+    use super::*;
+
+    async fn get_test_dependencies() -> Injector {
+        let mut injector = create_test_injector().await;
+        register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+        injector
+    }
+
+    #[tokio::test]
+    pub async fn get_all_files_valid_input_returned_all_files() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let repository = scope.resolve::<dyn FileRepository>().await;
+
+        repository
+            .create(&File::new(
+                None,
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+                FsrsProfileChoice::Inherit,
+            ))
+            .await
+            .unwrap();
+        scope.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = repository.get_all_files().await.unwrap();
+
+        // Assert
+
+        assert_eq!(1, actual.len());
+        assert_eq!(
+            FileSystemItemName::new_unchecked("file".to_string()),
+            actual[0].name()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_valid_input_deleted_file() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let repository = scope.resolve::<dyn FileRepository>().await;
+
+        let file_id = Guid::new_v4();
+        repository
+            .create(&File::new(
+                Some(file_id),
+                Some(ROOT_FOLDER_ID),
+                "file".try_into().unwrap(),
+                FsrsProfileChoice::Inherit,
+            ))
+            .await
+            .unwrap();
+        scope.save_changes().await.unwrap();
+
+        // Act
+
+        repository.delete_by_id(file_id).await.unwrap();
+        scope.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = repository.get_all_files().await.unwrap();
+        assert_eq!(0, actual.len());
+    }
+}
