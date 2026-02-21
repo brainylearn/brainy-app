@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use injector::injector_scope::InjectorScope;
-use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
-// TODO: use alias, everywhere for this
+use crate::common::{DbPool, DbTransaction};
+
 #[async_trait]
 pub trait UnitOfWorkExt {
     async fn save_changes(&self) -> Result<(), sqlx::Error>;
@@ -27,7 +27,7 @@ impl<'a> UnitOfWorkExt for InjectorScope<'a> {
     ) -> Result<(), sqlx::Error> {
         log::info!("Disabling foreign key constraint");
 
-        let tx = self.resolve::<Mutex<Transaction<'static, Sqlite>>>().await;
+        let tx = self.resolve::<Mutex<DbTransaction>>().await;
         let mut tx = tx.lock().await;
         let tx = tx.as_mut();
 
@@ -42,11 +42,9 @@ impl<'a> UnitOfWorkExt for InjectorScope<'a> {
 }
 
 /// Returns the old transaction.
-async fn replace_current_transaction_with_new_one(
-    scope: &InjectorScope<'_>,
-) -> Transaction<'static, Sqlite> {
-    let tx = scope.resolve::<Mutex<Transaction<'static, Sqlite>>>().await;
-    let pool = scope.resolve::<SqlitePool>().await;
+async fn replace_current_transaction_with_new_one(scope: &InjectorScope<'_>) -> DbTransaction {
+    let tx = scope.resolve::<Mutex<DbTransaction>>().await;
+    let pool = scope.resolve::<DbPool>().await;
 
     let mut guard = tx.lock().await;
     let new_tx = pool.begin().await.expect("Cannot create a new transaction");

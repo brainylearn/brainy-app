@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use async_trait::async_trait;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, Utc};
 use injector_derive::ScopeInjectable;
-use sqlx::{QueryBuilder, Sqlite, SqliteConnection, SqlitePool, Transaction};
+use sqlx::{QueryBuilder, SqliteConnection};
 use tokio::sync::Mutex;
 
 use crate::{
@@ -22,13 +22,13 @@ use crate::{
             traits::cell_repository::{CellRepository, MoveDirection},
         },
     },
-    common::repository_error::RepositoryError,
+    common::{DbPool, DbTransaction, repository_error::RepositoryError},
 };
 
 #[derive(ScopeInjectable)]
 pub struct SqliteCellRepository {
-    pool: Arc<SqlitePool>,
-    tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
+    pool: Arc<DbPool>,
+    tx: Arc<Mutex<DbTransaction>>,
 }
 
 #[async_trait]

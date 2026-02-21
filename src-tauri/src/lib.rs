@@ -37,7 +37,7 @@ use crate::{
             traits::{cell_repository::CellRepository, review_repository::ReviewRepository},
         },
     },
-    common::utils::create_sqlite_pool::create_sqlite_pool,
+    common::{DbPool, DbTransaction, utils::create_sqlite_pool::create_sqlite_pool},
     file_system::{
         file_system_service::FileSystemService,
         repositories::{
@@ -66,7 +66,6 @@ use crate::{
 };
 use injector::{injector::Injector, register_scope};
 use reqwest::Url;
-use sqlx::{Sqlite, SqlitePool, Transaction};
 use tauri::Manager;
 
 use ai_integration::ai_api::{
@@ -112,8 +111,6 @@ pub const DEFAULT_FSRS_PROFILE_ID: Guid = uuid::uuid!("00000000-0000-0000-0000-0
 pub mod generated_code {
     include!(concat!(env!("OUT_DIR"), "/generated_code.rs"));
 }
-
-type DbTransaction = Mutex<Transaction<'static, Sqlite>>;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
@@ -175,9 +172,9 @@ pub async fn run() -> Result<(), String> {
     register_scope!(injector, SyncService);
     register_scope!(injector, AiService);
 
-    injector.register_scope_factory::<DbTransaction>(|scope| {
+    injector.register_scope_factory::<Mutex<DbTransaction>>(|scope| {
         Box::pin(async move {
-            let pool = scope.resolve::<SqlitePool>().await;
+            let pool = scope.resolve::<DbPool>().await;
             let tx = pool.begin().await.expect("Cannot create a new transaction");
             Arc::new(Mutex::new(tx))
         })

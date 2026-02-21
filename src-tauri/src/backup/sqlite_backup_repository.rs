@@ -2,16 +2,15 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
-use sqlx::SqlitePool;
 
 use crate::{
     backup::repositories::traits::backup_repository::BackupRepository,
-    common::repository_error::RepositoryError,
+    common::{DbPool, repository_error::RepositoryError},
 };
 
 #[derive(ScopeInjectable)]
 pub struct SqliteBackupRepository {
-    pool: Arc<SqlitePool>,
+    pool: Arc<DbPool>,
 }
 
 #[async_trait]

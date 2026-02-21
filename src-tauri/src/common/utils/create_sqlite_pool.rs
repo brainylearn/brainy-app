@@ -1,11 +1,10 @@
 use std::str::FromStr;
 
-use sqlx::{
-    SqlitePool,
-    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-};
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
-pub async fn create_sqlite_pool(path: &str) -> Result<SqlitePool, sqlx::Error> {
+use crate::common::DbPool;
+
+pub async fn create_sqlite_pool(path: &str) -> Result<DbPool, sqlx::Error> {
     let url = format!("{path}?mode=rwc");
     let options = SqliteConnectOptions::from_str(&url)?
         // Since there is a single client, we can allow read uncommitted, and use shared cache.
