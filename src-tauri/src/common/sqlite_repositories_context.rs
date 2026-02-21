@@ -1,6 +1,5 @@
 use std::{str::FromStr, sync::Arc};
 
-use async_trait::async_trait;
 use sqlx::{
     Sqlite, SqlitePool, Transaction,
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -8,45 +7,11 @@ use sqlx::{
 use thiserror::Error;
 use tokio::sync::Mutex;
 
-use crate::{
-    backup::{
-        repositories::traits::backup_repository::BackupRepository,
-        sqlite_backup_repository::SqliteBackupRepository,
-    },
-    cells::repositories::{
-        sqlite_cell_repository::SqliteCellRepository,
-        sqlite_review_repository::SqliteReviewRepository,
-        traits::{cell_repository::CellRepository, review_repository::ReviewRepository},
-    },
-    common::traits::repositories_context::{RepositoriesContext, RepositoriesContextError},
-    file_system::repositories::{
-        sqlite_file_repository::SqliteFileRepository,
-        sqlite_folder_repository::SqliteFolderRepository,
-        traits::{file_repository::FileRepository, folder_repository::FolderRepository},
-    },
-    fsrs::entities::repositories::{
-        sqlite_fsrs_repository::SqliteFsrsRepository, traits::fsrs_repository::FsrsRepository,
-    },
-    local_configurations::repositories::{
-        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
-        traits::local_configuration_repository::LocalConfigurationRepository,
-    },
-    sync::repositories::{
-        sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository,
-    },
-};
+use crate::common::traits::repositories_context::RepositoriesContextError;
 
 pub struct SqliteRepositoriesContext {
     pub pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
-    folder_repository: Arc<SqliteFolderRepository>,
-    file_repository: Arc<SqliteFileRepository>,
-    cell_repository: Arc<SqliteCellRepository>,
-    review_repository: Arc<SqliteReviewRepository>,
-    local_configuration_repository: Arc<SqliteLocalConfigurationRepository>,
-    sync_repository: Arc<SqliteSyncRepository>,
-    backup_repository: Arc<SqliteBackupRepository>,
-    fsrs_repository: Arc<SqliteFsrsRepository>,
 }
 
 #[derive(Debug, Error)]
@@ -79,17 +44,6 @@ impl SqliteRepositoriesContext {
         Ok(Self {
             pool: arc_pool.clone(),
             tx: tx.clone(),
-            file_repository: Arc::new(SqliteFileRepository::new(arc_pool.clone(), tx.clone())),
-            folder_repository: Arc::new(SqliteFolderRepository::new(arc_pool.clone(), tx.clone())),
-            cell_repository: Arc::new(SqliteCellRepository::new(arc_pool.clone(), tx.clone())),
-            review_repository: Arc::new(SqliteReviewRepository::new(arc_pool.clone(), tx.clone())),
-            local_configuration_repository: Arc::new(SqliteLocalConfigurationRepository::new(
-                arc_pool.clone(),
-                tx.clone(),
-            )),
-            sync_repository: Arc::new(SqliteSyncRepository::new(arc_pool.clone(), tx.clone())),
-            backup_repository: Arc::new(SqliteBackupRepository::new(arc_pool.clone())),
-            fsrs_repository: Arc::new(SqliteFsrsRepository::new(arc_pool.clone(), tx.clone())),
         })
     }
 
@@ -106,80 +60,6 @@ impl SqliteRepositoriesContext {
         SqliteRepositoriesContext::new_with_migration("sqlite::memory:")
             .await
             .unwrap()
-    }
-}
-
-#[async_trait]
-impl RepositoriesContext for SqliteRepositoriesContext {
-    fn folder_repository(&self) -> Arc<dyn FolderRepository> {
-        self.folder_repository.clone()
-    }
-
-    fn file_repository(&self) -> Arc<dyn FileRepository> {
-        self.file_repository.clone()
-    }
-
-    fn cell_repository(&self) -> Arc<dyn CellRepository> {
-        self.cell_repository.clone()
-    }
-
-    fn review_repository(&self) -> Arc<dyn ReviewRepository> {
-        self.review_repository.clone()
-    }
-
-    fn local_configuration_repository(&self) -> Arc<dyn LocalConfigurationRepository> {
-        self.local_configuration_repository.clone()
-    }
-
-    fn sync_repository(&self) -> Arc<dyn SyncRepository> {
-        self.sync_repository.clone()
-    }
-
-    fn backup_repository(&self) -> Arc<dyn BackupRepository> {
-        self.backup_repository.clone()
-    }
-
-    fn fsrs_repository(&self) -> Arc<dyn FsrsRepository> {
-        self.fsrs_repository.clone()
-    }
-
-    async fn save_changes(&self) -> Result<(), RepositoriesContextError> {
-        log::info!("Saving changes");
-
-        let old_tx = self.replace_current_transaction_with_new_one().await;
-
-        if let Err(err) = old_tx.commit().await {
-            return Err(RepositoriesContextError::UnknownError(err.to_string()));
-        }
-        Ok(())
-    }
-
-    async fn rollback(&self) -> Result<(), RepositoriesContextError> {
-        log::info!("Aborting transaction");
-
-        let old_tx = self.replace_current_transaction_with_new_one().await;
-
-        if let Err(err) = old_tx.rollback().await {
-            return Err(RepositoriesContextError::UnknownError(err.to_string()));
-        }
-        Ok(())
-    }
-
-    async fn disable_foreign_key_constraint_for_current_transaction(
-        &self,
-    ) -> Result<(), RepositoriesContextError> {
-        let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut();
-
-        let result = sqlx::query("PRAGMA defer_foreign_keys = ON")
-            .fetch_optional(&mut *tx)
-            .await;
-
-        if let Err(err) = result {
-            return Err(RepositoriesContextError::UnknownError(err.to_string()));
-        }
-
-        Ok(())
     }
 }
 

@@ -11,7 +11,7 @@ mod sync;
 #[cfg(test)]
 mod test_utils;
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
 use crate::{
     ai_integration::{
@@ -25,16 +25,44 @@ use crate::{
         brainy_backend_http_client::BrainyBackendHttpClient,
         traits::brainy_backend_client::BrainyBackendClient,
     },
-    backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES},
-    cells::cell_service::CellService,
-    common::{
-        sqlite_repositories_context::SqliteRepositoriesContext,
-        traits::repositories_context::RepositoriesContext, unit_of_work::UnitOfWork,
+    backup::{
+        repositories::traits::backup_repository::BackupRepository,
+        sqlite_backup_repository::SqliteBackupRepository,
     },
-    file_system::file_system_service::FileSystemService,
-    fsrs::fsrs_service::FsrsService,
+    cells::{
+        cell_service::CellService,
+        repositories::{
+            sqlite_cell_repository::SqliteCellRepository,
+            sqlite_review_repository::SqliteReviewRepository,
+            traits::{cell_repository::CellRepository, review_repository::ReviewRepository},
+        },
+    },
+    common::{sqlite_repositories_context::SqliteRepositoriesContext, unit_of_work::UnitOfWork},
+    file_system::{
+        file_system_service::FileSystemService,
+        repositories::{
+            sqlite_file_repository::SqliteFileRepository,
+            sqlite_folder_repository::SqliteFolderRepository,
+            traits::{file_repository::FileRepository, folder_repository::FolderRepository},
+        },
+    },
+    fsrs::{
+        entities::repositories::{
+            sqlite_fsrs_repository::SqliteFsrsRepository, traits::fsrs_repository::FsrsRepository,
+        },
+        fsrs_service::FsrsService,
+    },
+    local_configurations::repositories::{
+        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
+        traits::local_configuration_repository::LocalConfigurationRepository,
+    },
     settings::{Settings, get_settings_dir},
-    sync::sync_service::SyncService,
+    sync::{
+        repositories::{
+            sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository,
+        },
+        sync_service::SyncService,
+    },
 };
 use injector::{injector::Injector, register_scope};
 use reqwest::Url;
@@ -130,8 +158,26 @@ pub async fn run() -> Result<(), String> {
     injector.register_singleton(repositories_context.pool.clone());
     injector.register_singleton(Arc::new(AiState::default()));
 
+    register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
+    register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+    register_scope!(injector, dyn CellRepository, SqliteCellRepository);
+    register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
+    register_scope!(
+        injector,
+        dyn LocalConfigurationRepository,
+        SqliteLocalConfigurationRepository
+    );
+    register_scope!(injector, dyn SyncRepository, SqliteSyncRepository);
+    register_scope!(injector, dyn BackupRepository, SqliteBackupRepository);
+    register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
     register_scope!(injector, dyn AiRepository, SqliteAiRepository);
+
+    register_scope!(injector, FileSystemService);
+    register_scope!(injector, CellService);
+    register_scope!(injector, FsrsService);
+    register_scope!(injector, SyncService);
     register_scope!(injector, AiService);
+
     register_scope!(injector, UnitOfWork);
 
     injector.register_scope_factory::<DbTransaction>(|scope| {
@@ -155,49 +201,6 @@ pub async fn run() -> Result<(), String> {
         .setup(move |app| {
             app.manage(injector);
 
-            let cell_service = Arc::new(CellService::new(
-                repositories_context.cell_repository(),
-                repositories_context.review_repository(),
-            ));
-            app.manage(cell_service.clone());
-
-            app.manage(Arc::new(FileSystemService::new(
-                cell_service.clone(),
-                repositories_context.folder_repository(),
-                repositories_context.file_repository(),
-                repositories_context.cell_repository(),
-            )));
-            app.manage(Arc::new(SyncService::new(
-                backend_client.clone(),
-                repositories_context.folder_repository(),
-                repositories_context.file_repository(),
-                repositories_context.cell_repository(),
-                repositories_context.review_repository(),
-                repositories_context.sync_repository(),
-                repositories_context.local_configuration_repository(),
-                repositories_context.fsrs_repository(),
-                cell_service.clone(),
-            )));
-
-            app.manage(Arc::new(FsrsService::new(
-                repositories_context.folder_repository(),
-                repositories_context.fsrs_repository(),
-            )));
-
-            let backup_service = BackupService::new(
-                repositories_context.local_configuration_repository(),
-                repositories_context.backup_repository(),
-                settings_directory,
-            );
-
-            app.manage(backend_client);
-
-            app.manage(settings.clone());
-
-            app.manage(
-                Arc::new(Mutex::new(repositories_context)) as Arc<Mutex<dyn RepositoriesContext>>
-            );
-
             #[cfg(dev)]
             {
                 let _ = app
@@ -206,22 +209,28 @@ pub async fn run() -> Result<(), String> {
                     .set_title("Brainy - development");
             }
 
+            // TODO:
+            // let backup_service = BackupService::new(
+            //     repositories_context.local_configuration_repository(),
+            //     repositories_context.backup_repository(),
+            //     settings_directory,
+            // );
             // Starting backup service.
-            tokio::spawn(async move {
-                let mut interval =
-                    tokio::time::interval(Duration::from_mins(TIME_BETWEEN_BACKUPS_IN_MINUTES));
-
-                loop {
-                    interval.tick().await;
-
-                    if let Err(err) = backup_service.ensure_backup().await {
-                        log::error!(
-                            "An error happened when saving a backup of your files {:?}",
-                            err
-                        );
-                    }
-                }
-            });
+            // tokio::spawn(async move {
+            //     let mut interval =
+            //         tokio::time::interval(Duration::from_mins(TIME_BETWEEN_BACKUPS_IN_MINUTES));
+            //
+            //     loop {
+            //         interval.tick().await;
+            //
+            //         if let Err(err) = backup_service.ensure_backup().await {
+            //             log::error!(
+            //                 "An error happened when saving a backup of your files {:?}",
+            //                 err
+            //             );
+            //         }
+            //     }
+            // });
 
             Ok(())
         })

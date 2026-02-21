@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use injector_derive::ScopeInjectable;
 use sqlx::{Sqlite, SqlitePool, Transaction};
 use tokio::sync::Mutex;
 
@@ -17,15 +18,10 @@ use crate::{
     },
 };
 
+#[derive(ScopeInjectable)]
 pub struct SqliteFsrsRepository {
     pool: Arc<SqlitePool>,
     tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
-}
-
-impl SqliteFsrsRepository {
-    pub fn new(pool: Arc<SqlitePool>, tx: Arc<Mutex<Transaction<'static, Sqlite>>>) -> Self {
-        Self { pool, tx }
-    }
 }
 
 #[async_trait]

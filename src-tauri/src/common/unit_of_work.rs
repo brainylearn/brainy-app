@@ -11,7 +11,7 @@ use crate::common::traits::repositories_context::RepositoriesContextError;
 #[derive(ScopeInjectable)]
 pub struct UnitOfWork {
     pool: Arc<SqlitePool>,
-    // TODO: use alias
+    // TODO: use alias, everywhere for this
     tx: Arc<Mutex<Transaction<'static, Sqlite>>>,
 }
 
@@ -77,6 +77,9 @@ async fn create_transaction(pool: &Arc<SqlitePool>) -> Transaction<'static, Sqli
 pub trait UnitOfWorkExt {
     async fn save_db_changes(&self) -> Result<(), RepositoriesContextError>;
     async fn rollback_changes(&self) -> Result<(), RepositoriesContextError>;
+    async fn disable_foreign_key_constraint_for_current_transaction(
+        &self,
+    ) -> Result<(), RepositoriesContextError>;
 }
 
 #[async_trait]
@@ -87,5 +90,14 @@ impl<'a> UnitOfWorkExt for InjectorScope<'a> {
 
     async fn rollback_changes(&self) -> Result<(), RepositoriesContextError> {
         self.resolve::<UnitOfWork>().await.rollback_changes().await
+    }
+
+    async fn disable_foreign_key_constraint_for_current_transaction(
+        &self,
+    ) -> Result<(), RepositoriesContextError> {
+        self.resolve::<UnitOfWork>()
+            .await
+            .disable_foreign_key_constraint_for_current_transaction()
+            .await
     }
 }
