@@ -11,61 +11,6 @@ mod sync;
 #[cfg(test)]
 mod test_utils;
 
-use std::sync::Arc;
-
-use crate::{
-    ai_integration::{
-        ai_service::AiService,
-        ai_state::AiState,
-        repositories::{
-            sqlite_ai_repository::SqliteAiRepository, traits::ai_repository::AiRepository,
-        },
-    },
-    backend::{
-        brainy_backend_http_client::BrainyBackendHttpClient,
-        traits::brainy_backend_client::BrainyBackendClient,
-    },
-    backup::{
-        repositories::traits::backup_repository::BackupRepository,
-        sqlite_backup_repository::SqliteBackupRepository,
-    },
-    cells::{
-        cell_service::CellService,
-        repositories::{
-            sqlite_cell_repository::SqliteCellRepository,
-            sqlite_review_repository::SqliteReviewRepository,
-            traits::{cell_repository::CellRepository, review_repository::ReviewRepository},
-        },
-    },
-    common::{DbPool, DbTransaction, utils::create_sqlite_pool::create_sqlite_pool},
-    file_system::{
-        file_system_service::FileSystemService,
-        repositories::{
-            sqlite_file_repository::SqliteFileRepository,
-            sqlite_folder_repository::SqliteFolderRepository,
-            traits::{file_repository::FileRepository, folder_repository::FolderRepository},
-        },
-    },
-    fsrs::{
-        entities::repositories::{
-            sqlite_fsrs_repository::SqliteFsrsRepository, traits::fsrs_repository::FsrsRepository,
-        },
-        fsrs_service::FsrsService,
-    },
-    local_configurations::repositories::{
-        sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
-        traits::local_configuration_repository::LocalConfigurationRepository,
-    },
-    settings::{Settings, get_settings_dir},
-    sync::{
-        repositories::{
-            sqlite_sync_repository::SqliteSyncRepository, traits::sync_repository::SyncRepository,
-        },
-        sync_service::SyncService,
-    },
-};
-use injector::{injector::Injector, register_scope};
-use reqwest::Url;
 use tauri::Manager;
 
 use ai_integration::ai_api::{
@@ -101,7 +46,8 @@ pub use sync::sync_api::sync;
 pub use file_system::api::export_import_api::{export_file, export_folder, import};
 
 use tauri_plugin_window_state::StateFlags;
-use tokio::sync::Mutex;
+
+use crate::common::utils::create_injector::create_injector;
 
 pub type Guid = uuid::Uuid;
 
@@ -116,13 +62,6 @@ pub mod generated_code {
 pub async fn run() -> Result<(), String> {
     simple_logger::init_with_level(log::Level::Info).unwrap();
 
-    let settings_directory = get_settings_dir()
-        .await
-        .expect("Cannot get settings directory!");
-    let settings = Settings::init_settings_and_get(settings_directory.clone())
-        .await
-        .unwrap();
-
     let mut tauri_builder =
         tauri::Builder::default().plugin(tauri_plugin_clipboard_manager::init());
 
@@ -136,49 +75,7 @@ pub async fn run() -> Result<(), String> {
         }));
     }
 
-    // TODO: move to own file
-    let mut injector = Injector::default();
-
-    let pool = create_sqlite_pool(&format!("sqlite:///{}", settings.database_location))
-        .await
-        .expect("Error connecting to Sqlite database");
-    injector.register_singleton(Arc::new(pool));
-
-    let backend_url = Url::parse("http://localhost:5078").unwrap();
-    injector.register_singleton::<dyn BrainyBackendClient>(Arc::new(
-        BrainyBackendHttpClient::new(backend_url).expect("Cannot create backend client"),
-    ));
-
-    injector.register_singleton(Arc::new(Mutex::new(settings)));
-    injector.register_singleton(Arc::new(AiState::default()));
-
-    register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
-    register_scope!(injector, dyn FileRepository, SqliteFileRepository);
-    register_scope!(injector, dyn CellRepository, SqliteCellRepository);
-    register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
-    register_scope!(
-        injector,
-        dyn LocalConfigurationRepository,
-        SqliteLocalConfigurationRepository
-    );
-    register_scope!(injector, dyn SyncRepository, SqliteSyncRepository);
-    register_scope!(injector, dyn BackupRepository, SqliteBackupRepository);
-    register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
-    register_scope!(injector, dyn AiRepository, SqliteAiRepository);
-
-    register_scope!(injector, FileSystemService);
-    register_scope!(injector, CellService);
-    register_scope!(injector, FsrsService);
-    register_scope!(injector, SyncService);
-    register_scope!(injector, AiService);
-
-    injector.register_scope_factory::<Mutex<DbTransaction>>(|scope| {
-        Box::pin(async move {
-            let pool = scope.resolve::<DbPool>().await;
-            let tx = pool.begin().await.expect("Cannot create a new transaction");
-            Arc::new(Mutex::new(tx))
-        })
-    });
+    let injector = create_injector().await;
 
     tauri_builder
         .plugin(tauri_plugin_process::init())
