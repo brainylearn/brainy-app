@@ -20,7 +20,7 @@ pub async fn create_test_injector() -> Injector {
     let pool = create_sqlite_pool("sqlite::memory:").await.unwrap();
     injector.register_singleton(Arc::new(pool));
 
-    // TODO: duplicated in lib.rs
+    // Copied from create_injector function.
     injector.register_scope_factory::<Mutex<DbTransaction>>(|scope| {
         Box::pin(async move {
             let pool = scope.resolve::<DbPool>().await;

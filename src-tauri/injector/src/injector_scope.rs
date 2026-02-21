@@ -9,6 +9,11 @@ use tokio::sync::Mutex;
 
 use crate::injector::Injector;
 
+#[async_trait]
+pub trait ScopeInjectable {
+    async fn from_injector_scope(scope: &InjectorScope<'_>) -> Self;
+}
+
 pub struct InjectorScope<'a> {
     injector: &'a Injector,
     resolved_scopes: Mutex<HashMap<TypeId, Box<dyn Any + Send + Sync>>>,
@@ -23,25 +28,11 @@ impl<'a> InjectorScope<'a> {
     }
 
     pub async fn resolve<T: Any + Send + Sync + ?Sized + 'static>(&'a self) -> Arc<T> {
-        if let Some(singleton) = self
-            .injector
-            .singleton_registry()
-            .get(&TypeId::of::<T>())
-            .and_then(|boxed| boxed.downcast_ref::<Arc<T>>())
-            .cloned()
-        {
+        if let Some(singleton) = find_by_type::<T>(self.injector.singleton_registry()) {
             return singleton;
         }
 
-        // TODO: this and singleton are duplicate, DRY
-        if let Some(scoped) = self
-            .resolved_scopes
-            .lock()
-            .await
-            .get(&TypeId::of::<T>())
-            .and_then(|boxed| boxed.downcast_ref::<Arc<T>>())
-            .cloned()
-        {
+        if let Some(scoped) = find_by_type::<T>(&*self.resolved_scopes.lock().await) {
             return scoped;
         }
 
@@ -64,7 +55,11 @@ impl<'a> InjectorScope<'a> {
     }
 }
 
-#[async_trait]
-pub trait ScopeInjectable {
-    async fn from_injector_scope(scope: &InjectorScope<'_>) -> Self;
+fn find_by_type<T: Any + Send + Sync + ?Sized + 'static>(
+    hash_map: &HashMap<TypeId, Box<dyn Any + Send + Sync>>,
+) -> Option<Arc<T>> {
+    hash_map
+        .get(&TypeId::of::<T>())
+        .and_then(|boxed| boxed.downcast_ref::<Arc<T>>())
+        .cloned()
 }
