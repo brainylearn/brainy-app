@@ -64,13 +64,24 @@ pub async fn create_injector() -> Injector {
         .await
         .expect("Cannot get settings directory!");
 
+    #[cfg(not(test))]
     let settings = Settings::init_settings_and_get(settings_directory.clone())
         .await
         .unwrap();
 
+    #[cfg(test)]
+    let settings = Settings::default();
+
+    #[cfg(not(test))]
     let pool = create_sqlite_pool(&format!("sqlite:///{}", settings.database_location))
         .await
         .expect("Error connecting to Sqlite database");
+
+    #[cfg(test)]
+    let pool = create_sqlite_pool("sqlite::memory:")
+        .await
+        .expect("Error connecting to Sqlite database");
+
     injector.register_singleton(Arc::new(pool));
 
     let backend_url = Url::parse("http://localhost:5078").unwrap();
@@ -115,4 +126,29 @@ pub fn register_scoped_tx(injector: &mut Injector) {
             Arc::new(Mutex::new(tx))
         })
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ai_integration::clients::mock_client::MockClient;
+
+    use super::*;
+
+    #[tokio::test]
+    pub async fn validate_created_injector() {
+        // Arrange
+
+        let mut injector = create_injector().await;
+
+        // Needed for testing.
+        injector.register_singleton(Arc::new(MockClient {
+            model: None,
+            completion_fn: Arc::new(None),
+            stream_fn: Arc::new(None),
+        }));
+
+        // Act & Assert
+
+        injector.validate().await;
+    }
 }

@@ -76,4 +76,15 @@ impl Injector {
     pub fn start_scope(&self) -> InjectorScope<'_> {
         InjectorScope::new(self)
     }
+
+    /// A method, useful for testing and for validating that all dependencies
+    /// can be made. This work by creating a scope and creating an instance of
+    /// all possible dependencies and checking that it is possible.
+    pub async fn validate(&self) {
+        let scope = self.start_scope();
+
+        for factory in self.scoped_factory_registry.values() {
+            factory(&scope).await;
+        }
+    }
 }

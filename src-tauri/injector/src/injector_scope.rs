@@ -19,7 +19,6 @@ pub struct InjectorScope<'a> {
     resolved_scopes: Mutex<HashMap<TypeId, Box<dyn Any + Send + Sync>>>,
 }
 
-// TODO: validate test
 impl<'a> InjectorScope<'a> {
     pub fn new(injector: &'a Injector) -> Self {
         Self {
@@ -33,7 +32,6 @@ impl<'a> InjectorScope<'a> {
             return singleton;
         }
 
-        // TODO: test
         if let Some(scoped) = find_by_type::<T>(&*self.resolved_scopes.lock().await) {
             return scoped;
         }
@@ -64,4 +62,47 @@ fn find_by_type<T: Any + Send + Sync + ?Sized + 'static>(
         .get(&TypeId::of::<T>())
         .and_then(|boxed| boxed.downcast_ref::<Arc<T>>())
         .cloned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicI32, Ordering};
+
+    use crate::injector::Injector;
+
+    #[tokio::test]
+    pub async fn resolve_scoped_factory_returned_same_value() {
+        // Arrange
+
+        let mut injector = Injector::default();
+        let called_times = Arc::new(AtomicI32::new(0));
+        let called_times_clone = called_times.clone();
+
+        injector.register_scope_factory::<i32>(move |_| {
+            let called_times_clone = called_times_clone.clone();
+
+            Box::pin(async move {
+                called_times_clone.store(
+                    called_times_clone.load(Ordering::Relaxed) + 1,
+                    Ordering::Relaxed,
+                );
+                Arc::new(called_times_clone.load(Ordering::Relaxed))
+            })
+        });
+
+        let scope = injector.start_scope();
+
+        // Act
+
+        scope.resolve::<i32>().await;
+        scope.resolve::<i32>().await;
+        scope.resolve::<i32>().await;
+        let last = scope.resolve::<i32>().await;
+
+        // Act
+
+        assert_eq!(1, *last);
+        assert_eq!(1, called_times.load(Ordering::Relaxed));
+    }
 }
