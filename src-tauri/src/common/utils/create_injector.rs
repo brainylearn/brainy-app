@@ -102,7 +102,12 @@ pub async fn create_injector() -> Injector {
     register_scope!(injector, FileSystemService);
     register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);
+    register_scoped_tx(&mut injector);
 
+    injector
+}
+
+pub fn register_scoped_tx(injector: &mut Injector) {
     injector.register_scope_factory::<Mutex<DbTransaction>>(|scope| {
         Box::pin(async move {
             let pool = scope.resolve::<DbPool>().await;
@@ -110,6 +115,4 @@ pub async fn create_injector() -> Injector {
             Arc::new(Mutex::new(tx))
         })
     });
-
-    injector
 }

@@ -149,211 +149,213 @@ impl BackupService {
     }
 }
 
-// TODO:
-// #[cfg(test)]
-// pub mod tests {
-//     use super::*;
-//     use crate::{
-//         common::{
-//             sqlite_repositories_context::SqliteRepositoriesContext,
-//             traits::repositories_context::RepositoriesContext,
-//         },
-//         test_utils::create_temp_directory,
-//     };
-//
-//     struct TestDependencies {
-//         service: BackupService,
-//         context: SqliteRepositoriesContext,
-//         backup_directory: PathBuf,
-//     }
-//
-//     async fn create_test_dependencies() -> TestDependencies {
-//         let path = create_temp_directory().await.join("brainy.db");
-//         // Must use database that is saved on disk for backups to work.
-//         let context = SqliteRepositoriesContext::new_with_migration(&format!(
-//             "sqlite:///{}",
-//             path.to_string_lossy()
-//         ))
-//         .await
-//         .unwrap();
-//
-//         let backup_directory = create_temp_directory().await;
-//         let service = BackupService::new(
-//             context.local_configuration_repository(),
-//             context.backup_repository(),
-//             backup_directory.clone(),
-//         );
-//
-//         TestDependencies {
-//             service,
-//             context,
-//             backup_directory,
-//         }
-//     }
-//
-//     #[tokio::test]
-//     pub async fn ensure_backup_no_backups_created_backup() {
-//         // Arrange
-//
-//         let TestDependencies {
-//             context,
-//             backup_directory,
-//             service,
-//         } = create_test_dependencies().await;
-//
-//         // Inserting a random row in the database to see if it exists in the new backup.
-//         context
-//             .local_configuration_repository()
-//             .upsert(&LocalConfiguration {
-//                 name: "test_configuration".into(),
-//                 value: "value".into(),
-//             })
-//             .await
-//             .unwrap();
-//         context.save_changes().await.unwrap();
-//
-//         // Act
-//
-//         service.ensure_backup().await.unwrap();
-//
-//         // Assert
-//
-//         let mut dir_entries = fs::read_dir(backup_directory).await.unwrap();
-//         let backup = dir_entries.next_entry().await.unwrap().unwrap();
-//         let backup_context =
-//             SqliteRepositoriesContext::new_with_migration(backup.path().to_str().unwrap())
-//                 .await
-//                 .unwrap();
-//
-//         let configuration = backup_context
-//             .local_configuration_repository()
-//             .get_by_name("test_configuration")
-//             .await
-//             .unwrap()
-//             .unwrap();
-//
-//         assert_eq!(configuration.value, "value");
-//     }
-//
-//     #[tokio::test]
-//     pub async fn ensure_backup_two_calls_in_row_only_created_backup_once() {
-//         // Arrange
-//
-//         let TestDependencies {
-//             backup_directory,
-//             service,
-//             context,
-//         } = create_test_dependencies().await;
-//
-//         // Act
-//
-//         service.ensure_backup().await.unwrap();
-//
-//         // Assert
-//
-//         let mut dir_entries = fs::read_dir(backup_directory).await.unwrap();
-//         dir_entries.next_entry().await.unwrap().unwrap();
-//         assert!(dir_entries.next_entry().await.unwrap().is_none());
-//
-//         let last_backup_date = DateTime::parse_from_rfc3339(
-//             &context
-//                 .local_configuration_repository()
-//                 .get_by_name(LAST_BACKUP_DATE_CONFIGURATION_NAME)
-//                 .await
-//                 .unwrap()
-//                 .unwrap()
-//                 .value,
-//         )
-//         .unwrap()
-//         .with_timezone(&Utc);
-//
-//         assert!((Utc::now() - last_backup_date) <= Duration::seconds(5));
-//     }
-//
-//     #[tokio::test]
-//     pub async fn ensure_backup_multiple_files_deleted_oldest_file() {
-//         // Arrange
-//
-//         let TestDependencies {
-//             context,
-//             backup_directory,
-//             service,
-//         } = create_test_dependencies().await;
-//
-//         let mut oldest_backup_path = None;
-//
-//         for i in 0..MAX_NUMBER_OF_BACKUPS {
-//             let path = backup_directory.join(format!(
-//                 "{}.backup",
-//                 Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, i as u32)
-//                     .unwrap()
-//                     .format(DATETIME_FORMAT_IN_FILE_NAMES)
-//             ));
-//
-//             context
-//                 .backup_repository()
-//                 .create_backup(&path.to_string_lossy())
-//                 .await
-//                 .unwrap();
-//
-//             if oldest_backup_path.is_none() {
-//                 oldest_backup_path = Some(path);
-//             }
-//         }
-//
-//         // Act
-//
-//         service.ensure_backup().await.unwrap();
-//
-//         // Assert
-//
-//         assert!(!oldest_backup_path.unwrap().exists());
-//     }
-//
-//     #[tokio::test]
-//     pub async fn ensure_backup_other_files_than_backup_did_not_count_them_as_backups() {
-//         // Arrange
-//
-//         let TestDependencies {
-//             context,
-//             backup_directory,
-//             service,
-//         } = create_test_dependencies().await;
-//
-//         let mut oldest_backup_path = None;
-//
-//         for i in 0..MAX_NUMBER_OF_BACKUPS - 1 {
-//             let path = backup_directory.join(format!(
-//                 "{}.backup",
-//                 Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, i as u32)
-//                     .unwrap()
-//                     .format(DATETIME_FORMAT_IN_FILE_NAMES)
-//             ));
-//
-//             context
-//                 .backup_repository()
-//                 .create_backup(&path.to_string_lossy())
-//                 .await
-//                 .unwrap();
-//
-//             if oldest_backup_path.is_none() {
-//                 oldest_backup_path = Some(path);
-//             }
-//         }
-//
-//         fs::write(backup_directory.join("settings.json"), "1234")
-//             .await
-//             .unwrap();
-//         fs::write(backup_directory.join("test.backup"), "1234")
-//             .await
-//             .unwrap();
-//
-//         // Act
-//
-//         service.ensure_backup().await.unwrap();
-//
-//         // Assert
-//
-//         assert!(oldest_backup_path.unwrap().exists());
-//     }
-// }
+#[cfg(test)]
+pub mod tests {
+    use std::path::Path;
+
+    use injector::{injector::Injector, register_scope};
+
+    use super::*;
+    use crate::{
+        backup::sqlite_backup_repository::SqliteBackupRepository,
+        common::{
+            unit_of_work_ext::UnitOfWorkExt,
+            utils::{create_injector::register_scoped_tx, create_sqlite_pool::create_sqlite_pool},
+        },
+        local_configurations::repositories::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
+        test_utils::create_temp_directory,
+    };
+
+    async fn get_test_dependencies() -> Injector {
+        let path = create_temp_directory().await.join("brainy.db");
+        create_injector_for_sqlite_path(&path).await
+    }
+
+    async fn create_injector_for_sqlite_path(path: &Path) -> Injector {
+        let mut injector = Injector::default();
+
+        let backup_directory = create_temp_directory().await;
+        injector.register_singleton(Arc::new(BackupDirectory(backup_directory)));
+
+        // Must use database that is saved on disk for backups to work.
+        let pool = create_sqlite_pool(&format!("sqlite:///{}", path.to_string_lossy()))
+            .await
+            .unwrap();
+        injector.register_singleton(Arc::new(pool));
+        register_scoped_tx(&mut injector);
+
+        register_scope!(
+            injector,
+            dyn LocalConfigurationRepository,
+            SqliteLocalConfigurationRepository
+        );
+        register_scope!(injector, dyn BackupRepository, SqliteBackupRepository);
+        register_scope!(injector, BackupService);
+
+        injector
+    }
+
+    #[tokio::test]
+    pub async fn ensure_backup_no_backups_created_backup() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let local_configuration_repository =
+            scope.resolve::<dyn LocalConfigurationRepository>().await;
+        let backup_directory = scope.resolve::<BackupDirectory>().await.0.clone();
+        let service = scope.resolve::<BackupService>().await;
+
+        // Inserting a random row in the database to see if it exists in the new backup.
+        local_configuration_repository
+            .upsert(&LocalConfiguration {
+                name: "test_configuration".into(),
+                value: "value".into(),
+            })
+            .await
+            .unwrap();
+        scope.save_changes().await.unwrap();
+
+        // Act
+
+        service.ensure_backup().await.unwrap();
+
+        // Assert
+
+        let mut dir_entries = fs::read_dir(backup_directory).await.unwrap();
+        let backup = dir_entries.next_entry().await.unwrap().unwrap();
+        let backup_injector = create_injector_for_sqlite_path(&backup.path()).await;
+
+        let backup_injector_scope = backup_injector.start_scope();
+
+        let configuration = backup_injector_scope
+            .resolve::<dyn LocalConfigurationRepository>()
+            .await
+            .get_by_name("test_configuration")
+            .await
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(configuration.value, "value");
+    }
+
+    #[tokio::test]
+    pub async fn ensure_backup_two_calls_in_row_only_created_backup_once() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let local_configuration_repository =
+            scope.resolve::<dyn LocalConfigurationRepository>().await;
+        let backup_directory = scope.resolve::<BackupDirectory>().await.0.clone();
+        let service = scope.resolve::<BackupService>().await;
+
+        // Act
+
+        service.ensure_backup().await.unwrap();
+
+        // Assert
+
+        let mut dir_entries = fs::read_dir(backup_directory).await.unwrap();
+        dir_entries.next_entry().await.unwrap().unwrap();
+        assert!(dir_entries.next_entry().await.unwrap().is_none());
+
+        let last_backup_date = DateTime::parse_from_rfc3339(
+            &local_configuration_repository
+                .get_by_name(LAST_BACKUP_DATE_CONFIGURATION_NAME)
+                .await
+                .unwrap()
+                .unwrap()
+                .value,
+        )
+        .unwrap()
+        .with_timezone(&Utc);
+
+        assert!((Utc::now() - last_backup_date) <= Duration::seconds(5));
+    }
+
+    #[tokio::test]
+    pub async fn ensure_backup_multiple_files_deleted_oldest_file() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let backup_repository = scope.resolve::<dyn BackupRepository>().await;
+        let backup_directory = scope.resolve::<BackupDirectory>().await.0.clone();
+        let service = scope.resolve::<BackupService>().await;
+
+        let mut oldest_backup_path = None;
+
+        for i in 0..MAX_NUMBER_OF_BACKUPS {
+            let path = backup_directory.join(format!(
+                "{}.backup",
+                Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, i as u32)
+                    .unwrap()
+                    .format(DATETIME_FORMAT_IN_FILE_NAMES)
+            ));
+
+            backup_repository
+                .create_backup(&path.to_string_lossy())
+                .await
+                .unwrap();
+
+            if oldest_backup_path.is_none() {
+                oldest_backup_path = Some(path);
+            }
+        }
+
+        // Act
+
+        service.ensure_backup().await.unwrap();
+
+        // Assert
+
+        assert!(!oldest_backup_path.unwrap().exists());
+    }
+
+    #[tokio::test]
+    pub async fn ensure_backup_other_files_than_backup_did_not_count_them_as_backups() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let backup_repository = scope.resolve::<dyn BackupRepository>().await;
+        let backup_directory = scope.resolve::<BackupDirectory>().await.0.clone();
+        let service = scope.resolve::<BackupService>().await;
+
+        let mut oldest_backup_path = None;
+
+        for i in 0..MAX_NUMBER_OF_BACKUPS - 1 {
+            let path = backup_directory.join(format!(
+                "{}.backup",
+                Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, i as u32)
+                    .unwrap()
+                    .format(DATETIME_FORMAT_IN_FILE_NAMES)
+            ));
+
+            backup_repository
+                .create_backup(&path.to_string_lossy())
+                .await
+                .unwrap();
+
+            if oldest_backup_path.is_none() {
+                oldest_backup_path = Some(path);
+            }
+        }
+
+        fs::write(backup_directory.join("settings.json"), "1234")
+            .await
+            .unwrap();
+        fs::write(backup_directory.join("test.backup"), "1234")
+            .await
+            .unwrap();
+
+        // Act
+
+        service.ensure_backup().await.unwrap();
+
+        // Assert
+
+        assert!(oldest_backup_path.unwrap().exists());
+    }
+}

@@ -19,6 +19,7 @@ pub struct InjectorScope<'a> {
     resolved_scopes: Mutex<HashMap<TypeId, Box<dyn Any + Send + Sync>>>,
 }
 
+// TODO: validate test
 impl<'a> InjectorScope<'a> {
     pub fn new(injector: &'a Injector) -> Self {
         Self {
@@ -32,6 +33,7 @@ impl<'a> InjectorScope<'a> {
             return singleton;
         }
 
+        // TODO: test
         if let Some(scoped) = find_by_type::<T>(&*self.resolved_scopes.lock().await) {
             return scoped;
         }

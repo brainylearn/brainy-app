@@ -258,95 +258,118 @@ pub async fn delete_fsrs_profile(
     Ok(())
 }
 
-// TODO: test
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::{
-//         DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
-//         common::sqlite_repositories_context::SqliteRepositoriesContext,
-//         file_system::entities::{file::File, folder::Folder},
-//     };
-//     use chrono::Utc;
-//
-//     #[tokio::test]
-//     pub async fn get_fsrs_profile_recursively_for_item_nested_file_returns_profile_correctly() {
-//         // Arrange
-//
-//         let context = SqliteRepositoriesContext::create_testing_context().await;
-//         let parent = Folder::new_unchecked(
-//             Guid::new_v4(),
-//             Utc::now(),
-//             Utc::now(),
-//             Some(ROOT_FOLDER_ID),
-//             "test".try_into().unwrap(),
-//             FsrsProfileChoice::Inherit,
-//         );
-//         context.folder_repository().create(&parent).await.unwrap();
-//
-//         let file = File::new_unchecked(
-//             Guid::new_v4(),
-//             Utc::now(),
-//             Utc::now(),
-//             Some(parent.id()),
-//             "test".try_into().unwrap(),
-//             FsrsProfileChoice::Inherit,
-//         );
-//         context.file_repository().create(&file).await.unwrap();
-//
-//         // Act
-//
-//         let result = get_fsrs_profile_recursively_for_item(
-//             &context,
-//             file.fsrs_profile_choice(),
-//             file.parent_id(),
-//         )
-//         .await
-//         .unwrap();
-//
-//         // Assert
-//
-//         assert_eq!(result.id(), DEFAULT_FSRS_PROFILE_ID);
-//     }
-//
-//     #[tokio::test]
-//     pub async fn get_fsrs_profile_recursively_for_item_file_with_custom_profile_returned_profile() {
-//         // Arrange
-//
-//         let context = SqliteRepositoriesContext::create_testing_context().await;
-//         let profile = FsrsProfile::new_unchecked(
-//             Guid::new_v4(),
-//             Utc::now(),
-//             Utc::now(),
-//             "test".into(),
-//             1f64,
-//             1f64,
-//             vec![1f64],
-//         );
-//         context.fsrs_repository().create(&profile).await.unwrap();
-//
-//         let file = File::new_unchecked(
-//             Guid::new_v4(),
-//             Utc::now(),
-//             Utc::now(),
-//             Some(ROOT_FOLDER_ID),
-//             "test".try_into().unwrap(),
-//             FsrsProfileChoice::Id(profile.id()),
-//         );
-//         context.file_repository().create(&file).await.unwrap();
-//
-//         // Act
-//
-//         let result = get_fsrs_profile_recursively_for_item(
-//             &context,
-//             file.fsrs_profile_choice(),
-//             file.parent_id(),
-//         )
-//         .await
-//         .unwrap();
-//
-//         // Assert
-//
-//         assert_eq!(result.id(), profile.id());
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
+        file_system::{
+            entities::{file::File, folder::Folder},
+            repositories::{
+                sqlite_file_repository::SqliteFileRepository,
+                sqlite_folder_repository::SqliteFolderRepository,
+            },
+        },
+        fsrs::entities::repositories::sqlite_fsrs_repository::SqliteFsrsRepository,
+        test_utils::create_test_injector,
+    };
+    use chrono::Utc;
+    use injector::register_scope;
+
+    async fn get_test_dependencies() -> Injector {
+        let mut injector = create_test_injector().await;
+        register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
+        register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+        register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
+        injector
+    }
+
+    #[tokio::test]
+    pub async fn get_fsrs_profile_recursively_for_item_nested_file_returns_profile_correctly() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let file_repository = scope.resolve::<dyn FileRepository>().await;
+        let folder_repository = scope.resolve::<dyn FolderRepository>().await;
+
+        let parent = Folder::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Inherit,
+        );
+        folder_repository.create(&parent).await.unwrap();
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(parent.id()),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Inherit,
+        );
+        file_repository.create(&file).await.unwrap();
+
+        // Act
+
+        let result = get_fsrs_profile_recursively_for_item(
+            &scope,
+            file.fsrs_profile_choice(),
+            file.parent_id(),
+        )
+        .await
+        .unwrap();
+
+        // Assert
+
+        assert_eq!(result.id(), DEFAULT_FSRS_PROFILE_ID);
+    }
+
+    #[tokio::test]
+    pub async fn get_fsrs_profile_recursively_for_item_file_with_custom_profile_returned_profile() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+        let file_repository = scope.resolve::<dyn FileRepository>().await;
+        let fsrs_repository = scope.resolve::<dyn FsrsRepository>().await;
+
+        let profile = FsrsProfile::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            "test".into(),
+            1f64,
+            1f64,
+            vec![1f64],
+        );
+        fsrs_repository.create(&profile).await.unwrap();
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Id(profile.id()),
+        );
+        file_repository.create(&file).await.unwrap();
+
+        // Act
+
+        let result = get_fsrs_profile_recursively_for_item(
+            &scope,
+            file.fsrs_profile_choice(),
+            file.parent_id(),
+        )
+        .await
+        .unwrap();
+
+        // Assert
+
+        assert_eq!(result.id(), profile.id());
+    }
+}
