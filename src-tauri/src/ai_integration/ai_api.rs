@@ -25,7 +25,7 @@ pub async fn stream_ai_response(
     let result = scope
         .resolve::<AiService>()
         .await
-        .stream(&scope, request, |event| match on_event.send(event) {
+        .stream(request, |event| match on_event.send(event) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         })

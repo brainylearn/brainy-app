@@ -25,7 +25,7 @@ import Message, {
 	MessageContentHumanAssistant,
 	ToolCall,
 	ToolCallStatus,
-} from "../types/message";
+} from "../../../types/backend/entity/message";
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
@@ -53,6 +53,7 @@ export default function AiChatWidget() {
 const NEW_SESSION_VALUE = "new-session";
 const TEMP_ASSISTANT_MESSAGE_ID = "temp-assistant";
 
+// TODO: do not allow user to switch chat while streaming? find a solution
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
@@ -85,7 +86,6 @@ function AiChatWidgetInner() {
 		if (newChatId === NEW_SESSION_VALUE) {
 			setMessages([]);
 		} else {
-			console.log(await getChatMessagesOrdered(newChatId));
 			setMessages(await getChatMessagesOrdered(newChatId));
 		}
 		setSelectedChatId(newChatId);
@@ -157,8 +157,10 @@ function AiChatWidgetInner() {
 				setIsStreamingResponse(false);
 			} else if (event.event === "error") {
 				setErrorMessage(event.data);
+			} else if (event.event === "toolCalled") {
+				// TODO: unit test
+				setMessages(messages => [...messages, event.data]);
 			}
-			// TODO: handle tool call tool event
 		};
 		setUserPrompt("");
 
@@ -178,6 +180,7 @@ function AiChatWidgetInner() {
 			setErrorMessage(errorToString(e));
 			setIsStreamingResponse(false);
 		} finally {
+			setChats(await getAllAiChatsSortedByDateDesc());
 			setMessages(await getChatMessagesOrdered(updatedChatId));
 		}
 	};
@@ -453,22 +456,26 @@ function AiChatWidgetInner() {
 interface Props {
 	toolCall: ToolCall;
 }
-function ToolCallDisplay({ toolCall }: Props) {
-	console.log(toolCall);
 
-	// TODO: color buttons
+// TODO: unit test
+// TODO : should not be able to accept card while creating answer
+function ToolCallDisplay({ toolCall }: Props) {
 	return (
 		<div className={styles.toolCall}>
 			<p className={styles.toolCallHeader}>{toolCall.displayName}</p>
 			<Markdown>{toolCall.displayDescriptionMarkdown}</Markdown>
-			<div className={styles.buttons}>
+			<div className={styles.footer}>
 				{toolCall.status === ToolCallStatus.Pending && (
 					<>
-						<button className="transparent" type="button">
+						<button
+							className={`transparent ${styles.reject}`}
+							type="button">
 							<Icon path={mdiClose} size={1} />
 							<p>Reject</p>
 						</button>
-						<button className="transparent" type="button">
+						<button
+							className={`transparent ${styles.accept}`}
+							type="button">
 							<Icon path={mdiCheckOutline} size={1} />
 							<p>Accept</p>
 						</button>

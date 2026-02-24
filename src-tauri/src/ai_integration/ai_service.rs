@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use injector::injector_scope::InjectorScope;
 use injector_derive::ScopeInjectable;
 #[cfg(not(test))]
 use rig::client::{Nothing, ProviderClient};
@@ -41,13 +40,14 @@ use crate::{
 };
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
+const DEFAULT_MAX_TURN: usize = 10;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum StreamLlmResponseEvent {
     CreatedChat(Chat),
     InProgress(String),
-    ToolCalled,
+    ToolCalled(Message),
     Finished,
     Error(String),
 }
@@ -83,7 +83,6 @@ pub struct AiService {
 impl AiService {
     pub async fn stream<F>(
         &self,
-        scope: &InjectorScope<'_>,
         request: StreamAiRequest,
         on_event: F,
     ) -> Result<(), AiServiceError>
@@ -93,49 +92,43 @@ impl AiService {
         let _ = self.state.start_generation().await;
 
         let messages;
-        let current_chat_id;
+        let chat_id;
         let mut chat_to_upsert = None;
-        if let Some(chat_id) = request.chat_id {
+        if let Some(request_chat_id) = request.chat_id {
+            chat_id = request_chat_id;
             messages = self
                 .ai_repository
                 .get_chat_messages_ordered(chat_id)
                 .await?;
-            current_chat_id = chat_id;
         } else {
-            chat_to_upsert = Some(self.create_chat(&request.prompt).await?);
-            current_chat_id = chat_to_upsert.as_ref().unwrap().id();
-            log::info!("Created new chat with id '{current_chat_id}'.");
+            let chat = self.create_chat(&request.prompt).await?;
+            chat_id = chat.id();
             messages = Vec::new();
-            on_event(StreamLlmResponseEvent::CreatedChat(
-                chat_to_upsert.as_ref().unwrap().clone(),
-            ))?;
+
+            on_event(StreamLlmResponseEvent::CreatedChat(chat.clone()))?;
+
+            chat_to_upsert = Some(chat);
         }
 
-        let mut messages_to_upsert = Vec::new();
-        messages_to_upsert.push(Message::new(
+        let messages_to_upsert = Arc::new(Mutex::new(vec![Message::new(
             None,
-            current_chat_id,
+            chat_id,
             MessageContent::Human(request.prompt.clone()),
-        ));
+        )]));
 
-        let messages = messages
-            .iter()
-            .map(|message| message.clone().into())
-            .collect();
+        let messages = messages.into_iter().map(|message| message.into()).collect();
 
-        let agent = self.get_agent(scope, &request, current_chat_id).await?;
+        let agent = self
+            .get_agent(&request, chat_id, messages_to_upsert.clone())
+            .await?;
         let mut stream = agent
             .stream_chat(request.prompt, messages)
             .with_hook(StateCancellationHook::new(self.state.clone()))
             .await;
 
-        let mut error_happened = false;
         let mut complete_ai_response = String::new();
 
         while let Some(content) = stream.next().await {
-            #[cfg(debug_assertions)]
-            log::info!("Received following answer from AI: {:?}", content);
-
             match content {
                 Ok(content) => {
                     if let MultiTurnStreamItem::StreamAssistantItem(
@@ -144,12 +137,8 @@ impl AiService {
                     {
                         complete_ai_response = format!("{complete_ai_response}{text}");
                         on_event(StreamLlmResponseEvent::InProgress(text))?;
-                    } else if let MultiTurnStreamItem::StreamAssistantItem(
-                        StreamedAssistantContent::ToolCall { .. },
-                    ) = content
-                    {
-                        on_event(StreamLlmResponseEvent::ToolCalled)?;
                     }
+                    // TODO: the tool it self should call on event
                 }
                 Err(err) => {
                     let mut should_call_callback = true;
@@ -162,7 +151,6 @@ impl AiService {
 
                     if should_call_callback {
                         on_event(StreamLlmResponseEvent::Error(err.to_string()))?;
-                        error_happened = true;
                     }
                     break;
                 }
@@ -170,22 +158,23 @@ impl AiService {
         }
 
         // Only save AI message when an error does not happen.
-        if !error_happened {
-            log::info!("Error happened, not storing user message.");
+        {
+            let mut messages_to_upsert = messages_to_upsert.lock().await;
             messages_to_upsert.push(Message::new(
                 None,
-                current_chat_id,
+                chat_id,
                 MessageContent::Assistant(complete_ai_response),
             ));
         }
 
-        // Delaying database operations to end to avoid locking anything else.
+        // Delaying database operations to the end to avoid the writes from locking
+        // the database.
         if let Some(chat) = chat_to_upsert {
             self.ai_repository.upsert_chat(&chat).await?;
         }
 
-        for message in messages_to_upsert {
-            self.ai_repository.upsert_message(&message).await?;
+        for message in messages_to_upsert.lock().await.iter() {
+            self.ai_repository.upsert_message(message).await?;
         }
 
         on_event(StreamLlmResponseEvent::Finished)?;
@@ -217,9 +206,9 @@ impl AiService {
 
     async fn get_agent(
         &self,
-        scope: &InjectorScope<'_>,
         request: &StreamAiRequest,
         chat_id: Guid,
+        messages_to_upsert: Arc<Mutex<Vec<Message>>>,
     ) -> Result<Agent<MultiCompletionModel>, AiServiceError> {
         let client = self.get_multi_completion_client().await?;
         let model_name = self.get_model_name().await;
@@ -227,43 +216,43 @@ impl AiService {
         let builder = client
             .agent(&model_name)
             .temperature(DEFAULT_TEMPERATURE)
-            .name("Main Agent")
+            .name("Brainy Tutor")
             .description(
-                "Acts as the user-facing tutor for explaining concepts and \
-                managing the conversation.",
+                "An active learning tutor that explains concepts and converts \
+                them into study materials using the best available format.",
             )
-            // TODO: some instruction are not important if creating tool agent is not important
+            .default_max_turns(DEFAULT_MAX_TURN)
             .preamble(
-                "\
-                You are the primary assistant for **Brainy**, an app designed \
-                to help users master subjects through active learning and \
-                flashcards. Your tone should be encouraging, concise, and \
-                academically focused.
-\
-                **Your Responsibilities:**\n\
-                1. **Tutor & Explain:** Answer user questions and explain \
-                concepts clearly. Ensure the user actually understands a topic \
-                before they try to memorize it.\n\
-                2. **Identify Memorization Needs:** Pay attention to when a \
-                user wants to study, remember, or drill specific information.\n\
-                3. **Delegate:** When the user is ready to create study \
-                materials, you must call the `Learning Content Agent` via your \
-                available tools. Pass down the core text, facts, or topic the \
-                user wants to learn.
-\
-                **Important Rule:** Do NOT generate the learning materials \
-                yourself. You must always invoke the Learning Content Agent \
-                to ensure the learning materials adhere to strict cognitive \
-                science principles.",
-            );
+                "You are **Brainy's** tutor. Your job is to help users understand \
+                and memorize information through active learning.\n\n\
+                **Responsibilities:**\n\
+                1. **Explain clearly:** Answer questions and break down concepts. \
+                Prioritize understanding over memorization — don't let a user \
+                try to memorize something they don't yet grasp.\n\
+                2. **Detect study intent:** When a user wants to study, drill, \
+                or memorize specific content, create study materials using your tools.\n\n\
+                **When creating study materials:**\n\
+                - Choose the most effective format for each fact based on the tools available.\n\
+                - **One fact per item.** Each item tests a single, atomic piece of information.\n\
+                - **Be concise.** Strip every redundant word without losing clarity.\n\
+                - **Add context tags.** Prefix with a short domain tag to prevent ambiguity: \
+                `[Biology]`, `[WW2]`, `[Calculus]`.\n\
+                - **No enumeration.** Never ask users to list multiple items. \
+                Break lists into individual items.\n\
+                - **Disambiguate.** When concepts are easily confused, word the item \
+                to highlight the distinguishing detail.\n\
+                - After creating materials, briefly summarize to the user what was added to their deck.\n\n\
+                **Rules:**\n\
+                - Never create study materials without using your tools.\n\
+                - Do not describe, list, or repeat card content in conversation — \
+                only create them via tools. Once a tool call is made, the card exists \
+                in the user's deck; there is no need to echo it back.",
+        );
 
         if let Some(file_id) = request.file_id {
             // TODO: unit test
             Ok(builder
-                .tool(
-                    create_learning_content_agent(scope, &client, &model_name, file_id, chat_id)
-                        .await,
-                )
+                .tool(CreateFlashCard::new(file_id, chat_id, messages_to_upsert))
                 .build())
         } else {
             Ok(builder.build())
@@ -302,48 +291,6 @@ impl AiService {
             model_name
         }
     }
-}
-
-async fn create_learning_content_agent(
-    scope: &InjectorScope<'_>,
-    client: &MultiCompletionClient,
-    model_name: &str,
-    file_id: Guid,
-    chat_id: Guid,
-) -> Agent<MultiCompletionModel> {
-    let builder = client
-        .agent(model_name)
-        .temperature(DEFAULT_TEMPERATURE)
-        .name("Learning Content Agent")
-        .description(
-            "Transforms raw educational text or concepts into optimized, \
-            active learning materials.",
-        )
-        .preamble(
-            "\
-                You are the **Learning Content Agent** for the Brainy app. You \
-                receive raw text or concepts from the Main Agent and convert \
-                them into optimized active learning tasks using your tools.
-    \
-                Always follow these principles:
-                1. **Minimum Information:** Each item tests exactly *one* fact or idea.
-                2. **Optimize Wording:** Strip redundant words. Keep questions \
-                and answers as concise as possible.
-                3. **No Enumerations:** Never ask users to list multiple items. \
-                Break them into separate facts or cloze deletions.
-                4. **Use Cloze Deletions:** Prefer fill-in-the-blank for \
-                definitions and relationships (e.g., \"The capital of France is [...]\").
-                5. **Provide Context:** Use short context cues to avoid \
-                ambiguity (e.g., \"[Physics] Force equals mass times [...]\").
-                6. **Target Interference:** Clearly distinguish similar \
-                concepts to prevent confusion.
-
-                **Output only structured learning materials via your tools.** \
-                No conversational filler; output is passed back to the Main Agent.",
-        )
-        .tool(CreateFlashCard::new(file_id, chat_id, scope).await);
-
-    builder.build()
 }
 
 // TOOD:

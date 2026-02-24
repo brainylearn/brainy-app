@@ -1,4 +1,5 @@
 import Chat from "../entity/chat";
+import Message from "../entity/message";
 
 export type StreamLlmResponseEvent =
 	| {
@@ -15,4 +16,8 @@ export type StreamLlmResponseEvent =
 	| {
 			event: "createdChat";
 			data: Chat;
+	  }
+	| {
+			event: "toolCalled";
+			data: Message;
 	  };

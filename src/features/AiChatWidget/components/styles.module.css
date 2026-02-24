@@ -151,7 +151,7 @@
 		font-weight: 600;
 	}
 
-	& .buttons {
+	& .footer {
 		display: flex;
 		padding-top: var(--spacing-2);
 		border-top: var(--default-border-width) solid var(--border-color);
@@ -162,6 +162,14 @@
 			justify-content: center;
 			align-items: center;
 			gap: var(--spacing-2);
+
+			&.accept {
+				color: var(--green-color);
+			}
+
+			&.reject {
+				color: var(--red-color);
+			}
 		}
 	}
 }

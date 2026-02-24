@@ -10,7 +10,7 @@ import {
 	streamAiResponse,
 } from "../../../../api/aiApi.ts";
 import userEvent from "@testing-library/user-event";
-import Message from "../../../../features/AiChatWidget/types/message.ts";
+import Message from "../../../../types/backend/entity/message.ts";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../../types/backend/events/streamLlmResponseEvent.ts";
 
