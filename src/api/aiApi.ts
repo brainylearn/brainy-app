@@ -2,16 +2,15 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../types/backend/events/streamLlmResponseEvent";
 import Chat from "../types/backend/entity/chat";
 import Message from "../features/AiChatWidget/types/message";
+import StreamAiRequest from "../types/backend/model/stream_ai_request";
 
 export function streamAiResponse(
-	prompt: string,
-	chatId: string | null,
+	request: StreamAiRequest,
 	onEvent: Channel<StreamLlmResponseEvent>,
 ): Promise<void> {
 	return invoke("stream_ai_response", {
-		prompt,
+		request,
 		onEvent,
-		chatId,
 	});
 }
 

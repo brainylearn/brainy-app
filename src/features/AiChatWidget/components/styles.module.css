@@ -138,3 +138,30 @@
 .rename-dialog {
 	width: 52rem;
 }
+
+.tool-call {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-2);
+
+	& .tool-call-header {
+		text-transform: capitalize;
+		border-bottom: var(--default-border-width) solid var(--border-color);
+		padding-bottom: var(--spacing-2);
+		font-weight: 600;
+	}
+
+	& .buttons {
+		display: flex;
+		padding-top: var(--spacing-2);
+		border-top: var(--default-border-width) solid var(--border-color);
+
+		& > button {
+			display: flex;
+			flex-grow: 1;
+			justify-content: center;
+			align-items: center;
+			gap: var(--spacing-2);
+		}
+	}
+}

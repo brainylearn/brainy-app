@@ -114,7 +114,7 @@ describe("AiChatWidget", () => {
 					{
 						id: "message-1",
 						chatId: "chat-1",
-						role: "human",
+						contentType: "human",
 						content: "message 1",
 					} as Message,
 				]);
@@ -123,7 +123,7 @@ describe("AiChatWidget", () => {
 					{
 						id: "message-2",
 						chatId: "chat-2",
-						role: "human",
+						contentType: "human",
 						content: "message 2",
 					} as Message,
 				]);
@@ -262,7 +262,7 @@ describe("AiChatWidget", () => {
 					{
 						id: "message-1",
 						chatId: "chat-1",
-						role: "human",
+						contentType: "human",
 						content: "retrieved message",
 					} as Message,
 				]);
@@ -436,7 +436,7 @@ describe("AiChatWidget", () => {
 				{
 					id: "message-1",
 					chatId: "chat-1",
-					role: "human",
+					contentType: "human",
 					content: "message 1",
 				} as Message,
 			]),

@@ -1,6 +1,7 @@
 import Icon from "@mdi/react";
 import {
 	mdiAttachment,
+	mdiCheckOutline,
 	mdiClose,
 	mdiDeleteOutline,
 	mdiPencilOutline,
@@ -20,7 +21,11 @@ import {
 	stopAiGeneration,
 	streamAiResponse,
 } from "../../../api/aiApi";
-import Message from "../types/message";
+import Message, {
+	MessageContentHumanAssistant,
+	ToolCall,
+	ToolCallStatus,
+} from "../types/message";
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
@@ -37,6 +42,8 @@ import Form, {
 	FormHeader,
 	FormRows,
 } from "../../../components/Form/Form";
+import { useSearchParams } from "react-router";
+import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
 
 export default function AiChatWidget() {
 	const settings = useAppSelector(selectSettings);
@@ -44,6 +51,7 @@ export default function AiChatWidget() {
 }
 
 const NEW_SESSION_VALUE = "new-session";
+const TEMP_ASSISTANT_MESSAGE_ID = "temp-assistant";
 
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
@@ -57,8 +65,10 @@ function AiChatWidgetInner() {
 	const [chats, setChats] = useState<Chat[]>([]);
 	const [selectedChatId, setSelectedChatId] =
 		useState<string>(NEW_SESSION_VALUE);
+	const [searchParams] = useSearchParams();
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
 
 	useGlobalKey(e => {
 		if (e.ctrlKey && e.key.toLowerCase() === "j") {
@@ -75,6 +85,7 @@ function AiChatWidgetInner() {
 		if (newChatId === NEW_SESSION_VALUE) {
 			setMessages([]);
 		} else {
+			console.log(await getChatMessagesOrdered(newChatId));
 			setMessages(await getChatMessagesOrdered(newChatId));
 		}
 		setSelectedChatId(newChatId);
@@ -90,14 +101,19 @@ function AiChatWidgetInner() {
 			{
 				chatId: selectedChatId ?? "tmp",
 				id: "tmp",
-				role: "human",
-				content: userPrompt,
+				content: {
+					type: "human",
+					value: userPrompt,
+				},
 			},
 			{
 				chatId: selectedChatId ?? "tmp",
-				id: "tmp",
-				role: "assistant",
-				content: "",
+				id: TEMP_ASSISTANT_MESSAGE_ID,
+				contentType: "assistant",
+				content: {
+					type: "assistant",
+					value: "",
+				},
 			},
 		]);
 
@@ -118,12 +134,22 @@ function AiChatWidgetInner() {
 				updatedChatId = event.data.id;
 			} else if (event.event === "inProgress") {
 				setMessages(messages => {
-					const lastMessage = messages[messages.length - 1];
+					const tempAssistantMessage = messages.find(
+						m => m.id === TEMP_ASSISTANT_MESSAGE_ID,
+					)!;
+
 					return [
-						...messages.slice(0, -1),
+						...messages.filter(
+							m => m.id !== TEMP_ASSISTANT_MESSAGE_ID,
+						),
 						{
-							...lastMessage,
-							content: lastMessage.content + event.data,
+							...tempAssistantMessage,
+							content: {
+								...tempAssistantMessage.content,
+								value:
+									(tempAssistantMessage.content
+										.value as string) + event.data,
+							} as MessageContentHumanAssistant,
 						},
 					];
 				});
@@ -132,13 +158,20 @@ function AiChatWidgetInner() {
 			} else if (event.event === "error") {
 				setErrorMessage(event.data);
 			}
+			// TODO: handle tool call tool event
 		};
 		setUserPrompt("");
 
 		try {
 			await streamAiResponse(
-				userPrompt,
-				selectedChatId === NEW_SESSION_VALUE ? null : selectedChatId,
+				{
+					prompt: userPrompt,
+					chatId:
+						selectedChatId === NEW_SESSION_VALUE
+							? null
+							: selectedChatId,
+					fileId: selectedFileId,
+				},
 				onEvent,
 			);
 		} catch (e) {
@@ -333,8 +366,19 @@ function AiChatWidgetInner() {
 							{messages.map((message, i) => (
 								<div
 									key={i}
-									className={`${styles.message} ${styles[message.role]}`}>
-									<Markdown>{message.content}</Markdown>
+									className={`${styles.message} ${styles[message.content.type]}`}>
+									{(message.content.type === "human" ||
+										message.content.type ==
+											"assistant") && (
+										<Markdown>
+											{message.content.value}
+										</Markdown>
+									)}
+									{message.content.type === "toolCall" && (
+										<ToolCallDisplay
+											toolCall={message.content.value}
+										/>
+									)}
 									{isStreamingResponse &&
 										i === messages.length - 1 && (
 											<div
@@ -403,5 +447,34 @@ function AiChatWidgetInner() {
 				)}
 			</div>
 		</>
+	);
+}
+
+interface Props {
+	toolCall: ToolCall;
+}
+function ToolCallDisplay({ toolCall }: Props) {
+	console.log(toolCall);
+
+	// TODO: color buttons
+	return (
+		<div className={styles.toolCall}>
+			<p className={styles.toolCallHeader}>{toolCall.displayName}</p>
+			<Markdown>{toolCall.displayDescriptionMarkdown}</Markdown>
+			<div className={styles.buttons}>
+				{toolCall.status === ToolCallStatus.Pending && (
+					<>
+						<button className="transparent" type="button">
+							<Icon path={mdiClose} size={1} />
+							<p>Reject</p>
+						</button>
+						<button className="transparent" type="button">
+							<Icon path={mdiCheckOutline} size={1} />
+							<p>Accept</p>
+						</button>
+					</>
+				)}
+			</div>
+		</div>
 	);
 }

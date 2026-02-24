@@ -7,6 +7,7 @@ use crate::{
         ai_state::AiState,
         entities::{chat::Chat, message::Message},
         repositories::traits::ai_repository::AiRepository,
+        stream_ai_request::StreamAiRequest,
     },
     common::{api_error::ApiError, unit_of_work_ext::UnitOfWorkExt},
 };
@@ -17,15 +18,14 @@ use tauri::{State, ipc::Channel};
 pub async fn stream_ai_response(
     injector: State<'_, Arc<Injector>>,
     on_event: Channel<StreamLlmResponseEvent>,
-    prompt: String,
-    chat_id: Option<Guid>,
+    request: StreamAiRequest,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
 
     let result = scope
         .resolve::<AiService>()
         .await
-        .stream(prompt, chat_id, |event| match on_event.send(event) {
+        .stream(&scope, request, |event| match on_event.send(event) {
             Ok(_) => Ok(()),
             Err(err) => Err(err.to_string()),
         })
