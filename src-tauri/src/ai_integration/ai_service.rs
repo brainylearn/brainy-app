@@ -80,15 +80,14 @@ pub struct AiService {
     mock_client: Arc<MockClient>,
 }
 
+pub type OnEventCallback = Arc<dyn Send + Sync + Fn(StreamLlmResponseEvent) -> Result<(), String>>;
+
 impl AiService {
-    pub async fn stream<F>(
+    pub async fn stream(
         &self,
         request: StreamAiRequest,
-        on_event: F,
-    ) -> Result<(), AiServiceError>
-    where
-        F: Fn(StreamLlmResponseEvent) -> Result<(), String>,
-    {
+        on_event: OnEventCallback,
+    ) -> Result<(), AiServiceError> {
         let _ = self.state.start_generation().await;
 
         let messages;
@@ -119,7 +118,12 @@ impl AiService {
         let messages = messages.into_iter().map(|message| message.into()).collect();
 
         let agent = self
-            .get_agent(&request, chat_id, messages_to_upsert.clone())
+            .get_agent(
+                &request,
+                chat_id,
+                messages_to_upsert.clone(),
+                on_event.clone(),
+            )
             .await?;
         let mut stream = agent
             .stream_chat(request.prompt, messages)
@@ -138,7 +142,6 @@ impl AiService {
                         complete_ai_response = format!("{complete_ai_response}{text}");
                         on_event(StreamLlmResponseEvent::InProgress(text))?;
                     }
-                    // TODO: the tool it self should call on event
                 }
                 Err(err) => {
                     let mut should_call_callback = true;
@@ -209,6 +212,7 @@ impl AiService {
         request: &StreamAiRequest,
         chat_id: Guid,
         messages_to_upsert: Arc<Mutex<Vec<Message>>>,
+        on_event: OnEventCallback,
     ) -> Result<Agent<MultiCompletionModel>, AiServiceError> {
         let client = self.get_multi_completion_client().await?;
         let model_name = self.get_model_name().await;
@@ -252,7 +256,12 @@ impl AiService {
         if let Some(file_id) = request.file_id {
             // TODO: unit test
             Ok(builder
-                .tool(CreateFlashCard::new(file_id, chat_id, messages_to_upsert))
+                .tool(CreateFlashCard::new(
+                    file_id,
+                    chat_id,
+                    messages_to_upsert,
+                    Some(on_event),
+                ))
                 .build())
         } else {
             Ok(builder.build())

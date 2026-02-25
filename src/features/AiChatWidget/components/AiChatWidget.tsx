@@ -1,7 +1,6 @@
 import Icon from "@mdi/react";
 import {
 	mdiAttachment,
-	mdiCheckOutline,
 	mdiClose,
 	mdiDeleteOutline,
 	mdiPencilOutline,
@@ -23,8 +22,6 @@ import {
 } from "../../../api/aiApi";
 import Message, {
 	MessageContentHumanAssistant,
-	ToolCall,
-	ToolCallStatus,
 } from "../../../types/backend/entity/message";
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
@@ -44,6 +41,7 @@ import Form, {
 } from "../../../components/Form/Form";
 import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
+import ToolCallDisplay from "./ToolCallDisplay";
 
 export default function AiChatWidget() {
 	const settings = useAppSelector(selectSettings);
@@ -159,7 +157,19 @@ function AiChatWidgetInner() {
 				setErrorMessage(event.data);
 			} else if (event.event === "toolCalled") {
 				// TODO: unit test
-				setMessages(messages => [...messages, event.data]);
+				setMessages(messages => {
+					const tempAssistantMessage = messages.find(
+						m => m.id === TEMP_ASSISTANT_MESSAGE_ID,
+					)!;
+
+					return [
+						...messages.filter(
+							m => m.id !== TEMP_ASSISTANT_MESSAGE_ID,
+						),
+						event.data,
+						tempAssistantMessage,
+					];
+				});
 			}
 		};
 		setUserPrompt("");
@@ -450,38 +460,5 @@ function AiChatWidgetInner() {
 				)}
 			</div>
 		</>
-	);
-}
-
-interface Props {
-	toolCall: ToolCall;
-}
-
-// TODO: unit test
-// TODO : should not be able to accept card while creating answer
-function ToolCallDisplay({ toolCall }: Props) {
-	return (
-		<div className={styles.toolCall}>
-			<p className={styles.toolCallHeader}>{toolCall.displayName}</p>
-			<Markdown>{toolCall.displayDescriptionMarkdown}</Markdown>
-			<div className={styles.footer}>
-				{toolCall.status === ToolCallStatus.Pending && (
-					<>
-						<button
-							className={`transparent ${styles.reject}`}
-							type="button">
-							<Icon path={mdiClose} size={1} />
-							<p>Reject</p>
-						</button>
-						<button
-							className={`transparent ${styles.accept}`}
-							type="button">
-							<Icon path={mdiCheckOutline} size={1} />
-							<p>Accept</p>
-						</button>
-					</>
-				)}
-			</div>
-		</div>
 	);
 }

@@ -9,7 +9,10 @@ use tokio::sync::Mutex;
 
 use crate::{
     Guid,
-    ai_integration::entities::message::{Message, MessageContent, ToolCall, ToolCallStatus},
+    ai_integration::{
+        ai_service::{OnEventCallback, StreamLlmResponseEvent},
+        entities::message::{Message, MessageContent, ToolCall, ToolCallStatus},
+    },
     common::repository_error::RepositoryError,
 };
 
@@ -29,20 +32,29 @@ pub enum CreateFlashCardError {
     SerdeError(#[from] serde_json::Error),
     #[error("{0}")]
     UnknownRepositoryError(#[from] RepositoryError),
+    #[error("{0}")]
+    OnEvent(String),
 }
 
 pub struct CreateFlashCard {
     file_id: Guid,
     chat_id: Guid,
     messages_to_upsert: Arc<Mutex<Vec<Message>>>,
+    on_event: Option<OnEventCallback>,
 }
 
 impl CreateFlashCard {
-    pub fn new(file_id: Guid, chat_id: Guid, messages_to_upsert: Arc<Mutex<Vec<Message>>>) -> Self {
+    pub fn new(
+        file_id: Guid,
+        chat_id: Guid,
+        messages_to_upsert: Arc<Mutex<Vec<Message>>>,
+        on_event: Option<OnEventCallback>,
+    ) -> Self {
         Self {
             file_id,
             chat_id,
             messages_to_upsert,
+            on_event,
         }
     }
 }
@@ -70,8 +82,7 @@ impl Tool for CreateFlashCard {
         log::info!("{} called with arguments {:?}", Self::NAME, args);
 
         let mut messages_to_upsert = self.messages_to_upsert.lock().await;
-
-        messages_to_upsert.push(Message::new(
+        let message = Message::new(
             None,
             self.chat_id,
             MessageContent::ToolCall(ToolCall {
@@ -91,8 +102,15 @@ impl Tool for CreateFlashCard {
                 status: ToolCallStatus::Pending,
                 file_id: Some(self.file_id),
             }),
-        ));
+        );
 
+        if let Some(on_event) = self.on_event.as_ref()
+            && let Err(err) = on_event(StreamLlmResponseEvent::ToolCalled(message.clone()))
+        {
+            return Err(CreateFlashCardError::OnEvent(err));
+        }
+
+        messages_to_upsert.push(message);
         Ok("Request to create the flashcard has been presented to the user.".to_string())
     }
 }

@@ -25,10 +25,13 @@ pub async fn stream_ai_response(
     let result = scope
         .resolve::<AiService>()
         .await
-        .stream(request, |event| match on_event.send(event) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string()),
-        })
+        .stream(
+            request,
+            Arc::new(move |event| match on_event.send(event) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err.to_string()),
+            }),
+        )
         .await;
 
     scope.save_changes().await?;
