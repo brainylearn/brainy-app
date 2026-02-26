@@ -5,6 +5,7 @@ use injector_derive::ScopeInjectable;
 use rig::client::{Nothing, ProviderClient};
 #[cfg(not(test))]
 use rig::providers::ollama;
+use rig::tool::Tool;
 use rig::{
     agent::{Agent, MultiTurnStreamItem, StreamingError, Text},
     client::CompletionClient,
@@ -19,7 +20,12 @@ use tokio_stream::StreamExt;
 use crate::Guid;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
+use crate::ai_integration::entities::message::ToolCallStatus;
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
+use crate::ai_integration::tools::AcceptToolCallFromJson;
+use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
+use crate::cells::cell_service::CellService;
+use crate::cells::repositories::traits::cell_repository::CellRepository;
 use crate::{
     ai_integration::{
         ai_state::AiState,
@@ -61,8 +67,12 @@ pub enum AiServiceError {
     #[error("Ollama model name is not filled in settings!")]
     #[cfg(not(test))]
     OllamaModelNameIsNotFilled,
+    #[error("Unknown tool name was given")]
+    UnknownToolName,
     #[error("An unknown error has happened!")]
     UnknownError(String),
+    #[error("Can only accept tool calls")]
+    CanOnlyAcceptToolCalls,
 }
 
 impl From<String> for AiServiceError {
@@ -76,6 +86,8 @@ pub struct AiService {
     settings: Arc<Mutex<Settings>>,
     state: Arc<AiState>,
     ai_repository: Arc<dyn AiRepository>,
+    cell_repository: Arc<dyn CellRepository>,
+    cell_service: Arc<CellService>,
     #[cfg(test)]
     mock_client: Arc<MockClient>,
 }
@@ -160,8 +172,7 @@ impl AiService {
             };
         }
 
-        // Only save AI message when an error does not happen.
-        {
+        if !complete_ai_response.trim().is_empty() {
             let mut messages_to_upsert = messages_to_upsert.lock().await;
             messages_to_upsert.push(Message::new(
                 None,
@@ -300,9 +311,37 @@ impl AiService {
             model_name
         }
     }
+
+    pub async fn accept_tool_call(&self, message_id: Guid) -> Result<(), AiServiceError> {
+        let mut message = self.ai_repository.get_message_by_id(message_id).await?;
+        let tool_call = match message.content_mut() {
+            MessageContent::ToolCall(tool_call) => tool_call,
+            _ => return Err(AiServiceError::CanOnlyAcceptToolCalls),
+        };
+
+        #[allow(clippy::needless_late_init)]
+        let tool: Box<dyn AcceptToolCallFromJson>;
+
+        if tool_call.name == CreateFlashCard::NAME {
+            tool = Box::new(AcceptCreateFlashCard::new(
+                self.cell_repository.clone(),
+                self.cell_service.clone(),
+            ));
+        } else {
+            return Err(AiServiceError::UnknownToolName);
+        }
+
+        tool.accept_call(tool_call, tool_call.arguments.clone())
+            .await?;
+
+        tool_call.status = ToolCallStatus::Accepted;
+        self.ai_repository.upsert_message(&message).await?;
+
+        Ok(())
+    }
 }
 
-// TOOD:
+// TODO:
 // #[cfg(test)]
 // pub mod tests {
 //     use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};

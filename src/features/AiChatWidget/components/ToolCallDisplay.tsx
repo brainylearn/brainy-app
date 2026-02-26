@@ -7,7 +7,7 @@ import Message, {
 	ToolCallStatus,
 } from "../../../types/backend/entity/message";
 import { useTransition } from "react";
-import { rejectToolCall } from "../../../api/aiApi";
+import { acceptToolCall, rejectToolCall } from "../../../api/aiApi";
 
 interface Props {
 	isStreamingResponse: boolean;
@@ -31,6 +31,13 @@ export default function ToolCallDisplay({
 		});
 	};
 
+	const handleAcceptToolCall = () => {
+		startRequest(async () => {
+			await acceptToolCall(message.id);
+			await onUpdate();
+		});
+	};
+
 	return (
 		<div className={styles.toolCall}>
 			<p className={styles.toolCallHeader}>{toolCall.displayName}</p>
@@ -40,6 +47,13 @@ export default function ToolCallDisplay({
 					<div className={styles.reject}>
 						<Icon path={mdiClose} size={1} />
 						<p>Rejected</p>
+					</div>
+				)}
+
+				{toolCall.status === ToolCallStatus.Accepted && (
+					<div className={styles.accept}>
+						<Icon path={mdiCheckOutline} size={1} />
+						<p>Accepted</p>
 					</div>
 				)}
 
@@ -66,7 +80,8 @@ export default function ToolCallDisplay({
 								isStreamingResponse
 									? "Please wait until generation is finished"
 									: "Accept"
-							}>
+							}
+							onClick={handleAcceptToolCall}>
 							<Icon path={mdiCheckOutline} size={1} />
 							<p>Accept</p>
 						</button>

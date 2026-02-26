@@ -66,6 +66,18 @@ pub async fn reject_tool_call(
 }
 
 #[tauri::command]
+pub async fn accept_tool_call(
+    injector: State<'_, Arc<Injector>>,
+    message_id: Guid,
+) -> Result<(), ApiError> {
+    let scope = injector.start_scope();
+    let service = scope.resolve::<AiService>().await;
+    service.accept_tool_call(message_id).await?;
+    scope.save_changes().await?;
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn stop_ai_generation(injector: State<'_, Arc<Injector>>) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     let state = scope.resolve::<AiState>().await;
