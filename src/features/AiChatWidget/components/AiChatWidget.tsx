@@ -195,6 +195,10 @@ function AiChatWidgetInner() {
 		}
 	};
 
+	const handleToolCallUpdate = async () => {
+		setMessages(await getChatMessagesOrdered(selectedChatId));
+	};
+
 	const handleSubmit = (e: React.SubmitEvent) => {
 		e.preventDefault();
 		void sendMessage();
@@ -389,7 +393,11 @@ function AiChatWidgetInner() {
 									)}
 									{message.content.type === "toolCall" && (
 										<ToolCallDisplay
-											toolCall={message.content.value}
+											isStreamingResponse={
+												isStreamingResponse
+											}
+											message={message}
+											onUpdate={handleToolCallUpdate}
 										/>
 									)}
 									{isStreamingResponse &&
@@ -414,7 +422,7 @@ function AiChatWidgetInner() {
 						<form onSubmit={handleSubmit}>
 							<textarea
 								ref={textAreaRef}
-								placeholder="Type here to speak with AI"
+								placeholder="Speak with AI"
 								value={userPrompt}
 								onChange={e => setUserPrompt(e.target.value)}
 								onKeyDown={handleTextAreaKeyDown}

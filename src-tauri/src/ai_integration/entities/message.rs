@@ -58,6 +58,10 @@ impl Message {
     pub fn content(&self) -> &MessageContent {
         &self.content
     }
+
+    pub fn content_mut(&mut self) -> &mut MessageContent {
+        &mut self.content
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

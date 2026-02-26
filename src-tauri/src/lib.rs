@@ -18,7 +18,7 @@ use tauri::Manager;
 
 use ai_integration::ai_api::{
     delete_ai_chat, get_all_ai_chats_sorted_by_date_desc, get_chat_messages_ordered,
-    rename_ai_chat, stop_ai_generation, stream_ai_response,
+    reject_tool_call, rename_ai_chat, stop_ai_generation, stream_ai_response,
 };
 use backend::api::auth_api::{
     is_signed_in, resend_email_verification_code, sign_in, sign_out, sign_up, update_password,
@@ -186,6 +186,7 @@ pub async fn run() -> Result<(), String> {
             rename_ai_chat,
             stop_ai_generation,
             stream_ai_response,
+            reject_tool_call,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

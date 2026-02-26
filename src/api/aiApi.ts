@@ -33,3 +33,7 @@ export function getChatMessagesOrdered(id: string): Promise<Message[]> {
 export function renameAiChat(id: string, newTitle: string): Promise<void> {
 	return invoke("rename_ai_chat", { id, newTitle });
 }
+
+export function rejectToolCall(messageId: string): Promise<void> {
+	return invoke("reject_tool_call", { messageId });
+}
