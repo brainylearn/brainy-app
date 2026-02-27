@@ -1,9 +1,7 @@
 import Icon from "@mdi/react";
 import {
 	mdiAttachment,
-	mdiClose,
 	mdiDeleteOutline,
-	mdiPencilOutline,
 	mdiRobotOutline,
 	mdiSendVariantOutline,
 	mdiStopCircleOutline,
@@ -26,35 +24,30 @@ import Message, {
 import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
 import Alert from "../../../components/Alert/Alert";
-import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
-import Select from "../../../components/Select/Select";
+import {
+	AUTO_SCROLL_THRESHOLD,
+	NEW_SESSION_CHAT_ID,
+	TEMP_ASSISTANT_MESSAGE_ID,
+} from "../config/constants";
 import Chat from "../../../types/backend/entity/chat";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectSettings } from "../../../stores/settings/settingsSelector";
 import useGlobalKey from "../../../hooks/useGlobalKey";
-import Dialog from "../../../components/Dialog/Dialog";
-import Form, {
-	FormButtons,
-	FormHeader,
-	FormRows,
-} from "../../../components/Form/Form";
 import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
 import ToolCallDisplay from "./ToolCallDisplay";
+import Header from "./Header";
+import RenameDialog from "./RenameDialog";
 
 export default function AiChatWidget() {
 	const settings = useAppSelector(selectSettings);
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
-const NEW_SESSION_CHAT_ID = "new-session";
-const TEMP_ASSISTANT_MESSAGE_ID = "temp-assistant";
-
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
-	const [newTitle, setNewTitle] = useState("");
 	const [showRenameDialog, setShowRenameDialog] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
@@ -259,7 +252,10 @@ function AiChatWidgetInner() {
 		setChats(await getAllAiChatsSortedByDateDesc());
 	};
 
-	const handleRenameSubmit = async (e: React.SubmitEvent) => {
+	const handleRenameSubmit = async (
+		e: React.SubmitEvent,
+		newTitle: string,
+	) => {
 		e.stopPropagation();
 		e.preventDefault();
 		setShowRenameDialog(false);
@@ -270,12 +266,6 @@ function AiChatWidgetInner() {
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 		}
-	};
-
-	const handleShowRenameDialog = () => {
-		setShowRenameDialog(true);
-		const chat = chats.find(c => c.id === selectedChatId)!;
-		setNewTitle(chat.title);
 	};
 
 	return (
@@ -291,91 +281,30 @@ function AiChatWidgetInner() {
 			)}
 
 			{showRenameDialog && (
-				<Dialog
-					focusTrap={true}
-					className={styles.renameDialog}
-					onHide={() => setShowRenameDialog(false)}>
-					<Form onSubmit={e => void handleRenameSubmit(e)}>
-						<FormHeader
-							icon={mdiPencilOutline}
-							title="Enter new name"
-						/>
-						<FormRows
-							rows={[
-								{
-									children: (
-										<input
-											type="text"
-											id="new-name"
-											value={newTitle}
-											onChange={e =>
-												setNewTitle(e.target.value)
-											}
-											required
-											autoFocus
-										/>
-									),
-									labelHtmlFor: "new-name",
-								},
-							]}
-						/>
-						<FormButtons
-							onClose={() => setShowRenameDialog(false)}
-							submitText="Rename"
-						/>
-					</Form>
-				</Dialog>
+				<RenameDialog
+					onHide={() => setShowRenameDialog(false)}
+					onSubmit={(e, newTitle) =>
+						void handleRenameSubmit(e, newTitle)
+					}
+					initialTitle={
+						chats.find(c => c.id === selectedChatId)?.title ?? ""
+					}
+				/>
 			)}
 
 			<div className={styles.container}>
 				{isOpen && (
 					<div className={styles.chatPanel}>
-						<div className={styles.header}>
-							<Select
-								onChangeValue={value =>
-									void handleChangeSelectedChatId(value)
-								}
-								currentValue={selectedChatId}
-								options={[
-									{
-										value: NEW_SESSION_CHAT_ID,
-										label: "+ New chat",
-									},
-									...chats.map(chat => ({
-										value: chat.id,
-										label: chat.title,
-									})),
-								]}
-							/>
-							<div className="row">
-								<button
-									onClick={handleShowRenameDialog}
-									className="transparent"
-									title="Rename chat"
-									disabled={
-										selectedChatId === NEW_SESSION_CHAT_ID
-									}>
-									<Icon path={mdiPencilOutline} size={1} />
-								</button>
-								<button
-									onClick={() =>
-										setShowDeleteChatDialog(true)
-									}
-									className="transparent"
-									title="Delete chat"
-									disabled={
-										selectedChatId === NEW_SESSION_CHAT_ID
-									}>
-									<Icon path={mdiDeleteOutline} size={1} />
-								</button>
-								<button
-									onClick={() => setIsOpen(false)}
-									className="transparent"
-									title="Close chat (Ctrl + J)">
-									<Icon path={mdiClose} size={1} />
-								</button>
-							</div>
-						</div>
+						<Header
+							selectedChatId={selectedChatId}
+							chats={chats}
+							onChangeSelectedChatId={value =>
+								void handleChangeSelectedChatId(value)
+							}
+							onClose={() => setIsOpen(false)}
+							onRenameClick={() => setShowRenameDialog(true)}
+							onDeleteClick={() => setShowDeleteChatDialog(true)}
+						/>
 
 						<div
 							className={styles.messages}
