@@ -21,6 +21,7 @@ pub trait AcceptToolCallFromJson: Send + Sync {
 #[async_trait]
 impl<T: AcceptToolCall + Send + Sync> AcceptToolCallFromJson for T {
     async fn accept_call(&self, tool_call: &ToolCall, value: Value) -> Result<(), String> {
+        // TODO: error handling
         let args = serde_json::from_value(value).unwrap();
         <Self as AcceptToolCall>::accept_call(self, tool_call, args).await
     }

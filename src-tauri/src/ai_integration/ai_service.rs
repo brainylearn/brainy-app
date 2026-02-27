@@ -20,6 +20,8 @@ use tokio_stream::StreamExt;
 use crate::Guid;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
+use crate::ai_integration::entities::message::ToolCallStatus;
+use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_TOOLS};
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::AcceptToolCallFromJson;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
@@ -195,11 +197,7 @@ impl AiService {
             .get_multi_completion_client()
             .await?
             .extractor::<GenerateTitle>(self.get_model_name().await)
-            .preamble(
-                "You are a chat naming assistant. Your task is to \
-                generate a concise, descriptive title for a conversation based \
-                on the user's first message. Be specific and descriptive.",
-            )
+            .preamble(PREAMBLE_GENERATE_TITLE)
             .build()
             .extract(format!("User message: {}", prompt))
             .await
@@ -226,41 +224,12 @@ impl AiService {
             .agent(&model_name)
             .temperature(DEFAULT_TEMPERATURE)
             .name("Brainy Tutor")
-            .description(
-                "An active learning tutor that explains concepts and converts \
-                them into study materials using the best available format.",
-            )
-            .default_max_turns(DEFAULT_MAX_TURN)
-            .preamble(
-                "You are **Brainy's** tutor. Your job is to help users understand \
-                and memorize information through active learning.\n\n\
-                **Responsibilities:**\n\
-                1. **Explain clearly:** Answer questions and break down concepts. \
-                Prioritize understanding over memorization — don't let a user \
-                try to memorize something they don't yet grasp.\n\
-                2. **Detect study intent:** When a user wants to study, drill, \
-                or memorize specific content, create study materials using your tools.\n\n\
-                **When creating study materials:**\n\
-                - Choose the most effective format for each fact based on the tools available.\n\
-                - **One fact per item.** Each item tests a single, atomic piece of information.\n\
-                - **Be concise.** Strip every redundant word without losing clarity.\n\
-                - **Add context tags.** Prefix with a short domain tag to prevent ambiguity: \
-                `[Biology]`, `[WW2]`, `[Calculus]`.\n\
-                - **No enumeration.** Never ask users to list multiple items. \
-                Break lists into individual items.\n\
-                - **Disambiguate.** When concepts are easily confused, word the item \
-                to highlight the distinguishing detail.\n\
-                - After creating materials, briefly summarize to the user what was added to their deck.\n\n\
-                **Rules:**\n\
-                - Never create study materials without using your tools.\n\
-                - Do not describe, list, or repeat card content in conversation — \
-                only create them via tools. Once a tool call is made, the card exists \
-                in the user's deck; there is no need to echo it back.",
-        );
+            .default_max_turns(DEFAULT_MAX_TURN);
 
+        // TODO: unit test
         if let Some(file_id) = request.file_id {
-            // TODO: unit test
             Ok(builder
+                .preamble(PREAMBLE_BASE)
                 .tool(CreateFlashCard::new(
                     file_id,
                     chat_id,
@@ -269,7 +238,7 @@ impl AiService {
                 ))
                 .build())
         } else {
-            Ok(builder.build())
+            Ok(builder.preamble(PREAMBLE_NO_TOOLS).build())
         }
     }
 
@@ -306,6 +275,7 @@ impl AiService {
         }
     }
 
+    // TODO: unit test
     pub async fn accept_tool_call(&self, message_id: Guid) -> Result<(), AiServiceError> {
         let mut message = self.ai_repository.get_message_by_id(message_id).await?;
         let tool_call = match message.content_mut() {
@@ -328,8 +298,7 @@ impl AiService {
         tool.accept_call(tool_call, tool_call.arguments.clone())
             .await?;
 
-        // TODO: uncomment
-        //tool_call.status = ToolCallStatus::Accepted;
+        tool_call.status = ToolCallStatus::Accepted;
         self.ai_repository.upsert_message(&message).await?;
 
         Ok(())
