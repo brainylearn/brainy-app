@@ -13,7 +13,7 @@ use crate::{
     ai_integration::{
         ai_service::{OnEventCallback, StreamLlmResponseEvent},
         entities::message::{Message, MessageContent, ToolCall, ToolCallStatus},
-        tools::AcceptToolCall,
+        tools::{AcceptToolCall, AcceptToolCallError},
     },
     cells::{
         cell_service::CellService, entities::cell::CellType, models::flash_card::FlashCard,
@@ -140,26 +140,29 @@ impl AcceptCreateFlashCard {
 impl AcceptToolCall for AcceptCreateFlashCard {
     type Args = CreateFlashcardArgs;
 
-    // TODO: better error handling
-    async fn accept_call(&self, tool_call: &ToolCall, args: Self::Args) -> Result<(), String> {
-        if tool_call.file_id.is_none() {
-            return Err("Missing file id!".to_string());
-        }
-
-        let cell_index = match self
-            .cell_repository
-            .get_number_of_cells_in_file(tool_call.file_id.unwrap())
-            .await
-        {
-            Ok(cell_index) => cell_index,
-            Err(err) => return Err(err.to_string()),
+    async fn accept_call(
+        &self,
+        tool_call: &ToolCall,
+        args: Self::Args,
+    ) -> Result<(), AcceptToolCallError> {
+        let file_id = match tool_call.file_id {
+            Some(file_id) => file_id,
+            None => {
+                return Err(AcceptToolCallError::MissingArguments(
+                    "Missing file id!".to_string(),
+                ));
+            }
         };
+
+        let cell_index = self
+            .cell_repository
+            .get_number_of_cells_in_file(file_id)
+            .await?;
 
         let flash_card = serde_json::to_string(&FlashCard {
             question: markdown::to_html(&args.question),
             answer: markdown::to_html(&args.answer),
-        })
-        .unwrap();
+        })?;
 
         log::info!(
             "Creating flash card with the following content {:?}",
@@ -167,14 +170,8 @@ impl AcceptToolCall for AcceptCreateFlashCard {
         );
 
         self.cell_service
-            .create_cell(
-                tool_call.file_id.unwrap(),
-                flash_card,
-                CellType::FlashCard,
-                cell_index,
-            )
-            .await
-            .unwrap();
+            .create_cell(file_id, flash_card, CellType::FlashCard, cell_index)
+            .await?;
 
         Ok(())
     }

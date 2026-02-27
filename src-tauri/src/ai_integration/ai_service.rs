@@ -23,8 +23,8 @@ use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::entities::message::ToolCallStatus;
 use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_TOOLS};
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
-use crate::ai_integration::tools::AcceptToolCallFromJson;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
+use crate::ai_integration::tools::{AcceptToolCallError, AcceptToolCallFromJson};
 use crate::cells::cell_service::CellService;
 use crate::cells::repositories::traits::cell_repository::CellRepository;
 use crate::{
@@ -58,7 +58,7 @@ pub enum StreamLlmResponseEvent {
     Error(String),
 }
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug)]
 pub enum AiServiceError {
     #[error("{0}")]
     UnknownRepositoryError(#[from] RepositoryError),
@@ -73,6 +73,8 @@ pub enum AiServiceError {
     UnknownError(String),
     #[error("Can only accept tool calls")]
     CanOnlyAcceptToolCalls,
+    #[error("{0}")]
+    AcceptToolCallError(#[from] AcceptToolCallError),
 }
 
 impl From<String> for AiServiceError {

@@ -7,7 +7,7 @@ import {
 	mdiStopCircleOutline,
 } from "@mdi/js";
 import styles from "./styles.module.css";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
 import {
@@ -15,7 +15,7 @@ import {
 	getAllAiChatsSortedByDateDesc,
 	getChatMessagesOrdered,
 	renameAiChat,
-	stopAiGeneration,
+	stopAiGeneration as stopAiGenerationApi,
 	streamAiResponse,
 } from "../../../api/aiApi";
 import Message, {
@@ -45,6 +45,7 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
+// TODO: when flash card is added editor must be refereshed
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
@@ -73,12 +74,16 @@ function AiChatWidgetInner() {
 		}
 	});
 
+	const stopAiGeneration = useCallback(async () => {
+		await stopAiGenerationApi();
+		setIsStreamingResponse(false);
+	}, []);
+
 	const handleChangeSelectedChatId = async (newChatId: string) => {
 		if (newChatId !== selectedChatId) {
 			setErrorMessage("");
-			await stopAiGeneration();
-			setIsStreamingResponse(false);
 			setSelectedChatId(newChatId);
+			await stopAiGeneration();
 		}
 
 		if (newChatId === NEW_SESSION_CHAT_ID) {
@@ -181,11 +186,11 @@ function AiChatWidgetInner() {
 			);
 		} catch (e) {
 			setErrorMessage(errorToString(e));
-			setIsStreamingResponse(false);
 		} finally {
 			setMessages(
 				await getChatMessagesOrdered(selectedChatIdRef.current),
 			);
+			setIsStreamingResponse(false);
 		}
 	};
 
@@ -236,7 +241,7 @@ function AiChatWidgetInner() {
 		return () => {
 			void stopAiGeneration();
 		};
-	}, []);
+	}, [stopAiGeneration]);
 
 	useEffect(() => {
 		if (!messagesContainerRef.current) return;
