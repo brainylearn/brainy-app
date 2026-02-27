@@ -156,8 +156,8 @@ impl AcceptToolCall for AcceptCreateFlashCard {
         };
 
         let flash_card = serde_json::to_string(&FlashCard {
-            question: args.question,
-            answer: args.answer,
+            question: markdown::to_html(&args.question),
+            answer: markdown::to_html(&args.answer),
         })
         .unwrap();
 

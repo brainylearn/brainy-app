@@ -27,6 +27,7 @@ function FlashCardCell({
 
 	useEffect(() => {
 		const flashCard = JSON.parse(cell.content) as FlashCard;
+		console.log(flashCard.question);
 		question.current = flashCard.question;
 		answer.current = flashCard.answer;
 	}, [cell.content]);

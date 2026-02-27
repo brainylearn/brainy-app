@@ -7,9 +7,6 @@ export type StreamLlmResponseEvent =
 			data: string;
 	  }
 	| {
-			event: "finished";
-	  }
-	| {
 			event: "error";
 			data: string;
 	  }

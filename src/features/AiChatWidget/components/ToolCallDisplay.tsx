@@ -31,6 +31,7 @@ export default function ToolCallDisplay({
 		});
 	};
 
+	// TODO: need to reload cells in editor
 	const handleAcceptToolCall = () => {
 		startRequest(async () => {
 			await acceptToolCall(message.id);

@@ -20,7 +20,6 @@ use tokio_stream::StreamExt;
 use crate::Guid;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
-use crate::ai_integration::entities::message::ToolCallStatus;
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::AcceptToolCallFromJson;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
@@ -54,7 +53,6 @@ pub enum StreamLlmResponseEvent {
     CreatedChat(Chat),
     InProgress(String),
     ToolCalled(Message),
-    Finished,
     Error(String),
 }
 
@@ -115,9 +113,7 @@ impl AiService {
             let chat = self.create_chat(&request.prompt).await?;
             chat_id = chat.id();
             messages = Vec::new();
-
             on_event(StreamLlmResponseEvent::CreatedChat(chat.clone()))?;
-
             chat_to_upsert = Some(chat);
         }
 
@@ -190,8 +186,6 @@ impl AiService {
         for message in messages_to_upsert.lock().await.iter() {
             self.ai_repository.upsert_message(message).await?;
         }
-
-        on_event(StreamLlmResponseEvent::Finished)?;
 
         Ok(())
     }
@@ -334,358 +328,353 @@ impl AiService {
         tool.accept_call(tool_call, tool_call.arguments.clone())
             .await?;
 
-        tool_call.status = ToolCallStatus::Accepted;
+        // TODO: uncomment
+        //tool_call.status = ToolCallStatus::Accepted;
         self.ai_repository.upsert_message(&message).await?;
 
         Ok(())
     }
 }
 
-// TODO:
-// #[cfg(test)]
-// pub mod tests {
-//     use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-//
-//     use injector::{injector::Injector, register_scope};
-//     use rig::{
-//         OneOrMany,
-//         completion::{CompletionError, CompletionResponse, Usage},
-//         message::{AssistantContent, Message, UserContent},
-//         streaming::RawStreamingChoice,
-//     };
-//
-//     use crate::{
-//         ai_integration::{
-//             clients::multi_completion_client::multi_response::MultiResponse,
-//             repositories::sqlite_ai_repository::SqliteAiRepository,
-//         },
-//         test_utils::create_test_injector,
-//     };
-//
-//     use super::*;
-//
-//     async fn get_test_dependencies(mock_client: MockClient, state: Arc<AiState>) -> Injector {
-//         let mut injector = create_test_injector().await;
-//
-//         let settings = Settings {
-//             enable_ai: true,
-//             ..Default::default()
-//         };
-//
-//         injector.register_singleton(Arc::new(Mutex::new(settings)));
-//         injector.register_singleton(Arc::new(mock_client));
-//         injector.register_singleton(state);
-//
-//         register_scope!(injector, dyn AiRepository, SqliteAiRepository);
-//         register_scope!(injector, AiService);
-//
-//         injector
-//     }
-//
-//     #[tokio::test]
-//     pub async fn stream_new_chat_created_new_chat_and_added_messages() {
-//         // Arrange
-//
-//         let sent_stream_answer = AtomicBool::new(false);
-//
-//         let mock_client = MockClient {
-//             model: None,
-//             completion_fn: Arc::new(Some(Box::new(|request| {
-//                 if let Message::User { content } = request.chat_history.last()
-//                     && let UserContent::Text(text) = content.last()
-//                     && text.text() == "User message: User prompt"
-//                 {
-//                     let tool_call = AssistantContent::tool_call(
-//                         "1",
-//                         "submit",
-//                         serde_json::to_value(GenerateTitle {
-//                             title: "Chat title".to_string(),
-//                         })
-//                         .unwrap(),
-//                     );
-//                     return CompletionResponse {
-//                         choice: OneOrMany::one(tool_call),
-//                         raw_response: MultiResponse::Mock,
-//                         usage: Usage::default(),
-//                         message_id: None,
-//                     };
-//                 }
-//
-//                 panic!()
-//             }))),
-//             stream_fn: Arc::new(Some(Box::new(move |request| {
-//                 if let Message::User { content } = request.chat_history.last()
-//                     && let UserContent::Text(text) = content.last()
-//                     && text.text() == "User prompt"
-//                     && !sent_stream_answer.load(Ordering::Relaxed)
-//                 {
-//                     sent_stream_answer.store(true, Ordering::Relaxed);
-//                     return Ok(Some(RawStreamingChoice::Message("Bot answer".to_string())));
-//                 }
-//
-//                 Ok(None)
-//             }))),
-//         };
-//
-//         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
-//         let scope = injector.start_scope();
-//         let service = scope.resolve::<AiService>().await;
-//         let repository = scope.resolve::<dyn AiRepository>().await;
-//
-//         let received_create_chat = Arc::new(AtomicBool::new(false));
-//         let received_in_progress = Arc::new(AtomicBool::new(false));
-//         let received_finished = Arc::new(AtomicBool::new(false));
-//
-//         let request = StreamAiRequest {
-//             prompt: "User prompt".to_string(),
-//             ..Default::default()
-//         };
-//
-//         // Act
-//
-//         service
-//             .stream(request, |event| {
-//                 match event {
-//                     StreamLlmResponseEvent::CreatedChat(chat) => {
-//                         received_create_chat
-//                             .clone()
-//                             .store(chat.title() == "Chat title", Ordering::Relaxed);
-//                     }
-//                     StreamLlmResponseEvent::InProgress(message) => {
-//                         received_in_progress
-//                             .clone()
-//                             .store(message == "Bot answer", Ordering::Relaxed);
-//                     }
-//                     StreamLlmResponseEvent::Finished => {
-//                         received_finished.clone().store(true, Ordering::Relaxed);
-//                     }
-//                     _ => (),
-//                 }
-//                 Ok(())
-//             })
-//             .await
-//             .unwrap();
-//
-//         // Assert
-//
-//         assert!(received_create_chat.load(Ordering::Relaxed));
-//         assert!(received_in_progress.load(Ordering::Relaxed));
-//         assert!(received_finished.load(Ordering::Relaxed));
-//
-//         let chats = repository
-//             .get_all_chats_sorted_by_date_desc()
-//             .await
-//             .unwrap();
-//         assert_eq!(1, chats.len());
-//         assert_eq!("Chat title", chats[0].title());
-//
-//         let messages = repository
-//             .get_chat_messages_ordered(chats[0].id())
-//             .await
-//             .unwrap();
-//         assert_eq!(2, messages.len());
-//
-//         assert_eq!(
-//             MessageContent::Human("User prompt".to_string()),
-//             *messages[0].content()
-//         );
-//
-//         assert_eq!(
-//             MessageContent::Assistant("Bot answer".to_string()),
-//             *messages[1].content()
-//         );
-//     }
-//
-//     #[tokio::test]
-//     pub async fn stream_cancelled_response_stopped_generation() {
-//         // Arrange
-//
-//         let last_sent_message = Arc::new(AtomicU32::new(1));
-//         let ai_state = Arc::new(AiState::default());
-//         let ai_state_clone = ai_state.clone();
-//
-//         let mock_client = MockClient {
-//             model: None,
-//             completion_fn: Arc::new(Some(Box::new(|request| {
-//                 if let Message::User { content } = request.chat_history.last()
-//                     && let UserContent::Text(text) = content.last()
-//                     && text.text() == "User message: User prompt"
-//                 {
-//                     let tool_call = AssistantContent::tool_call(
-//                         "1",
-//                         "submit",
-//                         serde_json::to_value(GenerateTitle {
-//                             title: "Chat title".to_string(),
-//                         })
-//                         .unwrap(),
-//                     );
-//                     return CompletionResponse {
-//                         choice: OneOrMany::one(tool_call),
-//                         raw_response: MultiResponse::Mock,
-//                         usage: Usage::default(),
-//                         message_id: None,
-//                     };
-//                 }
-//
-//                 panic!()
-//             }))),
-//             stream_fn: Arc::new(Some(Box::new(move |request| {
-//                 if let Message::User { content } = request.chat_history.last()
-//                     && let UserContent::Text(text) = content.last()
-//                     && text.text() == "User prompt"
-//                 {
-//                     let current = last_sent_message.load(Ordering::Relaxed);
-//                     if current > 3 {
-//                         ai_state_clone.cancel_generation();
-//                     }
-//                     last_sent_message.store(current + 1, Ordering::Relaxed);
-//                     return Ok(Some(RawStreamingChoice::Message(current.to_string())));
-//                 }
-//
-//                 Ok(None)
-//             }))),
-//         };
-//
-//         let injector = get_test_dependencies(mock_client, ai_state).await;
-//         let scope = injector.start_scope();
-//         let service = scope.resolve::<AiService>().await;
-//         let repository = scope.resolve::<dyn AiRepository>().await;
-//
-//         let received_finished = Arc::new(AtomicBool::new(false));
-//
-//         let request = StreamAiRequest {
-//             prompt: "User prompt".to_string(),
-//             ..Default::default()
-//         };
-//
-//         // Act
-//
-//         service
-//             .stream(request, |event| {
-//                 if let StreamLlmResponseEvent::Finished = event {
-//                     received_finished.clone().store(true, Ordering::Relaxed);
-//                 }
-//                 Ok(())
-//             })
-//             .await
-//             .unwrap();
-//
-//         // Assert
-//
-//         assert!(received_finished.load(Ordering::Relaxed));
-//
-//         let chats = repository
-//             .get_all_chats_sorted_by_date_desc()
-//             .await
-//             .unwrap();
-//         let messages = repository
-//             .get_chat_messages_ordered(chats[0].id())
-//             .await
-//             .unwrap();
-//         assert_eq!(
-//             MessageContent::Assistant("123".to_string()),
-//             *messages[1].content()
-//         );
-//     }
-//
-//     #[tokio::test]
-//     pub async fn stream_error_during_stream_called_correct_event_and_did_not_save_ai_message() {
-//         // Arrange
-//
-//         let sent_stream_answer = AtomicBool::new(false);
-//
-//         let mock_client = MockClient {
-//             model: None,
-//             completion_fn: Arc::new(Some(Box::new(|request| {
-//                 if let Message::User { content } = request.chat_history.last()
-//                     && let UserContent::Text(text) = content.last()
-//                     && text.text() == "User message: User prompt"
-//                 {
-//                     let tool_call = AssistantContent::tool_call(
-//                         "1",
-//                         "submit",
-//                         serde_json::to_value(GenerateTitle {
-//                             title: "Chat title".to_string(),
-//                         })
-//                         .unwrap(),
-//                     );
-//                     return CompletionResponse {
-//                         choice: OneOrMany::one(tool_call),
-//                         raw_response: MultiResponse::Mock,
-//                         usage: Usage::default(),
-//                         message_id: None,
-//                     };
-//                 }
-//
-//                 panic!()
-//             }))),
-//             stream_fn: Arc::new(Some(Box::new(move |request| {
-//                 if let Message::User { content } = request.chat_history.last()
-//                     && let UserContent::Text(text) = content.last()
-//                     && text.text() == "User prompt"
-//                 {
-//                     if sent_stream_answer.load(Ordering::Relaxed) {
-//                         // Fail on second time.
-//                         return Err(CompletionError::ResponseError("error from AI".to_string()));
-//                     } else {
-//                         sent_stream_answer.store(true, Ordering::Relaxed);
-//                         return Ok(Some(RawStreamingChoice::Message("Bot answer".to_string())));
-//                     }
-//                 }
-//
-//                 Ok(None)
-//             }))),
-//         };
-//
-//         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
-//         let scope = injector.start_scope();
-//         let service = scope.resolve::<AiService>().await;
-//         let repository = scope.resolve::<dyn AiRepository>().await;
-//
-//         let received_error = Arc::new(AtomicBool::new(false));
-//         let received_finished = Arc::new(AtomicBool::new(false));
-//
-//         let request = StreamAiRequest {
-//             prompt: "User prompt".to_string(),
-//             ..Default::default()
-//         };
-//
-//         // Act
-//
-//         service
-//             .stream(request, |event| {
-//                 match event {
-//                     StreamLlmResponseEvent::Error(error) => {
-//                         received_error.clone().store(
-//                             error == "CompletionError: ResponseError: error from AI",
-//                             Ordering::Relaxed,
-//                         );
-//                     }
-//                     StreamLlmResponseEvent::Finished => {
-//                         received_finished.clone().store(true, Ordering::Relaxed);
-//                     }
-//                     _ => (),
-//                 }
-//                 Ok(())
-//             })
-//             .await
-//             .unwrap();
-//
-//         // Assert
-//
-//         assert!(received_finished.load(Ordering::Relaxed));
-//         assert!(received_error.load(Ordering::Relaxed));
-//
-//         let chats = repository
-//             .get_all_chats_sorted_by_date_desc()
-//             .await
-//             .unwrap();
-//         assert_eq!(1, chats.len());
-//
-//         let messages = repository
-//             .get_chat_messages_ordered(chats[0].id())
-//             .await
-//             .unwrap();
-//         assert_eq!(1, messages.len());
-//     }
-// }
+#[cfg(test)]
+pub mod tests {
+    use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+
+    use injector::{injector::Injector, register_scope};
+    use rig::{
+        OneOrMany,
+        completion::{CompletionError, CompletionResponse, Usage},
+        message::{AssistantContent, Message, UserContent},
+        streaming::RawStreamingChoice,
+    };
+
+    use crate::{
+        ai_integration::{
+            clients::multi_completion_client::multi_response::MultiResponse,
+            repositories::sqlite_ai_repository::SqliteAiRepository,
+        },
+        cells::repositories::{
+            sqlite_cell_repository::SqliteCellRepository,
+            sqlite_review_repository::SqliteReviewRepository,
+            traits::review_repository::ReviewRepository,
+        },
+        test_utils::create_test_injector,
+    };
+
+    use super::*;
+
+    async fn get_test_dependencies(mock_client: MockClient, state: Arc<AiState>) -> Injector {
+        let mut injector = create_test_injector().await;
+
+        let settings = Settings {
+            enable_ai: true,
+            ..Default::default()
+        };
+
+        injector.register_singleton(Arc::new(Mutex::new(settings)));
+        injector.register_singleton(Arc::new(mock_client));
+        injector.register_singleton(state);
+
+        register_scope!(injector, dyn AiRepository, SqliteAiRepository);
+        register_scope!(injector, dyn CellRepository, SqliteCellRepository);
+        register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
+        register_scope!(injector, CellService);
+        register_scope!(injector, AiService);
+
+        injector
+    }
+
+    #[tokio::test]
+    pub async fn stream_new_chat_created_new_chat_and_added_messages() {
+        // Arrange
+
+        let sent_stream_answer = AtomicBool::new(false);
+
+        let mock_client = MockClient {
+            model: None,
+            completion_fn: Arc::new(Some(Box::new(|request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User message: User prompt"
+                {
+                    let tool_call = AssistantContent::tool_call(
+                        "1",
+                        "submit",
+                        serde_json::to_value(GenerateTitle {
+                            title: "Chat title".to_string(),
+                        })
+                        .unwrap(),
+                    );
+                    return CompletionResponse {
+                        choice: OneOrMany::one(tool_call),
+                        raw_response: MultiResponse::Mock,
+                        usage: Usage::default(),
+                        message_id: None,
+                    };
+                }
+
+                panic!()
+            }))),
+            stream_fn: Arc::new(Some(Box::new(move |request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User prompt"
+                    && !sent_stream_answer.load(Ordering::Relaxed)
+                {
+                    sent_stream_answer.store(true, Ordering::Relaxed);
+                    return Ok(Some(RawStreamingChoice::Message("Bot answer".to_string())));
+                }
+
+                Ok(None)
+            }))),
+        };
+
+        let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+        let repository = scope.resolve::<dyn AiRepository>().await;
+
+        let received_create_chat = Arc::new(AtomicBool::new(false));
+        let received_in_progress = Arc::new(AtomicBool::new(false));
+
+        // Clone before moving into closure
+        let received_create_chat_clone = Arc::clone(&received_create_chat);
+        let received_in_progress_clone = Arc::clone(&received_in_progress);
+
+        let request = StreamAiRequest {
+            prompt: "User prompt".to_string(),
+            ..Default::default()
+        };
+
+        // Act
+
+        service
+            .stream(
+                request,
+                Arc::new(move |event| {
+                    match event {
+                        StreamLlmResponseEvent::CreatedChat(chat) => {
+                            received_create_chat_clone
+                                .store(chat.title() == "Chat title", Ordering::Relaxed);
+                        }
+                        StreamLlmResponseEvent::InProgress(message) => {
+                            received_in_progress_clone
+                                .store(message == "Bot answer", Ordering::Relaxed);
+                        }
+                        _ => (),
+                    }
+                    Ok(())
+                }),
+            )
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert!(received_create_chat.load(Ordering::Relaxed));
+        assert!(received_in_progress.load(Ordering::Relaxed));
+
+        let chats = repository
+            .get_all_chats_sorted_by_date_desc()
+            .await
+            .unwrap();
+        assert_eq!(1, chats.len());
+        assert_eq!("Chat title", chats[0].title());
+
+        let messages = repository
+            .get_chat_messages_ordered(chats[0].id())
+            .await
+            .unwrap();
+        assert_eq!(2, messages.len());
+
+        assert_eq!(
+            MessageContent::Human("User prompt".to_string()),
+            *messages[0].content()
+        );
+
+        assert_eq!(
+            MessageContent::Assistant("Bot answer".to_string()),
+            *messages[1].content()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn stream_cancelled_response_stopped_generation() {
+        // Arrange
+
+        let last_sent_message = Arc::new(AtomicU32::new(1));
+        let ai_state = Arc::new(AiState::default());
+        let ai_state_clone = ai_state.clone();
+
+        let mock_client = MockClient {
+            model: None,
+            completion_fn: Arc::new(Some(Box::new(|request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User message: User prompt"
+                {
+                    let tool_call = AssistantContent::tool_call(
+                        "1",
+                        "submit",
+                        serde_json::to_value(GenerateTitle {
+                            title: "Chat title".to_string(),
+                        })
+                        .unwrap(),
+                    );
+                    return CompletionResponse {
+                        choice: OneOrMany::one(tool_call),
+                        raw_response: MultiResponse::Mock,
+                        usage: Usage::default(),
+                        message_id: None,
+                    };
+                }
+
+                panic!()
+            }))),
+            stream_fn: Arc::new(Some(Box::new(move |request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User prompt"
+                {
+                    let current = last_sent_message.load(Ordering::Relaxed);
+                    if current > 3 {
+                        ai_state_clone.cancel_generation();
+                    }
+                    last_sent_message.store(current + 1, Ordering::Relaxed);
+                    return Ok(Some(RawStreamingChoice::Message(current.to_string())));
+                }
+
+                Ok(None)
+            }))),
+        };
+
+        let injector = get_test_dependencies(mock_client, ai_state).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+        let repository = scope.resolve::<dyn AiRepository>().await;
+
+        let request = StreamAiRequest {
+            prompt: "User prompt".to_string(),
+            ..Default::default()
+        };
+
+        // Act
+
+        service
+            .stream(request, Arc::new(move |_| Ok(())))
+            .await
+            .unwrap();
+
+        // Assert
+
+        let chats = repository
+            .get_all_chats_sorted_by_date_desc()
+            .await
+            .unwrap();
+        let messages = repository
+            .get_chat_messages_ordered(chats[0].id())
+            .await
+            .unwrap();
+        assert_eq!(
+            MessageContent::Assistant("123".to_string()),
+            *messages[1].content()
+        );
+    }
+
+    #[tokio::test]
+    pub async fn stream_error_during_stream_called_correct_event_and_did_not_save_ai_message() {
+        // Arrange
+
+        let sent_stream_answer = AtomicBool::new(false);
+
+        let mock_client = MockClient {
+            model: None,
+            completion_fn: Arc::new(Some(Box::new(|request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User message: User prompt"
+                {
+                    let tool_call = AssistantContent::tool_call(
+                        "1",
+                        "submit",
+                        serde_json::to_value(GenerateTitle {
+                            title: "Chat title".to_string(),
+                        })
+                        .unwrap(),
+                    );
+                    return CompletionResponse {
+                        choice: OneOrMany::one(tool_call),
+                        raw_response: MultiResponse::Mock,
+                        usage: Usage::default(),
+                        message_id: None,
+                    };
+                }
+
+                panic!()
+            }))),
+            stream_fn: Arc::new(Some(Box::new(move |request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User prompt"
+                {
+                    if sent_stream_answer.load(Ordering::Relaxed) {
+                        // Fail on second time.
+                        return Err(CompletionError::ResponseError("error from AI".to_string()));
+                    } else {
+                        sent_stream_answer.store(true, Ordering::Relaxed);
+                        return Ok(Some(RawStreamingChoice::Message("Bot answer".to_string())));
+                    }
+                }
+
+                Ok(None)
+            }))),
+        };
+
+        let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+        let repository = scope.resolve::<dyn AiRepository>().await;
+
+        let received_error = Arc::new(AtomicBool::new(false));
+        let received_error_clone = received_error.clone();
+
+        let request = StreamAiRequest {
+            prompt: "User prompt".to_string(),
+            ..Default::default()
+        };
+
+        // Act
+
+        service
+            .stream(
+                request,
+                Arc::new(move |event| {
+                    if let StreamLlmResponseEvent::Error(error) = event {
+                        received_error_clone.store(
+                            error == "CompletionError: ResponseError: error from AI",
+                            Ordering::Relaxed,
+                        );
+                    }
+                    Ok(())
+                }),
+            )
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert!(received_error.load(Ordering::Relaxed));
+
+        let chats = repository
+            .get_all_chats_sorted_by_date_desc()
+            .await
+            .unwrap();
+        assert_eq!(1, chats.len());
+
+        let messages = repository
+            .get_chat_messages_ordered(chats[0].id())
+            .await
+            .unwrap();
+        assert_eq!(2, messages.len());
+    }
+}

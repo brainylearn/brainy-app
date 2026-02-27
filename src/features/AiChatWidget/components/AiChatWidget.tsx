@@ -48,10 +48,9 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
-const NEW_SESSION_VALUE = "new-session";
+const NEW_SESSION_CHAT_ID = "new-session";
 const TEMP_ASSISTANT_MESSAGE_ID = "temp-assistant";
 
-// TODO: do not allow user to switch chat while streaming? find a solution
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
@@ -63,11 +62,17 @@ function AiChatWidgetInner() {
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [chats, setChats] = useState<Chat[]>([]);
 	const [selectedChatId, setSelectedChatId] =
-		useState<string>(NEW_SESSION_VALUE);
+		useState<string>(NEW_SESSION_CHAT_ID);
+	// Used to have reference to the same selected chat id, useful for streaming.
+	const selectedChatIdRef = useRef(selectedChatId);
 	const [searchParams] = useSearchParams();
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
+
+	useEffect(() => {
+		selectedChatIdRef.current = selectedChatId;
+	}, [selectedChatId]);
 
 	useGlobalKey(e => {
 		if (e.ctrlKey && e.key.toLowerCase() === "j") {
@@ -79,14 +84,15 @@ function AiChatWidgetInner() {
 		if (newChatId !== selectedChatId) {
 			setErrorMessage("");
 			await stopAiGeneration();
+			setIsStreamingResponse(false);
+			setSelectedChatId(newChatId);
 		}
 
-		if (newChatId === NEW_SESSION_VALUE) {
+		if (newChatId === NEW_SESSION_CHAT_ID) {
 			setMessages([]);
 		} else {
 			setMessages(await getChatMessagesOrdered(newChatId));
 		}
-		setSelectedChatId(newChatId);
 	};
 
 	const sendMessage = async () => {
@@ -116,9 +122,6 @@ function AiChatWidgetInner() {
 		]);
 
 		const onEvent = new Channel<StreamLlmResponseEvent>();
-		// Using a custom variable since the variable can be updated under stream
-		// while the state is still queued for update.
-		let updatedChatId = selectedChatId;
 		onEvent.onmessage = event => {
 			if (event.event === "createdChat") {
 				setChats(chats => {
@@ -129,7 +132,6 @@ function AiChatWidgetInner() {
 					return newValue;
 				});
 				setSelectedChatId(event.data.id);
-				updatedChatId = event.data.id;
 			} else if (event.event === "inProgress") {
 				setMessages(messages => {
 					const tempAssistantMessage = messages.find(
@@ -151,8 +153,6 @@ function AiChatWidgetInner() {
 						},
 					];
 				});
-			} else if (event.event === "finished") {
-				setIsStreamingResponse(false);
 			} else if (event.event === "error") {
 				setErrorMessage(event.data);
 			} else if (event.event === "toolCalled") {
@@ -179,7 +179,7 @@ function AiChatWidgetInner() {
 				{
 					prompt: userPrompt,
 					chatId:
-						selectedChatId === NEW_SESSION_VALUE
+						selectedChatId === NEW_SESSION_CHAT_ID
 							? null
 							: selectedChatId,
 					fileId: selectedFileId,
@@ -190,8 +190,9 @@ function AiChatWidgetInner() {
 			setErrorMessage(errorToString(e));
 			setIsStreamingResponse(false);
 		} finally {
-			setChats(await getAllAiChatsSortedByDateDesc());
-			setMessages(await getChatMessagesOrdered(updatedChatId));
+			setMessages(
+				await getChatMessagesOrdered(selectedChatIdRef.current),
+			);
 		}
 	};
 
@@ -252,7 +253,7 @@ function AiChatWidgetInner() {
 
 	const handleDelete = async () => {
 		await deleteAiChat(selectedChatId);
-		await handleChangeSelectedChatId(NEW_SESSION_VALUE);
+		await handleChangeSelectedChatId(NEW_SESSION_CHAT_ID);
 		setErrorMessage("");
 		setShowDeleteChatDialog(false);
 		setChats(await getAllAiChatsSortedByDateDesc());
@@ -337,7 +338,7 @@ function AiChatWidgetInner() {
 								currentValue={selectedChatId}
 								options={[
 									{
-										value: NEW_SESSION_VALUE,
+										value: NEW_SESSION_CHAT_ID,
 										label: "+ New chat",
 									},
 									...chats.map(chat => ({
@@ -352,7 +353,7 @@ function AiChatWidgetInner() {
 									className="transparent"
 									title="Rename chat"
 									disabled={
-										selectedChatId === NEW_SESSION_VALUE
+										selectedChatId === NEW_SESSION_CHAT_ID
 									}>
 									<Icon path={mdiPencilOutline} size={1} />
 								</button>
@@ -363,7 +364,7 @@ function AiChatWidgetInner() {
 									className="transparent"
 									title="Delete chat"
 									disabled={
-										selectedChatId === NEW_SESSION_VALUE
+										selectedChatId === NEW_SESSION_CHAT_ID
 									}>
 									<Icon path={mdiDeleteOutline} size={1} />
 								</button>
