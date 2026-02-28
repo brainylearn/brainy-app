@@ -10,6 +10,10 @@ import useGlobalKey from "../../../hooks/useGlobalKey";
 import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
 import EditableCells from "../../EditableCells/components/EditableCells";
+import {
+	TOOL_CALL_ACCEPTED_EVENT,
+	ToolCallAcceptedPayload,
+} from "../../../types/events/toolCallAcceptedEvent";
 
 interface Props {
 	initialSelectedCellId: string | null;
@@ -64,6 +68,21 @@ function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
 				await getFileCellsOrderedByIndex(selectedFileId);
 			setCells(fetchedCells);
 		});
+	}, [executeRequest, selectedFileId]);
+
+	useEffect(() => {
+		const cb = (e: CustomEvent<ToolCallAcceptedPayload>) => {
+			if (e.detail.fileId !== selectedFileId) return;
+
+			void executeRequest(async () => {
+				const fetchedCells =
+					await getFileCellsOrderedByIndex(selectedFileId);
+				setCells(fetchedCells);
+			});
+		};
+
+		window.addEventListener(TOOL_CALL_ACCEPTED_EVENT, cb);
+		return () => window.removeEventListener("toolCallAccepted", cb);
 	}, [executeRequest, selectedFileId]);
 
 	useEffect(() => {

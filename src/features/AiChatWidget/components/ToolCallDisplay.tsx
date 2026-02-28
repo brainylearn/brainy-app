@@ -11,9 +11,12 @@ import { acceptToolCall, rejectToolCall } from "../../../api/aiApi";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
 import getFolderChildById from "../../../utils/getFolderChildById";
-import { useSearchParams } from "react-router";
-import { useNavigate } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
+import {
+	TOOL_CALL_ACCEPTED_EVENT,
+	ToolCallAcceptedPayload,
+} from "../../../types/events/toolCallAcceptedEvent";
 
 interface Props {
 	isStreamingResponse: boolean;
@@ -40,11 +43,20 @@ export default function ToolCallDisplay({
 		});
 	};
 
-	// TODO: need to reload cells in editor
 	const handleAcceptToolCall = () => {
 		startRequest(async () => {
 			await acceptToolCall(message.id);
 			await onUpdate();
+			window.dispatchEvent(
+				new CustomEvent<ToolCallAcceptedPayload>(
+					TOOL_CALL_ACCEPTED_EVENT,
+					{
+						detail: {
+							fileId: toolCall.fileId,
+						},
+					},
+				),
+			);
 		});
 	};
 
