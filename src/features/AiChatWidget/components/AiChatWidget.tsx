@@ -1,11 +1,5 @@
 import Icon from "@mdi/react";
-import {
-	mdiAttachment,
-	mdiDeleteOutline,
-	mdiRobotOutline,
-	mdiSendVariantOutline,
-	mdiStopCircleOutline,
-} from "@mdi/js";
+import { mdiDeleteOutline, mdiRobotOutline } from "@mdi/js";
 import styles from "./styles.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
@@ -21,11 +15,8 @@ import {
 import Message, {
 	MessageContentHumanAssistant,
 } from "../../../types/backend/entity/message";
-import Markdown from "react-markdown";
 import errorToString from "../../../utils/errorToString";
-import Alert from "../../../components/Alert/Alert";
 import {
-	AUTO_SCROLL_THRESHOLD,
 	NEW_SESSION_CHAT_ID,
 	TEMP_ASSISTANT_MESSAGE_ID,
 } from "../config/constants";
@@ -36,9 +27,10 @@ import { selectSettings } from "../../../stores/settings/settingsSelector";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
-import ToolCallDisplay from "./ToolCallDisplay";
 import Header from "./Header";
 import RenameDialog from "./RenameDialog";
+import Messages from "./Messages";
+import PromptForm from "./PromptForm";
 
 export default function AiChatWidget() {
 	const settings = useAppSelector(selectSettings);
@@ -60,8 +52,6 @@ function AiChatWidgetInner() {
 	// Used to have reference to the same selected chat id, useful for streaming.
 	const selectedChatIdRef = useRef(selectedChatId);
 	const [searchParams] = useSearchParams();
-	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
-	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
 	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
 
 	useEffect(() => {
@@ -94,7 +84,7 @@ function AiChatWidgetInner() {
 	};
 
 	const sendMessage = async () => {
-		if (!userPrompt || isStreamingResponse) return;
+		if (!userPrompt.trim() || isStreamingResponse) return;
 
 		setErrorMessage("");
 		setIsStreamingResponse(true);
@@ -215,25 +205,6 @@ function AiChatWidgetInner() {
 	};
 
 	useEffect(() => {
-		if (textAreaRef.current) {
-			textAreaRef.current.style.height = "auto";
-			textAreaRef.current.style.height =
-				textAreaRef.current.scrollHeight + "px";
-		}
-	}, [userPrompt]);
-
-	useEffect(() => {
-		if (!messagesContainerRef.current) return;
-
-		const container = messagesContainerRef.current;
-
-		const position = container.scrollTop + container.clientHeight;
-		if (container.scrollHeight - position < AUTO_SCROLL_THRESHOLD) {
-			container.scrollTop = container.scrollHeight;
-		}
-	}, [messages]);
-
-	useEffect(() => {
 		void (async () => {
 			setChats(await getAllAiChatsSortedByDateDesc());
 		})();
@@ -242,12 +213,6 @@ function AiChatWidgetInner() {
 			void stopAiGeneration();
 		};
 	}, [stopAiGeneration]);
-
-	useEffect(() => {
-		if (!messagesContainerRef.current) return;
-		messagesContainerRef.current.scrollTop =
-			messagesContainerRef.current.scrollHeight;
-	}, [selectedChatId]);
 
 	const handleDelete = async () => {
 		await deleteAiChat(selectedChatId);
@@ -311,85 +276,23 @@ function AiChatWidgetInner() {
 							onDeleteClick={() => setShowDeleteChatDialog(true)}
 						/>
 
-						<div
-							className={styles.messages}
-							ref={messagesContainerRef}
-							data-testid="messages-container">
-							{messages.map((message, i) => (
-								<div
-									key={i}
-									className={`${styles.message} ${styles[message.content.type]}`}>
-									{(message.content.type === "human" ||
-										message.content.type ==
-											"assistant") && (
-										<Markdown>
-											{message.content.value}
-										</Markdown>
-									)}
-									{message.content.type === "toolCall" && (
-										<ToolCallDisplay
-											isStreamingResponse={
-												isStreamingResponse
-											}
-											message={message}
-											onUpdate={handleToolCallUpdate}
-										/>
-									)}
-									{isStreamingResponse &&
-										i === messages.length - 1 && (
-											<div
-												className={
-													styles.spinner
-												}></div>
-										)}
-								</div>
-							))}
+						<Messages
+							messages={messages}
+							errorMessage={errorMessage}
+							isStreamingResponse={isStreamingResponse}
+							selectedChatId={selectedChatId}
+							onToolCallUpdate={handleToolCallUpdate}
+							onCloseError={() => setErrorMessage("")}
+						/>
 
-							{errorMessage && (
-								<Alert
-									type="error"
-									onClose={() => setErrorMessage("")}>
-									{errorMessage}
-								</Alert>
-							)}
-						</div>
-
-						<form onSubmit={handleSubmit}>
-							<textarea
-								ref={textAreaRef}
-								placeholder="Speak with AI"
-								value={userPrompt}
-								onChange={e => setUserPrompt(e.target.value)}
-								onKeyDown={handleTextAreaKeyDown}
-								rows={1}
-								autoFocus
-							/>
-							<button
-								className="transparent"
-								title="Add attachment">
-								<Icon path={mdiAttachment} size={1} />
-							</button>
-							{!isStreamingResponse && (
-								<button className="transparent" title="Send">
-									<Icon
-										path={mdiSendVariantOutline}
-										size={1}
-									/>
-								</button>
-							)}
-
-							{isStreamingResponse && (
-								<button
-									className="transparent"
-									title="Stop"
-									onClick={() => void stopAiGeneration()}>
-									<Icon
-										path={mdiStopCircleOutline}
-										size={1}
-									/>
-								</button>
-							)}
-						</form>
+						<PromptForm
+							isStreamingResponse={isStreamingResponse}
+							onSubmit={handleSubmit}
+							userPrompt={userPrompt}
+							onUserPromptChange={setUserPrompt}
+							onStopGeneration={stopAiGeneration}
+							onTextAreaKeyDown={handleTextAreaKeyDown}
+						/>
 					</div>
 				)}
 

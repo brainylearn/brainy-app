@@ -55,6 +55,10 @@
 			border-radius: var(--default-border-radius);
 			border: var(--default-border-width) solid var(--border-color);
 			word-break: break-all;
+
+			& * {
+				white-space: pre-wrap;
+			}
 		}
 
 		.spinner::after {
