@@ -74,16 +74,14 @@ function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
 		const cb = (e: CustomEvent<ToolCallAcceptedPayload>) => {
 			if (e.detail.fileId !== selectedFileId) return;
 
-			void executeRequest(async () => {
-				const fetchedCells =
-					await getFileCellsOrderedByIndex(selectedFileId);
-				setCells(fetchedCells);
-			});
+			void retrieveSelectedFileCells();
+			void retrieveRepetitionCounts();
 		};
 
+		// TODO: does not update repetition counts
 		window.addEventListener(TOOL_CALL_ACCEPTED_EVENT, cb);
 		return () => window.removeEventListener("toolCallAccepted", cb);
-	}, [executeRequest, selectedFileId]);
+	}, [retrieveRepetitionCounts, retrieveSelectedFileCells, selectedFileId]);
 
 	useEffect(() => {
 		const intervalId = setInterval(
