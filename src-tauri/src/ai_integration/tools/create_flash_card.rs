@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use rig::{completion::ToolDefinition, tool::Tool};
 use schemars::schema_for;
 use serde::{Deserialize, Serialize};
-use serde_json::to_value;
 use thiserror::Error;
 use tokio::sync::Mutex;
 
@@ -22,7 +21,7 @@ use crate::{
     common::repository_error::RepositoryError,
 };
 
-#[derive(Deserialize, Debug, Serialize, schemars::JsonSchema)]
+#[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct CreateFlashcardArgs {
     #[schemars(description = "The question shown to the user.'")]
     question: String,
@@ -42,7 +41,6 @@ pub enum CreateFlashCardError {
     OnEvent(String),
 }
 
-// TODO: Unit test the two structs here
 pub struct CreateFlashCard {
     file_id: Guid,
     chat_id: Guid,
@@ -105,7 +103,7 @@ impl Tool for CreateFlashCard {
                     args.question, args.answer
                 )
                 .to_string(),
-                arguments: to_value(&args)?,
+                arguments: serde_json::to_value(&args)?,
                 status: ToolCallStatus::Pending,
                 file_id: Some(self.file_id),
             }),
@@ -140,6 +138,7 @@ impl AcceptCreateFlashCard {
 impl AcceptToolCall for AcceptCreateFlashCard {
     type Args = CreateFlashcardArgs;
 
+    // TODO: Unit test
     async fn accept_call(
         &self,
         tool_call: &ToolCall,
@@ -174,5 +173,69 @@ impl AcceptToolCall for AcceptCreateFlashCard {
             .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod create_flash_card_test {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    use super::*;
+
+    #[tokio::test]
+    pub async fn call_valid_input_added_message_and_called_on_event() {
+        // Arrange
+
+        let file_id = Guid::new_v4();
+        let chat_id = Guid::new_v4();
+        let messages_to_upsert = Arc::new(Mutex::new(Vec::new()));
+
+        let received_on_event = Arc::new(AtomicBool::new(false));
+        let received_on_event_clone = received_on_event.clone();
+
+        let create_flash_card = CreateFlashCard::new(
+            file_id,
+            chat_id,
+            messages_to_upsert.clone(),
+            Some(Arc::new(move |_| {
+                received_on_event_clone.store(true, Ordering::Relaxed);
+                Ok(())
+            })),
+        );
+
+        let args = CreateFlashcardArgs {
+            question: "Question".to_string(),
+            answer: "Answer".to_string(),
+        };
+
+        // Act
+
+        create_flash_card.call(args.clone()).await.unwrap();
+
+        // Assert
+
+        assert!(received_on_event.load(Ordering::Relaxed));
+        let messages_to_upsert = messages_to_upsert.lock().await;
+        assert_eq!(messages_to_upsert.len(), 1);
+        assert_eq!(messages_to_upsert[0].chat_id(), chat_id);
+
+        if let MessageContent::ToolCall(tool_call) = messages_to_upsert[0].content() {
+            assert_eq!(tool_call.name, CreateFlashCard::NAME);
+            assert_eq!(tool_call.display_name, "📝 Create flashcard".to_string());
+            assert_eq!(
+                tool_call.display_description_markdown,
+                "\
+                        **Question**: Question
+
+\
+                        **Answer**: Answer"
+                    .to_string()
+            );
+            assert_eq!(tool_call.arguments, serde_json::to_value(args).unwrap());
+            assert_eq!(tool_call.status, ToolCallStatus::Pending);
+            assert_eq!(tool_call.file_id, Some(file_id));
+        } else {
+            panic!("Not correct message content");
+        }
     }
 }
