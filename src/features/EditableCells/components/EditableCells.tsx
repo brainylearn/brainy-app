@@ -69,8 +69,11 @@ function EditableCells({
 	if (!selectedCellId) {
 		if (cells.some(c => c.id === initialSelectedCellId))
 			setSelectedCellId(initialSelectedCellId!);
-		else if (cells.length > 0)
-			setSelectedCellId(cells[cells.length - 1].id);
+		else if (cells.length > 0) {
+			if (fileMode === "single")
+				setSelectedCellId(cells[cells.length - 1].id);
+			else setSelectedCellId(cells[0].id);
+		}
 	}
 
 	const { saveChanges, onCellContentUpdate, ignoreCell } = useAutoSave({
