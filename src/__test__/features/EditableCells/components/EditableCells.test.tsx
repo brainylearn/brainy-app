@@ -248,6 +248,7 @@ describe("Scrolling", () => {
 
 		renderEditableCells({
 			cells: [createTestCell(1), createTestCell(2), createTestCell(3)],
+			initialSelectedCellId: "1",
 		});
 
 		// Act

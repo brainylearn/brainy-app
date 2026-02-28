@@ -114,8 +114,10 @@ describe("AiChatWidget", () => {
 					{
 						id: "message-1",
 						chatId: "chat-1",
-						contentType: "human",
-						content: "message 1",
+						content: {
+							type: "human",
+							value: "message 1",
+						},
 					} as Message,
 				]);
 			} else {
@@ -123,8 +125,10 @@ describe("AiChatWidget", () => {
 					{
 						id: "message-2",
 						chatId: "chat-2",
-						contentType: "human",
-						content: "message 2",
+						content: {
+							type: "human",
+							value: "message 2",
+						},
 					} as Message,
 				]);
 			}
@@ -196,10 +200,11 @@ describe("AiChatWidget", () => {
 			Promise.resolve([]),
 		);
 
+		// TODO: assert that file id is added
 		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
 		let finishedStreaming = false;
 		vi.mocked(streamAiResponse).mockImplementation(
-			async (prompt, chatId, onEvent) => {
+			async ({ prompt, chatId }, onEvent) => {
 				if (prompt === "hello" && chatId === null) {
 					capturedOnEvent = onEvent;
 				}
@@ -243,10 +248,8 @@ describe("AiChatWidget", () => {
 		await screen.findByText("message from AI");
 
 		await screen.findByTitle("Stop");
-		capturedOnEvent!.onmessage({
-			event: "finished",
-		});
 		finishedStreaming = true;
+
 		await screen.findByTitle("Send");
 	});
 
@@ -262,8 +265,10 @@ describe("AiChatWidget", () => {
 					{
 						id: "message-1",
 						chatId: "chat-1",
-						contentType: "human",
-						content: "retrieved message",
+						content: {
+							type: "human",
+							value: "retrieved message",
+						},
 					} as Message,
 				]);
 			}
@@ -272,14 +277,12 @@ describe("AiChatWidget", () => {
 
 		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
 		let finishedStreaming = false;
-		vi.mocked(streamAiResponse).mockImplementation(
-			async (_, __, onEvent) => {
-				capturedOnEvent = onEvent;
-				while (!finishedStreaming) {
-					await new Promise(resolve => setTimeout(resolve, 20));
-				}
-			},
-		);
+		vi.mocked(streamAiResponse).mockImplementation(async (_, onEvent) => {
+			capturedOnEvent = onEvent;
+			while (!finishedStreaming) {
+				await new Promise(resolve => setTimeout(resolve, 20));
+			}
+		});
 
 		renderComponent({});
 
@@ -313,9 +316,6 @@ describe("AiChatWidget", () => {
 		});
 
 		finishedStreaming = true;
-		capturedOnEvent!.onmessage({
-			event: "finished",
-		});
 
 		await screen.findByText("An error has happened");
 		// Asserting that the chat retrieved that latest messages.
@@ -329,6 +329,13 @@ describe("AiChatWidget", () => {
 			Promise.resolve([]),
 		);
 
+		let finishedStreaming = false;
+		vi.mocked(streamAiResponse).mockImplementation(async () => {
+			while (!finishedStreaming) {
+				await new Promise(resolve => setTimeout(resolve, 20));
+			}
+		});
+
 		renderComponent({});
 
 		// Act
@@ -337,6 +344,7 @@ describe("AiChatWidget", () => {
 		await userEvent.click(await screen.findByRole("textbox"));
 		await userEvent.keyboard("hello{Enter}");
 		await userEvent.click(screen.getByTitle("Stop"));
+		finishedStreaming = true;
 
 		// Assert
 
@@ -436,8 +444,10 @@ describe("AiChatWidget", () => {
 				{
 					id: "message-1",
 					chatId: "chat-1",
-					contentType: "human",
-					content: "message 1",
+					content: {
+						type: "human",
+						value: "message 1",
+					},
 				} as Message,
 			]),
 		);
