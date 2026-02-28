@@ -228,7 +228,6 @@ impl AiService {
             .name("Brainy Tutor")
             .default_max_turns(DEFAULT_MAX_TURN);
 
-        // TODO: unit test
         if let Some(file_id) = request.file_id {
             Ok(builder
                 .preamble(PREAMBLE_BASE)
@@ -369,7 +368,7 @@ pub mod tests {
                     && text.text() == "User message: User prompt"
                 {
                     let tool_call = AssistantContent::tool_call(
-                        "1",
+                        "id",
                         "submit",
                         serde_json::to_value(GenerateTitle {
                             title: "Chat title".to_string(),
@@ -470,6 +469,127 @@ pub mod tests {
     }
 
     #[tokio::test]
+    pub async fn stream_added_tools_when_file_id_is_given() {
+        // Arrange
+
+        let valid_request = Arc::new(AtomicBool::new(false));
+        let valid_request_clone = valid_request.clone();
+
+        let mock_client = MockClient {
+            model: None,
+            completion_fn: Arc::new(Some(Box::new(|_| {
+                let tool_call = AssistantContent::tool_call(
+                    "id",
+                    "submit",
+                    serde_json::to_value(GenerateTitle {
+                        title: "Chat title".to_string(),
+                    })
+                    .unwrap(),
+                );
+                CompletionResponse {
+                    choice: OneOrMany::one(tool_call),
+                    raw_response: MultiResponse::Mock,
+                    usage: Usage::default(),
+                    message_id: None,
+                }
+            }))),
+            stream_fn: Arc::new(Some(Box::new(move |request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User prompt"
+                    && request.tools.len() == 1
+                    && request.tools.first().unwrap().name == CreateFlashCard::NAME
+                {
+                    valid_request_clone.store(true, Ordering::Relaxed);
+                }
+
+                Ok(None)
+            }))),
+        };
+
+        let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+
+        let request = StreamAiRequest {
+            prompt: "User prompt".to_string(),
+            file_id: Some(Guid::new_v4()),
+            ..Default::default()
+        };
+
+        // Act
+
+        service
+            .stream(request, Arc::new(move |_| Ok(())))
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert!(valid_request.load(Ordering::Relaxed));
+    }
+
+    #[tokio::test]
+    pub async fn stream_did_not_add_tools_when_no_file_id_is_given() {
+        // Arrange
+
+        let valid_request = Arc::new(AtomicBool::new(false));
+        let valid_request_clone = valid_request.clone();
+
+        let mock_client = MockClient {
+            model: None,
+            completion_fn: Arc::new(Some(Box::new(|_| {
+                let tool_call = AssistantContent::tool_call(
+                    "id",
+                    "submit",
+                    serde_json::to_value(GenerateTitle {
+                        title: "Chat title".to_string(),
+                    })
+                    .unwrap(),
+                );
+                CompletionResponse {
+                    choice: OneOrMany::one(tool_call),
+                    raw_response: MultiResponse::Mock,
+                    usage: Usage::default(),
+                    message_id: None,
+                }
+            }))),
+            stream_fn: Arc::new(Some(Box::new(move |request| {
+                if let Message::User { content } = request.chat_history.last()
+                    && let UserContent::Text(text) = content.last()
+                    && text.text() == "User prompt"
+                    && request.tools.is_empty()
+                {
+                    valid_request_clone.store(true, Ordering::Relaxed);
+                }
+
+                Ok(None)
+            }))),
+        };
+
+        let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+
+        let request = StreamAiRequest {
+            prompt: "User prompt".to_string(),
+            file_id: None,
+            ..Default::default()
+        };
+
+        // Act
+
+        service
+            .stream(request, Arc::new(move |_| Ok(())))
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert!(valid_request.load(Ordering::Relaxed));
+    }
+
+    #[tokio::test]
     pub async fn stream_cancelled_response_stopped_generation() {
         // Arrange
 
@@ -485,7 +605,7 @@ pub mod tests {
                     && text.text() == "User message: User prompt"
                 {
                     let tool_call = AssistantContent::tool_call(
-                        "1",
+                        "id",
                         "submit",
                         serde_json::to_value(GenerateTitle {
                             title: "Chat title".to_string(),
@@ -566,7 +686,7 @@ pub mod tests {
                     && text.text() == "User message: User prompt"
                 {
                     let tool_call = AssistantContent::tool_call(
-                        "1",
+                        "id",
                         "submit",
                         serde_json::to_value(GenerateTitle {
                             title: "Chat title".to_string(),

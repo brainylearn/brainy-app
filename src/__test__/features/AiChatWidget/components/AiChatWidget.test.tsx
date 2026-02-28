@@ -13,6 +13,8 @@ import userEvent from "@testing-library/user-event";
 import Message from "../../../../types/backend/entity/message.ts";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../../types/backend/events/streamLlmResponseEvent.ts";
+import { MemoryRouterProps } from "react-router";
+import { FILE_ID_QUERY_PARAMETER } from "../../../../config/constants.ts";
 
 vi.mock(import("../../../../api/aiApi.ts"));
 
@@ -26,8 +28,12 @@ vi.mock("@tauri-apps/api/core", () => {
 	};
 });
 
-function renderComponent({ enableAi = true }) {
+function renderComponent({
+	enableAi = true,
+	memoryRouterProps = {} as MemoryRouterProps,
+}) {
 	return renderWithProviders(<AiChatWidget />, {
+		memoryRouterProps,
 		preloadedState: {
 			settings: {
 				settings: {
@@ -200,12 +206,15 @@ describe("AiChatWidget", () => {
 			Promise.resolve([]),
 		);
 
-		// TODO: assert that file id is added
 		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
 		let finishedStreaming = false;
 		vi.mocked(streamAiResponse).mockImplementation(
-			async ({ prompt, chatId }, onEvent) => {
-				if (prompt === "hello" && chatId === null) {
+			async ({ prompt, chatId, fileId }, onEvent) => {
+				if (
+					prompt === "hello" &&
+					chatId === null &&
+					fileId === "file-123"
+				) {
 					capturedOnEvent = onEvent;
 				}
 
@@ -215,7 +224,11 @@ describe("AiChatWidget", () => {
 			},
 		);
 
-		renderComponent({});
+		renderComponent({
+			memoryRouterProps: {
+				initialEntries: [`?${FILE_ID_QUERY_PARAMETER}=file-123`],
+			},
+		});
 
 		// Act & Assert
 
