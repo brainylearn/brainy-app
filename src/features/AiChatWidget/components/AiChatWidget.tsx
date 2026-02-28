@@ -37,7 +37,6 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
-// TODO: when flash card is added editor must be refereshed
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);

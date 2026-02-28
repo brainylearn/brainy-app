@@ -1,5 +1,5 @@
 import styles from "./styles.module.css";
-import { mdiClose, mdiCheckOutline } from "@mdi/js";
+import { mdiClose, mdiCheckOutline, mdiFileDocumentOutline } from "@mdi/js";
 import Icon from "@mdi/react";
 import Markdown from "react-markdown";
 import Message, {
@@ -8,6 +8,12 @@ import Message, {
 } from "../../../types/backend/entity/message";
 import { useTransition } from "react";
 import { acceptToolCall, rejectToolCall } from "../../../api/aiApi";
+import useAppSelector from "../../../hooks/useAppSelector";
+import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
+import getFolderChildById from "../../../utils/getFolderChildById";
+import { useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
+import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";
 
 interface Props {
 	isStreamingResponse: boolean;
@@ -22,7 +28,10 @@ export default function ToolCallDisplay({
 	onUpdate,
 }: Props) {
 	const [isSendingRequest, startRequest] = useTransition();
+	const rootFolder = useAppSelector(selectRootFolder);
 	const toolCall = message.content.value as ToolCall;
+	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
 
 	const handleRejectToolCall = () => {
 		startRequest(async () => {
@@ -39,9 +48,34 @@ export default function ToolCallDisplay({
 		});
 	};
 
+	const file =
+		toolCall.fileId && getFolderChildById(rootFolder, toolCall.fileId);
+
+	const handleNavigateToFileClick = () => {
+		if (!file) return;
+
+		searchParams.set(FILE_ID_QUERY_PARAMETER, file.id);
+		void navigate({
+			pathname: "editor",
+			search: searchParams.toString(),
+		});
+	};
+
 	return (
 		<div className={styles.toolCall}>
-			<p className={styles.toolCallHeader}>{toolCall.displayName}</p>
+			<div className={styles.toolCallHeader}>
+				<p>{toolCall.displayName}</p>
+				{file && (
+					<button
+						className="transparent"
+						title="Navigate to file"
+						onClick={handleNavigateToFileClick}>
+						<Icon path={mdiFileDocumentOutline} size={1} />
+						<p>{file.name}</p>
+					</button>
+				)}
+			</div>
+
 			<Markdown>{toolCall.displayDescriptionMarkdown}</Markdown>
 			<div className={styles.footer}>
 				{toolCall.status === ToolCallStatus.Rejected && (
@@ -63,7 +97,9 @@ export default function ToolCallDisplay({
 						<button
 							className={`transparent ${styles.reject}`}
 							type="button"
-							disabled={isStreamingResponse || isSendingRequest}
+							disabled={
+								isStreamingResponse || !file || isSendingRequest
+							}
 							title={
 								isStreamingResponse
 									? "Please wait until generation is finished"
@@ -76,7 +112,9 @@ export default function ToolCallDisplay({
 						<button
 							className={`transparent ${styles.accept}`}
 							type="button"
-							disabled={isStreamingResponse || isSendingRequest}
+							disabled={
+								isStreamingResponse || !file || isSendingRequest
+							}
 							title={
 								isStreamingResponse
 									? "Please wait until generation is finished"

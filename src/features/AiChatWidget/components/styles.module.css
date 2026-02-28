@@ -17,7 +17,7 @@
 .chat-panel {
 	box-shadow: var(--default-box-shadow);
 	width: 32rem;
-	max-width: 80vw;
+	max-width: 75vw;
 	border-radius: var(--default-border-radius);
 
 	& .header {
@@ -55,9 +55,10 @@
 			border-radius: var(--default-border-radius);
 			border: var(--default-border-width) solid var(--border-color);
 			word-break: break-all;
+			overflow-wrap: break-word;
 
-			& * {
-				white-space: pre-wrap;
+			& > * {
+				overflow-x: auto;
 			}
 		}
 
@@ -149,10 +150,23 @@
 	gap: var(--spacing-2);
 
 	& .tool-call-header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-1);
+
 		text-transform: capitalize;
 		border-bottom: var(--default-border-width) solid var(--border-color);
 		padding-bottom: var(--spacing-2);
 		font-weight: 600;
+
+		& button {
+			align-self: flex-start;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: var(--spacing-1);
+			padding: var(--spacing-1);
+		}
 	}
 
 	& .footer {

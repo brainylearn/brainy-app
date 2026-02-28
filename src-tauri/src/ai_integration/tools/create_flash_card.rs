@@ -95,7 +95,7 @@ impl Tool for CreateFlashCard {
             MessageContent::ToolCall(ToolCall {
                 id: Guid::new_v4().to_string(),
                 name: Self::NAME.to_string(),
-                display_name: "Create flashcard".to_string(),
+                display_name: "📝 Create flashcard".to_string(),
                 display_description_markdown: format!(
                     "\
                         **Question**: {}
@@ -118,7 +118,7 @@ impl Tool for CreateFlashCard {
         }
 
         messages_to_upsert.push(message);
-        Ok("Request to create the flashcard has been presented to the user.".to_string())
+        Ok("Request to create the flashcard has been presented to the user, please do not repeat the flash cards.".to_string())
     }
 }
 

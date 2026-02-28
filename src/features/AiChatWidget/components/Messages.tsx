@@ -24,30 +24,38 @@ export default function Messages({
 	onCloseError,
 }: Props) {
 	const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+	const followTail = useRef(true);
 
 	useEffect(() => {
-		if (!messagesContainerRef.current) return;
-
 		const container = messagesContainerRef.current;
-
-		// TODO: not working exactly as planned
-		const position = container.scrollTop + container.clientHeight;
-		if (container.scrollHeight - position < AUTO_SCROLL_THRESHOLD) {
+		if (container && followTail.current) {
 			container.scrollTop = container.scrollHeight;
 		}
 	}, [messages]);
 
 	useEffect(() => {
-		if (!messagesContainerRef.current) return;
-		messagesContainerRef.current.scrollTop =
-			messagesContainerRef.current.scrollHeight;
+		if (messagesContainerRef.current) {
+			messagesContainerRef.current.scrollTop =
+				messagesContainerRef.current.scrollHeight;
+		}
+
+		followTail.current = true;
 	}, [selectedChatId]);
+
+	const handleScroll = () => {
+		if (!messagesContainerRef.current) return;
+		const { scrollTop, scrollHeight, clientHeight } =
+			messagesContainerRef.current;
+		followTail.current =
+			scrollHeight - scrollTop <= clientHeight + AUTO_SCROLL_THRESHOLD;
+	};
 
 	return (
 		<div
 			className={styles.messages}
 			ref={messagesContainerRef}
-			data-testid="messages-container">
+			data-testid="messages-container"
+			onScroll={handleScroll}>
 			{messages.map((message, i) => (
 				<div
 					key={i}
