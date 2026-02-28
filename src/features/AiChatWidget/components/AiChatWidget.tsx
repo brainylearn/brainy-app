@@ -59,9 +59,10 @@ function AiChatWidgetInner() {
 
 	useGlobalKey(e => {
 		if (e.ctrlKey && e.key.toLowerCase() === "j") {
+			e.preventDefault();
 			setIsOpen(isOpen => !isOpen);
 		}
-	});
+	}, "keydown");
 
 	const stopAiGeneration = useCallback(async () => {
 		await stopAiGenerationApi();

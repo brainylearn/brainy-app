@@ -78,7 +78,6 @@ function Editor({ initialSelectedCellId, onError, onStudyStart }: Props) {
 			void retrieveRepetitionCounts();
 		};
 
-		// TODO: does not update repetition counts
 		window.addEventListener(TOOL_CALL_ACCEPTED_EVENT, cb);
 		return () => window.removeEventListener("toolCallAccepted", cb);
 	}, [retrieveRepetitionCounts, retrieveSelectedFileCells, selectedFileId]);
