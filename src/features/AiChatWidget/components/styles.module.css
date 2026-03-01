@@ -50,7 +50,7 @@
 
 		& .message {
 			background-color: var(--default-background-color);
-			max-width: 90%;
+			max-width: 92%;
 			padding: var(--spacing-2);
 			border-radius: var(--default-border-radius);
 			border: var(--default-border-width) solid var(--border-color);
