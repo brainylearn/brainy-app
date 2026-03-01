@@ -24,11 +24,11 @@ use crate::{
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct CreateFlashcardArgs {
     #[schemars(description = "The question shown to the user.'")]
-    question: String,
+    pub question: String,
     #[schemars(
         description = "The correct answer. Must be as concise as possible — a word, phrase, or single sentence."
     )]
-    answer: String,
+    pub answer: String,
 }
 
 #[derive(Error, Debug)]
@@ -138,7 +138,6 @@ impl AcceptCreateFlashCard {
 impl AcceptToolCall for AcceptCreateFlashCard {
     type Args = CreateFlashcardArgs;
 
-    // TODO: Unit test
     async fn accept_call(
         &self,
         tool_call: &ToolCall,
@@ -237,5 +236,120 @@ pub mod create_flash_card_test {
         } else {
             panic!("Not correct message content");
         }
+    }
+}
+
+#[cfg(test)]
+pub mod accept_create_flash_card_test {
+    use injector::{injector::Injector, register_scope};
+
+    use crate::{
+        ROOT_FOLDER_ID,
+        cells::repositories::{
+            sqlite_cell_repository::SqliteCellRepository,
+            sqlite_review_repository::SqliteReviewRepository,
+            traits::review_repository::ReviewRepository,
+        },
+        file_system::{
+            file_system_service::FileSystemService,
+            repositories::{
+                sqlite_file_repository::SqliteFileRepository,
+                sqlite_folder_repository::SqliteFolderRepository,
+                traits::{file_repository::FileRepository, folder_repository::FolderRepository},
+            },
+            value_objects::file_system_item_name::FileSystemItemName,
+        },
+        test_utils::create_test_injector,
+    };
+
+    use super::*;
+
+    async fn get_test_dependencies() -> Injector {
+        let mut injector = create_test_injector().await;
+
+        register_scope!(injector, dyn CellRepository, SqliteCellRepository);
+        register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
+        register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+        register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
+        register_scope!(injector, CellService);
+        register_scope!(injector, FileSystemService);
+
+        injector
+    }
+
+    #[tokio::test]
+    pub async fn accept_call_valid_input_added_flash_cards() {
+        // Arrange
+
+        let injector = get_test_dependencies().await;
+        let scope = injector.start_scope();
+
+        let file_id = scope
+            .resolve::<FileSystemService>()
+            .await
+            .create_file(
+                Some(ROOT_FOLDER_ID),
+                FileSystemItemName::new_unchecked("Test".to_string()),
+            )
+            .await
+            .unwrap();
+
+        let cell_service = scope.resolve::<CellService>().await;
+        cell_service
+            .create_cell(file_id, "".to_string(), CellType::Note, 0)
+            .await
+            .unwrap();
+        cell_service
+            .create_cell(file_id, "".to_string(), CellType::Note, 1)
+            .await
+            .unwrap();
+
+        let cell_repository = scope.resolve::<dyn CellRepository>().await;
+
+        let args = CreateFlashcardArgs {
+            question: "**Question**".to_string(),
+            answer: "Answer".to_string(),
+        };
+        let accept_create_flash_card = AcceptCreateFlashCard {
+            cell_repository: cell_repository.clone(),
+            cell_service,
+        };
+
+        // Act
+
+        accept_create_flash_card
+            .accept_call(
+                &ToolCall {
+                    id: "".to_string(),
+                    name: "".to_string(),
+                    display_name: "".to_string(),
+                    display_description_markdown: "".to_string(),
+                    arguments: serde_json::to_value(args.clone()).unwrap(),
+                    status: ToolCallStatus::Pending,
+                    file_id: Some(file_id),
+                },
+                args,
+            )
+            .await
+            .unwrap();
+
+        // Assert
+
+        let cells = cell_repository
+            .get_file_cells_ordered_by_index(file_id)
+            .await
+            .unwrap();
+
+        assert_eq!(3, cells.len());
+        assert_eq!(&CellType::FlashCard, cells[2].cell_type());
+        assert_eq!(
+            serde_json::to_string(&FlashCard {
+                question: "<p><strong>Question</strong></p>".to_string(),
+                answer: "<p>Answer</p>".to_string(),
+            })
+            .unwrap(),
+            cells[2].content()
+        );
+        assert_eq!(2, cells[2].index());
     }
 }

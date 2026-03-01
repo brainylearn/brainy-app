@@ -276,7 +276,6 @@ impl AiService {
         }
     }
 
-    // TODO: unit test
     pub async fn accept_tool_call(&self, message_id: Guid) -> Result<(), AiServiceError> {
         let mut message = self.ai_repository.get_message_by_id(message_id).await?;
         let tool_call = match message.content_mut() {
@@ -314,19 +313,30 @@ pub mod tests {
     use rig::{
         OneOrMany,
         completion::{CompletionError, CompletionResponse, Usage},
-        message::{AssistantContent, Message, UserContent},
+        message::{AssistantContent, Message as RigMessage, UserContent},
         streaming::RawStreamingChoice,
     };
 
     use crate::{
+        ROOT_FOLDER_ID,
         ai_integration::{
             clients::multi_completion_client::multi_response::MultiResponse,
-            repositories::sqlite_ai_repository::SqliteAiRepository,
+            entities::message::ToolCall, repositories::sqlite_ai_repository::SqliteAiRepository,
+            tools::create_flash_card::CreateFlashcardArgs,
         },
         cells::repositories::{
             sqlite_cell_repository::SqliteCellRepository,
             sqlite_review_repository::SqliteReviewRepository,
             traits::review_repository::ReviewRepository,
+        },
+        file_system::{
+            file_system_service::FileSystemService,
+            repositories::{
+                sqlite_file_repository::SqliteFileRepository,
+                sqlite_folder_repository::SqliteFolderRepository,
+                traits::{file_repository::FileRepository, folder_repository::FolderRepository},
+            },
+            value_objects::file_system_item_name::FileSystemItemName,
         },
         test_utils::create_test_injector,
     };
@@ -348,7 +358,10 @@ pub mod tests {
         register_scope!(injector, dyn AiRepository, SqliteAiRepository);
         register_scope!(injector, dyn CellRepository, SqliteCellRepository);
         register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
+        register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+        register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
         register_scope!(injector, CellService);
+        register_scope!(injector, FileSystemService);
         register_scope!(injector, AiService);
 
         injector
@@ -363,7 +376,7 @@ pub mod tests {
         let mock_client = MockClient {
             model: None,
             completion_fn: Arc::new(Some(Box::new(|request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User message: User prompt"
                 {
@@ -386,7 +399,7 @@ pub mod tests {
                 panic!()
             }))),
             stream_fn: Arc::new(Some(Box::new(move |request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
                     && !sent_stream_answer.load(Ordering::Relaxed)
@@ -494,7 +507,7 @@ pub mod tests {
                 }
             }))),
             stream_fn: Arc::new(Some(Box::new(move |request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
                     && request.tools.len() == 1
@@ -555,7 +568,7 @@ pub mod tests {
                 }
             }))),
             stream_fn: Arc::new(Some(Box::new(move |request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
                     && request.tools.is_empty()
@@ -600,7 +613,7 @@ pub mod tests {
         let mock_client = MockClient {
             model: None,
             completion_fn: Arc::new(Some(Box::new(|request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User message: User prompt"
                 {
@@ -623,7 +636,7 @@ pub mod tests {
                 panic!()
             }))),
             stream_fn: Arc::new(Some(Box::new(move |request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
                 {
@@ -681,7 +694,7 @@ pub mod tests {
         let mock_client = MockClient {
             model: None,
             completion_fn: Arc::new(Some(Box::new(|request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User message: User prompt"
                 {
@@ -704,7 +717,7 @@ pub mod tests {
                 panic!()
             }))),
             stream_fn: Arc::new(Some(Box::new(move |request| {
-                if let Message::User { content } = request.chat_history.last()
+                if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
                 {
@@ -767,5 +780,102 @@ pub mod tests {
             .await
             .unwrap();
         assert_eq!(2, messages.len());
+    }
+
+    #[tokio::test]
+    pub async fn accept_tool_call_create_flashcard_called_correctly_and_updated_status() {
+        // Arrange
+
+        let mock_client = MockClient {
+            model: None,
+            completion_fn: Arc::new(Some(Box::new(|_| {
+                let tool_call = AssistantContent::tool_call(
+                    "id",
+                    "submit",
+                    serde_json::to_value(GenerateTitle {
+                        title: "Chat title".to_string(),
+                    })
+                    .unwrap(),
+                );
+                CompletionResponse {
+                    choice: OneOrMany::one(tool_call),
+                    raw_response: MultiResponse::Mock,
+                    usage: Usage::default(),
+                    message_id: None,
+                }
+            }))),
+            stream_fn: Arc::new(Some(Box::new(move |_| Ok(None)))),
+        };
+
+        let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+
+        let ai_repository = scope.resolve::<dyn AiRepository>().await;
+        let chat_id = Guid::new_v4();
+        ai_repository
+            .upsert_chat(&Chat::new(Some(chat_id), "test".to_string()))
+            .await
+            .unwrap();
+
+        let file_id = scope
+            .resolve::<FileSystemService>()
+            .await
+            .create_file(
+                Some(ROOT_FOLDER_ID),
+                FileSystemItemName::new_unchecked("Test".to_string()),
+            )
+            .await
+            .unwrap();
+
+        let args = CreateFlashcardArgs {
+            question: "**Question**".to_string(),
+            answer: "Answer".to_string(),
+        };
+
+        let message_id = Guid::new_v4();
+        ai_repository
+            .upsert_message(&Message::new(
+                Some(message_id),
+                chat_id,
+                MessageContent::ToolCall(ToolCall {
+                    id: "".to_string(),
+                    name: CreateFlashCard::NAME.to_string(),
+                    display_name: "".to_string(),
+                    display_description_markdown: "".to_string(),
+                    arguments: serde_json::to_value(args.clone()).unwrap(),
+                    status: ToolCallStatus::Pending,
+                    file_id: Some(file_id),
+                }),
+            ))
+            .await
+            .unwrap();
+
+        // Act
+
+        service.accept_tool_call(message_id).await.unwrap();
+
+        // Assert
+
+        let cells = scope
+            .resolve::<dyn CellRepository>()
+            .await
+            .get_file_cells_ordered_by_index(file_id)
+            .await
+            .unwrap();
+        assert_eq!(1, cells.len());
+
+        let actual_message = scope
+            .resolve::<dyn AiRepository>()
+            .await
+            .get_message_by_id(message_id)
+            .await
+            .unwrap();
+
+        if let MessageContent::ToolCall(tool_call) = actual_message.content() {
+            assert_eq!(ToolCallStatus::Accepted, tool_call.status);
+        } else {
+            panic!();
+        }
     }
 }
