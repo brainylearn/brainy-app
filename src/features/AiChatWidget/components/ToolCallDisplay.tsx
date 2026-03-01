@@ -24,7 +24,6 @@ interface Props {
 	onUpdate: () => Promise<void>;
 }
 
-// TODO: unit test
 export default function ToolCallDisplay({
 	isStreamingResponse,
 	message,

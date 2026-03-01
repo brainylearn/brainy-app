@@ -144,7 +144,6 @@ function AiChatWidgetInner() {
 			} else if (event.event === "error") {
 				setErrorMessage(event.data);
 			} else if (event.event === "toolCalled") {
-				// TODO: unit test
 				setMessages(messages => {
 					const tempAssistantMessage = messages.find(
 						m => m.id === TEMP_ASSISTANT_MESSAGE_ID,

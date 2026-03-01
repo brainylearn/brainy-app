@@ -3,18 +3,26 @@ import AiChatWidget from "../../../../features/AiChatWidget/components/AiChatWid
 import Settings from "../../../../types/backend/model/settings";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 import {
+	acceptToolCall,
 	getAllAiChatsSortedByDateDesc,
 	getChatMessagesOrdered,
+	rejectToolCall,
 	renameAiChat,
 	stopAiGeneration,
 	streamAiResponse,
 } from "../../../../api/aiApi.ts";
 import userEvent from "@testing-library/user-event";
-import Message from "../../../../types/backend/entity/message.ts";
+import Message, {
+	ToolCall,
+	ToolCallStatus,
+} from "../../../../types/backend/entity/message.ts";
 import { Channel } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../../../../types/backend/events/streamLlmResponseEvent.ts";
 import { MemoryRouterProps } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../../config/constants.ts";
+import { RootState } from "../../../../stores/store.ts";
+import { ReviewTreeFolder } from "../../../../types/backend/dto/reviewTreeFolder.ts";
+import { TOOL_CALL_ACCEPTED_EVENT } from "../../../../types/events/toolCallAcceptedEvent.ts";
 
 vi.mock(import("../../../../api/aiApi.ts"));
 
@@ -31,6 +39,7 @@ vi.mock("@tauri-apps/api/core", () => {
 function renderComponent({
 	enableAi = true,
 	memoryRouterProps = {} as MemoryRouterProps,
+	preloadedState = {} as Partial<RootState>,
 }) {
 	return renderWithProviders(<AiChatWidget />, {
 		memoryRouterProps,
@@ -40,6 +49,7 @@ function renderComponent({
 					enableAi,
 				} as Partial<Settings> as Settings,
 			},
+			...preloadedState,
 		},
 	});
 }
@@ -254,11 +264,32 @@ describe("AiChatWidget", () => {
 			data: "message from",
 		});
 		await screen.findByText("message from");
+
 		capturedOnEvent!.onmessage({
 			event: "inProgress",
 			data: " AI",
 		});
 		await screen.findByText("message from AI");
+
+		capturedOnEvent!.onmessage({
+			event: "toolCalled",
+			data: {
+				id: "",
+				chatId: "",
+				content: {
+					type: "toolCall",
+					value: {
+						id: "",
+						displayDescriptionMarkdown: "**Question**",
+						displayName: "Create FlashCard",
+						fileId: "",
+						status: ToolCallStatus.Accepted,
+					},
+				},
+			},
+		});
+		await screen.findByText("Create FlashCard");
+		await screen.findByText("Accepted");
 
 		await screen.findByTitle("Stop");
 		finishedStreaming = true;
@@ -509,5 +540,225 @@ describe("AiChatWidget", () => {
 		// Assert
 
 		expect(vi.mocked(renameAiChat)).toBeCalledWith("chat-1", "New name");
+	});
+});
+
+describe("ToolCallDisplay", () => {
+	it("Should be able to accept tool call and dispatch event", async () => {
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+			]),
+		);
+
+		vi.mocked(getChatMessagesOrdered)
+			.mockReturnValueOnce(
+				Promise.resolve([
+					{
+						id: "message-1",
+						chatId: "chat-1",
+						content: {
+							type: "toolCall",
+							value: {
+								displayName: "Create FlashCard",
+								displayDescriptionMarkdown: "Question",
+								status: ToolCallStatus.Pending,
+								fileId: "file-1",
+							} as ToolCall,
+						},
+					} as Message,
+				]),
+			)
+			.mockReturnValueOnce(
+				Promise.resolve([
+					{
+						id: "message-1",
+						chatId: "chat-1",
+						content: {
+							type: "toolCall",
+							value: {
+								displayName: "Create FlashCard",
+								displayDescriptionMarkdown: "Question",
+								fileId: "file-1",
+								status: ToolCallStatus.Accepted,
+							} as ToolCall,
+						},
+					} as Message,
+				]),
+			);
+
+		let calledEventFileId = null;
+		window.addEventListener(TOOL_CALL_ACCEPTED_EVENT, event => {
+			calledEventFileId = event.detail.fileId;
+		});
+
+		renderComponent({
+			preloadedState: {
+				fileSystem: {
+					errorMessage: "",
+					successMessage: "",
+					rootFolder: {
+						files: [
+							{
+								id: "file-1",
+							},
+						],
+					} as unknown as ReviewTreeFolder,
+				},
+			},
+		});
+
+		// Act
+
+		await openChat();
+		await userEvent.click(await screen.findByText("+ New chat"));
+		await userEvent.click(await screen.findByText("chat 1"));
+		await userEvent.click(await screen.findByText("Accept"));
+		await screen.findByText("Accepted");
+
+		// Assert
+
+		expect(vi.mocked(acceptToolCall)).toBeCalledWith("message-1");
+		expect(calledEventFileId).toBe("file-1");
+	});
+
+	it("Should be able to reject tool call", async () => {
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+			]),
+		);
+
+		vi.mocked(getChatMessagesOrdered)
+			.mockReturnValueOnce(
+				Promise.resolve([
+					{
+						id: "message-1",
+						chatId: "chat-1",
+						content: {
+							type: "toolCall",
+							value: {
+								displayName: "Create FlashCard",
+								displayDescriptionMarkdown: "Question",
+								status: ToolCallStatus.Pending,
+								fileId: "file-1",
+							} as ToolCall,
+						},
+					} as Message,
+				]),
+			)
+			.mockReturnValueOnce(
+				Promise.resolve([
+					{
+						id: "message-1",
+						chatId: "chat-1",
+						content: {
+							type: "toolCall",
+							value: {
+								displayName: "Create FlashCard",
+								displayDescriptionMarkdown: "Question",
+								fileId: "file-1",
+								status: ToolCallStatus.Rejected,
+							} as ToolCall,
+						},
+					} as Message,
+				]),
+			);
+
+		renderComponent({
+			preloadedState: {
+				fileSystem: {
+					errorMessage: "",
+					successMessage: "",
+					rootFolder: {
+						files: [
+							{
+								id: "file-1",
+							},
+						],
+					} as unknown as ReviewTreeFolder,
+				},
+			},
+		});
+
+		// Act
+
+		await openChat();
+		await userEvent.click(await screen.findByText("+ New chat"));
+		await userEvent.click(await screen.findByText("chat 1"));
+		await userEvent.click(await screen.findByText("Reject"));
+		await screen.findByText("Rejected");
+
+		// Assert
+
+		expect(vi.mocked(rejectToolCall)).toBeCalledWith("message-1");
+	});
+
+	it("Should be able to navigate to file", async () => {
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
+			Promise.resolve([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+			]),
+		);
+
+		vi.mocked(getChatMessagesOrdered).mockReturnValueOnce(
+			Promise.resolve([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					content: {
+						type: "toolCall",
+						value: {
+							displayName: "Create FlashCard",
+							displayDescriptionMarkdown: "Question",
+							status: ToolCallStatus.Pending,
+							fileId: "file-1",
+						} as ToolCall,
+					},
+				} as Message,
+			]),
+		);
+
+		renderComponent({
+			preloadedState: {
+				fileSystem: {
+					errorMessage: "",
+					successMessage: "",
+					rootFolder: {
+						files: [
+							{
+								id: "file-1",
+								name: "file 1",
+							},
+						],
+					} as unknown as ReviewTreeFolder,
+				},
+			},
+		});
+
+		// Act
+
+		await openChat();
+		await userEvent.click(await screen.findByText("+ New chat"));
+		await userEvent.click(await screen.findByText("chat 1"));
+		await userEvent.click(await screen.findByText("file 1"));
+
+		// Assert
+
+		expect(await screen.findByTestId("location-display")).toHaveTextContent(
+			`/editor?${FILE_ID_QUERY_PARAMETER}=file-1`,
+		);
 	});
 });
