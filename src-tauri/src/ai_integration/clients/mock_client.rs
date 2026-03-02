@@ -6,7 +6,7 @@ use rig::{
     streaming::{RawStreamingChoice, StreamingCompletionResponse},
 };
 
-use crate::ai_integration::clients::multi_completion_client::{
+use crate::ai_integration::clients::multi_client::{
     multi_response::MultiResponse, multi_streaming_response::MultiStreamingResponse,
 };
 

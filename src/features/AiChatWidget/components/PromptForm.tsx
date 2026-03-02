@@ -1,3 +1,4 @@
+import { open } from "@tauri-apps/plugin-dialog";
 import {
 	mdiAttachment,
 	mdiSendVariantOutline,
@@ -37,6 +38,15 @@ export default function PromptForm({
 		}
 	}, [userPrompt]);
 
+	const handleAddAttachment = async () => {
+		const attachmentPath = await open({
+			directory: false,
+		});
+
+		if (!attachmentPath) return;
+		console.log(attachmentPath);
+	};
+
 	return (
 		<form onSubmit={onSubmit}>
 			<textarea
@@ -48,7 +58,11 @@ export default function PromptForm({
 				rows={1}
 				autoFocus
 			/>
-			<button className="transparent" title="Add attachment">
+			<button
+				className="transparent"
+				title="Add attachment"
+				onClick={() => void handleAddAttachment()}
+				disabled={isStreamingResponse}>
 				<Icon path={mdiAttachment} size={1} />
 			</button>
 			{!isStreamingResponse && (

@@ -1,8 +1,14 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use injector_derive::ScopeInjectable;
+use rig::client::EmbeddingsClient;
 #[cfg(not(test))]
 use rig::client::{Nothing, ProviderClient};
+use rig::embeddings::EmbeddingsBuilder;
+use rig::loaders::PdfFileLoader;
+use rig::loaders::file::FileLoaderError;
+use rig::loaders::pdf::PdfLoaderError;
 #[cfg(not(test))]
 use rig::providers::ollama;
 use rig::tool::Tool;
@@ -12,12 +18,14 @@ use rig::{
     completion::PromptError,
     streaming::{StreamedAssistantContent, StreamingChat},
 };
+use rig_lancedb::{LanceDbVectorIndex, SearchParams};
 use serde::Serialize;
 use thiserror::Error;
 use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
 use crate::Guid;
+use crate::ai_integration::attachment::Attachment;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::entities::message::ToolCallStatus;
@@ -30,9 +38,7 @@ use crate::cells::repositories::traits::cell_repository::CellRepository;
 use crate::{
     ai_integration::{
         ai_state::AiState,
-        clients::multi_completion_client::{
-            MultiCompletionClient, multi_completion_model::MultiCompletionModel,
-        },
+        clients::multi_client::{MultiClient, multi_completion_model::MultiCompletionModel},
         entities::{
             chat::Chat,
             message::{Message, MessageContent},
@@ -75,6 +81,10 @@ pub enum AiServiceError {
     CanOnlyAcceptToolCalls,
     #[error("{0}")]
     AcceptToolCallError(#[from] AcceptToolCallError),
+    #[error("Error loading file: {0}")]
+    FileLoaderError(#[from] FileLoaderError),
+    #[error("Error loading pdf file: {0}")]
+    PdfLoaderError(#[from] PdfLoaderError),
 }
 
 impl From<String> for AiServiceError {
@@ -196,7 +206,7 @@ impl AiService {
 
     async fn create_chat(&self, prompt: &str) -> Result<Chat, AiServiceError> {
         let response = match self
-            .get_multi_completion_client()
+            .get_multi_client()
             .await?
             .extractor::<GenerateTitle>(self.get_model_name().await?)
             .preamble(PREAMBLE_GENERATE_TITLE)
@@ -219,7 +229,7 @@ impl AiService {
         messages_to_upsert: Arc<Mutex<Vec<Message>>>,
         on_event: OnEventCallback,
     ) -> Result<Agent<MultiCompletionModel>, AiServiceError> {
-        let client = self.get_multi_completion_client().await?;
+        let client = self.get_multi_client().await?;
         let model_name = self.get_model_name().await?;
 
         let builder = client
@@ -227,6 +237,9 @@ impl AiService {
             .temperature(DEFAULT_TEMPERATURE)
             .name("Brainy Tutor")
             .default_max_turns(DEFAULT_MAX_TURN);
+
+        // TODO: https://book.rig.rs/playbook/rag.html#tool-rag
+        // .dynamic_tools(2, in_memory, some_toolset)
 
         if let Some(file_id) = request.file_id {
             Ok(builder
@@ -243,18 +256,92 @@ impl AiService {
         }
     }
 
-    async fn get_multi_completion_client(&self) -> Result<MultiCompletionClient, AiServiceError> {
+    pub async fn accept_tool_call(&self, message_id: Guid) -> Result<(), AiServiceError> {
+        let mut message = self.ai_repository.get_message_by_id(message_id).await?;
+        let tool_call = match message.content_mut() {
+            MessageContent::ToolCall(tool_call) => tool_call,
+            _ => return Err(AiServiceError::CanOnlyAcceptToolCalls),
+        };
+
+        #[allow(clippy::needless_late_init)]
+        let tool: Box<dyn AcceptToolCallFromJson>;
+
+        if tool_call.name == CreateFlashCard::NAME {
+            tool = Box::new(AcceptCreateFlashCard::new(
+                self.cell_repository.clone(),
+                self.cell_service.clone(),
+            ));
+        } else {
+            return Err(AiServiceError::UnknownToolName);
+        }
+
+        tool.accept_call(tool_call, tool_call.arguments.clone())
+            .await?;
+
+        tool_call.status = ToolCallStatus::Accepted;
+        self.ai_repository.upsert_message(&message).await?;
+
+        Ok(())
+    }
+
+    // TODO: unit test
+    pub async fn upload_attachment(&self, path: impl Into<PathBuf>) -> Result<(), AiServiceError> {
+        let path: PathBuf = path.into();
+        // TODO: model name
+        let embed_model = self.get_multi_client().await?.embedding_model("");
+
+        // TODO: error handling, many unwraps
+        let mut embeddings_builder = EmbeddingsBuilder::new(embed_model.clone());
+
+        if let Some(extension) = path.extension() {
+            let loader = PdfFileLoader::with_glob(path.to_str().unwrap())?;
+
+            let pages = loader
+                .load_with_path()
+                .ignore_errors()
+                .by_page()
+                .into_iter()
+                .map(|v| v.1)
+                .flatten()
+                .map(|v| v.1)
+                .map(|v| v.unwrap())
+                .map(|v| Attachment { content: v })
+                .collect::<Vec<_>>();
+
+            embeddings_builder = embeddings_builder.documents(pages).unwrap();
+        }
+
+        let embeddings = embeddings_builder.build().await.unwrap();
+        let db = lancedb::connect("data/my-app-store")
+            .execute()
+            .await
+            .unwrap();
+        let table = db
+            .create_table("documents", embeddings)
+            .execute()
+            .await
+            .unwrap();
+
+        let index =
+            LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
+                .await
+                .unwrap();
+
+        Ok(())
+    }
+
+    async fn get_multi_client(&self) -> Result<MultiClient, AiServiceError> {
         let settings = self.settings.lock().await;
         if !settings.enable_ai {
             return Err(AiServiceError::AiNotEnabled);
         }
 
         #[cfg(test)]
-        return Ok(MultiCompletionClient::Mock((*self.mock_client).clone()));
+        return Ok(MultiClient::Mock((*self.mock_client).clone()));
 
         #[cfg(not(test))]
         {
-            let client = MultiCompletionClient::Ollama(ollama::Client::from_val(Nothing));
+            let client = MultiClient::Ollama(ollama::Client::from_val(Nothing));
             Ok(client)
         }
     }
@@ -287,34 +374,6 @@ impl AiService {
             Ok(model_name)
         }
     }
-
-    pub async fn accept_tool_call(&self, message_id: Guid) -> Result<(), AiServiceError> {
-        let mut message = self.ai_repository.get_message_by_id(message_id).await?;
-        let tool_call = match message.content_mut() {
-            MessageContent::ToolCall(tool_call) => tool_call,
-            _ => return Err(AiServiceError::CanOnlyAcceptToolCalls),
-        };
-
-        #[allow(clippy::needless_late_init)]
-        let tool: Box<dyn AcceptToolCallFromJson>;
-
-        if tool_call.name == CreateFlashCard::NAME {
-            tool = Box::new(AcceptCreateFlashCard::new(
-                self.cell_repository.clone(),
-                self.cell_service.clone(),
-            ));
-        } else {
-            return Err(AiServiceError::UnknownToolName);
-        }
-
-        tool.accept_call(tool_call, tool_call.arguments.clone())
-            .await?;
-
-        tool_call.status = ToolCallStatus::Accepted;
-        self.ai_repository.upsert_message(&message).await?;
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -332,8 +391,8 @@ pub mod tests {
     use crate::{
         ROOT_FOLDER_ID,
         ai_integration::{
-            clients::multi_completion_client::multi_response::MultiResponse,
-            entities::message::ToolCall, repositories::sqlite_ai_repository::SqliteAiRepository,
+            clients::multi_client::multi_response::MultiResponse, entities::message::ToolCall,
+            repositories::sqlite_ai_repository::SqliteAiRepository,
             tools::create_flash_card::CreateFlashcardArgs,
         },
         cells::repositories::{
