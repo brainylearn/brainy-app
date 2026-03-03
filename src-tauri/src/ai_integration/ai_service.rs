@@ -1,17 +1,21 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use arrow_array::types::{Float32Type, Float64Type};
+use arrow_array::{ArrayRef, FixedSizeListArray, RecordBatch, RecordBatchIterator, StringArray};
 use injector_derive::ScopeInjectable;
+use lancedb::arrow::arrow_schema::{ArrowError, Schema};
+use rig::OneOrMany;
 use rig::client::EmbeddingsClient;
 #[cfg(not(test))]
 use rig::client::{Nothing, ProviderClient};
-use rig::embeddings::EmbeddingsBuilder;
+use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
 use rig::loaders::PdfFileLoader;
 use rig::loaders::file::FileLoaderError;
 use rig::loaders::pdf::PdfLoaderError;
 #[cfg(not(test))]
 use rig::providers::ollama;
-use rig::tool::Tool;
+use rig::tool::{Tool, ToolSet};
 use rig::{
     agent::{Agent, MultiTurnStreamItem, StreamingError, Text},
     client::CompletionClient,
@@ -54,6 +58,9 @@ use crate::{
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
 const DEFAULT_MAX_TURN: usize = 10;
+
+// TODO: remove
+const MODEL_NAME: &str = "qwen3-embedding:4b";
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -232,28 +239,39 @@ impl AiService {
         let client = self.get_multi_client().await?;
         let model_name = self.get_model_name().await?;
 
-        let builder = client
+        // TODO: duplication here refactor
+        let embed_model = self.get_multi_client().await?.embedding_model(MODEL_NAME);
+        let dims = embed_model.ndims();
+        let schema = Arc::new(Attachment::schema(dims));
+        let table = get_or_create_lancedb_table(schema, chat_id).await;
+        let mut toolset_builder = ToolSet::builder();
+
+        let mut builder = client
             .agent(&model_name)
             .temperature(DEFAULT_TEMPERATURE)
             .name("Brainy Tutor")
             .default_max_turns(DEFAULT_MAX_TURN);
 
-        // TODO: https://book.rig.rs/playbook/rag.html#tool-rag
-        // .dynamic_tools(2, in_memory, some_toolset)
-
         if let Some(file_id) = request.file_id {
-            Ok(builder
-                .preamble(PREAMBLE_BASE)
-                .tool(CreateFlashCard::new(
-                    file_id,
-                    chat_id,
-                    messages_to_upsert,
-                    Some(on_event),
-                ))
-                .build())
+            toolset_builder = toolset_builder.static_tool(CreateFlashCard::new(
+                file_id,
+                chat_id,
+                messages_to_upsert,
+                Some(on_event),
+            ));
+            builder = builder.preamble(PREAMBLE_BASE);
         } else {
-            Ok(builder.preamble(PREAMBLE_NO_TOOLS).build())
+            builder = builder.preamble(PREAMBLE_NO_TOOLS);
         }
+
+        let index =
+            LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
+                .await
+                .unwrap();
+
+        let builder = builder.dynamic_tools(3, index, toolset_builder.build());
+
+        Ok(builder.build())
     }
 
     pub async fn accept_tool_call(&self, message_id: Guid) -> Result<(), AiServiceError> {
@@ -285,15 +303,21 @@ impl AiService {
     }
 
     // TODO: unit test
-    pub async fn upload_attachment(&self, path: impl Into<PathBuf>) -> Result<(), AiServiceError> {
+    pub async fn upload_attachment(
+        &self,
+        path: impl Into<PathBuf>,
+        chat_id: Guid,
+    ) -> Result<(), AiServiceError> {
         let path: PathBuf = path.into();
         // TODO: model name
-        let embed_model = self.get_multi_client().await?.embedding_model("");
+        let embed_model = self.get_multi_client().await?.embedding_model(MODEL_NAME);
 
         // TODO: error handling, many unwraps
         let mut embeddings_builder = EmbeddingsBuilder::new(embed_model.clone());
 
-        if let Some(extension) = path.extension() {
+        if let Some(extension) = path.extension()
+            && extension == "pdf"
+        {
             let loader = PdfFileLoader::with_glob(path.to_str().unwrap())?;
 
             let pages = loader
@@ -301,31 +325,26 @@ impl AiService {
                 .ignore_errors()
                 .by_page()
                 .into_iter()
-                .map(|v| v.1)
-                .flatten()
-                .map(|v| v.1)
-                .map(|v| v.unwrap())
-                .map(|v| Attachment { content: v })
+                .flat_map(|(_path, result)| result)
+                .map(|(_pageno, result)| result)
+                .filter_map(|v| v.ok())
+                .enumerate()
+                .map(|(i, page)| Attachment {
+                    content: page,
+                    id: format!("page_{}", i),
+                })
                 .collect::<Vec<_>>();
 
             embeddings_builder = embeddings_builder.documents(pages).unwrap();
         }
 
         let embeddings = embeddings_builder.build().await.unwrap();
-        let db = lancedb::connect("data/my-app-store")
-            .execute()
-            .await
-            .unwrap();
-        let table = db
-            .create_table("documents", embeddings)
-            .execute()
-            .await
-            .unwrap();
 
-        let index =
-            LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
-                .await
-                .unwrap();
+        let dims = embed_model.ndims();
+        let schema = Arc::new(Attachment::schema(dims));
+        let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
+        let table = get_or_create_lancedb_table(schema, chat_id).await;
+        table.add(Box::new(batches)).execute().await.unwrap();
 
         Ok(())
     }
@@ -373,6 +392,65 @@ impl AiService {
             log::info!("Using the model with name '{model_name}'.");
             Ok(model_name)
         }
+    }
+}
+
+fn to_record_batch_iterator(
+    schema: Arc<Schema>,
+    dims: usize,
+    embeddings: Vec<(Attachment, OneOrMany<Embedding>)>,
+) -> RecordBatchIterator<Vec<Result<RecordBatch, ArrowError>>> {
+    // TODO: error handling
+    let ids: Vec<String> = embeddings
+        .iter()
+        .flat_map(|e| (0..e.1.len()).map(|i| format!("{}-{i}", e.0.id)))
+        .collect();
+
+    let contents: Vec<String> = embeddings
+        .iter()
+        .flat_map(|e| e.1.iter().map(|emb| emb.document.clone()))
+        .collect();
+
+    let vecs: Vec<Option<Vec<Option<f32>>>> = embeddings
+        .iter()
+        .flat_map(|e| {
+            e.1.iter()
+                // TODO: f32 vs f64?
+                .map(|emb| Some(emb.vec.iter().map(|&x| Some(x as f32)).collect()))
+        })
+        .collect();
+
+    let record_batch = RecordBatch::try_new(
+        schema.clone(),
+        vec![
+            Arc::new(StringArray::from(ids)) as ArrayRef,
+            Arc::new(StringArray::from(contents)) as ArrayRef,
+            Arc::new(
+                FixedSizeListArray::from_iter_primitive::<Float32Type, _, _>(vecs, dims as i32),
+            ) as ArrayRef,
+        ],
+    )
+    .unwrap();
+
+    RecordBatchIterator::new(vec![Ok(record_batch)], schema)
+}
+
+// TODO: move to another file
+async fn get_or_create_lancedb_table(schema: Arc<Schema>, chat_id: Guid) -> lancedb::Table {
+    // TODO: error handling
+    let db = lancedb::connect("data/my-app-store")
+        .execute()
+        .await
+        .unwrap();
+    let table_names = db.table_names().execute().await.unwrap();
+
+    if table_names.contains(&chat_id.to_string()) {
+        db.open_table(chat_id).execute().await.unwrap()
+    } else {
+        db.create_empty_table(chat_id, schema)
+            .execute()
+            .await
+            .unwrap()
     }
 }
 

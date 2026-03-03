@@ -291,8 +291,13 @@ function AiChatWidgetInner() {
 
 						<PromptForm
 							isStreamingResponse={isStreamingResponse}
-							onSubmit={handleSubmit}
 							userPrompt={userPrompt}
+							chatId={
+								selectedChatId === NEW_SESSION_CHAT_ID
+									? null
+									: selectedChatId
+							}
+							onSubmit={handleSubmit}
 							onUserPromptChange={setUserPrompt}
 							onStopGeneration={stopAiGeneration}
 							onTextAreaKeyDown={handleTextAreaKeyDown}

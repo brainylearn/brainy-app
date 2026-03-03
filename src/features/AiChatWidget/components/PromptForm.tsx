@@ -6,10 +6,12 @@ import {
 } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useEffect, useRef } from "react";
+import { uploadAttachment } from "../../../api/aiApi";
 
 interface Props {
 	isStreamingResponse: boolean;
 	userPrompt: string;
+	chatId: string | null;
 	onTextAreaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 	onUserPromptChange: (value: string) => void;
 	onSubmit: (e: React.SubmitEvent) => void;
@@ -19,6 +21,7 @@ interface Props {
 export default function PromptForm({
 	isStreamingResponse,
 	userPrompt,
+	chatId,
 	onUserPromptChange,
 	onSubmit,
 	onStopGeneration,
@@ -44,7 +47,7 @@ export default function PromptForm({
 		});
 
 		if (!attachmentPath) return;
-		console.log(attachmentPath);
+		await uploadAttachment(attachmentPath, chatId);
 	};
 
 	return (

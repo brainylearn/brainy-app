@@ -19,15 +19,21 @@ prost-build = "0.14.3"
 tauri-build = { version = "2.5.5", features = [] }
 
 [dependencies]
+anyhow = "1.0.102"
+arrow-array = "56.2"
 async-stream = "0.3.6"
 async-trait = "0.1.89"
 base64 = "0.22.1"
 chrono = { version = "0.4.44", features = ["serde"] }
 cookie_store = "0.22.1"
 dirs = "6.0.0"
+injector = { path = "./injector" }
+injector_derive = { path="./injector_derive" }
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+lancedb = "0.23.1"
 log = "0.4.29"
 lol_html = "2.7.2"
+markdown = "1.0.0"
 prost = "0.14.3"
 prost-types = "0.14.3"
 regex = "1.12.3"
@@ -36,6 +42,7 @@ reqwest-middleware = { version = "0.5.1", features = ["json", "query"] }
 reqwest-retry = "0.9.1"
 reqwest_cookie_store = "0.10.0"
 rig-core = { version = "0.31.0", features = ["pdf", "derive"] }
+rig-lancedb = "0.3.0"
 schemars = "1.2.1"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
@@ -51,12 +58,6 @@ thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["full"] }
 tokio-stream = "0.1.18"
 uuid = { version = "1.21.0", features = [ "v4", "serde" ] }
-injector = { path = "./injector" }
-injector_derive = { path="./injector_derive" }
-markdown = "1.0.0"
-rig-lancedb = "0.3.0"
-lancedb = "0.26.2"
-arrow-array = "58.0.0"
 
 [dev-dependencies]
 mockall = "0.14.0"

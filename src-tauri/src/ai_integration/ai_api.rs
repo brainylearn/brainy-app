@@ -143,10 +143,12 @@ pub async fn rename_ai_chat(
 pub async fn upload_attachment(
     injector: State<'_, Arc<Injector>>,
     path: String,
+    chat_id: Guid,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     let service = scope.resolve::<AiService>().await;
-    service.upload_attachment(path).await?;
+    // TODO: should create chat if chat id is null
+    service.upload_attachment(path, chat_id).await?;
     scope.save_changes().await?;
     Ok(())
 }
