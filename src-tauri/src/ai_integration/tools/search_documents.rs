@@ -15,47 +15,51 @@ use crate::ai_integration::{
 };
 
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
-pub struct SearchUserDocumentsArgs {
+pub struct SearchDocumentsArgs {
     #[schemars(
-        description = "A concise, standalone search query optimized for semantic similarity. Should be rephrased from the user's message to be self-contained — avoid pronouns or references that depend on conversation history"
+        description = "The search query or question to find relevant information in the uploaded files."
     )]
     pub query: String,
-    #[schemars(description = "Number of chunks to retrieve.")]
+    #[schemars(description = "The maximum number of top matching results to return.")]
     pub top_k: u64,
 }
 
 #[derive(Error, Debug)]
-pub enum SearchUserDocumentsError {}
+pub enum SearchDocumentsError {}
 
-pub struct SearchUserDocuments {
+pub struct SearchDocuments {
     pub index: Arc<LanceDbVectorIndex<MultiEmbeddingModel>>,
 }
 
-impl SearchUserDocuments {
+impl SearchDocuments {
     pub fn new(index: Arc<LanceDbVectorIndex<MultiEmbeddingModel>>) -> Self {
         Self { index }
     }
 }
 
-impl Tool for SearchUserDocuments {
-    const NAME: &'static str = "search_user_documents";
+impl Tool for SearchDocuments {
+    const NAME: &'static str = "search_documents";
 
-    type Error = SearchUserDocumentsError;
-    type Args = SearchUserDocumentsArgs;
+    type Error = SearchDocumentsError;
+    type Args = SearchDocumentsArgs;
     type Output = Vec<Attachment>;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
-        let parameters = serde_json::to_value(schema_for!(SearchUserDocumentsArgs)).unwrap();
+        let parameters = serde_json::to_value(schema_for!(SearchDocumentsArgs)).unwrap();
 
         ToolDefinition {
             name: Self::NAME.to_string(),
-            description: "Search the user's uploaded files for relevant information. Use when the answer likely exists in their documents."
+            description: "Performs semantic search over the text content of \
+                all files uploaded by the user. It returns relevant \
+                snippets (chunks) that match the query"
                 .to_string(),
             parameters,
         }
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+        log::info!("{} called with arguments {:?}", Self::NAME, args);
+
         let request = VectorSearchRequest::builder()
             .query(args.query)
             .samples(args.top_k)

@@ -5,6 +5,7 @@ use rig::Embed;
 use serde::{Deserialize, Serialize};
 
 #[derive(Embed, Clone, Debug, Serialize, Deserialize)]
+// TODO: rename document
 pub struct Attachment {
     pub id: String,
     #[embed]
@@ -20,7 +21,7 @@ impl Attachment {
             Field::new(
                 "embedding",
                 DataType::FixedSizeList(
-                    Arc::new(Field::new("item", DataType::Float32, true)),
+                    Arc::new(Field::new("item", DataType::Float64, true)),
                     dims as i32,
                 ),
                 false,

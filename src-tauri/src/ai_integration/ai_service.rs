@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use arrow_array::types::{Float32Type, Float64Type};
+use arrow_array::types::Float64Type;
 use arrow_array::{ArrayRef, FixedSizeListArray, RecordBatch, RecordBatchIterator, StringArray};
 use injector_derive::ScopeInjectable;
 use lancedb::arrow::arrow_schema::{ArrowError, Schema};
@@ -15,7 +15,7 @@ use rig::loaders::file::FileLoaderError;
 use rig::loaders::pdf::PdfLoaderError;
 #[cfg(not(test))]
 use rig::providers::ollama;
-use rig::tool::{Tool, ToolDyn, ToolSet};
+use rig::tool::{Tool, ToolDyn};
 use rig::{
     agent::{Agent, MultiTurnStreamItem, StreamingError, Text},
     client::CompletionClient,
@@ -32,11 +32,11 @@ use crate::Guid;
 use crate::ai_integration::attachment::Attachment;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
-use crate::ai_integration::entities::message::ToolCallStatus;
+use crate::ai_integration::entities::message::{HumanAttachment, ToolCallStatus};
 use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_FILE};
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
-use crate::ai_integration::tools::search_user_documents::SearchUserDocuments;
+use crate::ai_integration::tools::search_documents::SearchDocuments;
 use crate::ai_integration::tools::{AcceptToolCallError, AcceptToolCallFromJson};
 use crate::cells::cell_service::CellService;
 use crate::cells::repositories::traits::cell_repository::CellRepository;
@@ -255,24 +255,27 @@ impl AiService {
                 .unwrap(),
         );
 
+        let mut tools: Vec<Box<dyn ToolDyn>> = vec![Box::new(SearchDocuments::new(index))];
+
         let mut builder = client
             .agent(&model_name)
             .temperature(DEFAULT_TEMPERATURE)
             .name("Brainy Tutor")
-            .default_max_turns(DEFAULT_MAX_TURN)
-            .tool(SearchUserDocuments::new(index));
+            .default_max_turns(DEFAULT_MAX_TURN);
 
         if let Some(file_id) = request.file_id {
-            builder = builder.tool(CreateFlashCard::new(
+            tools.push(Box::new(CreateFlashCard::new(
                 file_id,
                 chat_id,
                 messages_to_upsert,
                 Some(on_event),
-            ));
+            )));
             builder = builder.preamble(PREAMBLE_BASE);
         } else {
             builder = builder.preamble(PREAMBLE_NO_FILE);
         }
+
+        let builder = builder.tools(tools);
 
         Ok(builder.build())
     }
@@ -312,7 +315,6 @@ impl AiService {
         chat_id: Guid,
     ) -> Result<(), AiServiceError> {
         let path: PathBuf = path.into();
-        // TODO: model name
         let embed_model = self
             .get_multi_client()
             .await?
@@ -346,12 +348,25 @@ impl AiService {
 
         let embeddings = embeddings_builder.build().await.unwrap();
 
-        // TODO: add message here that is shown to user and to AI
         let dims = embed_model.ndims();
         let schema = Arc::new(Attachment::schema(dims));
         let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
         let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
         table.add(Box::new(batches)).execute().await.unwrap();
+
+        self.ai_repository
+            .upsert_message(&Message::new(
+                None,
+                chat_id,
+                MessageContent::HumanAttachment(HumanAttachment {
+                    file_name: path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or("")
+                        .to_string(),
+                }),
+            ))
+            .await?;
 
         Ok(())
     }
@@ -418,12 +433,12 @@ fn to_record_batch_iterator(
         .flat_map(|e| e.1.iter().map(|emb| emb.document.clone()))
         .collect();
 
-    let vecs: Vec<Option<Vec<Option<f32>>>> = embeddings
+    let vecs: Vec<Option<Vec<Option<f64>>>> = embeddings
         .iter()
         .flat_map(|e| {
             e.1.iter()
                 // TODO: f32 vs f64?
-                .map(|emb| Some(emb.vec.iter().map(|&x| Some(x as f32)).collect()))
+                .map(|emb| Some(emb.vec.iter().map(|&x| Some(x)).collect()))
         })
         .collect();
 
@@ -433,7 +448,7 @@ fn to_record_batch_iterator(
             Arc::new(StringArray::from(ids)) as ArrayRef,
             Arc::new(StringArray::from(contents)) as ArrayRef,
             Arc::new(
-                FixedSizeListArray::from_iter_primitive::<Float32Type, _, _>(vecs, dims as i32),
+                FixedSizeListArray::from_iter_primitive::<Float64Type, _, _>(vecs, dims as i32),
             ) as ArrayRef,
         ],
     )
@@ -449,6 +464,7 @@ async fn get_or_create_lancedb_table(
     chat_id: Guid,
 ) -> lancedb::Table {
     // TODO: error handling
+    // TODO: path to database should be a setting
     let db = lancedb::connect("data/my-app-store")
         .execute()
         .await
@@ -464,8 +480,8 @@ async fn get_or_create_lancedb_table(
                 Arc::new(StringArray::from(Vec::<&str>::new())) as ArrayRef,
                 Arc::new(StringArray::from(Vec::<&str>::new())) as ArrayRef,
                 Arc::new(
-                    FixedSizeListArray::from_iter_primitive::<Float32Type, _, _>(
-                        Vec::<Option<Vec<Option<f32>>>>::new(),
+                    FixedSizeListArray::from_iter_primitive::<Float64Type, _, _>(
+                        Vec::<Option<Vec<Option<f64>>>>::new(),
                         dims as i32,
                     ),
                 ) as ArrayRef,

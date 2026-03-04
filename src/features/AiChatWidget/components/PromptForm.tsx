@@ -41,14 +41,15 @@ export default function PromptForm({
 		}
 	}, [userPrompt]);
 
-	const handleAddAttachment = async () => {
+	const handleUploadDocument = async () => {
 		// TODO: unit test
-		const attachmentPath = await open({
+		// TODO: show spinner for loading
+		const path = await open({
 			directory: false,
 		});
 
-		if (!attachmentPath) return;
-		await uploadAttachment(attachmentPath, chatId);
+		if (!path) return;
+		await uploadAttachment(path, chatId);
 	};
 
 	return (
@@ -64,8 +65,8 @@ export default function PromptForm({
 			/>
 			<button
 				className="transparent"
-				title="Add attachment"
-				onClick={() => void handleAddAttachment()}
+				title="Upload document"
+				onClick={() => void handleUploadDocument()}
 				disabled={isStreamingResponse}>
 				<Icon path={mdiAttachment} size={1} />
 			</button>
