@@ -9,6 +9,7 @@ use crate::{
 };
 
 pub mod create_flash_card;
+pub mod search_user_documents;
 
 #[derive(Error, Debug)]
 pub enum AcceptToolCallError {

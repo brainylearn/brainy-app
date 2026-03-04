@@ -42,6 +42,7 @@ export default function PromptForm({
 	}, [userPrompt]);
 
 	const handleAddAttachment = async () => {
+		// TODO: unit test
 		const attachmentPath = await open({
 			directory: false,
 		});

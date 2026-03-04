@@ -37,6 +37,9 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
+// TODO: show message when use uploads file
+// TODO: handle new chat situation when uploading ifles
+// TODO: show spinner when file is uploaded
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);

@@ -33,7 +33,7 @@ to highlight the distinguishing detail.
 only create them via tools. Once a tool call is made, the card exists \
 in the user's deck; there is no need to echo it back.";
 
-pub(in crate::ai_integration) const PREAMBLE_NO_TOOLS: &str = "\
+pub(in crate::ai_integration) const PREAMBLE_NO_FILE: &str = "\
 You are **Brainy's** tutor. Your job is to help users understand \
 concepts through clear explanation.
 

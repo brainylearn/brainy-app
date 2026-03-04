@@ -15,7 +15,7 @@ use rig::loaders::file::FileLoaderError;
 use rig::loaders::pdf::PdfLoaderError;
 #[cfg(not(test))]
 use rig::providers::ollama;
-use rig::tool::{Tool, ToolSet};
+use rig::tool::{Tool, ToolDyn, ToolSet};
 use rig::{
     agent::{Agent, MultiTurnStreamItem, StreamingError, Text},
     client::CompletionClient,
@@ -33,9 +33,10 @@ use crate::ai_integration::attachment::Attachment;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::entities::message::ToolCallStatus;
-use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_TOOLS};
+use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_FILE};
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
+use crate::ai_integration::tools::search_user_documents::SearchUserDocuments;
 use crate::ai_integration::tools::{AcceptToolCallError, AcceptToolCallFromJson};
 use crate::cells::cell_service::CellService;
 use crate::cells::repositories::traits::cell_repository::CellRepository;
@@ -57,7 +58,7 @@ use crate::{
 };
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
-const DEFAULT_MAX_TURN: usize = 10;
+const DEFAULT_MAX_TURN: usize = 16;
 
 // TODO: remove
 const MODEL_NAME: &str = "qwen3-embedding:4b";
@@ -240,20 +241,29 @@ impl AiService {
         let model_name = self.get_model_name().await?;
 
         // TODO: duplication here refactor
-        let embed_model = self.get_multi_client().await?.embedding_model(MODEL_NAME);
+        let embed_model = self
+            .get_multi_client()
+            .await?
+            .embedding_model_with_ndims(MODEL_NAME, 2560);
         let dims = embed_model.ndims();
         let schema = Arc::new(Attachment::schema(dims));
-        let table = get_or_create_lancedb_table(schema, chat_id).await;
-        let mut toolset_builder = ToolSet::builder();
+        let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
+
+        let index = Arc::new(
+            LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
+                .await
+                .unwrap(),
+        );
 
         let mut builder = client
             .agent(&model_name)
             .temperature(DEFAULT_TEMPERATURE)
             .name("Brainy Tutor")
-            .default_max_turns(DEFAULT_MAX_TURN);
+            .default_max_turns(DEFAULT_MAX_TURN)
+            .tool(SearchUserDocuments::new(index));
 
         if let Some(file_id) = request.file_id {
-            toolset_builder = toolset_builder.static_tool(CreateFlashCard::new(
+            builder = builder.tool(CreateFlashCard::new(
                 file_id,
                 chat_id,
                 messages_to_upsert,
@@ -261,15 +271,8 @@ impl AiService {
             ));
             builder = builder.preamble(PREAMBLE_BASE);
         } else {
-            builder = builder.preamble(PREAMBLE_NO_TOOLS);
+            builder = builder.preamble(PREAMBLE_NO_FILE);
         }
-
-        let index =
-            LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
-                .await
-                .unwrap();
-
-        let builder = builder.dynamic_tools(3, index, toolset_builder.build());
 
         Ok(builder.build())
     }
@@ -310,7 +313,10 @@ impl AiService {
     ) -> Result<(), AiServiceError> {
         let path: PathBuf = path.into();
         // TODO: model name
-        let embed_model = self.get_multi_client().await?.embedding_model(MODEL_NAME);
+        let embed_model = self
+            .get_multi_client()
+            .await?
+            .embedding_model_with_ndims(MODEL_NAME, 2560);
 
         // TODO: error handling, many unwraps
         let mut embeddings_builder = EmbeddingsBuilder::new(embed_model.clone());
@@ -340,10 +346,11 @@ impl AiService {
 
         let embeddings = embeddings_builder.build().await.unwrap();
 
+        // TODO: add message here that is shown to user and to AI
         let dims = embed_model.ndims();
         let schema = Arc::new(Attachment::schema(dims));
         let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
-        let table = get_or_create_lancedb_table(schema, chat_id).await;
+        let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
         table.add(Box::new(batches)).execute().await.unwrap();
 
         Ok(())
@@ -436,7 +443,11 @@ fn to_record_batch_iterator(
 }
 
 // TODO: move to another file
-async fn get_or_create_lancedb_table(schema: Arc<Schema>, chat_id: Guid) -> lancedb::Table {
+async fn get_or_create_lancedb_table(
+    schema: Arc<Schema>,
+    dims: usize,
+    chat_id: Guid,
+) -> lancedb::Table {
     // TODO: error handling
     let db = lancedb::connect("data/my-app-store")
         .execute()
@@ -447,10 +458,23 @@ async fn get_or_create_lancedb_table(schema: Arc<Schema>, chat_id: Guid) -> lanc
     if table_names.contains(&chat_id.to_string()) {
         db.open_table(chat_id).execute().await.unwrap()
     } else {
-        db.create_empty_table(chat_id, schema)
-            .execute()
-            .await
-            .unwrap()
+        let empty_batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![
+                Arc::new(StringArray::from(Vec::<&str>::new())) as ArrayRef,
+                Arc::new(StringArray::from(Vec::<&str>::new())) as ArrayRef,
+                Arc::new(
+                    FixedSizeListArray::from_iter_primitive::<Float32Type, _, _>(
+                        Vec::<Option<Vec<Option<f32>>>>::new(),
+                        dims as i32,
+                    ),
+                ) as ArrayRef,
+            ],
+        )
+        .unwrap();
+
+        let batches = RecordBatchIterator::new(vec![Ok(empty_batch)], schema);
+        db.create_table(chat_id, batches).execute().await.unwrap()
     }
 }
 
