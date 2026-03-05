@@ -3,7 +3,7 @@ use std::sync::Arc;
 use rig::{
     completion::ToolDefinition,
     tool::Tool,
-    vector_store::{VectorSearchRequest, VectorStoreIndex},
+    vector_store::{VectorSearchRequest, VectorStoreError, VectorStoreIndex},
 };
 use rig_lancedb::LanceDbVectorIndex;
 use schemars::schema_for;
@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::ai_integration::{
-    attachment::Attachment, clients::multi_client::multi_embedding_model::MultiEmbeddingModel,
+    clients::multi_client::multi_embedding_model::MultiEmbeddingModel, document::Document,
 };
 
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
@@ -25,7 +25,12 @@ pub struct SearchDocumentsArgs {
 }
 
 #[derive(Error, Debug)]
-pub enum SearchDocumentsError {}
+pub enum SearchDocumentsError {
+    #[error("Error fetching documents from vector store")]
+    FetchingError(#[from] VectorStoreError),
+    #[error("Error building search query")]
+    SearchQueryError(VectorStoreError),
+}
 
 pub struct SearchDocuments {
     pub index: Arc<LanceDbVectorIndex<MultiEmbeddingModel>>,
@@ -42,7 +47,7 @@ impl Tool for SearchDocuments {
 
     type Error = SearchDocumentsError;
     type Args = SearchDocumentsArgs;
-    type Output = Vec<Attachment>;
+    type Output = Vec<Document>;
 
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         let parameters = serde_json::to_value(schema_for!(SearchDocumentsArgs)).unwrap();
@@ -57,23 +62,23 @@ impl Tool for SearchDocuments {
         }
     }
 
+    // TODO: unit test
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        log::info!("{} called with arguments {:?}", Self::NAME, args);
-
-        let request = VectorSearchRequest::builder()
+        let request = match VectorSearchRequest::builder()
             .query(args.query)
             .samples(args.top_k)
             .build()
-            .unwrap();
+        {
+            Err(err) => return Err(SearchDocumentsError::SearchQueryError(err)),
+            Ok(request) => request,
+        };
 
-        // TODO: error handling
         let results = self
             .index
-            .top_n::<Attachment>(request)
-            .await
-            .unwrap()
+            .top_n::<Document>(request)
+            .await?
             .into_iter()
-            .map(|(_, _, attachment)| attachment)
+            .map(|(_, _, document)| document)
             .collect();
 
         Ok(results)

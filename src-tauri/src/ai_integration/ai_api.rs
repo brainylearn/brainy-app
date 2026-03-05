@@ -140,7 +140,7 @@ pub async fn rename_ai_chat(
 }
 
 #[tauri::command]
-pub async fn upload_attachment(
+pub async fn upload_document(
     injector: State<'_, Arc<Injector>>,
     path: String,
     chat_id: Guid,
@@ -148,7 +148,7 @@ pub async fn upload_attachment(
     let scope = injector.start_scope();
     let service = scope.resolve::<AiService>().await;
     // TODO: should create chat if chat id is null
-    service.upload_attachment(path, chat_id).await?;
+    service.upload_document(path, chat_id).await?;
     scope.save_changes().await?;
     Ok(())
 }

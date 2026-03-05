@@ -29,10 +29,10 @@ use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
 use crate::Guid;
-use crate::ai_integration::attachment::Attachment;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
-use crate::ai_integration::entities::message::{HumanAttachment, ToolCallStatus};
+use crate::ai_integration::document::Document;
+use crate::ai_integration::entities::message::{self, ToolCallStatus};
 use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_FILE};
 use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
@@ -171,9 +171,15 @@ impl AiService {
                     {
                         complete_ai_response = format!("{complete_ai_response}{text}");
                         on_event(StreamLlmResponseEvent::InProgress(text))?;
+                    } else if let MultiTurnStreamItem::StreamAssistantItem(
+                        StreamedAssistantContent::ToolCall { tool_call, .. },
+                    ) = content
+                    {
+                        log::info!("Tool call: {:#?}", tool_call);
                     }
                 }
                 Err(err) => {
+                    log::error!("Error happened while streaming {:?}", err);
                     let mut should_call_callback = true;
 
                     if let StreamingError::Prompt(ref prompt_error) = err
@@ -240,13 +246,12 @@ impl AiService {
         let client = self.get_multi_client().await?;
         let model_name = self.get_model_name().await?;
 
-        // TODO: duplication here refactor
         let embed_model = self
             .get_multi_client()
             .await?
             .embedding_model_with_ndims(MODEL_NAME, 2560);
         let dims = embed_model.ndims();
-        let schema = Arc::new(Attachment::schema(dims));
+        let schema = Arc::new(Document::schema(dims));
         let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
 
         let index = Arc::new(
@@ -309,7 +314,7 @@ impl AiService {
     }
 
     // TODO: unit test
-    pub async fn upload_attachment(
+    pub async fn upload_document(
         &self,
         path: impl Into<PathBuf>,
         chat_id: Guid,
@@ -328,6 +333,7 @@ impl AiService {
         {
             let loader = PdfFileLoader::with_glob(path.to_str().unwrap())?;
 
+            // TODO: split
             let pages = loader
                 .load_with_path()
                 .ignore_errors()
@@ -337,7 +343,7 @@ impl AiService {
                 .map(|(_pageno, result)| result)
                 .filter_map(|v| v.ok())
                 .enumerate()
-                .map(|(i, page)| Attachment {
+                .map(|(i, page)| Document {
                     content: page,
                     id: format!("page_{}", i),
                 })
@@ -349,7 +355,7 @@ impl AiService {
         let embeddings = embeddings_builder.build().await.unwrap();
 
         let dims = embed_model.ndims();
-        let schema = Arc::new(Attachment::schema(dims));
+        let schema = Arc::new(Document::schema(dims));
         let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
         let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
         table.add(Box::new(batches)).execute().await.unwrap();
@@ -358,7 +364,7 @@ impl AiService {
             .upsert_message(&Message::new(
                 None,
                 chat_id,
-                MessageContent::HumanAttachment(HumanAttachment {
+                MessageContent::Document(message::Document {
                     file_name: path
                         .file_name()
                         .and_then(|name| name.to_str())
@@ -420,7 +426,7 @@ impl AiService {
 fn to_record_batch_iterator(
     schema: Arc<Schema>,
     dims: usize,
-    embeddings: Vec<(Attachment, OneOrMany<Embedding>)>,
+    embeddings: Vec<(Document, OneOrMany<Embedding>)>,
 ) -> RecordBatchIterator<Vec<Result<RecordBatch, ArrowError>>> {
     // TODO: error handling
     let ids: Vec<String> = embeddings

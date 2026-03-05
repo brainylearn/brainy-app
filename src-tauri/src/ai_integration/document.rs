@@ -5,16 +5,14 @@ use rig::Embed;
 use serde::{Deserialize, Serialize};
 
 #[derive(Embed, Clone, Debug, Serialize, Deserialize)]
-// TODO: rename document
-pub struct Attachment {
+pub struct Document {
     pub id: String,
     #[embed]
     pub content: String,
 }
 
-impl Attachment {
+impl Document {
     pub fn schema(dims: usize) -> Schema {
-        log::info!("Dims is {dims}");
         Schema::new(Fields::from(vec![
             Field::new("id", DataType::Utf8, false),
             Field::new("content", DataType::Utf8, false),

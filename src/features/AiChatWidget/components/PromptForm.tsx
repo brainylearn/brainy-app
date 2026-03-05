@@ -6,7 +6,7 @@ import {
 } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useEffect, useRef } from "react";
-import { uploadAttachment } from "../../../api/aiApi";
+import { uploadDocument } from "../../../api/aiApi";
 
 interface Props {
 	isStreamingResponse: boolean;
@@ -49,7 +49,7 @@ export default function PromptForm({
 		});
 
 		if (!path) return;
-		await uploadAttachment(path, chatId);
+		await uploadDocument(path, chatId);
 	};
 
 	return (

@@ -68,14 +68,14 @@ impl Message {
 #[serde(rename_all = "camelCase", tag = "type", content = "value")]
 pub enum MessageContent {
     Human(String),
-    HumanAttachment(HumanAttachment),
+    Document(Document),
     Assistant(String),
     ToolCall(ToolCall),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct HumanAttachment {
+pub struct Document {
     pub file_name: String,
 }
 
@@ -106,13 +106,11 @@ impl From<Message> for rig::message::Message {
             MessageContent::Human(content) => rig::message::Message::User {
                 content: OneOrMany::one(UserContent::text(content)),
             },
-            MessageContent::HumanAttachment(HumanAttachment { file_name }) => {
-                rig::message::Message::User {
-                    content: OneOrMany::one(UserContent::text(format!(
-                        "I have uploaded the following file: {file_name}"
-                    ))),
-                }
-            }
+            MessageContent::Document(Document { file_name }) => rig::message::Message::User {
+                content: OneOrMany::one(UserContent::text(format!(
+                    "I have uploaded the following file: {file_name}"
+                ))),
+            },
             MessageContent::Assistant(content) => rig::message::Message::Assistant {
                 id: None,
                 content: OneOrMany::one(AssistantContent::Text(Text { text: content })),

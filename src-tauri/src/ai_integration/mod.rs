@@ -1,8 +1,8 @@
 pub mod ai_api;
 pub mod ai_service;
 pub mod ai_state;
-pub mod attachment;
 pub mod clients;
+pub mod document;
 pub mod entities;
 pub mod json_schemas;
 pub mod prompts;
