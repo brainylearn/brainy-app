@@ -9,7 +9,7 @@ use rig::OneOrMany;
 use rig::client::EmbeddingsClient;
 #[cfg(not(test))]
 use rig::client::{Nothing, ProviderClient};
-use rig::embeddings::{Embedding, EmbeddingModel, EmbeddingsBuilder};
+use rig::embeddings::{EmbedError, Embedding, EmbeddingError, EmbeddingModel, EmbeddingsBuilder};
 use rig::loaders::PdfFileLoader;
 use rig::loaders::file::FileLoaderError;
 use rig::loaders::pdf::PdfLoaderError;
@@ -93,6 +93,12 @@ pub enum AiServiceError {
     FileLoaderError(#[from] FileLoaderError),
     #[error("Error loading pdf file: {0}")]
     PdfLoaderError(#[from] PdfLoaderError),
+    #[error("Embed error: {0}")]
+    EmbedError(#[from] EmbedError),
+    #[error("Embedding error: {0}")]
+    EmbeddingError(#[from] EmbeddingError),
+    #[error("Add embedding error: {0}")]
+    AddEmbeddingError(String),
 }
 
 impl From<String> for AiServiceError {
@@ -325,7 +331,6 @@ impl AiService {
             .await?
             .embedding_model_with_ndims(MODEL_NAME, 2560);
 
-        // TODO: error handling, many unwraps
         let mut embeddings_builder = EmbeddingsBuilder::new(embed_model.clone());
 
         if let Some(extension) = path.extension()
@@ -349,16 +354,19 @@ impl AiService {
                 })
                 .collect::<Vec<_>>();
 
-            embeddings_builder = embeddings_builder.documents(pages).unwrap();
+            embeddings_builder = embeddings_builder.documents(pages)?;
         }
 
-        let embeddings = embeddings_builder.build().await.unwrap();
+        let embeddings = embeddings_builder.build().await?;
 
         let dims = embed_model.ndims();
         let schema = Arc::new(Document::schema(dims));
         let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
         let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
-        table.add(Box::new(batches)).execute().await.unwrap();
+
+        if let Err(err) = table.add(Box::new(batches)).execute().await {
+            return Err(AiServiceError::AddEmbeddingError(err.to_string()));
+        }
 
         self.ai_repository
             .upsert_message(&Message::new(
@@ -443,7 +451,6 @@ fn to_record_batch_iterator(
         .iter()
         .flat_map(|e| {
             e.1.iter()
-                // TODO: f32 vs f64?
                 .map(|emb| Some(emb.vec.iter().map(|&x| Some(x)).collect()))
         })
         .collect();
