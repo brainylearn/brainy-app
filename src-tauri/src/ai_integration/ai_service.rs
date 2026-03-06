@@ -28,7 +28,6 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 use tokio_stream::StreamExt;
 
-use crate::Guid;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::document::Document;
@@ -40,6 +39,8 @@ use crate::ai_integration::tools::search_documents::SearchDocuments;
 use crate::ai_integration::tools::{AcceptToolCallError, AcceptToolCallFromJson};
 use crate::cells::cell_service::CellService;
 use crate::cells::repositories::traits::cell_repository::CellRepository;
+use crate::settings::SettingsError;
+use crate::{Guid, settings};
 use crate::{
     ai_integration::{
         ai_state::AiState,
@@ -60,9 +61,6 @@ use crate::{
 const DEFAULT_TEMPERATURE: f64 = 0.5;
 const DEFAULT_MAX_TURN: usize = 16;
 
-// TODO: remove
-const MODEL_NAME: &str = "qwen3-embedding:4b";
-
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum StreamLlmResponseEvent {
@@ -78,9 +76,12 @@ pub enum AiServiceError {
     UnknownRepositoryError(#[from] RepositoryError),
     #[error("Ai is not enabled in settings!")]
     AiNotEnabled,
-    #[error("Ollama model name is not filled in settings!")]
     #[cfg(not(test))]
+    #[error("Ollama model name is not filled in settings!")]
     OllamaModelNameIsNotFilled,
+    #[cfg(not(test))]
+    #[error("Ollama embeddings model name is not filled in settings!")]
+    OllamaEmbeddingsModelNameIsNotFilled,
     #[error("Unknown tool name was given")]
     UnknownToolName,
     #[error("An unknown error has happened!")]
@@ -99,6 +100,12 @@ pub enum AiServiceError {
     EmbeddingError(#[from] EmbeddingError),
     #[error("Add embedding error: {0}")]
     AddEmbeddingError(String),
+    #[error("{0}")]
+    SettingsError(#[from] SettingsError),
+    #[error("Error connecting to embeddings database")]
+    ConnectingToEmbeddingsDatabase(String),
+    #[error("Error while executing command in embeddings database: {0}")]
+    ExecutingEmbeddingsDatabaseError(String),
 }
 
 impl From<String> for AiServiceError {
@@ -251,14 +258,15 @@ impl AiService {
     ) -> Result<Agent<MultiCompletionModel>, AiServiceError> {
         let client = self.get_multi_client().await?;
         let model_name = self.get_model_name().await?;
+        let embeddings_model_name = self.get_embeddings_model_name().await?;
 
         let embed_model = self
             .get_multi_client()
             .await?
-            .embedding_model_with_ndims(MODEL_NAME, 2560);
+            .embedding_model_with_ndims(embeddings_model_name, 2560);
         let dims = embed_model.ndims();
         let schema = Arc::new(Document::schema(dims));
-        let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
+        let table = get_or_create_lancedb_table(schema, dims, chat_id).await?;
 
         let index = Arc::new(
             LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
@@ -326,10 +334,12 @@ impl AiService {
         chat_id: Guid,
     ) -> Result<(), AiServiceError> {
         let path: PathBuf = path.into();
+        let embeddings_model_name = self.get_embeddings_model_name().await?;
+
         let embed_model = self
             .get_multi_client()
             .await?
-            .embedding_model_with_ndims(MODEL_NAME, 2560);
+            .embedding_model_with_ndims(embeddings_model_name, 2560);
 
         let mut embeddings_builder = EmbeddingsBuilder::new(embed_model.clone());
 
@@ -362,7 +372,7 @@ impl AiService {
         let dims = embed_model.ndims();
         let schema = Arc::new(Document::schema(dims));
         let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
-        let table = get_or_create_lancedb_table(schema, dims, chat_id).await;
+        let table = get_or_create_lancedb_table(schema, dims, chat_id).await?;
 
         if let Err(err) = table.add(Box::new(batches)).execute().await {
             return Err(AiServiceError::AddEmbeddingError(err.to_string()));
@@ -429,6 +439,35 @@ impl AiService {
             Ok(model_name)
         }
     }
+
+    async fn get_embeddings_model_name(&self) -> Result<String, AiServiceError> {
+        #[cfg(test)]
+        return Ok(self.mock_client.model.clone().unwrap_or_default());
+
+        #[cfg(not(test))]
+        {
+            let settings = self.settings.lock().await;
+
+            if settings.ollama_embeddings_model_name.is_none() {
+                return Err(AiServiceError::OllamaEmbeddingsModelNameIsNotFilled);
+            }
+
+            let model_name = settings
+                .ollama_embeddings_model_name
+                .as_ref()
+                .unwrap()
+                .clone()
+                .trim()
+                .to_string();
+
+            if model_name.is_empty() {
+                return Err(AiServiceError::OllamaModelNameIsNotFilled);
+            }
+
+            log::info!("Using the embeddings model with name '{model_name}'.");
+            Ok(model_name)
+        }
+    }
 }
 
 fn to_record_batch_iterator(
@@ -436,7 +475,6 @@ fn to_record_batch_iterator(
     dims: usize,
     embeddings: Vec<(Document, OneOrMany<Embedding>)>,
 ) -> RecordBatchIterator<Vec<Result<RecordBatch, ArrowError>>> {
-    // TODO: error handling
     let ids: Vec<String> = embeddings
         .iter()
         .flat_map(|e| (0..e.1.len()).map(|i| format!("{}-{i}", e.0.id)))
@@ -470,40 +508,45 @@ fn to_record_batch_iterator(
     RecordBatchIterator::new(vec![Ok(record_batch)], schema)
 }
 
-// TODO: move to another file
 async fn get_or_create_lancedb_table(
     schema: Arc<Schema>,
     dims: usize,
     chat_id: Guid,
-) -> lancedb::Table {
-    // TODO: error handling
-    // TODO: path to database should be a setting
-    let db = lancedb::connect("data/my-app-store")
-        .execute()
-        .await
-        .unwrap();
-    let table_names = db.table_names().execute().await.unwrap();
+) -> Result<lancedb::Table, AiServiceError> {
+    let dir = settings::get_settings_dir().await?.join("lancedb");
+
+    let db = match lancedb::connect(dir.to_str().unwrap()).execute().await {
+        Err(err) => {
+            return Err(AiServiceError::ConnectingToEmbeddingsDatabase(
+                err.to_string(),
+            ));
+        }
+        Ok(db) => db,
+    };
+    let table_names = match db.table_names().execute().await {
+        Err(err) => {
+            return Err(AiServiceError::ExecutingEmbeddingsDatabaseError(
+                err.to_string(),
+            ));
+        }
+        Ok(table_names) => table_names,
+    };
 
     if table_names.contains(&chat_id.to_string()) {
-        db.open_table(chat_id).execute().await.unwrap()
+        match db.open_table(chat_id).execute().await {
+            Err(err) => Err(AiServiceError::ExecutingEmbeddingsDatabaseError(
+                err.to_string(),
+            )),
+            Ok(table) => Ok(table),
+        }
     } else {
-        let empty_batch = RecordBatch::try_new(
-            schema.clone(),
-            vec![
-                Arc::new(StringArray::from(Vec::<&str>::new())) as ArrayRef,
-                Arc::new(StringArray::from(Vec::<&str>::new())) as ArrayRef,
-                Arc::new(
-                    FixedSizeListArray::from_iter_primitive::<Float64Type, _, _>(
-                        Vec::<Option<Vec<Option<f64>>>>::new(),
-                        dims as i32,
-                    ),
-                ) as ArrayRef,
-            ],
-        )
-        .unwrap();
-
-        let batches = RecordBatchIterator::new(vec![Ok(empty_batch)], schema);
-        db.create_table(chat_id, batches).execute().await.unwrap()
+        let empty_batch = to_record_batch_iterator(schema, dims, Vec::new());
+        match db.create_table(chat_id, empty_batch).execute().await {
+            Err(err) => Err(AiServiceError::ExecutingEmbeddingsDatabaseError(
+                err.to_string(),
+            )),
+            Ok(table) => Ok(table),
+        }
     }
 }
 
