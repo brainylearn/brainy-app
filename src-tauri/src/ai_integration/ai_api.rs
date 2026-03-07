@@ -147,7 +147,6 @@ pub async fn upload_document(
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     let service = scope.resolve::<AiService>().await;
-    // TODO: should create chat if chat id is null
     service.upload_document(path, chat_id).await?;
     scope.save_changes().await?;
     Ok(())

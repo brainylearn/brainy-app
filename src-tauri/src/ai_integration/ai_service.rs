@@ -60,6 +60,7 @@ use crate::{
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
 const DEFAULT_MAX_TURN: usize = 16;
+const EMBEDDINGS_DIMENSIONS: usize = 2560;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -263,7 +264,7 @@ impl AiService {
         let embed_model = self
             .get_multi_client()
             .await?
-            .embedding_model_with_ndims(embeddings_model_name, 2560);
+            .embedding_model_with_ndims(embeddings_model_name, EMBEDDINGS_DIMENSIONS);
         let dims = embed_model.ndims();
         let schema = Arc::new(Document::schema(dims));
         let table = get_or_create_lancedb_table(schema, dims, chat_id).await?;
@@ -339,7 +340,7 @@ impl AiService {
         let embed_model = self
             .get_multi_client()
             .await?
-            .embedding_model_with_ndims(embeddings_model_name, 2560);
+            .embedding_model_with_ndims(embeddings_model_name, EMBEDDINGS_DIMENSIONS);
 
         let mut embeddings_builder = EmbeddingsBuilder::new(embed_model.clone());
 

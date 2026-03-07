@@ -326,6 +326,7 @@ function AiChatWidgetInner() {
 						<PromptForm
 							isSendingRequest={isSendingRequest}
 							userPrompt={userPrompt}
+							selectedChatId={selectedChatId}
 							onUploadDocument={handleUploadDocument}
 							onSubmit={handleSubmit}
 							onUserPromptChange={setUserPrompt}

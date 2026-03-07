@@ -3,6 +3,7 @@ use std::sync::Arc;
 use async_stream::stream;
 use rig::{
     completion::{self, CompletionError, CompletionModel, CompletionRequest, CompletionResponse},
+    embeddings::EmbeddingModel,
     streaming::{RawStreamingChoice, StreamingCompletionResponse},
 };
 
@@ -19,11 +20,18 @@ type StreamFn = dyn Send
         CompletionRequest,
     ) -> Result<Option<RawStreamingChoice<MultiStreamingResponse>>, CompletionError>;
 
+type EmbedTextsFn = dyn Send
+    + Sync
+    + Fn(Vec<String>) -> Result<Vec<rig::embeddings::Embedding>, rig::embeddings::EmbeddingError>;
+
 #[derive(Clone)]
 pub struct MockClient {
     pub model: Option<String>,
     pub completion_fn: Arc<Option<Box<CompletionFn>>>,
     pub stream_fn: Arc<Option<Box<StreamFn>>>,
+
+    pub embeddings_model_dims: Option<usize>,
+    pub embed_texts_fn: Arc<Option<Box<EmbedTextsFn>>>,
 }
 
 impl CompletionModel for MockClient {
@@ -74,5 +82,34 @@ impl CompletionModel for MockClient {
         };
 
         Ok(StreamingCompletionResponse::stream(Box::pin(stream)))
+    }
+}
+
+impl EmbeddingModel for MockClient {
+    const MAX_DOCUMENTS: usize = 1024;
+
+    type Client = MockClient;
+
+    fn make(client: &Self::Client, model: impl Into<String>, dims: Option<usize>) -> Self {
+        let mut new_client = client.clone();
+        new_client.model = Some(model.into());
+        new_client.embeddings_model_dims = dims;
+        new_client
+    }
+
+    fn ndims(&self) -> usize {
+        self.embeddings_model_dims
+            .expect("Number of dimensions are not specified")
+    }
+
+    async fn embed_texts(
+        &self,
+        texts: impl IntoIterator<Item = String> + rig::wasm_compat::WasmCompatSend,
+    ) -> Result<Vec<rig::embeddings::Embedding>, rig::embeddings::EmbeddingError> {
+        let texts = texts.into_iter().collect::<Vec<_>>();
+        match &*self.embed_texts_fn {
+            Some(embed_texts_fn) => embed_texts_fn(texts),
+            None => panic!("No embed texts function provided!"),
+        }
     }
 }

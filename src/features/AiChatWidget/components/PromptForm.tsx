@@ -10,6 +10,7 @@ import { useEffect, useRef } from "react";
 interface Props {
 	isSendingRequest: boolean;
 	userPrompt: string;
+	selectedChatId: string | null;
 	onTextAreaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 	onUserPromptChange: (value: string) => void;
 	onSubmit: (e: React.SubmitEvent) => void;
@@ -20,6 +21,7 @@ interface Props {
 export default function PromptForm({
 	isSendingRequest,
 	userPrompt,
+	selectedChatId,
 	onUserPromptChange,
 	onSubmit,
 	onStopGeneration,
@@ -65,7 +67,7 @@ export default function PromptForm({
 				className="transparent"
 				title="Upload document"
 				onClick={() => void handleUploadDocument()}
-				disabled={isSendingRequest}>
+				disabled={isSendingRequest || selectedChatId === null}>
 				<Icon path={mdiAttachment} size={1} />
 			</button>
 			{!isSendingRequest && (

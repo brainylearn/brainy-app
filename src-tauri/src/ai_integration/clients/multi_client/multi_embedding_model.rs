@@ -1,8 +1,5 @@
 use rig::embeddings::EmbeddingModel;
 
-#[cfg(test)]
-use rig::completion::CompletionModel;
-
 #[cfg(not(test))]
 use rig::providers::ollama;
 
@@ -30,7 +27,9 @@ impl EmbeddingModel for MultiEmbeddingModel {
                 MultiEmbeddingModel::Ollama(ollama::EmbeddingModel::make(client, model, dims))
             }
             #[cfg(test)]
-            MultiClient::Mock(client) => MultiEmbeddingModel::Mock(MockClient::make(client, model)),
+            MultiClient::Mock(client) => {
+                MultiEmbeddingModel::Mock(<MockClient as EmbeddingModel>::make(client, model, dims))
+            }
         }
     }
 
@@ -39,10 +38,7 @@ impl EmbeddingModel for MultiEmbeddingModel {
             #[cfg(not(test))]
             Self::Ollama(embedding_model) => embedding_model.ndims(),
             #[cfg(test)]
-            MultiEmbeddingModel::Mock(embedding_model) => {
-                // TODO:
-                todo!()
-            }
+            MultiEmbeddingModel::Mock(embedding_model) => embedding_model.ndims(),
         }
     }
 
@@ -54,10 +50,7 @@ impl EmbeddingModel for MultiEmbeddingModel {
             #[cfg(not(test))]
             Self::Ollama(embedding_model) => embedding_model.embed_texts(texts).await,
             #[cfg(test)]
-            MultiEmbeddingModel::Mock(embedding_model) => {
-                // TODO:
-                todo!()
-            }
+            MultiEmbeddingModel::Mock(embedding_model) => embedding_model.embed_texts(texts).await,
         }
     }
 }
