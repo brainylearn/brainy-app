@@ -17,7 +17,11 @@ import Message, {
 	MessageContentHumanAssistant,
 } from "../../../types/backend/entity/message";
 import errorToString from "../../../utils/errorToString";
-import { TEMP_ASSISTANT_MESSAGE_ID } from "../config/constants";
+import {
+	TEMP_ASSISTANT_MESSAGE_ID,
+	TEMP_CHAT_ID,
+	TEMP_HUMAN_MESSAGE_ID,
+} from "../config/constants";
 import Chat from "../../../types/backend/entity/chat";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 import useAppSelector from "../../../hooks/useAppSelector";
@@ -88,15 +92,15 @@ function AiChatWidgetInner() {
 		setMessages(messages => [
 			...messages,
 			{
-				chatId: selectedChatId ?? "tmp",
-				id: "tmp",
+				chatId: selectedChatId ?? TEMP_CHAT_ID,
+				id: TEMP_HUMAN_MESSAGE_ID,
 				content: {
 					type: "human",
 					value: userPrompt,
 				},
 			},
 			{
-				chatId: selectedChatId ?? "tmp",
+				chatId: selectedChatId ?? TEMP_CHAT_ID,
 				id: TEMP_ASSISTANT_MESSAGE_ID,
 				contentType: "assistant",
 				content: {
@@ -250,7 +254,7 @@ function AiChatWidgetInner() {
 		setMessages(messages => [
 			...messages,
 			{
-				id: "tmp",
+				id: TEMP_HUMAN_MESSAGE_ID,
 				chatId: selectedChatId,
 				content: {
 					type: "document",

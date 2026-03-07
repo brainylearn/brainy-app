@@ -107,6 +107,8 @@ pub enum AiServiceError {
     ConnectingToEmbeddingsDatabase(String),
     #[error("Error while executing command in embeddings database: {0}")]
     ExecutingEmbeddingsDatabaseError(String),
+    #[error("Error in embeddings database: {0}")]
+    LanceDbError(#[from] lancedb::Error),
 }
 
 impl From<String> for AiServiceError {
@@ -261,18 +263,14 @@ impl AiService {
         let model_name = self.get_model_name().await?;
         let embeddings_model_name = self.get_embeddings_model_name().await?;
 
-        let embed_model = self
-            .get_multi_client()
-            .await?
-            .embedding_model_with_ndims(embeddings_model_name, EMBEDDINGS_DIMENSIONS);
+        let embed_model =
+            client.embedding_model_with_ndims(embeddings_model_name, EMBEDDINGS_DIMENSIONS);
         let dims = embed_model.ndims();
         let schema = Arc::new(Document::schema(dims));
         let table = get_or_create_lancedb_table(schema, dims, chat_id).await?;
-
         let index = Arc::new(
             LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
-                .await
-                .unwrap(),
+                .await?,
         );
 
         let mut tools: Vec<Box<dyn ToolDyn>> = vec![Box::new(SearchDocuments::new(index))];
@@ -442,7 +440,11 @@ impl AiService {
 
     async fn get_embeddings_model_name(&self) -> Result<String, AiServiceError> {
         #[cfg(test)]
-        return Ok(self.mock_client.model.clone().unwrap_or_default());
+        return Ok(self
+            .mock_client
+            .embeddings_model
+            .clone()
+            .unwrap_or_default());
 
         #[cfg(not(test))]
         {

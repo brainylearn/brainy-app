@@ -93,7 +93,7 @@ impl EmbeddingModel for MockClient {
 
     fn make(client: &Self::Client, model: impl Into<String>, dims: Option<usize>) -> Self {
         let mut new_client = client.clone();
-        new_client.model = Some(model.into());
+        new_client.embeddings_model = Some(model.into());
         new_client.embeddings_model_dims = dims;
         new_client
     }
