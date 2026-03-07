@@ -8,7 +8,7 @@ import Icon from "@mdi/react";
 import { useEffect, useRef } from "react";
 
 interface Props {
-	isStreamingResponse: boolean;
+	isSendingRequest: boolean;
 	userPrompt: string;
 	onTextAreaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 	onUserPromptChange: (value: string) => void;
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function PromptForm({
-	isStreamingResponse,
+	isSendingRequest,
 	userPrompt,
 	onUserPromptChange,
 	onSubmit,
@@ -65,16 +65,16 @@ export default function PromptForm({
 				className="transparent"
 				title="Upload document"
 				onClick={() => void handleUploadDocument()}
-				disabled={isStreamingResponse}>
+				disabled={isSendingRequest}>
 				<Icon path={mdiAttachment} size={1} />
 			</button>
-			{!isStreamingResponse && (
+			{!isSendingRequest && (
 				<button className="transparent" title="Send">
 					<Icon path={mdiSendVariantOutline} size={1} />
 				</button>
 			)}
 
-			{isStreamingResponse && (
+			{isSendingRequest && (
 				<button
 					className="transparent"
 					title="Stop"

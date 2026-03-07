@@ -348,7 +348,6 @@ impl AiService {
         {
             let loader = PdfFileLoader::with_glob(path.to_str().unwrap())?;
 
-            // TODO: split
             let pages = loader
                 .load_with_path()
                 .ignore_errors()

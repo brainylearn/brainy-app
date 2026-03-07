@@ -17,10 +17,7 @@ import Message, {
 	MessageContentHumanAssistant,
 } from "../../../types/backend/entity/message";
 import errorToString from "../../../utils/errorToString";
-import {
-	NEW_SESSION_CHAT_ID,
-	TEMP_ASSISTANT_MESSAGE_ID,
-} from "../config/constants";
+import { TEMP_ASSISTANT_MESSAGE_ID } from "../config/constants";
 import Chat from "../../../types/backend/entity/chat";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 import useAppSelector from "../../../hooks/useAppSelector";
@@ -38,20 +35,17 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
-// TODO: show message when use uploads file (live)
+// TODO: stop button when uploading file
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
 	const [showRenameDialog, setShowRenameDialog] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
-	// TODO: used for more than streaming, for uploading document
-	const [isStreamingResponse, setIsStreamingResponse] = useState(false);
+	const [isSendingRequest, setIsSendingRequest] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [chats, setChats] = useState<Chat[]>([]);
-	// TODO: when nothing is selected set null
-	const [selectedChatId, setSelectedChatId] =
-		useState<string>(NEW_SESSION_CHAT_ID);
+	const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 	// Used to have reference to the same selected chat id, useful for streaming.
 	const selectedChatIdRef = useRef(selectedChatId);
 	const [searchParams] = useSearchParams();
@@ -70,17 +64,16 @@ function AiChatWidgetInner() {
 
 	const stopAiGeneration = useCallback(async () => {
 		await stopAiGenerationApi();
-		setIsStreamingResponse(false);
 	}, []);
 
-	const handleChangeSelectedChatId = async (newChatId: string) => {
+	const handleChangeSelectedChatId = async (newChatId: string | null) => {
 		if (newChatId !== selectedChatId) {
 			setErrorMessage("");
 			setSelectedChatId(newChatId);
 			await stopAiGeneration();
 		}
 
-		if (newChatId === NEW_SESSION_CHAT_ID) {
+		if (newChatId === null) {
 			setMessages([]);
 		} else {
 			setMessages(await getChatMessagesOrdered(newChatId));
@@ -88,10 +81,10 @@ function AiChatWidgetInner() {
 	};
 
 	const sendMessage = async () => {
-		if (!userPrompt.trim() || isStreamingResponse) return;
+		if (!userPrompt.trim() || isSendingRequest) return;
 
 		setErrorMessage("");
-		setIsStreamingResponse(true);
+		setIsSendingRequest(true);
 		setMessages(messages => [
 			...messages,
 			{
@@ -169,10 +162,7 @@ function AiChatWidgetInner() {
 			await streamAiResponse(
 				{
 					prompt: userPrompt,
-					chatId:
-						selectedChatId === NEW_SESSION_CHAT_ID
-							? null
-							: selectedChatId,
+					chatId: selectedChatId,
 					fileId: selectedFileId,
 				},
 				onEvent,
@@ -180,7 +170,7 @@ function AiChatWidgetInner() {
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 		} finally {
-			if (selectedChatIdRef.current === NEW_SESSION_CHAT_ID) {
+			if (selectedChatIdRef.current === null) {
 				setMessages([]);
 				setUserPrompt(userPrompt);
 			} else {
@@ -188,12 +178,14 @@ function AiChatWidgetInner() {
 					await getChatMessagesOrdered(selectedChatIdRef.current),
 				);
 			}
-			setIsStreamingResponse(false);
+			setIsSendingRequest(false);
 		}
 	};
 
 	const handleToolCallUpdate = async () => {
-		setMessages(await getChatMessagesOrdered(selectedChatId));
+		if (selectedChatId !== null) {
+			setMessages(await getChatMessagesOrdered(selectedChatId));
+		}
 	};
 
 	const handleSubmit = (e: React.SubmitEvent) => {
@@ -223,8 +215,10 @@ function AiChatWidgetInner() {
 	}, [stopAiGeneration]);
 
 	const handleDelete = async () => {
+		if (selectedChatId === null) return;
+
 		await deleteAiChat(selectedChatId);
-		await handleChangeSelectedChatId(NEW_SESSION_CHAT_ID);
+		await handleChangeSelectedChatId(null);
 		setErrorMessage("");
 		setShowDeleteChatDialog(false);
 		setChats(await getAllAiChatsSortedByDateDesc());
@@ -234,6 +228,8 @@ function AiChatWidgetInner() {
 		e: React.SubmitEvent,
 		newTitle: string,
 	) => {
+		if (selectedChatId === null) return;
+
 		e.stopPropagation();
 		e.preventDefault();
 		setShowRenameDialog(false);
@@ -247,8 +243,7 @@ function AiChatWidgetInner() {
 	};
 
 	const handleUploadDocument = async (path: string) => {
-		const chatId =
-			selectedChatId === NEW_SESSION_CHAT_ID ? null : selectedChatId;
+		if (selectedChatId === null) return;
 
 		const fileName = path.replace(/^.*[/\\]/, "");
 
@@ -256,7 +251,7 @@ function AiChatWidgetInner() {
 			...messages,
 			{
 				id: "tmp",
-				chatId: chatId,
+				chatId: selectedChatId,
 				content: {
 					type: "document",
 					value: {
@@ -265,17 +260,19 @@ function AiChatWidgetInner() {
 				},
 			} as Message,
 		]);
-		setIsStreamingResponse(true);
+		setIsSendingRequest(true);
 
 		try {
-			await uploadDocument(path, chatId);
+			await uploadDocument(path, selectedChatId);
 		} catch (e) {
 			setErrorMessage(errorToString(e));
 		} finally {
-			setMessages(
-				await getChatMessagesOrdered(selectedChatIdRef.current),
-			);
-			setIsStreamingResponse(false);
+			if (selectedChatIdRef.current !== null) {
+				setMessages(
+					await getChatMessagesOrdered(selectedChatIdRef.current),
+				);
+			}
+			setIsSendingRequest(false);
 		}
 	};
 
@@ -320,14 +317,14 @@ function AiChatWidgetInner() {
 						<Messages
 							messages={messages}
 							errorMessage={errorMessage}
-							isStreamingResponse={isStreamingResponse}
+							isSendingRequest={isSendingRequest}
 							selectedChatId={selectedChatId}
 							onToolCallUpdate={handleToolCallUpdate}
 							onCloseError={() => setErrorMessage("")}
 						/>
 
 						<PromptForm
-							isStreamingResponse={isStreamingResponse}
+							isSendingRequest={isSendingRequest}
 							userPrompt={userPrompt}
 							onUploadDocument={handleUploadDocument}
 							onSubmit={handleSubmit}

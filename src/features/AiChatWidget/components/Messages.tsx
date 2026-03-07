@@ -10,16 +10,16 @@ import Icon from "@mdi/react";
 
 interface Props {
 	messages: Message[];
-	isStreamingResponse: boolean;
+	isSendingRequest: boolean;
 	errorMessage: string;
-	selectedChatId: string;
+	selectedChatId: string | null;
 	onToolCallUpdate: () => Promise<void>;
 	onCloseError: () => void;
 }
 
 export default function Messages({
 	messages,
-	isStreamingResponse,
+	isSendingRequest,
 	errorMessage,
 	selectedChatId,
 	onToolCallUpdate,
@@ -73,7 +73,7 @@ export default function Messages({
 					)}
 					{message.content.type === "toolCall" && (
 						<ToolCallDisplay
-							isStreamingResponse={isStreamingResponse}
+							isSendingRequest={isSendingRequest}
 							message={message}
 							onUpdate={onToolCallUpdate}
 						/>
@@ -92,7 +92,7 @@ export default function Messages({
 						</div>
 					)}
 
-					{isStreamingResponse && i === messages.length - 1 && (
+					{isSendingRequest && i === messages.length - 1 && (
 						<div className={styles.spinner}></div>
 					)}
 				</div>
