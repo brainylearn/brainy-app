@@ -5,6 +5,8 @@ import ToolCallDisplay from "./ToolCallDisplay";
 import Markdown from "react-markdown";
 import Alert from "../../../components/Alert/Alert";
 import { AUTO_SCROLL_THRESHOLD } from "../config/constants";
+import { mdiFileDocumentOutline } from "@mdi/js";
+import Icon from "@mdi/react";
 
 interface Props {
 	messages: Message[];
@@ -59,7 +61,12 @@ export default function Messages({
 			{messages.map((message, i) => (
 				<div
 					key={i}
-					className={`${styles.message} ${styles[message.content.type]}`}>
+					className={`${styles.message} ${
+						message.content.type === "human" ||
+						message.content.type === "document"
+							? styles.human
+							: styles.assistant
+					}`}>
 					{(message.content.type === "human" ||
 						message.content.type == "assistant") && (
 						<Markdown>{message.content.value}</Markdown>
@@ -71,6 +78,20 @@ export default function Messages({
 							onUpdate={onToolCallUpdate}
 						/>
 					)}
+					{message.content.type === "document" && (
+						<div
+							className={styles.document}
+							title="Uploaded document">
+							<div className={styles.icon}>
+								<Icon
+									path={mdiFileDocumentOutline}
+									size={1.6}
+								/>
+							</div>
+							<p>{message.content.value.fileName}</p>
+						</div>
+					)}
+
 					{isStreamingResponse && i === messages.length - 1 && (
 						<div className={styles.spinner}></div>
 					)}

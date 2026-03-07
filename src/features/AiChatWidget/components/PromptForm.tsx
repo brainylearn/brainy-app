@@ -6,26 +6,25 @@ import {
 } from "@mdi/js";
 import Icon from "@mdi/react";
 import { useEffect, useRef } from "react";
-import { uploadDocument } from "../../../api/aiApi";
 
 interface Props {
 	isStreamingResponse: boolean;
 	userPrompt: string;
-	chatId: string | null;
 	onTextAreaKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 	onUserPromptChange: (value: string) => void;
 	onSubmit: (e: React.SubmitEvent) => void;
 	onStopGeneration: () => Promise<void>;
+	onUploadDocument: (path: string) => Promise<void>;
 }
 
 export default function PromptForm({
 	isStreamingResponse,
 	userPrompt,
-	chatId,
 	onUserPromptChange,
 	onSubmit,
 	onStopGeneration,
 	onTextAreaKeyDown,
+	onUploadDocument,
 }: Props) {
 	const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -43,13 +42,12 @@ export default function PromptForm({
 
 	const handleUploadDocument = async () => {
 		// TODO: unit test
-		// TODO: show spinner for loading
 		const path = await open({
 			directory: false,
 		});
 
 		if (!path) return;
-		await uploadDocument(path, chatId);
+		await onUploadDocument(path);
 	};
 
 	return (

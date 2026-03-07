@@ -11,6 +11,7 @@ import {
 	renameAiChat,
 	stopAiGeneration as stopAiGenerationApi,
 	streamAiResponse,
+	uploadDocument,
 } from "../../../api/aiApi";
 import Message, {
 	MessageContentHumanAssistant,
@@ -37,18 +38,18 @@ export default function AiChatWidget() {
 	return settings?.enableAi ? <AiChatWidgetInner /> : null;
 }
 
-// TODO: show message when use uploads file
-// TODO: handle new chat situation when uploading ifles
-// TODO: show spinner when file is uploaded
+// TODO: show message when use uploads file (live)
 function AiChatWidgetInner() {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
 	const [showRenameDialog, setShowRenameDialog] = useState(false);
 	const [userPrompt, setUserPrompt] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
+	// TODO: used for more than streaming, for uploading document
 	const [isStreamingResponse, setIsStreamingResponse] = useState(false);
 	const [messages, setMessages] = useState<Message[]>([]);
 	const [chats, setChats] = useState<Chat[]>([]);
+	// TODO: when nothing is selected set null
 	const [selectedChatId, setSelectedChatId] =
 		useState<string>(NEW_SESSION_CHAT_ID);
 	// Used to have reference to the same selected chat id, useful for streaming.
@@ -245,6 +246,39 @@ function AiChatWidgetInner() {
 		}
 	};
 
+	const handleUploadDocument = async (path: string) => {
+		const chatId =
+			selectedChatId === NEW_SESSION_CHAT_ID ? null : selectedChatId;
+
+		const fileName = path.replace(/^.*[/\\]/, "");
+
+		setMessages(messages => [
+			...messages,
+			{
+				id: "tmp",
+				chatId: chatId,
+				content: {
+					type: "document",
+					value: {
+						fileName: fileName,
+					},
+				},
+			} as Message,
+		]);
+		setIsStreamingResponse(true);
+
+		try {
+			await uploadDocument(path, chatId);
+		} catch (e) {
+			setErrorMessage(errorToString(e));
+		} finally {
+			setMessages(
+				await getChatMessagesOrdered(selectedChatIdRef.current),
+			);
+			setIsStreamingResponse(false);
+		}
+	};
+
 	return (
 		<>
 			{showDeleteChatDialog && (
@@ -295,11 +329,7 @@ function AiChatWidgetInner() {
 						<PromptForm
 							isStreamingResponse={isStreamingResponse}
 							userPrompt={userPrompt}
-							chatId={
-								selectedChatId === NEW_SESSION_CHAT_ID
-									? null
-									: selectedChatId
-							}
+							onUploadDocument={handleUploadDocument}
 							onSubmit={handleSubmit}
 							onUserPromptChange={setUserPrompt}
 							onStopGeneration={stopAiGeneration}
