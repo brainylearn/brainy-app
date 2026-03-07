@@ -1,35 +1,36 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use arrow_array::types::Float64Type;
-use arrow_array::{ArrayRef, FixedSizeListArray, RecordBatch, RecordBatchIterator, StringArray};
 use injector_derive::ScopeInjectable;
-use lancedb::arrow::arrow_schema::{ArrowError, Schema};
-use rig::OneOrMany;
 use rig::client::EmbeddingsClient;
 #[cfg(not(test))]
 use rig::client::{Nothing, ProviderClient};
-use rig::embeddings::{EmbedError, Embedding, EmbeddingError, EmbeddingModel, EmbeddingsBuilder};
+use rig::embeddings::{EmbedError, EmbeddingError, EmbeddingsBuilder};
 use rig::loaders::PdfFileLoader;
 use rig::loaders::file::FileLoaderError;
 use rig::loaders::pdf::PdfLoaderError;
 #[cfg(not(test))]
 use rig::providers::ollama;
 use rig::tool::{Tool, ToolDyn};
+use rig::vector_store::VectorStoreError;
 use rig::{
     agent::{Agent, MultiTurnStreamItem, StreamingError, Text},
     client::CompletionClient,
     completion::PromptError,
     streaming::{StreamedAssistantContent, StreamingChat},
 };
-use rig_lancedb::{LanceDbVectorIndex, SearchParams};
+use rig_sqlite::SqliteVectorStore;
 use serde::Serialize;
+use sqlite_vec::sqlite3_vec_init;
 use thiserror::Error;
 use tokio::sync::Mutex;
+use tokio_rusqlite::Connection;
+use tokio_rusqlite::ffi::{sqlite3, sqlite3_api_routines, sqlite3_auto_extension};
 use tokio_stream::StreamExt;
 
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
+use crate::ai_integration::clients::multi_client::multi_embedding_model::MultiEmbeddingModel;
 use crate::ai_integration::document::Document;
 use crate::ai_integration::entities::message::{self, ToolCallStatus};
 use crate::ai_integration::prompts::{PREAMBLE_BASE, PREAMBLE_GENERATE_TITLE, PREAMBLE_NO_FILE};
@@ -57,6 +58,9 @@ use crate::{
     common::repository_error::RepositoryError,
     settings::Settings,
 };
+
+type SqliteExtensionFn =
+    unsafe extern "C" fn(*mut sqlite3, *mut *mut i8, *const sqlite3_api_routines) -> i32;
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
 const DEFAULT_MAX_TURN: usize = 16;
@@ -99,16 +103,12 @@ pub enum AiServiceError {
     EmbedError(#[from] EmbedError),
     #[error("Embedding error: {0}")]
     EmbeddingError(#[from] EmbeddingError),
-    #[error("Add embedding error: {0}")]
-    AddEmbeddingError(String),
     #[error("{0}")]
     SettingsError(#[from] SettingsError),
     #[error("Error connecting to embeddings database")]
     ConnectingToEmbeddingsDatabase(String),
-    #[error("Error while executing command in embeddings database: {0}")]
-    ExecutingEmbeddingsDatabaseError(String),
-    #[error("Error in embeddings database: {0}")]
-    LanceDbError(#[from] lancedb::Error),
+    #[error("{0}")]
+    VectorStoreError(#[from] VectorStoreError),
 }
 
 impl From<String> for AiServiceError {
@@ -263,17 +263,14 @@ impl AiService {
         let model_name = self.get_model_name().await?;
         let embeddings_model_name = self.get_embeddings_model_name().await?;
 
-        let embed_model =
-            client.embedding_model_with_ndims(embeddings_model_name, EMBEDDINGS_DIMENSIONS);
-        let dims = embed_model.ndims();
-        let schema = Arc::new(Document::schema(dims));
-        let table = get_or_create_lancedb_table(schema, dims, chat_id).await?;
-        let index = Arc::new(
-            LanceDbVectorIndex::new(table, embed_model.clone(), "id", SearchParams::default())
-                .await?,
-        );
+        let embed_model = self
+            .get_multi_client()
+            .await?
+            .embedding_model_with_ndims(embeddings_model_name, EMBEDDINGS_DIMENSIONS);
+        let vector_store = get_sqlite_vector_store(&embed_model).await?;
+        let index = Arc::new(vector_store.index(embed_model));
 
-        let mut tools: Vec<Box<dyn ToolDyn>> = vec![Box::new(SearchDocuments::new(index))];
+        let mut tools: Vec<Box<dyn ToolDyn>> = vec![Box::new(SearchDocuments::new(index, chat_id))];
 
         let mut builder = client
             .agent(&model_name)
@@ -357,8 +354,9 @@ impl AiService {
                 .filter_map(|v| v.ok())
                 .enumerate()
                 .map(|(i, page)| Document {
-                    content: page,
                     id: format!("page_{}", i),
+                    content: page,
+                    chat_id,
                 })
                 .collect::<Vec<_>>();
 
@@ -367,14 +365,8 @@ impl AiService {
 
         let embeddings = embeddings_builder.build().await?;
 
-        let dims = embed_model.ndims();
-        let schema = Arc::new(Document::schema(dims));
-        let batches = to_record_batch_iterator(schema.clone(), dims, embeddings);
-        let table = get_or_create_lancedb_table(schema, dims, chat_id).await?;
-
-        if let Err(err) = table.add(Box::new(batches)).execute().await {
-            return Err(AiServiceError::AddEmbeddingError(err.to_string()));
-        }
+        let vector_store = get_sqlite_vector_store(&embed_model).await?;
+        vector_store.add_rows(embeddings).await.unwrap();
 
         self.ai_repository
             .upsert_message(&Message::new(
@@ -472,84 +464,25 @@ impl AiService {
     }
 }
 
-fn to_record_batch_iterator(
-    schema: Arc<Schema>,
-    dims: usize,
-    embeddings: Vec<(Document, OneOrMany<Embedding>)>,
-) -> RecordBatchIterator<Vec<Result<RecordBatch, ArrowError>>> {
-    let ids: Vec<String> = embeddings
-        .iter()
-        .flat_map(|e| (0..e.1.len()).map(|i| format!("{}-{i}", e.0.id)))
-        .collect();
-
-    let contents: Vec<String> = embeddings
-        .iter()
-        .flat_map(|e| e.1.iter().map(|emb| emb.document.clone()))
-        .collect();
-
-    let vecs: Vec<Option<Vec<Option<f64>>>> = embeddings
-        .iter()
-        .flat_map(|e| {
-            e.1.iter()
-                .map(|emb| Some(emb.vec.iter().map(|&x| Some(x)).collect()))
-        })
-        .collect();
-
-    let record_batch = RecordBatch::try_new(
-        schema.clone(),
-        vec![
-            Arc::new(StringArray::from(ids)) as ArrayRef,
-            Arc::new(StringArray::from(contents)) as ArrayRef,
-            Arc::new(
-                FixedSizeListArray::from_iter_primitive::<Float64Type, _, _>(vecs, dims as i32),
-            ) as ArrayRef,
-        ],
-    )
-    .unwrap();
-
-    RecordBatchIterator::new(vec![Ok(record_batch)], schema)
-}
-
-async fn get_or_create_lancedb_table(
-    schema: Arc<Schema>,
-    dims: usize,
-    chat_id: Guid,
-) -> Result<lancedb::Table, AiServiceError> {
-    let dir = settings::get_settings_dir().await?.join("lancedb");
-
-    let db = match lancedb::connect(dir.to_str().unwrap()).execute().await {
+async fn get_sqlite_vector_store(
+    embed_model: &MultiEmbeddingModel,
+) -> Result<SqliteVectorStore<MultiEmbeddingModel, Document>, AiServiceError> {
+    unsafe {
+        sqlite3_auto_extension(Some(std::mem::transmute::<*const (), SqliteExtensionFn>(
+            sqlite3_vec_init as *const (),
+        )));
+    }
+    let settings_dir = settings::get_settings_dir().await?;
+    let path = settings_dir.join("vector_store.db");
+    let conn = match Connection::open(path.to_str().unwrap()).await {
         Err(err) => {
             return Err(AiServiceError::ConnectingToEmbeddingsDatabase(
                 err.to_string(),
             ));
         }
-        Ok(db) => db,
+        Ok(conn) => conn,
     };
-    let table_names = match db.table_names().execute().await {
-        Err(err) => {
-            return Err(AiServiceError::ExecutingEmbeddingsDatabaseError(
-                err.to_string(),
-            ));
-        }
-        Ok(table_names) => table_names,
-    };
-
-    if table_names.contains(&chat_id.to_string()) {
-        match db.open_table(chat_id).execute().await {
-            Err(err) => Err(AiServiceError::ExecutingEmbeddingsDatabaseError(
-                err.to_string(),
-            )),
-            Ok(table) => Ok(table),
-        }
-    } else {
-        let empty_batch = to_record_batch_iterator(schema, dims, Vec::new());
-        match db.create_table(chat_id, empty_batch).execute().await {
-            Err(err) => Err(AiServiceError::ExecutingEmbeddingsDatabaseError(
-                err.to_string(),
-            )),
-            Ok(table) => Ok(table),
-        }
-    }
+    Ok(SqliteVectorStore::new(conn, embed_model).await?)
 }
 
 #[cfg(test)]

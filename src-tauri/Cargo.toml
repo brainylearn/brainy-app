@@ -19,8 +19,6 @@ prost-build = "0.14.3"
 tauri-build = { version = "2.5.5", features = [] }
 
 [dependencies]
-anyhow = "1.0.102"
-arrow-array = "56.2"
 async-stream = "0.3.6"
 async-trait = "0.1.89"
 base64 = "0.22.1"
@@ -30,7 +28,6 @@ dirs = "6.0.0"
 injector = { path = "./injector" }
 injector_derive = { path="./injector_derive" }
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
-lancedb = "0.23.1"
 log = "0.4.29"
 lol_html = "2.7.2"
 markdown = "1.0.0"
@@ -41,13 +38,14 @@ reqwest = { version = "0.13.2", features = ["json", "cookies", "query"] }
 reqwest-middleware = { version = "0.5.1", features = ["json", "query"] }
 reqwest-retry = "0.9.1"
 reqwest_cookie_store = "0.10.0"
-rig-core = { version = "0.31.0", features = ["pdf", "derive"] }
-rig-lancedb = "0.3.0"
+rig-core = { version = "0.32.0", features = ["pdf", "derive"] }
+rig-sqlite = "0.2.1"
 schemars = "1.2.1"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_repr = "0.1.20"
 simple_logger = "5.2.0"
+sqlite-vec = "0.1.6"
 sqlx = { version = "0.8.6", features = [ "runtime-tokio", "tls-native-tls", "macros", "sqlite", "chrono", "uuid" ] }
 tauri = { version = "2.10.2", features = ["test"] }
 tauri-plugin-clipboard-manager = "2"
@@ -56,6 +54,7 @@ tauri-plugin-opener = "2.5.3"
 tauri-plugin-process = "2.3.1"
 thiserror = "2.0.18"
 tokio = { version = "1.49.0", features = ["full"] }
+tokio-rusqlite = "0.6.0"
 tokio-stream = "0.1.18"
 uuid = { version = "1.21.0", features = [ "v4", "serde" ] }
 

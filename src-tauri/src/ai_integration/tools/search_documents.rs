@@ -3,15 +3,21 @@ use std::sync::Arc;
 use rig::{
     completion::ToolDefinition,
     tool::Tool,
-    vector_store::{VectorSearchRequest, VectorStoreError, VectorStoreIndex},
+    vector_store::{
+        VectorSearchRequest, VectorStoreError, VectorStoreIndex, request::SearchFilter,
+    },
 };
-use rig_lancedb::LanceDbVectorIndex;
+use rig_sqlite::{SqliteSearchFilter, SqliteVectorIndex};
 use schemars::schema_for;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::ai_integration::{
-    clients::multi_client::multi_embedding_model::MultiEmbeddingModel, document::Document,
+use crate::{
+    Guid,
+    ai_integration::{
+        clients::multi_client::multi_embedding_model::MultiEmbeddingModel,
+        document::{CHAT_ID_COLUMN_NAME, Document},
+    },
 };
 
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
@@ -33,12 +39,16 @@ pub enum SearchDocumentsError {
 }
 
 pub struct SearchDocuments {
-    pub index: Arc<LanceDbVectorIndex<MultiEmbeddingModel>>,
+    chat_id: Guid,
+    index: Arc<SqliteVectorIndex<MultiEmbeddingModel, Document>>,
 }
 
 impl SearchDocuments {
-    pub fn new(index: Arc<LanceDbVectorIndex<MultiEmbeddingModel>>) -> Self {
-        Self { index }
+    pub fn new(
+        index: Arc<SqliteVectorIndex<MultiEmbeddingModel, Document>>,
+        chat_id: Guid,
+    ) -> Self {
+        Self { index, chat_id }
     }
 }
 
@@ -64,22 +74,28 @@ impl Tool for SearchDocuments {
 
     // TODO: unit test
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
-        let request = match VectorSearchRequest::builder()
-            .query(args.query)
+        let filter = SqliteSearchFilter::eq(
+            CHAT_ID_COLUMN_NAME,
+            serde_json::to_value(self.chat_id.to_string()).unwrap(),
+        );
+
+        let req = match VectorSearchRequest::builder()
             .samples(args.top_k)
+            .query(args.query)
+            .filter(filter)
             .build()
         {
+            Ok(req) => req,
             Err(err) => return Err(SearchDocumentsError::SearchQueryError(err)),
-            Ok(request) => request,
         };
 
         let results = self
             .index
-            .top_n::<Document>(request)
+            .top_n::<Document>(req)
             .await?
             .into_iter()
             .map(|(_, _, document)| document)
-            .collect();
+            .collect::<Vec<_>>();
 
         Ok(results)
     }

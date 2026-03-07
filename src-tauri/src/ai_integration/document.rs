@@ -1,29 +1,41 @@
-use std::sync::Arc;
-
-use lancedb::arrow::arrow_schema::{DataType, Field, Fields, Schema};
 use rig::Embed;
+use rig_sqlite::{Column, ColumnValue, SqliteVectorStoreTable};
 use serde::{Deserialize, Serialize};
+
+use crate::Guid;
+
+pub const CHAT_ID_COLUMN_NAME: &str = "chat_id";
 
 #[derive(Embed, Clone, Debug, Serialize, Deserialize)]
 pub struct Document {
     pub id: String,
+    pub chat_id: Guid,
     #[embed]
     pub content: String,
 }
 
-impl Document {
-    pub fn schema(dims: usize) -> Schema {
-        Schema::new(Fields::from(vec![
-            Field::new("id", DataType::Utf8, false),
-            Field::new("content", DataType::Utf8, false),
-            Field::new(
-                "embedding",
-                DataType::FixedSizeList(
-                    Arc::new(Field::new("item", DataType::Float64, true)),
-                    dims as i32,
-                ),
-                false,
-            ),
-        ]))
+impl SqliteVectorStoreTable for Document {
+    fn name() -> &'static str {
+        "documents"
+    }
+
+    fn schema() -> Vec<Column> {
+        vec![
+            Column::new("id", "TEXT PRIMARY KEY"),
+            Column::new(CHAT_ID_COLUMN_NAME, "TEXT NOT NULL"),
+            Column::new("content", "TEXT"),
+        ]
+    }
+
+    fn id(&self) -> String {
+        self.id.clone()
+    }
+
+    fn column_values(&self) -> Vec<(&'static str, Box<dyn ColumnValue>)> {
+        vec![
+            ("id", Box::new(self.id.clone())),
+            ("content", Box::new(self.content.clone())),
+            (CHAT_ID_COLUMN_NAME, Box::new(self.chat_id.to_string())),
+        ]
     }
 }
