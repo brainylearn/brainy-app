@@ -24,12 +24,13 @@ type EmbedTextsFn = dyn Send
     + Sync
     + Fn(Vec<String>) -> Result<Vec<rig::embeddings::Embedding>, rig::embeddings::EmbeddingError>;
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct MockClient {
     pub model: Option<String>,
     pub completion_fn: Arc<Option<Box<CompletionFn>>>,
     pub stream_fn: Arc<Option<Box<StreamFn>>>,
 
+    pub embeddings_model: Option<String>,
     pub embeddings_model_dims: Option<usize>,
     pub embed_texts_fn: Arc<Option<Box<EmbedTextsFn>>>,
 }

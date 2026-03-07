@@ -619,7 +619,6 @@ pub mod tests {
         let sent_stream_answer = AtomicBool::new(false);
 
         let mock_client = MockClient {
-            model: None,
             completion_fn: Arc::new(Some(Box::new(|request| {
                 if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
@@ -655,6 +654,7 @@ pub mod tests {
 
                 Ok(None)
             }))),
+            ..Default::default()
         };
 
         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
@@ -734,7 +734,6 @@ pub mod tests {
         let valid_request_clone = valid_request.clone();
 
         let mock_client = MockClient {
-            model: None,
             completion_fn: Arc::new(Some(Box::new(|_| {
                 let tool_call = AssistantContent::tool_call(
                     "id",
@@ -755,14 +754,16 @@ pub mod tests {
                 if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
-                    && request.tools.len() == 1
-                    && request.tools.first().unwrap().name == CreateFlashCard::NAME
+                    // Two tools, one for searching documents and one for creating flash cards.
+                    && request.tools.len() == 2
+                    && request.tools.iter().any(|tool| tool.name == CreateFlashCard::NAME)
                 {
                     valid_request_clone.store(true, Ordering::Relaxed);
                 }
 
                 Ok(None)
             }))),
+            ..Default::default()
         };
 
         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
@@ -795,7 +796,6 @@ pub mod tests {
         let valid_request_clone = valid_request.clone();
 
         let mock_client = MockClient {
-            model: None,
             completion_fn: Arc::new(Some(Box::new(|_| {
                 let tool_call = AssistantContent::tool_call(
                     "id",
@@ -816,13 +816,15 @@ pub mod tests {
                 if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
                     && text.text() == "User prompt"
-                    && request.tools.is_empty()
+                    // Only one tool for searching documents.
+                    && request.tools.len() == 1
                 {
                     valid_request_clone.store(true, Ordering::Relaxed);
                 }
 
                 Ok(None)
             }))),
+            ..Default::default()
         };
 
         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
@@ -856,7 +858,6 @@ pub mod tests {
         let ai_state_clone = ai_state.clone();
 
         let mock_client = MockClient {
-            model: None,
             completion_fn: Arc::new(Some(Box::new(|request| {
                 if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
@@ -895,6 +896,7 @@ pub mod tests {
 
                 Ok(None)
             }))),
+            ..Default::default()
         };
 
         let injector = get_test_dependencies(mock_client, ai_state).await;
@@ -937,7 +939,6 @@ pub mod tests {
         let sent_stream_answer = AtomicBool::new(false);
 
         let mock_client = MockClient {
-            model: None,
             completion_fn: Arc::new(Some(Box::new(|request| {
                 if let RigMessage::User { content } = request.chat_history.last()
                     && let UserContent::Text(text) = content.last()
@@ -977,6 +978,7 @@ pub mod tests {
 
                 Ok(None)
             }))),
+            ..Default::default()
         };
 
         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;
@@ -1032,7 +1034,6 @@ pub mod tests {
         // Arrange
 
         let mock_client = MockClient {
-            model: None,
             completion_fn: Arc::new(Some(Box::new(|_| {
                 let tool_call = AssistantContent::tool_call(
                     "id",
@@ -1049,7 +1050,7 @@ pub mod tests {
                     message_id: None,
                 }
             }))),
-            stream_fn: Arc::new(Some(Box::new(move |_| Ok(None)))),
+            ..Default::default()
         };
 
         let injector = get_test_dependencies(mock_client, Arc::new(AiState::default())).await;

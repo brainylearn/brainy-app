@@ -37,8 +37,10 @@ impl EmbeddingsClient for MultiClient {
             }
             #[cfg(test)]
             MultiClient::Mock(client) => {
-                // TODO:
-                todo!()
+                let mut client = client.clone();
+                client.embeddings_model = Some(model.into());
+                client.embeddings_model_dims = None;
+                MultiEmbeddingModel::Mock(client)
             }
         }
     }
@@ -55,8 +57,10 @@ impl EmbeddingsClient for MultiClient {
             }
             #[cfg(test)]
             MultiClient::Mock(client) => {
-                // TODO:
-                todo!()
+                let mut client = client.clone();
+                client.embeddings_model_dims = Some(ndims);
+                client.embeddings_model = Some(model.into());
+                MultiEmbeddingModel::Mock(client)
             }
         }
     }
