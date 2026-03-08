@@ -318,7 +318,6 @@ impl AiService {
         Ok(())
     }
 
-    // TODO: unit test
     pub async fn upload_document(
         &self,
         path: impl Into<PathBuf>,
