@@ -477,12 +477,16 @@ async fn get_sqlite_vector_store(
 
 #[cfg(test)]
 pub mod tests {
-    use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    use std::{
+        iter,
+        sync::atomic::{AtomicBool, AtomicU32, Ordering},
+    };
 
     use injector::{injector::Injector, register_scope};
     use rig::{
         OneOrMany,
         completion::{CompletionError, CompletionResponse, Usage},
+        embeddings::Embedding,
         message::{AssistantContent, Message as RigMessage, UserContent},
         streaming::RawStreamingChoice,
     };
@@ -490,9 +494,12 @@ pub mod tests {
     use crate::{
         ROOT_FOLDER_ID,
         ai_integration::{
-            clients::multi_client::multi_response::MultiResponse, entities::message::ToolCall,
+            clients::multi_client::multi_response::MultiResponse,
+            entities::message::ToolCall,
             repositories::sqlite_ai_repository::SqliteAiRepository,
-            tools::create_flash_card::CreateFlashcardArgs,
+            tools::{
+                create_flash_card::CreateFlashcardArgs, search_documents::SearchDocumentsArgs,
+            },
         },
         cells::repositories::{
             sqlite_cell_repository::SqliteCellRepository,
@@ -1048,5 +1055,88 @@ pub mod tests {
         } else {
             panic!();
         }
+    }
+
+    #[tokio::test]
+    pub async fn upload_document_pdf_file_uploaded_file_and_added_message() {
+        // Arrange
+
+        let mock_client = MockClient {
+            embeddings_model_dims: Some(EMBEDDINGS_DIMENSIONS),
+            embed_texts_fn: Arc::new(Some(Box::new(move |request| {
+                if request.len() == 1 && request[0].trim() == "Page 1 content" {
+                    let embeddings = Embedding {
+                        document: String::new(),
+                        vec: iter::once(12f64)
+                            .chain(iter::repeat_n(0f64, EMBEDDINGS_DIMENSIONS - 1))
+                            .collect(),
+                    };
+
+                    return Ok(vec![embeddings]);
+                } else if request.len() == 1 && request[0] == "search query" {
+                    let embeddings = Embedding {
+                        document: String::new(),
+                        vec: iter::once(11.9f64)
+                            .chain(iter::repeat_n(0f64, EMBEDDINGS_DIMENSIONS - 1))
+                            .collect(),
+                    };
+
+                    return Ok(vec![embeddings]);
+                }
+                unreachable!()
+            }))),
+            ..Default::default()
+        };
+
+        let injector =
+            get_test_dependencies(mock_client.clone(), Arc::new(AiState::default())).await;
+        let scope = injector.start_scope();
+        let service = scope.resolve::<AiService>().await;
+
+        let ai_repository = scope.resolve::<dyn AiRepository>().await;
+        let chat_id = Guid::new_v4();
+        ai_repository
+            .upsert_chat(&Chat::new(Some(chat_id), "test".to_string()))
+            .await
+            .unwrap();
+
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/example.pdf");
+
+        // Act
+
+        service.upload_document(path, chat_id).await.unwrap();
+
+        // Assert
+
+        let messages = ai_repository
+            .get_chat_messages_ordered(chat_id)
+            .await
+            .unwrap();
+        assert_eq!(1, messages.len());
+        if let MessageContent::Document(document) = messages[0].content() {
+            assert_eq!(document.file_name, "example.pdf");
+        } else {
+            panic!("Expected document");
+        }
+
+        let multi_embedding_model = MultiEmbeddingModel::Mock(mock_client);
+        let store = get_sqlite_vector_store(&multi_embedding_model)
+            .await
+            .unwrap();
+        let index = Arc::new(store.index(multi_embedding_model));
+        let search_tool = SearchDocuments::new(index, chat_id);
+        let search_result = Tool::call(
+            &search_tool,
+            SearchDocumentsArgs {
+                query: "search query".to_string(),
+                top_k: 1,
+            },
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(1, search_result.len());
+        assert_eq!("Page 1 content", search_result[0].content.trim());
     }
 }
