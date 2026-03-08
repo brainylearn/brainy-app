@@ -43,7 +43,6 @@ export default function PromptForm({
 	}, [userPrompt]);
 
 	const handleUploadDocument = async () => {
-		// TODO: unit test
 		const path = await open({
 			directory: false,
 		});

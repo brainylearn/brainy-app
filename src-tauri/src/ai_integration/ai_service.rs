@@ -21,11 +21,9 @@ use rig::{
 };
 use rig_sqlite::SqliteVectorStore;
 use serde::Serialize;
-use sqlite_vec::sqlite3_vec_init;
 use thiserror::Error;
 use tokio::sync::Mutex;
 use tokio_rusqlite::Connection;
-use tokio_rusqlite::ffi::{sqlite3, sqlite3_api_routines, sqlite3_auto_extension};
 use tokio_stream::StreamExt;
 
 #[cfg(test)]
@@ -59,12 +57,9 @@ use crate::{
     settings::Settings,
 };
 
-type SqliteExtensionFn =
-    unsafe extern "C" fn(*mut sqlite3, *mut *mut i8, *const sqlite3_api_routines) -> i32;
-
 const DEFAULT_TEMPERATURE: f64 = 0.5;
 const DEFAULT_MAX_TURN: usize = 16;
-const EMBEDDINGS_DIMENSIONS: usize = 2560;
+pub const EMBEDDINGS_DIMENSIONS: usize = 2560;
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
@@ -467,11 +462,6 @@ impl AiService {
 async fn get_sqlite_vector_store(
     embed_model: &MultiEmbeddingModel,
 ) -> Result<SqliteVectorStore<MultiEmbeddingModel, Document>, AiServiceError> {
-    unsafe {
-        sqlite3_auto_extension(Some(std::mem::transmute::<*const (), SqliteExtensionFn>(
-            sqlite3_vec_init as *const (),
-        )));
-    }
     let settings_dir = settings::get_settings_dir().await?;
     let path = settings_dir.join("vector_store.db");
     let conn = match Connection::open(path.to_str().unwrap()).await {

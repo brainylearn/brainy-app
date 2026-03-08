@@ -72,7 +72,6 @@ impl Tool for SearchDocuments {
         }
     }
 
-    // TODO: unit test
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
         let filter = SqliteSearchFilter::eq(
             CHAT_ID_COLUMN_NAME,
@@ -98,5 +97,87 @@ impl Tool for SearchDocuments {
             .collect::<Vec<_>>();
 
         Ok(results)
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use std::iter;
+
+    use rig::{OneOrMany, embeddings::Embedding};
+    use rig_sqlite::SqliteVectorStore;
+    use sqlite_vec::sqlite3_vec_init;
+    use tokio_rusqlite::{Connection, ffi::sqlite3_auto_extension};
+
+    use crate::ai_integration::{
+        ai_service::EMBEDDINGS_DIMENSIONS, clients::mock_client::MockClient,
+    };
+
+    use super::*;
+
+    fn create_embedding(chat_id: Guid, first_number: f64) -> (Document, OneOrMany<Embedding>) {
+        (
+            Document {
+                chat_id,
+                id: Guid::new_v4().to_string(),
+                content: format!("{first_number}").to_string(),
+            },
+            OneOrMany::one(Embedding {
+                document: String::new(),
+                vec: iter::once(first_number)
+                    .chain(iter::repeat_n(0f64, EMBEDDINGS_DIMENSIONS - 1))
+                    .collect(),
+            }),
+        )
+    }
+
+    #[tokio::test]
+    pub async fn call_multiple_documents_returned_closest_documents() {
+        // Arrange
+
+        unsafe {
+            #[allow(clippy::missing_transmute_annotations)]
+            sqlite3_auto_extension(Some(std::mem::transmute(sqlite3_vec_init as *const ())));
+        }
+        let conn = Connection::open_in_memory().await.unwrap();
+
+        let chat_id = Guid::new_v4();
+        let embed_model = MultiEmbeddingModel::Mock(MockClient {
+            embed_texts_fn: Arc::new(Some(Box::new(move |request| {
+                if request.len() == 1 && request[0] == "request" {
+                    return Ok(vec![create_embedding(chat_id, 1.1f64).1.first()]);
+                }
+                unreachable!()
+            }))),
+            embeddings_model_dims: Some(EMBEDDINGS_DIMENSIONS),
+            ..Default::default()
+        });
+
+        let vector_store = SqliteVectorStore::new(conn, &embed_model).await.unwrap();
+        let embeddings: Vec<(Document, OneOrMany<Embedding>)> = vec![
+            create_embedding(chat_id, 1f64),
+            create_embedding(chat_id, 1.3f64),
+            create_embedding(chat_id, 4f64),
+        ];
+        vector_store.add_rows(embeddings).await.unwrap();
+
+        let index = Arc::new(vector_store.index(embed_model));
+        let tool = SearchDocuments::new(index, chat_id);
+
+        // Act
+
+        let actual = tool
+            .call(SearchDocumentsArgs {
+                query: "request".to_string(),
+                top_k: 2,
+            })
+            .await
+            .unwrap();
+
+        // Assert
+
+        assert_eq!(2, actual.len());
+        assert_eq!("1.3", actual[0].content);
+        assert_eq!("1", actual[1].content);
     }
 }
