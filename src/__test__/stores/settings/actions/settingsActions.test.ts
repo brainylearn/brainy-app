@@ -25,6 +25,7 @@ const getAndSetDefaultSettings = () => {
 		zoomPercentage: 150,
 		enableAi: true,
 		ollamaModelName: "",
+		ollamaEmbeddingsModelName: "",
 	};
 	const getSettingsMock = vi.mocked(getSettings);
 	getSettingsMock.mockReturnValue(Promise.resolve(settings));

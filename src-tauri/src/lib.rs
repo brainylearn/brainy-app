@@ -49,6 +49,7 @@ pub use sync::sync_api::sync;
 
 pub use file_system::api::export_import_api::{export_file, export_folder, import};
 
+#[cfg(desktop)]
 use tauri_plugin_window_state::StateFlags;
 
 use crate::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
@@ -82,20 +83,27 @@ pub async fn run() -> Result<(), String> {
 
     let injector = Arc::new(create_injector().await);
 
-    tauri_builder
+    tauri_builder = tauri_builder
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init());
+
+    #[cfg(desktop)]
+    {
+        tauri_builder = tauri_builder.plugin(
             tauri_plugin_window_state::Builder::new()
                 .with_state_flags(StateFlags::SIZE | StateFlags::POSITION)
                 .build(),
-        )
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
+        );
+        // TODO:
+        //.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    tauri_builder
         .setup(move |app| {
             app.manage(injector.clone());
 
-            #[cfg(dev)]
+            #[cfg(all(dev, desktop))]
             {
                 let _ = app
                     .get_webview_window("main")

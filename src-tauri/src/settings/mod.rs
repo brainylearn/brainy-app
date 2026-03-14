@@ -109,10 +109,15 @@ impl Settings {
 }
 
 pub async fn get_settings_dir() -> Result<PathBuf, SettingsError> {
+    #[cfg(target_os = "android")]
+    let dir_path = PathBuf::from("/data/data/com.brainy.app/files");
+
+    #[cfg(not(target_os = "android"))]
     let dir_path = match dirs::config_dir() {
         Some(dir) => dir.join("Brainy"),
         None => return Err(SettingsError::NoConfigDirectory),
     };
+
     match fs::create_dir_all(dir_path.clone()).await {
         Ok(_) => Ok(dir_path),
         Err(err) => Err(SettingsError::CannotCreateSettingsDirectory(
