@@ -108,6 +108,7 @@ impl Settings {
     }
 }
 
+// TODO: remove
 pub async fn get_settings_dir() -> Result<PathBuf, SettingsError> {
     #[cfg(target_os = "android")]
     let dir_path = PathBuf::from("/data/data/com.brainy.app/files");

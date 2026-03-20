@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use injector::{injector::Injector, register_scope};
 use tauri::Url;
@@ -57,12 +57,12 @@ use crate::{
     },
 };
 
-pub async fn create_injector() -> Injector {
+pub async fn create_injector(settings_directory: PathBuf) -> Injector {
     let mut injector = Injector::default();
 
-    let settings_directory = get_settings_dir()
-        .await
-        .expect("Cannot get settings directory!");
+    // let settings_directory = get_settings_dir()
+    //     .await
+    //     .expect("Cannot get settings directory!");
 
     #[cfg(not(test))]
     let settings = Settings::init_settings_and_get(settings_directory.clone())

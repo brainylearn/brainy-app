@@ -51,6 +51,7 @@ pub use file_system::api::export_import_api::{export_file, export_folder, import
 
 #[cfg(desktop)]
 use tauri_plugin_window_state::StateFlags;
+use tokio::runtime::Handle;
 
 use crate::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 use crate::common::utils::create_injector::create_injector;
@@ -81,8 +82,6 @@ pub async fn run() -> Result<(), String> {
         }));
     }
 
-    let injector = Arc::new(create_injector().await);
-
     tauri_builder = tauri_builder
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
@@ -101,7 +100,15 @@ pub async fn run() -> Result<(), String> {
     }
 
     tauri_builder
-        .setup(move |app| {
+        .setup(|app| {
+            let injector = Arc::new(tokio::task::block_in_place(|| {
+                Handle::current().block_on(create_injector(
+                    app.path()
+                        .app_data_dir()
+                        .expect("Cannot get settings directory"),
+                ))
+            }));
+
             app.manage(injector.clone());
 
             #[cfg(all(dev, desktop))]
