@@ -86,6 +86,13 @@ body {
 	--placeholder-color: #adb5bd;
 }
 
+@media (max-width: 480px) {
+	/* Scale down for mobile phones. */
+	html {
+		font-size: 10px;
+	}
+}
+
 /* On dark theme, the roles of shade and tint colors are reversed. */
 body.dark {
 	--text-color: #f5f7fa;
