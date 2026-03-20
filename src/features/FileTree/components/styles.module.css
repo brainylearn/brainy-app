@@ -26,6 +26,10 @@
 	}
 }
 
+:global(body.mobile) .file-tree-dots {
+	opacity: 1;
+}
+
 .file-tree-row {
 	width: 100%;
 	padding: 10px;

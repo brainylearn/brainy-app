@@ -5,6 +5,7 @@ import Settings from "../../types/backend/model/settings";
 import { sync } from "../sync/syncActions";
 import { defaultCloseRequestedEventManager } from "../../managers/closeRequestedEventManager";
 import tryGetCurrentWebView from "../../utils/tauriUtils";
+import IsMobile from "../../utils/isMobile";
 
 export const SETTINGS_CLOSE_REQUESTED_HANDLER_NAME = "Settings handler";
 
@@ -50,6 +51,13 @@ async function applySettings(settings: Settings, dispatch: AppDispatch) {
 		} else {
 			await tryGetCurrentWebView()?.window.setTheme("light");
 			document.body.classList.remove("dark");
+		}
+
+		// TODO: unit test
+		if (IsMobile()) {
+			document.body.classList.add("mobile");
+		} else {
+			document.body.classList.remove("mobile");
 		}
 
 		await tryGetCurrentWebView()?.setZoom(settings.zoomPercentage / 100);
