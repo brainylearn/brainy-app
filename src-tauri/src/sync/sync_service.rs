@@ -86,6 +86,8 @@ impl SyncService {
         // Only allowing one sync at a time.
         let _ = self.sync_lock.0.lock().await;
 
+        let sync_start_time = Utc::now();
+
         let last_sync_date = self
             .local_configuration_repository
             .get_by_name(LAST_SYNC_DATE_CONFIGURATION_NAME)
@@ -118,12 +120,6 @@ impl SyncService {
             }
         }
 
-        // `sync_start_time` is captured here, after the pull phase but before the
-        // push. This means any local edits made *during* the push window will not
-        // be uploaded until the next sync cycle. This is intentional: it keeps the
-        // sync boundary stable and avoids a moving-target situation where we try to
-        // chase edits that keep arriving. The next sync will pick them up.
-        let sync_start_time = Utc::now();
         self.send_unsynced_entities_since(last_sync_date, &entities_overwritten_by_server)
             .await?;
 
