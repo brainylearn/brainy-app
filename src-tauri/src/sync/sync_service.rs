@@ -116,13 +116,14 @@ impl SyncService {
             }
         }
 
+        let sync_start_time = Utc::now();
         self.send_unsynced_entities_since(last_sync_date, &entities_changed_locally)
             .await?;
 
         self.local_configuration_repository
             .upsert(&LocalConfiguration {
                 name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
-                value: Utc::now().to_rfc3339(),
+                value: sync_start_time.to_rfc3339(),
             })
             .await?;
 
@@ -504,7 +505,7 @@ impl SyncService {
         {
             let data = generated_code::DeletedEntity {
                 entity_name: deleted_entity.entity_name,
-                deleted_date: Some(deleted_entity.entity_created_date.into_timestamp()),
+                deleted_date: Some(deleted_entity.deleted_date.into_timestamp()),
             }
             .into_base64();
 
@@ -521,8 +522,7 @@ impl SyncService {
         synced_entities.retain(|entity| !excluded_entities.contains(&entity.entity_id));
 
         if !synced_entities.is_empty() {
-            #[cfg(debug_assertions)]
-            log::info!("Sending these entities to sync:\n{:#?}", synced_entities);
+            log::info!("Sending to backend {} entities", synced_entities.len());
 
             self.backend_client
                 .send_synced_entities(&synced_entities)
