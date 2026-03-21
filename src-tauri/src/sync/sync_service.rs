@@ -80,8 +80,8 @@ pub struct SyncService {
 }
 
 impl SyncService {
-    /// Gets the entities from the backend since last sync and upload all changed
-    /// entities that are not overwritten from the sync.
+    /// Gets the entities from the backend since last sync and uploads all changed
+    /// entities that were not overwritten by the server during the pull phase.
     pub async fn sync_with_backend(&self) -> Result<(), SyncError> {
         // Only allowing one sync at a time.
         let _ = self.sync_lock.0.lock().await;
@@ -98,15 +98,17 @@ impl SyncService {
             .unwrap_or(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap());
 
         let mut sync_page = 0;
-        // Contains a list of the entities that has been overwritten from the sync.
-        let mut entities_changed_locally = HashSet::new();
+        // Tracks entities whose local state was overwritten by the server during the
+        // pull phase. These are excluded from the subsequent push so we don't
+        // immediately re-upload stale local data on top of what was just received.
+        let mut entities_overwritten_by_server = HashSet::new();
 
         loop {
             let has_more = self
                 .fetch_and_process_next_sync_page(
                     sync_page,
                     last_sync_date,
-                    &mut entities_changed_locally,
+                    &mut entities_overwritten_by_server,
                 )
                 .await?;
             if has_more {
@@ -116,8 +118,13 @@ impl SyncService {
             }
         }
 
+        // `sync_start_time` is captured here, after the pull phase but before the
+        // push. This means any local edits made *during* the push window will not
+        // be uploaded until the next sync cycle. This is intentional: it keeps the
+        // sync boundary stable and avoids a moving-target situation where we try to
+        // chase edits that keep arriving. The next sync will pick them up.
         let sync_start_time = Utc::now();
-        self.send_unsynced_entities_since(last_sync_date, &entities_changed_locally)
+        self.send_unsynced_entities_since(last_sync_date, &entities_overwritten_by_server)
             .await?;
 
         self.local_configuration_repository
@@ -132,13 +139,20 @@ impl SyncService {
         Ok(())
     }
 
-    /// This function fetches and process the next sync page.
-    /// Returns whether there are more pages to sync or not.
+    /// Fetches and processes the next sync page.
+    ///
+    /// Returns `true` if there are more pages to process, `false` once the last
+    /// page has been handled.
+    ///
+    /// When the repository upsert for a received entity writes new data (i.e. the
+    /// server version was newer than the local one), the entity ID is added to
+    /// `entities_overwritten_by_server` so the push phase can skip it and avoid
+    /// re-uploading the just-received data.
     async fn fetch_and_process_next_sync_page(
         &self,
         sync_page: u32,
         last_sync_date: DateTime<Utc>,
-        entities_changed_locally: &mut HashSet<Guid>,
+        entities_overwritten_by_server: &mut HashSet<Guid>,
     ) -> Result<bool, SyncError> {
         let result = self
             .backend_client
@@ -147,9 +161,14 @@ impl SyncService {
 
         for synced_entity in result.synced_entities {
             let entity_id = synced_entity.entity_id;
-            let change_count = self.process_synced_entity(synced_entity).await?;
-            if change_count > 0 {
-                entities_changed_locally.insert(entity_id);
+            // `process_synced_entity` returns the number of rows affected by the
+            // upsert. A non-zero value means the server version was newer than what
+            // we had locally, so the local state was actually overwritten. A zero
+            // return means the local version was already equal or newer and the
+            // upsert was a no-op.
+            let rows_affected = self.process_synced_entity(synced_entity).await?;
+            if rows_affected > 0 {
+                entities_overwritten_by_server.insert(entity_id);
             }
         }
 
@@ -332,8 +351,8 @@ impl SyncService {
         Ok(change_count)
     }
 
-    /// Sends all entities with modified date after the last sync date, excluding
-    /// entities given in the vector.
+    /// Sends all entities with modified date on or after `last_sync_date` to the
+    /// backend, skipping any whose IDs are present in `excluded_entities`.
     async fn send_unsynced_entities_since(
         &self,
         last_sync_date: DateTime<Utc>,
