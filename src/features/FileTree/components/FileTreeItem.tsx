@@ -19,8 +19,6 @@ import {
 	deleteFile,
 	deleteFolder,
 	getReviewTreeFolderForRoot,
-	moveFile,
-	moveFolder,
 } from "../../../stores/fileSystem/fileSystemActions.ts";
 import getFileName from "../utils/getFileName.ts";
 import {
@@ -36,11 +34,7 @@ import {
 	ROOT_FOLDER_ID,
 } from "../../../config/constants";
 import { useNavigate, useSearchParams } from "react-router";
-import {
-	dragFormatForFile,
-	dragFormatForFolder,
-	jsonFileFilter,
-} from "../config/constants.ts";
+import { jsonFileFilter } from "../config/constants.ts";
 import {
 	exportFile,
 	exportFolder,
@@ -50,6 +44,7 @@ import useLocalStorage from "../../../hooks/useLocalStorage.ts";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog.tsx";
 import getFolderChildById from "../../../utils/getFolderChildById.ts";
 import FsrsDialog from "./FsrsDialog.tsx";
+import { useDroppable } from "@dnd-kit/react";
 
 interface Props {
 	folder: UiFolder | null;
@@ -75,7 +70,6 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [creatingNewFolder, setCreatingNewFolder] = useState(false);
 	const [creatingNewFile, setCreatingNewFile] = useState(false);
-	const [dragCounter, setDragCounter] = useState(0);
 	const [isOpen, setIsOpen] = useLocalStorage(
 		`is-file-tree-item-open-${id}`,
 		false,
@@ -88,6 +82,12 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 	const isExpanded = isRoot || isOpen;
 	const actions: Action[] = [];
 	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
+
+	const { ref: setNodeRef, isDropTarget } = useDroppable({
+		id: `droppable-${id}`,
+		disabled: !folder,
+		data: { folderId: id },
+	});
 
 	const showCreateNewFileInput = () => {
 		setCreatingNewFolder(false);
@@ -246,54 +246,6 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 		setCreatingNewFile(false);
 	};
 
-	const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-		e.stopPropagation();
-		if (isRenaming) return;
-		setShowActions(false);
-		const format = folder ? dragFormatForFolder : dragFormatForFile;
-		e.dataTransfer.setData(format, id.toString());
-	};
-
-	const isAllowedDrag = (e: React.DragEvent<HTMLDivElement>) => {
-		return (
-			folder &&
-			(e.dataTransfer.types.includes(dragFormatForFile) ||
-				e.dataTransfer.types.includes(dragFormatForFolder))
-		);
-	};
-
-	const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-		if (!isAllowedDrag(e)) return;
-		e.preventDefault();
-		e.stopPropagation();
-		setDragCounter(val => val + 1);
-	};
-
-	const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-		if (!isAllowedDrag(e)) return;
-		e.preventDefault();
-		e.stopPropagation();
-		setDragCounter(val => val - 1);
-	};
-
-	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-		if (isAllowedDrag(e)) e.preventDefault();
-	};
-
-	const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-		if (!folder) return;
-		e.stopPropagation();
-		setDragCounter(0);
-
-		const fileId = e.dataTransfer.getData(dragFormatForFile);
-		const folderId = e.dataTransfer.getData(dragFormatForFolder);
-		if (fileId) {
-			await dispatch(moveFile(fileId, id));
-		} else if (folderId) {
-			await dispatch(moveFolder(folderId, id));
-		}
-	};
-
 	const handleDelete = async () => {
 		if (folder) {
 			await dispatch(deleteFolder(id));
@@ -353,11 +305,8 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 
 			{(!folder || isRoot || folder.isVisible) && (
 				<div
-					className={`${styles.fileItemOuterContainer} ${dragCounter ? styles.dragOver : ""}`}
-					onDragEnter={handleDragEnter}
-					onDragOver={handleDragOver}
-					onDragLeave={handleDragLeave}
-					onDrop={e => void handleDrop(e)}
+					ref={setNodeRef}
+					className={`${styles.fileItemOuterContainer} ${isDropTarget ? styles.dragOver : ""}`}
 					onKeyDown={handleKeyDown}>
 					<FileTreeItemRow
 						ref={fileTreeItemRowRef}
@@ -368,7 +317,6 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 						showActions={showActions}
 						isExpanded={isExpanded}
 						actions={actions}
-						onDragStart={handleDragStart}
 						onRenameEnd={() => setIsRenaming(false)}
 						fullPath={fullPath}
 						onShowActions={() => setShowActions(true)}

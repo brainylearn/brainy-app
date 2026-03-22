@@ -14,10 +14,13 @@
 
 .file-tree-row-container {
 	width: 100%;
-	transition: all var(--default-transition-time);
 	border-radius: var(--default-border-radius);
 	position: relative;
 	margin-bottom: var(--spacing-1);
+
+	&.dragging {
+		opacity: 0.7;
+	}
 
 	&:hover > .file-tree-dots,
 	&:focus > .file-tree-dots,

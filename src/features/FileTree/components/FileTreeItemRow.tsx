@@ -22,6 +22,7 @@ import CancellableInput from "../../../components/CancellableInput/CancellableIn
 import useOutsideClick from "../../../hooks/useOutsideClick";
 import useOutsideContextMenu from "../../../hooks/useOutsideContextMenu";
 import { FileTreeItemRef } from "./FileTreeItem";
+import { useDraggable } from "@dnd-kit/react";
 
 interface Props {
 	isRoot: boolean;
@@ -33,7 +34,6 @@ interface Props {
 	actions: Action[];
 	fullPath: string;
 	ref?: React.Ref<FileTreeItemRef>;
-	onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
 	onRenameEnd: () => void;
 	onShowActions: () => void;
 	onHideActions: () => void;
@@ -51,7 +51,6 @@ export default function FileTreeItemRow({
 	actions,
 	fullPath,
 	ref,
-	onDragStart,
 	onRenameEnd,
 	onShowActions,
 	onClick,
@@ -65,6 +64,17 @@ export default function FileTreeItemRow({
 	const isSelected = selectedFileId === id && !isRoot;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
+
+	const {
+		ref: setDragRef,
+		handleRef,
+		isDragging,
+	} = useDraggable({
+		id: `draggable-${id}`,
+		disabled: isRoot || isRenaming,
+		data: { id, isFolder },
+		feedback: "clone",
+	});
 
 	useOutsideClick(
 		containerRef as React.RefObject<HTMLElement>,
@@ -130,18 +140,22 @@ export default function FileTreeItemRow({
 	return (
 		<>
 			<div
-				className={`${styles.fileTreeRowContainer}`}
-				draggable={!isRoot && !isRenaming}
-				onDragStart={onDragStart}
-				onContextMenu={handleContextMenu}
-				ref={containerRef}>
+				ref={node => {
+					containerRef.current = node;
+					setDragRef(node);
+				}}
+				className={`${styles.fileTreeRowContainer} ${isDragging && styles.dragging}`}
+				onContextMenu={handleContextMenu}>
 				{!isRenaming && (
 					<>
 						<button
 							className={`${styles.fileTreeRow}
                             ${isSelected && !isFolder && !isRenaming ? "primary" : "transparent"}`}
 							onClick={onClick}
-							ref={buttonRef}>
+							ref={node => {
+								buttonRef.current = node;
+								handleRef(node);
+							}}>
 							<Icon path={iconPath} size={1} />
 							<p>{isRoot ? "Files" : getFileName(fullPath)}</p>
 						</button>
