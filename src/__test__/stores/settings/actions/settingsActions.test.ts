@@ -11,11 +11,13 @@ import { setSettings } from "../../../../stores/settings/settingsReducer.ts";
 import { defaultCloseRequestedEventManager } from "../../../../managers/closeRequestedEventManager.ts";
 import * as syncActions from "../../../../stores/sync/syncActions.ts";
 import { Window } from "@tauri-apps/api/window";
+import isMobile from "../../../../utils/isMobile.ts";
 
 vi.mock(import("@tauri-apps/api/webview"));
 vi.mock(import("../../../../api/settingsApi.ts"));
 vi.mock(import("../../../../stores/sync/syncActions.ts"));
 vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
+vi.mock(import("../../../../utils/isMobile.ts"));
 
 const getAndSetDefaultSettings = () => {
 	const settings: Settings = {
@@ -228,5 +230,41 @@ describe("updateAndApplySettings", () => {
 
 		expect(dispatch).toBeCalledWith(setSettings(settings));
 		expect(document.body.classList.contains("no-transition")).toBe(false);
+	});
+
+	it("Should add mobile class when on mobile", async () => {
+		// Arrange
+
+		const settings = getAndSetDefaultSettings();
+		vi.mocked(isMobile).mockReturnValue(true);
+
+		const dispatch = vi.fn();
+
+		// Act
+
+		const cb = updateAndApplySettings(settings);
+		await cb(dispatch);
+
+		// Assert
+
+		expect(document.body.classList.contains("mobile")).toBe(true);
+	});
+
+	it("Should not add mobile class when on mobile", async () => {
+		// Arrange
+
+		const settings = getAndSetDefaultSettings();
+		vi.mocked(isMobile).mockReturnValue(false);
+
+		const dispatch = vi.fn();
+
+		// Act
+
+		const cb = updateAndApplySettings(settings);
+		await cb(dispatch);
+
+		// Assert
+
+		expect(document.body.classList.contains("mobile")).toBe(false);
 	});
 });

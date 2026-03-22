@@ -5,7 +5,7 @@ import Settings from "../../types/backend/model/settings";
 import { sync } from "../sync/syncActions";
 import { defaultCloseRequestedEventManager } from "../../managers/closeRequestedEventManager";
 import tryGetCurrentWebView from "../../utils/tauriUtils";
-import IsMobile from "../../utils/isMobile";
+import isMobile from "../../utils/isMobile";
 
 export const SETTINGS_CLOSE_REQUESTED_HANDLER_NAME = "Settings handler";
 
@@ -53,8 +53,7 @@ async function applySettings(settings: Settings, dispatch: AppDispatch) {
 			document.body.classList.remove("dark");
 		}
 
-		// TODO: unit test
-		if (IsMobile()) {
+		if (isMobile()) {
 			document.body.classList.add("mobile");
 		} else {
 			document.body.classList.remove("mobile");

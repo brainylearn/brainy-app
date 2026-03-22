@@ -1,8 +1,8 @@
 import { Webview, getCurrentWebview } from "@tauri-apps/api/webview";
-import IsMobile from "./isMobile";
+import isMobile from "./isMobile";
 
 export default function tryGetCurrentWebView(): Webview | null {
-	if (IsMobile()) {
+	if (isMobile()) {
 		return null;
 	}
 	return getCurrentWebview();

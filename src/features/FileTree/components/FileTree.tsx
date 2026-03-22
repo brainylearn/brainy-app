@@ -13,7 +13,7 @@ import {
 	PointerActivationConstraints,
 	PointerSensor,
 } from "@dnd-kit/dom";
-import IsMobile from "../../../utils/isMobile.ts";
+import isMobile from "../../../utils/isMobile.ts";
 import FileItemSourceData from "../types/fileItemSourceData.ts";
 import {
 	FILE_ITEM_SOURCE_DATA,
@@ -49,7 +49,7 @@ function FileTree({ folder }: Props) {
 		}
 	};
 
-	const sensorActivationConstraint = IsMobile()
+	const sensorActivationConstraint = isMobile()
 		? new PointerActivationConstraints.Delay({ value: 200, tolerance: 10 })
 		: new PointerActivationConstraints.Distance({ value: 5 });
 

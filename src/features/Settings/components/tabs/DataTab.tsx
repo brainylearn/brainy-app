@@ -5,7 +5,7 @@ import Icon from "@mdi/react";
 import { mdiFolderOpenOutline } from "@mdi/js";
 import Settings from "../../../../types/backend/model/settings";
 import { TabProps } from "../../types/tabProps";
-import IsMobile from "../../../../utils/isMobile";
+import isMobile from "../../../../utils/isMobile";
 
 export default function DataTab({ state, setState }: TabProps) {
 	const updateSettings = (newSettings: Partial<Settings>) => {
@@ -55,7 +55,7 @@ export default function DataTab({ state, setState }: TabProps) {
 	};
 
 	// TODO: unit test
-	if (!IsMobile()) {
+	if (!isMobile()) {
 		formRowsProps.rows.push({
 			label: "Database Location",
 			labelHtmlFor: "database-location",

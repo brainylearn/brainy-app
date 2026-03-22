@@ -2,7 +2,7 @@ import Settings, { Theme } from "../../../../types/backend/model/settings";
 import { FormRows, FormRowsProps } from "../../../../components/Form/Form";
 import { TabProps } from "../../types/tabProps";
 import Select from "../../../../components/Select/Select";
-import IsMobile from "../../../../utils/isMobile";
+import isMobile from "../../../../utils/isMobile";
 
 export default function AppearanceTab({ state, setState }: TabProps) {
 	const updateSettings = (newSettings: Partial<Settings>) => {
@@ -51,7 +51,7 @@ export default function AppearanceTab({ state, setState }: TabProps) {
 	};
 
 	// TODO: unit test
-	if (!IsMobile()) {
+	if (!isMobile()) {
 		formRowsProps.rows.push({
 			label: "Zoom (%)",
 			labelHtmlFor: "zoom",

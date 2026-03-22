@@ -96,8 +96,6 @@ pub async fn run() -> Result<(), String> {
                 .with_state_flags(StateFlags::SIZE | StateFlags::POSITION)
                 .build(),
         );
-        // TODO:
-        //.plugin(tauri_plugin_updater::Builder::new().build());
     }
 
     tauri_builder
