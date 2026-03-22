@@ -21,6 +21,7 @@ vi.mock(import("../../../../api/authApi.ts"));
 vi.mock(import("../../../../api/userApi.ts"));
 vi.mock(import("../../../../api/settingsApi.ts"));
 vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
+vi.mock(import("../../../../utils/isMobile.ts"));
 vi.mock(import("@tauri-apps/api/webview"), () => ({
 	getCurrentWebview: () =>
 		({
