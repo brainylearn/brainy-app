@@ -9,7 +9,6 @@ import { createCell, deleteCell, moveCell } from "../../../api/cellApi";
 import errorToString from "../../../utils/errorToString";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import scrollUntilVisible from "../utils/scrollUntilVisible";
-import { CELL_ID_DRAG_FORMAT } from "../config/constants";
 import useAutoSave from "../hooks/useAutoSave";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSyncing } from "../../../stores/sync/syncSelector";
@@ -17,6 +16,7 @@ import {
 	defaultGlobalSyncEventManager,
 	ListenerType,
 } from "../../../stores/sync/managers/syncEventManager";
+import DefaultDragDropProvider from "../../../components/DefaultDragDropProvider/DefaultDragDropProvider";
 
 /** Used to say how many cells are always eagerly loaded from the current
  * selected cell.
@@ -260,6 +260,7 @@ function EditableCells({
 		await onCellsUpdateSave();
 	};
 
+	// TODO: in handler
 	const handleDrop = async (e: React.DragEvent, index: number) => {
 		const dragCellId = e.dataTransfer.getData(CELL_ID_DRAG_FORMAT);
 		if (!dragCellId) return;
@@ -279,64 +280,66 @@ function EditableCells({
 			ref={containerRef}>
 			{cells.length === 0 && <p>This file is empty</p>}
 
-			{filteredCells.map((cell, i) => (
-				<RenderIfVisible
-					key={cell.id}
-					stayRendered={selectedCellId === cell.id}
-					root={containerRef}>
-					<CellBlock
-						key={
-							// Using isSyncing directly in key to re-force reconstruction
-							// of the editors.
-							i + cell.id + isSyncing
-						}
-						ref={
-							cell.id === selectedCellId ? selectedCellRef : null
-						}
-						eagerLoadRichTextEditor={
-							selectedCellIndex !== null
-								? Math.abs(selectedCellIndex - i) <=
-									EAGER_LOAD_DISTANCE_FROM_SELECTED
-								: false
-						}
-						cell={cell}
-						fileMode={fileMode}
-						isSelected={selectedCellId === cell.id}
-						repetitions={cell.repetitions}
-						autoFocusEditor={
-							autoFocusEditor && selectedCellId === cell.id
-						}
-						enableFileSpecificFunctionality={
-							enableFileSpecificFunctionality
-						}
-						onFocus={() => setSelectedCellId(cell.id)}
-						onClick={() => setSelectedCellId(cell.id)}
-						onError={onError}
-						onDrop={e => void handleDrop(e, i)}
-						onChange={content =>
-							onCellContentUpdate(cell.id, content)
-						}
-						onDelete={() => void handleCellDeleteConfirm()}
-						onInsertNewCell={cellType =>
-							void insertNewCell(cellType, i + 1)
-						}
-						onResetRepetitions={() => {
-							void saveChanges();
-							void onCellsUpdateSave();
-						}}
-						onEditButtonClick={onEditButtonClick}
-					/>
-				</RenderIfVisible>
-			))}
+			<DefaultDragDropProvider>
+				{filteredCells.map((cell, i) => (
+					<RenderIfVisible
+						key={cell.id}
+						stayRendered={selectedCellId === cell.id}
+						root={containerRef}>
+						<CellBlock
+							key={
+								// Using isSyncing directly in key to re-force reconstruction
+								// of the editors.
+								i + cell.id + isSyncing
+							}
+							ref={
+								cell.id === selectedCellId
+									? selectedCellRef
+									: null
+							}
+							eagerLoadRichTextEditor={
+								selectedCellIndex !== null
+									? Math.abs(selectedCellIndex - i) <=
+										EAGER_LOAD_DISTANCE_FROM_SELECTED
+									: false
+							}
+							cell={cell}
+							fileMode={fileMode}
+							isSelected={selectedCellId === cell.id}
+							repetitions={cell.repetitions}
+							autoFocusEditor={
+								autoFocusEditor && selectedCellId === cell.id
+							}
+							enableFileSpecificFunctionality={
+								enableFileSpecificFunctionality
+							}
+							onFocus={() => setSelectedCellId(cell.id)}
+							onClick={() => setSelectedCellId(cell.id)}
+							onError={onError}
+							onChange={content =>
+								onCellContentUpdate(cell.id, content)
+							}
+							onDelete={() => void handleCellDeleteConfirm()}
+							onInsertNewCell={cellType =>
+								void insertNewCell(cellType, i + 1)
+							}
+							onResetRepetitions={() => {
+								void saveChanges();
+								void onCellsUpdateSave();
+							}}
+							onEditButtonClick={onEditButtonClick}
+						/>
+					</RenderIfVisible>
+				))}
 
-			{enableFileSpecificFunctionality && (
-				<AddCellContainer
-					onDrop={e => void handleDrop(e, cells.length)}
-					onAddNewCell={cellType =>
-						void insertNewCell(cellType, cells.length)
-					}
-				/>
-			)}
+				{enableFileSpecificFunctionality && (
+					<AddCellContainer
+						onAddNewCell={cellType =>
+							void insertNewCell(cellType, cells.length)
+						}
+					/>
+				)}
+			</DefaultDragDropProvider>
 		</div>
 	);
 }

@@ -1,1 +1,2 @@
-export const CELL_ID_DRAG_FORMAT = "cell/id";
+export const CELL_DRAG_SOURCE_DATA = "CELL_DRAG_SOURCE_DATA";
+export const CELL_DRAG_TARGET_DATA = "CELL_DRAG_TARGET_DATA";

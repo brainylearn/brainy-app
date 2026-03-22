@@ -11,10 +11,14 @@ import FocusTools from "./FocusTools";
 import Repetition from "../../../types/backend/entity/repetition";
 import NewCellTypeSelector from "./NewCellTypeSelector";
 import useGlobalKey from "../../../hooks/useGlobalKey";
-import { CELL_ID_DRAG_FORMAT } from "../config/constants";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSyncing } from "../../../stores/sync/syncSelector";
 import { LexicalEditor } from "lexical";
+import { useDraggable, useDroppable } from "@dnd-kit/react";
+import {
+	CELL_DRAG_SOURCE_DATA,
+	CELL_DRAG_TARGET_DATA,
+} from "../config/constants";
 
 interface Props {
 	cell: Cell;
@@ -27,7 +31,6 @@ interface Props {
 	onFocus: (e: React.FocusEvent<HTMLDivElement>) => void;
 	onClick: (id: string) => void;
 	onError: (error: string) => void;
-	onDrop: (e: React.DragEvent) => void;
 	onChange: (content: string) => void;
 	onDelete: () => void;
 	onInsertNewCell: (cellType: CellType) => void;
@@ -47,7 +50,6 @@ function CellBlock(
 		onError,
 		onFocus,
 		onClick,
-		onDrop,
 		onChange,
 		onDelete,
 		onInsertNewCell,
@@ -56,14 +58,30 @@ function CellBlock(
 	}: Props,
 	ref: ForwardedRef<HTMLDivElement>,
 ) {
-	const [isDragging, setIsDragging] = useState(false);
-	const [isDragOver, setIsDragOver] = useState(false);
 	const [showInsertNewCell, setShowInsertNewCell] = useState(false);
 	const [previousIsSelected, setPreviousIsSelected] = useState<
 		boolean | null
 	>(null);
 	const isSyncing = useAppSelector(selectIsSyncing);
 	const editorRef = useRef<LexicalEditor>(null);
+
+	const {
+		ref: setDragRef,
+		handleRef: setHandleDragRef,
+		isDragging,
+	} = useDraggable({
+		id: `draggable-${cell.id}`,
+		type: CELL_DRAG_SOURCE_DATA,
+		data: { id: cell.id },
+		feedback: "clone",
+	});
+
+	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
+		id: `droppable-${cell.id}`,
+		type: CELL_DRAG_TARGET_DATA,
+		// TODO:
+		// data: { folderId: id } as FileItemTargetData,
+	});
 
 	useGlobalKey(
 		e => {
@@ -89,28 +107,6 @@ function CellBlock(
 		if (!showInsertNewCell && editorRef.current) editorRef.current.focus();
 	}, [showInsertNewCell]);
 
-	const handleDragStart = (e: React.DragEvent) => {
-		e.stopPropagation();
-		e.dataTransfer.setData(CELL_ID_DRAG_FORMAT, cell.id.toString());
-		setIsDragging(true);
-	};
-
-	const handleDragOver = (e: React.DragEvent) => {
-		if (
-			isDragging ||
-			!e.dataTransfer.types.some(t => t === CELL_ID_DRAG_FORMAT)
-		) {
-			return;
-		}
-		e.preventDefault();
-		setIsDragOver(true);
-	};
-
-	const handleDrop = (e: React.DragEvent) => {
-		setIsDragOver(false);
-		onDrop(e);
-	};
-
 	const handleFocusToolsInsertNewCellClick = () => {
 		setShowInsertNewCell(!showInsertNewCell);
 		if (showInsertNewCell) editorRef.current?.focus();
@@ -130,22 +126,26 @@ function CellBlock(
 
 	return (
 		<div
-			ref={ref}
+			ref={node => {
+				setDragRef(node);
+				setDroppableNodeRef(node);
+				// TODO: move out
+				if (typeof ref === "function") {
+					ref(node);
+				} else if (ref) {
+					ref.current = node;
+				}
+			}}
 			onFocus={onFocus}
 			onClick={handleClick}
-			onDragOver={handleDragOver}
-			onDragLeave={() => setIsDragOver(false)}
-			onDrop={handleDrop}
 			data-testid={`CellBlock-${cell.id}`}
 			className={`${styles.cellBlock}
                 ${isSelected ? styles.selectedCell : ""}
-                ${isDragOver ? styles.dragOver : ""}
+                ${isDropTarget ? styles.dragOver : ""}
                 ${isDragging ? styles.dragging : ""}`}>
 			{isSelected && (
 				<FocusTools
 					onInsertClick={handleFocusToolsInsertNewCellClick}
-					onDragStart={e => handleDragStart(e)}
-					onDragEnd={() => setIsDragging(false)}
 					cell={cell}
 					repetitions={repetitions}
 					onShowRepetitionsInfo={() => setShowInsertNewCell(false)}
@@ -153,6 +153,7 @@ function CellBlock(
 					onError={onError}
 					onCellDeleteConfirm={onDelete}
 					fileMode={fileMode}
+					setHandleDragRef={setHandleDragRef}
 					enableFileSpecificFunctionality={
 						enableFileSpecificFunctionality
 					}
