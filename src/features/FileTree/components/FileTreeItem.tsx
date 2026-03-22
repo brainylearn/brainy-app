@@ -34,7 +34,10 @@ import {
 	ROOT_FOLDER_ID,
 } from "../../../config/constants";
 import { useNavigate, useSearchParams } from "react-router";
-import { jsonFileFilter } from "../config/constants.ts";
+import {
+	FILE_ITEM_TARGET_DATA,
+	JSON_FILE_FILTER,
+} from "../config/constants.ts";
 import {
 	exportFile,
 	exportFolder,
@@ -45,11 +48,14 @@ import ConfirmationDialog from "../../../components/ConfirmationDialog/Confirmat
 import getFolderChildById from "../../../utils/getFolderChildById.ts";
 import FsrsDialog from "./FsrsDialog.tsx";
 import { useDroppable } from "@dnd-kit/react";
+import FileItemTargetData from "../types/fileItemTargetData.ts";
+import { pointerIntersection } from "@dnd-kit/collision";
 
 interface Props {
 	folder: UiFolder | null;
 	fullPath: string;
 	id: string;
+	depth: number;
 	ref?: React.Ref<FileTreeItemRef>;
 	onDelete?: () => void;
 }
@@ -62,7 +68,7 @@ export interface FileTreeItemRef {
  * Displays a folder or a file based on whether the folder parameter is given
  * or not.
  */
-function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
+function FileTreeItem({ folder, fullPath, id, ref, depth, onDelete }: Props) {
 	const isRoot = id === ROOT_FOLDER_ID;
 	const [isDeleteDialogShown, setIsDeleteDialogShown] = useState(false);
 	const [isFsrsDialogShown, setIsFsrsDialogShown] = useState(false);
@@ -83,10 +89,13 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 	const actions: Action[] = [];
 	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
 
-	const { ref: setNodeRef, isDropTarget } = useDroppable({
-		id: `droppable-${id}`,
+	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
+		id,
+		type: FILE_ITEM_TARGET_DATA,
 		disabled: !folder,
-		data: { folderId: id },
+		collisionDetector: pointerIntersection,
+		collisionPriority: depth,
+		data: { folderId: id } as FileItemTargetData,
 	});
 
 	const showCreateNewFileInput = () => {
@@ -149,7 +158,7 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 			void (async () => {
 				setShowActions(false);
 				const savePath = await openSaveDialog({
-					filters: [jsonFileFilter],
+					filters: [JSON_FILE_FILTER],
 					defaultPath: getFileName(fullPath) + ".json",
 				});
 				if (!savePath) return;
@@ -175,7 +184,7 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 					try {
 						setShowActions(false);
 						const openPath = await openOpenDialog({
-							filters: [jsonFileFilter],
+							filters: [JSON_FILE_FILTER],
 						});
 						if (!openPath) return;
 						await importExportedItem(openPath, id);
@@ -305,7 +314,7 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 
 			{(!folder || isRoot || folder.isVisible) && (
 				<div
-					ref={setNodeRef}
+					ref={setDroppableNodeRef}
 					className={`${styles.fileItemOuterContainer} ${isDropTarget ? styles.dragOver : ""}`}
 					onKeyDown={handleKeyDown}>
 					<FileTreeItemRow
@@ -333,6 +342,7 @@ function FileTreeItem({ folder, fullPath, id, ref, onDelete }: Props) {
 							isRoot={isRoot}
 							folder={folder}
 							fullPath={fullPath}
+							depth={depth + 1}
 							onCreateNewFileClick={() =>
 								setCreatingNewFile(true)
 							}

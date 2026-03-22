@@ -14,6 +14,12 @@ import {
 	PointerSensor,
 } from "@dnd-kit/dom";
 import IsMobile from "../../../utils/isMobile.ts";
+import FileItemSourceData from "../types/fileItemSourceData.ts";
+import {
+	FILE_ITEM_SOURCE_DATA,
+	FILE_ITEM_TARGET_DATA,
+} from "../config/constants.ts";
+import FileItemTargetData from "../types/fileItemTargetData.ts";
 
 interface Props {
 	folder: UiFolder;
@@ -25,19 +31,14 @@ function FileTree({ folder }: Props) {
 	const handleDragEnd: DragEndEvent = event => {
 		if (
 			event.canceled ||
-			!event.operation.source ||
-			!event.operation.target
+			event.operation.target?.type !== FILE_ITEM_TARGET_DATA ||
+			event.operation.source?.type !== FILE_ITEM_SOURCE_DATA
 		)
 			return;
 
-		// TODO: types
-		const { id, isFolder } = event.operation.source.data as {
-			id: string;
-			isFolder: boolean;
-		};
-		const { folderId } = event.operation.target.data as {
-			folderId: string;
-		};
+		const { id, isFolder } = event.operation.source
+			.data as FileItemSourceData;
+		const { folderId } = event.operation.target.data as FileItemTargetData;
 
 		if (id === folderId) return;
 
@@ -65,7 +66,12 @@ function FileTree({ folder }: Props) {
 						activationConstraints: [sensorActivationConstraint],
 					}),
 				]}>
-				<FileTreeItem fullPath="" folder={folder} id={folder.id} />
+				<FileTreeItem
+					fullPath=""
+					folder={folder}
+					id={folder.id}
+					depth={0}
+				/>
 			</DragDropProvider>
 		</div>
 	);

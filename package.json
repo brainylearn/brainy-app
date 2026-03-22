@@ -23,6 +23,7 @@
 		"*.rs": "cargo fmt --manifest-path ./src-tauri/Cargo.toml --"
 	},
 	"dependencies": {
+		"@dnd-kit/collision": "^0.3.2",
 		"@dnd-kit/react": "^0.3.2",
 		"@fontsource-variable/noto-sans": "^5.2.10",
 		"@lexical/html": "0.41.0",

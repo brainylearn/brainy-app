@@ -15,10 +15,7 @@ import {
 } from "../../../../api/fileSystemApi.ts";
 import UiFile from "../../../../types/ui/uiFile.ts";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import {
-	dragFormatForFolder,
-	jsonFileFilter,
-} from "../../../../features/FileTree/config/constants.ts";
+import { JSON_FILE_FILTER } from "../../../../features/FileTree/config/constants.ts";
 import {
 	exportFile,
 	exportFolder,
@@ -290,7 +287,7 @@ describe("FileTreeItem", () => {
 
 		vi.mocked(save).mockImplementation(options => {
 			if (
-				options!.filters![0] === jsonFileFilter &&
+				options!.filters![0] === JSON_FILE_FILTER &&
 				options!.defaultPath === "test.json"
 			) {
 				return Promise.resolve("/usr/test/test.json");
@@ -319,7 +316,7 @@ describe("FileTreeItem", () => {
 		renderWithProviders(<FileTree folder={root} />);
 
 		vi.mocked(open).mockImplementation(options => {
-			if (options!.filters![0] === jsonFileFilter) {
+			if (options!.filters![0] === JSON_FILE_FILTER) {
 				return Promise.resolve("/usr/test/test.json");
 			}
 			return Promise.resolve(null);
@@ -348,7 +345,7 @@ describe("FileTreeItem", () => {
 
 		vi.mocked(save).mockImplementation(options => {
 			if (
-				options!.filters![0] === jsonFileFilter &&
+				options!.filters![0] === JSON_FILE_FILTER &&
 				options!.defaultPath === "test.json"
 			) {
 				return Promise.resolve("/usr/test/test.json");
