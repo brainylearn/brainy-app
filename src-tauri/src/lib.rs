@@ -55,6 +55,7 @@ use tokio::runtime::Handle;
 
 use crate::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 use crate::common::utils::create_injector::create_injector;
+use crate::settings::SettingsDirectory;
 
 pub type Guid = uuid::Uuid;
 
@@ -101,12 +102,14 @@ pub async fn run() -> Result<(), String> {
 
     tauri_builder
         .setup(|app| {
+            let app_data_dir = app
+                .path()
+                .app_data_dir()
+                .expect("Cannot get settings directory");
+            let settings_directory = SettingsDirectory::new(app_data_dir);
+
             let injector = Arc::new(tokio::task::block_in_place(|| {
-                Handle::current().block_on(create_injector(
-                    app.path()
-                        .app_data_dir()
-                        .expect("Cannot get settings directory"),
-                ))
+                Handle::current().block_on(create_injector(settings_directory))
             }));
 
             app.manage(injector.clone());
