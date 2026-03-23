@@ -6,7 +6,9 @@ import {
 } from "@dnd-kit/dom";
 import { isMobile } from "../../utils/tauriUtils";
 
-type DragDropProviderProps = React.ComponentProps<typeof DragDropProvider>;
+export type DragDropProviderProps = React.ComponentProps<
+	typeof DragDropProvider
+>;
 
 export default function DefaultDragDropProvider({
 	plugins,

@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event";
 import FileTree from "../../../../features/FileTree/components/FileTree";
 import UiFolder from "../../../../types/ui/uiFolder";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { ROOT_FOLDER_ID } from "../../../../config/constants";
 import {
 	createFile,
@@ -26,11 +26,24 @@ import fileTreeStyles from "../../../../features/FileTree/components/styles.modu
 import useAppSelector from "../../../../hooks/useAppSelector.ts";
 import { selectRootFolder } from "../../../../stores/fileSystem/fileSystemSelectors.ts";
 import searchFolder from "../../../../features/SideBar/utils/searchFolder.ts";
+import {
+	mockDndKit,
+	mockDragDropProvider,
+	mockUseDraggable,
+} from "../../../test-utils/dndMocks.tsx";
+import FileItemDropContainerData, {
+	FILE_ITEM_DROP_CONTAINER_TYPE,
+} from "../../../../features/FileTree/types/fileItemDropContainerData.ts";
+import DraggedFileItemData, {
+	DRAGGED_FILE_ITEM_TYPE,
+} from "../../../../features/FileTree/types/draggedFileItemData.ts";
+import { DragEndEvent } from "@dnd-kit/react";
 
 vi.mock(import("../../../../api/fileSystemApi.ts"));
 vi.mock(import("../../../../api/exportImportApi.ts"));
-vi.mock(import("@tauri-apps/plugin-dialog"));
 vi.mock(import("../../../../utils/tauriUtils.ts"));
+vi.mock(import("@tauri-apps/plugin-dialog"));
+vi.mock(import("@dnd-kit/react"));
 
 function createTestFolder(name: string, id: string): UiFolder {
 	return {
@@ -53,6 +66,10 @@ function createTestFile(name: string, id: string): UiFile {
 }
 
 describe("FileTree", () => {
+	beforeEach(() => {
+		mockDndKit();
+	});
+
 	it("Should delete folder when pressing DEL", async () => {
 		// Arrange
 
@@ -109,6 +126,8 @@ describe("FileTreeItem", () => {
 		// The file tree uses local storage to remember which folders were open,
 		// which could make some trouble while testing.
 		localStorage.clear();
+
+		mockDndKit();
 	});
 
 	it("Should be able create new folder using context menu", async () => {
@@ -383,139 +402,95 @@ describe("FileTreeItem", () => {
 		expect(screen.queryByText("Export")).toBeNull();
 	});
 
-	it("Should put id on drag start", () => {
+	it("Should update classes on dragging", () => {
 		// Arrange
 
 		const root = createTestFolder("", ROOT_FOLDER_ID);
 		root.subfolders.push(createTestFolder("test", "1"));
-		renderWithProviders(<FileTree folder={root} />);
-		let format = "",
-			data = "";
+
+		mockUseDraggable({
+			isDragging: true,
+		});
 
 		// Act
 
-		act(() => {
-			fireEvent.dragStart(screen.getByText("test"), {
-				dataTransfer: {
-					setData(formatArg: string, dataArg: string) {
-						format = formatArg;
-						data = dataArg;
-					},
-				},
-			});
-		});
+		renderWithProviders(<FileTree folder={root} />);
 
 		// Assert
 
-		expect(format).toBe(dragFormatForFolder);
-		expect(data).toBe("1");
+		const fileTree = screen.getByText("test").parentElement!.parentElement!;
+		expect(fileTree.classList).toContain(fileTreeStyles.dragging);
 	});
 
-	it("Should update classes on drag enter", () => {
+	it("Should not contain dragging class if nothing is dragged over", () => {
 		// Arrange
 
 		const root = createTestFolder("", ROOT_FOLDER_ID);
 		root.subfolders.push(createTestFolder("test", "1"));
-		renderWithProviders(<FileTree folder={root} />);
+
+		mockUseDraggable({
+			isDragging: false,
+		});
 
 		// Act
 
-		act(() => {
-			fireEvent.dragEnter(screen.getByText("test"), {
-				dataTransfer: {
-					types: [dragFormatForFolder],
-				},
-			});
-		});
+		renderWithProviders(<FileTree folder={root} />);
 
 		// Assert
 
-		const fileTree =
-			screen.getByText("test").parentElement!.parentElement!
-				.parentElement!;
-		expect(fileTree.classList).toContain(fileTreeStyles.dragOver);
+		const fileTree = screen.getByText("test").parentElement!.parentElement!;
+		expect(fileTree.classList).not.toContain(fileTreeStyles.dragging);
 	});
 
-	it("Should update classes on drag drag", () => {
+	it("Should call backend on drop", async () => {
 		// Arrange
 
 		const root = createTestFolder("", ROOT_FOLDER_ID);
 		root.subfolders.push(createTestFolder("test", "1"));
+
+		const { getCapturedProviderProps } = mockDragDropProvider();
+
+		type ParametersType = Parameters<DragEndEvent>[0];
+		const input: ParametersType = {
+			operation: {
+				target: {
+					type: FILE_ITEM_DROP_CONTAINER_TYPE,
+					data: {
+						folderId: "1",
+					} as FileItemDropContainerData,
+				} as Partial<
+					ParametersType["operation"]["target"]
+				> as ParametersType["operation"]["target"],
+				source: {
+					type: DRAGGED_FILE_ITEM_TYPE,
+					data: {
+						id: "2",
+						isFolder: true,
+					} as DraggedFileItemData,
+				} as Partial<
+					ParametersType["operation"]["source"]
+				> as ParametersType["operation"]["source"],
+			} as Partial<
+				ParametersType["operation"]
+			> as ParametersType["operation"],
+		} as Partial<ParametersType> as ParametersType;
+
 		renderWithProviders(<FileTree folder={root} />);
 
 		// Act
 
-		act(() => {
-			fireEvent.dragEnter(screen.getByText("test"), {
-				dataTransfer: {
-					types: [dragFormatForFolder],
-				},
-			});
-			fireEvent.dragLeave(screen.getByText("test"), {
-				dataTransfer: {
-					types: [dragFormatForFolder],
-				},
-			});
-		});
+		const capturedProps = getCapturedProviderProps();
+		expect(capturedProps).not.toBeNull();
+		capturedProps!.onDragEnd!(
+			input,
+			null as unknown as Parameters<DragEndEvent>[1],
+		);
 
 		// Assert
 
-		const fileTree =
-			screen.getByText("test").parentElement!.parentElement!
-				.parentElement!;
-		expect(fileTree.classList).not.toContain(fileTreeStyles.dragOver);
-	});
-
-	it("Should prevent default on drag over", () => {
-		// Arrange
-
-		const root = createTestFolder("", ROOT_FOLDER_ID);
-		root.subfolders.push(createTestFolder("test", "1"));
-		renderWithProviders(<FileTree folder={root} />);
-
-		// The testing library is acting weiredly when attaching preventDefault
-		// as mock function, therefore spying on the prototype.
-		const preventDefaultSpy = vi.spyOn(Event.prototype, "preventDefault");
-
-		// Act
-
-		act(() => {
-			fireEvent.dragOver(screen.getByText("test"), {
-				dataTransfer: {
-					types: [dragFormatForFolder],
-				},
-			});
+		await waitFor(() => {
+			expect(vi.mocked(moveFolder)).toBeCalledWith("2", "1");
 		});
-
-		// Assert
-
-		expect(preventDefaultSpy).toBeCalled();
-	});
-
-	it("Should call backend on drop", () => {
-		// Arrange
-
-		const root = createTestFolder("", ROOT_FOLDER_ID);
-		root.subfolders.push(createTestFolder("test", "1"));
-		renderWithProviders(<FileTree folder={root} />);
-
-		// Act
-
-		act(() => {
-			fireEvent.drop(screen.getByText("test"), {
-				dataTransfer: {
-					types: [dragFormatForFolder],
-					getData(format: string) {
-						if (format === dragFormatForFolder) return "2";
-						return null;
-					},
-				},
-			});
-		});
-
-		// Assert
-
-		expect(vi.mocked(moveFolder)).toBeCalledWith("2", "1");
 	});
 
 	it("Should navigate to file on click", async () => {
