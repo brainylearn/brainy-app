@@ -19,6 +19,7 @@ import DraggedCellData, { DRAGGED_CELL_TYPE } from "../types/draggedCellData";
 import CellDropContainerData, {
 	CELL_DROP_CONTAINER_TYPE,
 } from "../types/cellDropContainerData";
+import mergeRefs from "../../../utils/mergeRefs";
 
 interface Props {
 	cell: Cell;
@@ -125,16 +126,7 @@ function CellBlock(
 
 	return (
 		<div
-			ref={node => {
-				setDragRef(node);
-				setDroppableNodeRef(node);
-				// TODO: move out
-				if (typeof ref === "function") {
-					ref(node);
-				} else if (ref) {
-					ref.current = node;
-				}
-			}}
+			ref={mergeRefs(setDragRef, setDroppableNodeRef, ref)}
 			onFocus={onFocus}
 			onClick={handleClick}
 			data-testid={`CellBlock-${cell.id}`}
