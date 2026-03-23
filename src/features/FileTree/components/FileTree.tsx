@@ -7,12 +7,12 @@ import {
 	moveFolder,
 } from "../../../stores/fileSystem/fileSystemActions.ts";
 import { DragEndEvent } from "@dnd-kit/dom";
-import FileItemSourceData from "../types/fileItemSourceData.ts";
-import {
-	FILE_ITEM_SOURCE_DATA,
-	FILE_ITEM_TARGET_DATA,
-} from "../config/constants.ts";
-import FileItemTargetData from "../types/fileItemTargetData.ts";
+import DraggedFileItemData, {
+	DRAGGED_FILE_ITEM_TYPE,
+} from "../types/draggedFileItemData.ts";
+import FileItemDropContainerData, {
+	FILE_ITEM_DROP_CONTAINER_TYPE,
+} from "../types/fileItemDropContainerData.ts";
 import DefaultDragDropProvider from "../../../components/DefaultDragDropProvider/DefaultDragDropProvider.tsx";
 
 interface Props {
@@ -25,14 +25,15 @@ function FileTree({ folder }: Props) {
 	const handleDragEnd: DragEndEvent = event => {
 		if (
 			event.canceled ||
-			event.operation.target?.type !== FILE_ITEM_TARGET_DATA ||
-			event.operation.source?.type !== FILE_ITEM_SOURCE_DATA
+			event.operation.target?.type !== FILE_ITEM_DROP_CONTAINER_TYPE ||
+			event.operation.source?.type !== DRAGGED_FILE_ITEM_TYPE
 		)
 			return;
 
 		const { id, isFolder } = event.operation.source
-			.data as FileItemSourceData;
-		const { folderId } = event.operation.target.data as FileItemTargetData;
+			.data as DraggedFileItemData;
+		const { folderId } = event.operation.target
+			.data as FileItemDropContainerData;
 
 		if (id === folderId) return;
 

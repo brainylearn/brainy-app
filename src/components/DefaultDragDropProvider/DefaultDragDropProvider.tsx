@@ -4,7 +4,7 @@ import {
 	PointerActivationConstraints,
 	PointerSensor,
 } from "@dnd-kit/dom";
-import isMobile from "../../utils/isMobile";
+import { isMobile } from "../../utils/tauriUtils";
 
 type DragDropProviderProps = React.ComponentProps<typeof DragDropProvider>;
 

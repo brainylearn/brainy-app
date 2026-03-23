@@ -11,13 +11,13 @@ import { setSettings } from "../../../../stores/settings/settingsReducer.ts";
 import { defaultCloseRequestedEventManager } from "../../../../managers/closeRequestedEventManager.ts";
 import * as syncActions from "../../../../stores/sync/syncActions.ts";
 import { Window } from "@tauri-apps/api/window";
-import isMobile from "../../../../utils/isMobile.ts";
+import { isMobile } from "../../../../utils/tauriUtils.ts";
 
 vi.mock(import("@tauri-apps/api/webview"));
 vi.mock(import("../../../../api/settingsApi.ts"));
 vi.mock(import("../../../../stores/sync/syncActions.ts"));
 vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
-vi.mock(import("../../../../utils/isMobile.ts"));
+vi.mock(import("../../../../utils/tauriUtils.ts"));
 
 const getAndSetDefaultSettings = () => {
 	const settings: Settings = {

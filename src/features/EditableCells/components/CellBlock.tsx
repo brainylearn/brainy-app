@@ -16,9 +16,9 @@ import { selectIsSyncing } from "../../../stores/sync/syncSelector";
 import { LexicalEditor } from "lexical";
 import { useDraggable, useDroppable } from "@dnd-kit/react";
 import DraggedCellData, { DRAGGED_CELL_TYPE } from "../types/draggedCellData";
-import DropCellContainerData, {
-	DROP_CELL_CONTAINER_TYPE,
-} from "../types/dropCellContainerData";
+import CellDropContainerData, {
+	CELL_DROP_CONTAINER_TYPE,
+} from "../types/cellDropContainerData";
 
 interface Props {
 	cell: Cell;
@@ -78,8 +78,8 @@ function CellBlock(
 
 	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
 		id: `droppable-${cell.id}`,
-		type: DROP_CELL_CONTAINER_TYPE,
-		data: { type: "cell", cellId: cell.id } as DropCellContainerData,
+		type: CELL_DROP_CONTAINER_TYPE,
+		data: { type: "cell", cellId: cell.id } as CellDropContainerData,
 	});
 
 	useGlobalKey(

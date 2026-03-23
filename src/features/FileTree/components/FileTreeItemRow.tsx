@@ -23,8 +23,9 @@ import useOutsideClick from "../../../hooks/useOutsideClick";
 import useOutsideContextMenu from "../../../hooks/useOutsideContextMenu";
 import { FileTreeItemRef } from "./FileTreeItem";
 import { useDraggable } from "@dnd-kit/react";
-import FileItemSourceData from "../types/fileItemSourceData";
-import { FILE_ITEM_SOURCE_DATA } from "../config/constants";
+import DraggedFileItemData, {
+	DRAGGED_FILE_ITEM_TYPE,
+} from "../types/draggedFileItemData";
 
 interface Props {
 	isRoot: boolean;
@@ -73,9 +74,9 @@ export default function FileTreeItemRow({
 		isDragging,
 	} = useDraggable({
 		id,
-		type: FILE_ITEM_SOURCE_DATA,
+		type: DRAGGED_FILE_ITEM_TYPE,
 		disabled: isRoot || isRenaming,
-		data: { id, isFolder } as FileItemSourceData,
+		data: { id, isFolder } as DraggedFileItemData,
 		feedback: "clone",
 	});
 

@@ -4,8 +4,7 @@ import { setSettings } from "./settingsReducer";
 import Settings from "../../types/backend/model/settings";
 import { sync } from "../sync/syncActions";
 import { defaultCloseRequestedEventManager } from "../../managers/closeRequestedEventManager";
-import tryGetCurrentWebView from "../../utils/tauriUtils";
-import isMobile from "../../utils/isMobile";
+import { tryGetCurrentWebView, isMobile } from "../../utils/tauriUtils";
 
 export const SETTINGS_CLOSE_REQUESTED_HANDLER_NAME = "Settings handler";
 

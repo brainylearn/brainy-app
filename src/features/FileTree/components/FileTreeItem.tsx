@@ -34,10 +34,7 @@ import {
 	ROOT_FOLDER_ID,
 } from "../../../config/constants";
 import { useNavigate, useSearchParams } from "react-router";
-import {
-	FILE_ITEM_TARGET_DATA,
-	JSON_FILE_FILTER,
-} from "../config/constants.ts";
+import { JSON_FILE_FILTER } from "../config/constants.ts";
 import {
 	exportFile,
 	exportFolder,
@@ -48,7 +45,9 @@ import ConfirmationDialog from "../../../components/ConfirmationDialog/Confirmat
 import getFolderChildById from "../../../utils/getFolderChildById.ts";
 import FsrsDialog from "./FsrsDialog.tsx";
 import { useDroppable } from "@dnd-kit/react";
-import FileItemTargetData from "../types/fileItemTargetData.ts";
+import FileItemDropContainerData, {
+	FILE_ITEM_DROP_CONTAINER_TYPE,
+} from "../types/fileItemDropContainerData.ts";
 import { pointerIntersection } from "@dnd-kit/collision";
 
 interface Props {
@@ -91,11 +90,11 @@ function FileTreeItem({ folder, fullPath, id, ref, depth, onDelete }: Props) {
 
 	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
 		id,
-		type: FILE_ITEM_TARGET_DATA,
+		type: FILE_ITEM_DROP_CONTAINER_TYPE,
 		disabled: !folder,
 		collisionDetector: pointerIntersection,
 		collisionPriority: depth,
-		data: { folderId: id } as FileItemTargetData,
+		data: { folderId: id } as FileItemDropContainerData,
 	});
 
 	const showCreateNewFileInput = () => {

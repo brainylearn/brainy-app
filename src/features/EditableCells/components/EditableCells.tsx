@@ -19,9 +19,9 @@ import {
 import DefaultDragDropProvider from "../../../components/DefaultDragDropProvider/DefaultDragDropProvider";
 import { DragEndEvent } from "@dnd-kit/react";
 import DraggedCellData, { DRAGGED_CELL_TYPE } from "../types/draggedCellData";
-import DropCellContainerData, {
-	DROP_CELL_CONTAINER_TYPE,
-} from "../types/dropCellContainerData";
+import CellDropContainerData, {
+	CELL_DROP_CONTAINER_TYPE,
+} from "../types/cellDropContainerData";
 
 /** Used to say how many cells are always eagerly loaded from the current
  * selected cell.
@@ -268,14 +268,14 @@ function EditableCells({
 	const handleDragEnd: DragEndEvent = event => {
 		if (
 			event.canceled ||
-			event.operation.target?.type !== DROP_CELL_CONTAINER_TYPE ||
+			event.operation.target?.type !== CELL_DROP_CONTAINER_TYPE ||
 			event.operation.source?.type !== DRAGGED_CELL_TYPE
 		)
 			return;
 
 		const { cellId: dragCellId } = event.operation.source
 			.data as DraggedCellData;
-		const targetData = event.operation.target.data as DropCellContainerData;
+		const targetData = event.operation.target.data as CellDropContainerData;
 
 		const draggedCellIndex = cells.findIndex(c => c.id === dragCellId);
 		let dropIndex =

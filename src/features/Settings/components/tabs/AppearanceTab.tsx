@@ -2,7 +2,7 @@ import Settings, { Theme } from "../../../../types/backend/model/settings";
 import { FormRows, FormRowsProps } from "../../../../components/Form/Form";
 import { TabProps } from "../../types/tabProps";
 import Select from "../../../../components/Select/Select";
-import isMobile from "../../../../utils/isMobile";
+import { isMobile } from "../../../../utils/tauriUtils";
 
 export default function AppearanceTab({ state, setState }: TabProps) {
 	const updateSettings = (newSettings: Partial<Settings>) => {

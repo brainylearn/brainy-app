@@ -35,7 +35,7 @@ vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
 vi.mock(import("../../../../api/cellApi.ts"), () => ({
 	getCellsForFilesWithFsrsProfileIds: () => Promise.resolve([]),
 }));
-vi.mock(import("../../../../utils/isMobile.ts"));
+vi.mock(import("../../../../utils/tauriUtils.ts"));
 vi.mock(import("@tauri-apps/api/core"));
 vi.mock(import("@tauri-apps/plugin-updater"));
 vi.mock(import("@tauri-apps/plugin-dialog"));

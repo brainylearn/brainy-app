@@ -5,7 +5,7 @@ import Icon from "@mdi/react";
 import { mdiFolderOpenOutline } from "@mdi/js";
 import Settings from "../../../../types/backend/model/settings";
 import { TabProps } from "../../types/tabProps";
-import isMobile from "../../../../utils/isMobile";
+import { isMobile } from "../../../../utils/tauriUtils";
 
 export default function DataTab({ state, setState }: TabProps) {
 	const updateSettings = (newSettings: Partial<Settings>) => {

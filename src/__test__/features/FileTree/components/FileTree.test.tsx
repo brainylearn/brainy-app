@@ -30,7 +30,7 @@ import searchFolder from "../../../../features/SideBar/utils/searchFolder.ts";
 vi.mock(import("../../../../api/fileSystemApi.ts"));
 vi.mock(import("../../../../api/exportImportApi.ts"));
 vi.mock(import("@tauri-apps/plugin-dialog"));
-vi.mock(import("../../../../utils/isMobile.ts"));
+vi.mock(import("../../../../utils/tauriUtils.ts"));
 
 function createTestFolder(name: string, id: string): UiFolder {
 	return {
