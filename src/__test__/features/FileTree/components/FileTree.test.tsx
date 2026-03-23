@@ -31,12 +31,8 @@ import {
 	mockDragDropProvider,
 	mockUseDraggable,
 } from "../../../test-utils/dndMocks.tsx";
-import FileItemDropContainerData, {
-	FILE_ITEM_DROP_CONTAINER_TYPE,
-} from "../../../../features/FileTree/types/fileItemDropContainerData.ts";
-import DraggedFileItemData, {
-	DRAGGED_FILE_ITEM_TYPE,
-} from "../../../../features/FileTree/types/draggedFileItemData.ts";
+import { FILE_ITEM_DROP_CONTAINER_TYPE } from "../../../../features/FileTree/types/fileItemDropContainerData.ts";
+import { DRAGGED_FILE_ITEM_TYPE } from "../../../../features/FileTree/types/draggedFileItemData.ts";
 import { DragEndEvent } from "@dnd-kit/react";
 
 vi.mock(import("../../../../api/fileSystemApi.ts"));
@@ -450,30 +446,23 @@ describe("FileTreeItem", () => {
 
 		const { getCapturedProviderProps } = mockDragDropProvider();
 
-		type ParametersType = Parameters<DragEndEvent>[0];
-		const input: ParametersType = {
+		const input = {
 			operation: {
 				target: {
 					type: FILE_ITEM_DROP_CONTAINER_TYPE,
 					data: {
 						folderId: "1",
-					} as FileItemDropContainerData,
-				} as Partial<
-					ParametersType["operation"]["target"]
-				> as ParametersType["operation"]["target"],
+					},
+				},
 				source: {
 					type: DRAGGED_FILE_ITEM_TYPE,
 					data: {
 						id: "2",
 						isFolder: true,
-					} as DraggedFileItemData,
-				} as Partial<
-					ParametersType["operation"]["source"]
-				> as ParametersType["operation"]["source"],
-			} as Partial<
-				ParametersType["operation"]
-			> as ParametersType["operation"],
-		} as Partial<ParametersType> as ParametersType;
+					},
+				},
+			},
+		};
 
 		renderWithProviders(<FileTree folder={root} />);
 
@@ -482,7 +471,7 @@ describe("FileTreeItem", () => {
 		const capturedProps = getCapturedProviderProps();
 		expect(capturedProps).not.toBeNull();
 		capturedProps!.onDragEnd!(
-			input,
+			input as unknown as Parameters<DragEndEvent>[0],
 			null as unknown as Parameters<DragEndEvent>[1],
 		);
 
