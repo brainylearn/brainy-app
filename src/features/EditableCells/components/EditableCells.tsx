@@ -17,6 +17,11 @@ import {
 	ListenerType,
 } from "../../../stores/sync/managers/syncEventManager";
 import DefaultDragDropProvider from "../../../components/DefaultDragDropProvider/DefaultDragDropProvider";
+import { DragEndEvent } from "@dnd-kit/react";
+import DraggedCellData, { DRAGGED_CELL_TYPE } from "../types/draggedCellData";
+import DropCellContainerData, {
+	DROP_CELL_CONTAINER_TYPE,
+} from "../types/dropCellContainerData";
 
 /** Used to say how many cells are always eagerly loaded from the current
  * selected cell.
@@ -260,17 +265,35 @@ function EditableCells({
 		await onCellsUpdateSave();
 	};
 
-	// TODO: in handler
-	const handleDrop = async (e: React.DragEvent, index: number) => {
-		const dragCellId = e.dataTransfer.getData(CELL_ID_DRAG_FORMAT);
-		if (!dragCellId) return;
+	const handleDragEnd: DragEndEvent = event => {
+		if (
+			event.canceled ||
+			event.operation.target?.type !== DROP_CELL_CONTAINER_TYPE ||
+			event.operation.source?.type !== DRAGGED_CELL_TYPE
+		)
+			return;
+
+		const { cellId: dragCellId } = event.operation.source
+			.data as DraggedCellData;
+		const targetData = event.operation.target.data as DropCellContainerData;
+
 		const draggedCellIndex = cells.findIndex(c => c.id === dragCellId);
-		if (index > draggedCellIndex) index--;
-		if (index === draggedCellIndex) return;
+		let dropIndex =
+			targetData.type === "add-cell-container"
+				? cells.length
+				: cells.findIndex(c => c.id === targetData.cellId);
+
+		if (dropIndex > draggedCellIndex) dropIndex--;
+		if (dropIndex === draggedCellIndex) return;
 		scrollToSelectedCellOnNextRender.current = true;
-		await executeRequest(async () => await moveCell(dragCellId, index));
-		await saveChanges();
-		await onCellsUpdateSave();
+
+		void (async () => {
+			await executeRequest(
+				async () => await moveCell(dragCellId, dropIndex),
+			);
+			await saveChanges();
+			await onCellsUpdateSave();
+		})();
 	};
 
 	return (
@@ -280,7 +303,7 @@ function EditableCells({
 			ref={containerRef}>
 			{cells.length === 0 && <p>This file is empty</p>}
 
-			<DefaultDragDropProvider>
+			<DefaultDragDropProvider onDragEnd={handleDragEnd}>
 				{filteredCells.map((cell, i) => (
 					<RenderIfVisible
 						key={cell.id}

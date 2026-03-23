@@ -7,7 +7,9 @@ import { CellType } from "../../../types/backend/entity/cell";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import Dialog from "../../../components/Dialog/Dialog";
 import { useDroppable } from "@dnd-kit/react";
-import { CELL_DRAG_SOURCE_DATA } from "../config/constants";
+import DropCellContainerData, {
+	DROP_CELL_CONTAINER_TYPE,
+} from "../types/dropCellContainerData";
 
 interface Props {
 	onAddNewCell: (cellType: CellType) => void;
@@ -18,9 +20,8 @@ function AddCellContainer({ onAddNewCell }: Props) {
 
 	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
 		id: "add-cell-container",
-		type: CELL_DRAG_SOURCE_DATA,
-		// TODO:
-		// data: { folderId: id } as FileItemTargetData,
+		type: DROP_CELL_CONTAINER_TYPE,
+		data: { type: "add-cell-container" } as DropCellContainerData,
 	});
 
 	useGlobalKey(

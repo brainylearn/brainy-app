@@ -15,10 +15,10 @@ import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSyncing } from "../../../stores/sync/syncSelector";
 import { LexicalEditor } from "lexical";
 import { useDraggable, useDroppable } from "@dnd-kit/react";
-import {
-	CELL_DRAG_SOURCE_DATA,
-	CELL_DRAG_TARGET_DATA,
-} from "../config/constants";
+import DraggedCellData, { DRAGGED_CELL_TYPE } from "../types/draggedCellData";
+import DropCellContainerData, {
+	DROP_CELL_CONTAINER_TYPE,
+} from "../types/dropCellContainerData";
 
 interface Props {
 	cell: Cell;
@@ -71,16 +71,15 @@ function CellBlock(
 		isDragging,
 	} = useDraggable({
 		id: `draggable-${cell.id}`,
-		type: CELL_DRAG_SOURCE_DATA,
-		data: { id: cell.id },
+		type: DRAGGED_CELL_TYPE,
+		data: { cellId: cell.id } as DraggedCellData,
 		feedback: "clone",
 	});
 
 	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
 		id: `droppable-${cell.id}`,
-		type: CELL_DRAG_TARGET_DATA,
-		// TODO:
-		// data: { folderId: id } as FileItemTargetData,
+		type: DROP_CELL_CONTAINER_TYPE,
+		data: { type: "cell", cellId: cell.id } as DropCellContainerData,
 	});
 
 	useGlobalKey(
