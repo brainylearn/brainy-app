@@ -50,7 +50,6 @@ export default function AppearanceTab({ state, setState }: TabProps) {
 		],
 	};
 
-	// TODO: unit test
 	if (!isMobile()) {
 		formRowsProps.rows.push({
 			label: "Zoom (%)",
