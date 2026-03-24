@@ -13,10 +13,10 @@ export function mockDndKit() {
 }
 
 export function mockDragDropProvider() {
-	let capturedProps: DragDropProviderProps | null = null;
+	const capturedProps: DragDropProviderProps[] = [];
 
 	vi.mocked(DragDropProvider).mockImplementation(props => {
-		capturedProps = props;
+		capturedProps.push(props);
 		return <>{props.children}</>;
 	});
 
@@ -28,10 +28,10 @@ export function mockDragDropProvider() {
 export function mockUseDraggable(
 	returnValue: Partial<useDraggableReturnType> = {},
 ) {
-	let capturedCaptured: Parameters<typeof useDraggable>[0] | null = null;
+	const capturedInput: Parameters<typeof useDraggable>[0][] = [];
 
 	vi.mocked(useDraggable).mockImplementation(input => {
-		capturedCaptured = input;
+		capturedInput.push(input);
 		return {
 			isDragging: false,
 			handleRef: vi.fn(),
@@ -41,17 +41,17 @@ export function mockUseDraggable(
 	});
 
 	return {
-		getUseDraggableInputs: () => capturedCaptured,
+		getUseDraggableInputs: () => capturedInput,
 	};
 }
 
 export function mockUseDroppable(
 	returnValue: Partial<useDroppableReturnType> = {},
 ) {
-	let capturedInput: Parameters<typeof useDroppable>[0] | null = null;
+	const capturedInput: Parameters<typeof useDroppable>[0][] = [];
 
 	vi.mocked(useDroppable).mockImplementation(input => {
-		capturedInput = input;
+		capturedInput.push(input);
 		return {
 			ref: vi.fn(),
 			...returnValue,

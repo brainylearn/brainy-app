@@ -30,10 +30,16 @@ import {
 	mockDndKit,
 	mockDragDropProvider,
 	mockUseDraggable,
+	mockUseDroppable,
 } from "../../../test-utils/dndMocks.tsx";
-import { FILE_ITEM_DROP_CONTAINER_TYPE } from "../../../../features/FileTree/types/fileItemDropContainerData.ts";
-import { DRAGGED_FILE_ITEM_TYPE } from "../../../../features/FileTree/types/draggedFileItemData.ts";
+import FileItemDropContainerData, {
+	FILE_ITEM_DROP_CONTAINER_TYPE,
+} from "../../../../features/FileTree/types/fileItemDropContainerData.ts";
+import DraggedFileItemData, {
+	DRAGGED_FILE_ITEM_TYPE,
+} from "../../../../features/FileTree/types/draggedFileItemData.ts";
 import { DragEndEvent } from "@dnd-kit/react";
+import { pointerIntersection } from "@dnd-kit/collision";
 
 vi.mock(import("../../../../api/fileSystemApi.ts"));
 vi.mock(import("../../../../api/exportImportApi.ts"));
@@ -114,6 +120,68 @@ describe("FileTree", () => {
 		expect(screen.getByTestId("location-display")).toHaveTextContent(
 			"/home",
 		);
+	});
+
+	it("Should set drag and drop data correctly", () => {
+		// Arrange
+
+		const { getUseDraggableInputs } = mockUseDraggable();
+		const { getUseDroppableInputs } = mockUseDroppable();
+
+		const root = createTestFolder("", ROOT_FOLDER_ID);
+		root.subfolders.push(createTestFolder("test", "1"));
+
+		// Act
+
+		renderWithProviders(<FileTree folder={root} />);
+
+		// Assert
+
+		const draggableInputs = getUseDraggableInputs();
+		expect(draggableInputs[0]).toMatchObject({
+			id: ROOT_FOLDER_ID,
+			disabled: true,
+			type: DRAGGED_FILE_ITEM_TYPE,
+			data: {
+				id: ROOT_FOLDER_ID,
+				isFolder: true,
+			} as DraggedFileItemData,
+			feedback: "clone",
+		});
+
+		expect(draggableInputs[1]).toMatchObject({
+			id: "1",
+			disabled: false,
+			type: DRAGGED_FILE_ITEM_TYPE,
+			data: {
+				id: "1",
+				isFolder: true,
+			} as DraggedFileItemData,
+			feedback: "clone",
+		});
+
+		const draggableOutputs = getUseDroppableInputs();
+		expect(draggableOutputs[0]).toStrictEqual({
+			id: ROOT_FOLDER_ID,
+			type: FILE_ITEM_DROP_CONTAINER_TYPE,
+			disabled: false,
+			collisionDetector: pointerIntersection,
+			collisionPriority: 0,
+			data: {
+				folderId: ROOT_FOLDER_ID,
+			} as FileItemDropContainerData,
+		});
+
+		expect(draggableOutputs[1]).toStrictEqual({
+			id: "1",
+			type: FILE_ITEM_DROP_CONTAINER_TYPE,
+			disabled: false,
+			collisionDetector: pointerIntersection,
+			collisionPriority: 1,
+			data: {
+				folderId: "1",
+			} as FileItemDropContainerData,
+		});
 	});
 });
 
@@ -469,8 +537,8 @@ describe("FileTreeItem", () => {
 		// Act
 
 		const capturedProps = getCapturedProviderProps();
-		expect(capturedProps).not.toBeNull();
-		capturedProps!.onDragEnd!(
+		expect(capturedProps).toHaveLength(1);
+		capturedProps[0].onDragEnd!(
 			input as unknown as Parameters<DragEndEvent>[0],
 			null as unknown as Parameters<DragEndEvent>[1],
 		);

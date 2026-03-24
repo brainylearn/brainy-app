@@ -73,7 +73,6 @@ export default function FileTreeItemRow({
 		handleRef: setHandleDragRef,
 		isDragging,
 	} = useDraggable({
-		// TODO: unit test these values
 		id,
 		type: DRAGGED_FILE_ITEM_TYPE,
 		disabled: isRoot || isRenaming,

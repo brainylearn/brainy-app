@@ -89,7 +89,6 @@ function FileTreeItem({ folder, fullPath, id, ref, depth, onDelete }: Props) {
 	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
 
 	const { ref: setDroppableNodeRef, isDropTarget } = useDroppable({
-		// TODO: unit test these values
 		id,
 		type: FILE_ITEM_DROP_CONTAINER_TYPE,
 		disabled: !folder,

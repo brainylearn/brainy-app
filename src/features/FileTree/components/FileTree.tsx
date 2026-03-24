@@ -22,7 +22,6 @@ interface Props {
 function FileTree({ folder }: Props) {
 	const dispatch = useAppDispatch();
 
-	// TODO: unit test this
 	const handleDragEnd: DragEndEvent = event => {
 		if (
 			event.canceled ||
