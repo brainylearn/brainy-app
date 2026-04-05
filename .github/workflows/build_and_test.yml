@@ -3,9 +3,9 @@ name: Build and test
 on:
   push:
     branches: ["main"]
-    pull_request:
-      branches: ["main"]
-      types: [review_requested, ready_for_review]
+  pull_request:
+    branches: ["main"]
+    types: [review_requested, ready_for_review]
 
 env:
   CARGO_TERM_COLOR: always
