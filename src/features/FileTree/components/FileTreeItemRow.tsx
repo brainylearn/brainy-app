@@ -26,6 +26,7 @@ import { useDraggable } from "@dnd-kit/react";
 import DraggedFileItemData, {
 	DRAGGED_FILE_ITEM_TYPE,
 } from "../types/draggedFileItemData";
+import mergeRefs from "../../../utils/mergeRefs";
 
 interface Props {
 	isRoot: boolean;
@@ -144,10 +145,7 @@ export default function FileTreeItemRow({
 	return (
 		<>
 			<div
-				ref={node => {
-					containerRef.current = node;
-					setDragRef(node);
-				}}
+				ref={mergeRefs(containerRef, setDragRef)}
 				className={`${styles.fileTreeRowContainer} ${isDragging && styles.dragging}`}
 				onContextMenu={handleContextMenu}>
 				{!isRenaming && (
@@ -156,10 +154,7 @@ export default function FileTreeItemRow({
 							className={`${styles.fileTreeRow}
                             ${isSelected && !isFolder && !isRenaming ? "primary" : "transparent"}`}
 							onClick={onClick}
-							ref={node => {
-								buttonRef.current = node;
-								setHandleDragRef(node);
-							}}>
+							ref={mergeRefs(buttonRef, setHandleDragRef)}>
 							<Icon path={iconPath} size={1} />
 							<p>{isRoot ? "Files" : getFileName(fullPath)}</p>
 						</button>
