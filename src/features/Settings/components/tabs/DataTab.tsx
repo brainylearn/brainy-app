@@ -54,7 +54,6 @@ export default function DataTab({ state, setState }: TabProps) {
 		],
 	};
 
-	// TODO: unit test
 	if (!isMobile()) {
 		formRowsProps.rows.push({
 			label: "Database Location",
