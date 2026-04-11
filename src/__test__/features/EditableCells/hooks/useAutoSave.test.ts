@@ -149,8 +149,10 @@ describe("useAutoSave", () => {
 		const { returnValue, onCellsUpdateSaveCb } = renderAutoSave();
 		returnValue.result.current.onCellContentUpdate(cellId, "test");
 		returnValue.unmount();
-		// Waiting for all async functions to be called.
-		await Promise.resolve();
+		// Waiting for async callback to finish.
+		await act(async () => {
+			/* Nothing */
+		});
 
 		// Assert
 

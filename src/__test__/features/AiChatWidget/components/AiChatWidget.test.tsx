@@ -78,25 +78,23 @@ describe("AiChatWidget", () => {
 	it("Should get all chats initial", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-				{
-					id: "chat-2",
-					title: "chat 2",
-					createdDate: "date",
-				},
-				{
-					id: "chat-3",
-					title: "chat 3",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+			{
+				id: "chat-2",
+				title: "chat 2",
+				createdDate: "date",
+			},
+			{
+				id: "chat-3",
+				title: "chat 3",
+				createdDate: "date",
+			},
+		]);
 		renderComponent({});
 
 		// Act
@@ -113,20 +111,18 @@ describe("AiChatWidget", () => {
 	it("Should get and show chat message when switching session", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-				{
-					id: "chat-2",
-					title: "chat 2",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+			{
+				id: "chat-2",
+				title: "chat 2",
+				createdDate: "date",
+			},
+		]);
 
 		vi.mocked(getChatMessagesOrdered).mockImplementation(id => {
 			if (id === "chat-1") {
@@ -173,29 +169,25 @@ describe("AiChatWidget", () => {
 		// Arrange
 
 		vi.mocked(getAllAiChatsSortedByDateDesc)
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "chat-1",
-						title: "chat 1",
-						createdDate: "date",
-					},
-					{
-						id: "chat-2",
-						title: "chat 2",
-						createdDate: "date",
-					},
-				]),
-			)
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "chat-2",
-						title: "chat 2",
-						createdDate: "date",
-					},
-				]),
-			);
+			.mockResolvedValueOnce([
+				{
+					id: "chat-1",
+					title: "chat 1",
+					createdDate: "date",
+				},
+				{
+					id: "chat-2",
+					title: "chat 2",
+					createdDate: "date",
+				},
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "chat-2",
+					title: "chat 2",
+					createdDate: "date",
+				},
+			]);
 
 		renderComponent({});
 
@@ -216,9 +208,7 @@ describe("AiChatWidget", () => {
 	it("Should show streamed responses correctly", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 
 		let capturedOnEvent: Channel<StreamLlmResponseEvent> | null = null;
 		let finishedStreaming = false;
@@ -304,9 +294,7 @@ describe("AiChatWidget", () => {
 	it("Should show error when streaming a response", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 		vi.mocked(getChatMessagesOrdered).mockImplementation(id => {
 			if (id === "chat-1") {
 				return Promise.resolve([
@@ -373,9 +361,7 @@ describe("AiChatWidget", () => {
 	it("Should be able to stop generating when streaming", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 
 		let finishedStreaming = false;
 		vi.mocked(streamAiResponse).mockImplementation(async () => {
@@ -402,9 +388,7 @@ describe("AiChatWidget", () => {
 	it("Should stop generation when unmounted", () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 
 		const { unmount } = renderComponent({});
 
@@ -420,9 +404,7 @@ describe("AiChatWidget", () => {
 	it("Should toggle chat when shortcut is pressed", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 
 		renderComponent({});
 
@@ -437,9 +419,7 @@ describe("AiChatWidget", () => {
 	it("Should hide the chat when Escape is pressed", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 
 		renderComponent({});
 
@@ -457,9 +437,7 @@ describe("AiChatWidget", () => {
 	it("Should not send message when shift is pressed", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([]);
 
 		renderComponent({});
 
@@ -477,28 +455,24 @@ describe("AiChatWidget", () => {
 	it("Should scroll to the bottom on changing chat", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		]);
 
-		vi.mocked(getChatMessagesOrdered).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "message-1",
-					chatId: "chat-1",
-					content: {
-						type: "human",
-						value: "message 1",
-					},
-				} as Message,
-			]),
-		);
+		vi.mocked(getChatMessagesOrdered).mockResolvedValue([
+			{
+				id: "message-1",
+				chatId: "chat-1",
+				content: {
+					type: "human",
+					value: "message 1",
+				},
+			} as Message,
+		]);
 
 		renderComponent({});
 
@@ -521,15 +495,13 @@ describe("AiChatWidget", () => {
 	it("Should be able to rename chat", async () => {
 		// Arrange
 
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		]);
 
 		renderComponent({});
 
@@ -552,51 +524,45 @@ describe("AiChatWidget", () => {
 
 describe("ToolCallDisplay", () => {
 	it("Should be able to accept tool call and dispatch event", async () => {
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		]);
 
 		vi.mocked(getChatMessagesOrdered)
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "message-1",
-						chatId: "chat-1",
-						content: {
-							type: "toolCall",
-							value: {
-								displayName: "Create FlashCard",
-								displayDescriptionMarkdown: "Question",
-								status: ToolCallStatus.Pending,
-								fileId: "file-1",
-							} as ToolCall,
-						},
-					} as Message,
-				]),
-			)
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "message-1",
-						chatId: "chat-1",
-						content: {
-							type: "toolCall",
-							value: {
-								displayName: "Create FlashCard",
-								displayDescriptionMarkdown: "Question",
-								fileId: "file-1",
-								status: ToolCallStatus.Accepted,
-							} as ToolCall,
-						},
-					} as Message,
-				]),
-			);
+			.mockResolvedValueOnce([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					content: {
+						type: "toolCall",
+						value: {
+							displayName: "Create FlashCard",
+							displayDescriptionMarkdown: "Question",
+							status: ToolCallStatus.Pending,
+							fileId: "file-1",
+						} as ToolCall,
+					},
+				} as Message,
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					content: {
+						type: "toolCall",
+						value: {
+							displayName: "Create FlashCard",
+							displayDescriptionMarkdown: "Question",
+							fileId: "file-1",
+							status: ToolCallStatus.Accepted,
+						} as ToolCall,
+					},
+				} as Message,
+			]);
 
 		let calledEventFileId = null;
 		window.addEventListener(TOOL_CALL_ACCEPTED_EVENT, event => {
@@ -634,51 +600,45 @@ describe("ToolCallDisplay", () => {
 	});
 
 	it("Should be able to reject tool call", async () => {
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		]);
 
 		vi.mocked(getChatMessagesOrdered)
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "message-1",
-						chatId: "chat-1",
-						content: {
-							type: "toolCall",
-							value: {
-								displayName: "Create FlashCard",
-								displayDescriptionMarkdown: "Question",
-								status: ToolCallStatus.Pending,
-								fileId: "file-1",
-							} as ToolCall,
-						},
-					} as Message,
-				]),
-			)
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "message-1",
-						chatId: "chat-1",
-						content: {
-							type: "toolCall",
-							value: {
-								displayName: "Create FlashCard",
-								displayDescriptionMarkdown: "Question",
-								fileId: "file-1",
-								status: ToolCallStatus.Rejected,
-							} as ToolCall,
-						},
-					} as Message,
-				]),
-			);
+			.mockResolvedValueOnce([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					content: {
+						type: "toolCall",
+						value: {
+							displayName: "Create FlashCard",
+							displayDescriptionMarkdown: "Question",
+							status: ToolCallStatus.Pending,
+							fileId: "file-1",
+						} as ToolCall,
+					},
+				} as Message,
+			])
+			.mockResolvedValueOnce([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					content: {
+						type: "toolCall",
+						value: {
+							displayName: "Create FlashCard",
+							displayDescriptionMarkdown: "Question",
+							fileId: "file-1",
+							status: ToolCallStatus.Rejected,
+						} as ToolCall,
+					},
+				} as Message,
+			]);
 
 		renderComponent({
 			preloadedState: {
@@ -710,33 +670,29 @@ describe("ToolCallDisplay", () => {
 	});
 
 	it("Should be able to navigate to file", async () => {
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		]);
 
-		vi.mocked(getChatMessagesOrdered).mockReturnValueOnce(
-			Promise.resolve([
-				{
-					id: "message-1",
-					chatId: "chat-1",
-					content: {
-						type: "toolCall",
-						value: {
-							displayName: "Create FlashCard",
-							displayDescriptionMarkdown: "Question",
-							status: ToolCallStatus.Pending,
-							fileId: "file-1",
-						} as ToolCall,
-					},
-				} as Message,
-			]),
-		);
+		vi.mocked(getChatMessagesOrdered).mockResolvedValueOnce([
+			{
+				id: "message-1",
+				chatId: "chat-1",
+				content: {
+					type: "toolCall",
+					value: {
+						displayName: "Create FlashCard",
+						displayDescriptionMarkdown: "Question",
+						status: ToolCallStatus.Pending,
+						fileId: "file-1",
+					} as ToolCall,
+				},
+			} as Message,
+		]);
 
 		renderComponent({
 			preloadedState: {
@@ -770,34 +726,30 @@ describe("ToolCallDisplay", () => {
 	});
 
 	it("Should be able to upload a file", async () => {
-		vi.mocked(getAllAiChatsSortedByDateDesc).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "chat-1",
-					title: "chat 1",
-					createdDate: "date",
-				},
-			]),
-		);
+		vi.mocked(getAllAiChatsSortedByDateDesc).mockResolvedValue([
+			{
+				id: "chat-1",
+				title: "chat 1",
+				createdDate: "date",
+			},
+		]);
 
 		vi.mocked(getChatMessagesOrdered)
-			.mockReturnValueOnce(Promise.resolve([]))
-			.mockReturnValueOnce(
-				Promise.resolve([
-					{
-						id: "message-1",
-						chatId: "chat-1",
-						content: {
-							type: "document",
-							value: {
-								fileName: "file 1 -- backend.pdf",
-							},
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
+				{
+					id: "message-1",
+					chatId: "chat-1",
+					content: {
+						type: "document",
+						value: {
+							fileName: "file 1 -- backend.pdf",
 						},
-					} as Message,
-				]),
-			);
+					},
+				} as Message,
+			]);
 
-		vi.mocked(open).mockReturnValue(Promise.resolve("/home/file.pdf"));
+		vi.mocked(open).mockResolvedValue("/home/file.pdf");
 
 		vi.mocked(uploadDocument).mockImplementation(
 			async () => await new Promise(resolve => setTimeout(resolve, 50)),

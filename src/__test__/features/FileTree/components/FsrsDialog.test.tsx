@@ -33,20 +33,14 @@ describe("FsrsDialog", () => {
 	it("Should be able to update profile", async () => {
 		// Arrange
 
-		vi.mocked(getAllFsrsProfiles).mockReturnValue(
-			Promise.resolve([FILLED_PROFILE]),
-		);
+		vi.mocked(getAllFsrsProfiles).mockResolvedValue([FILLED_PROFILE]);
 
-		vi.mocked(getFsrsProfileChoiceForFolder).mockReturnValue(
-			Promise.resolve({
-				type: "id",
-				content: FILLED_PROFILE.id,
-			}),
-		);
+		vi.mocked(getFsrsProfileChoiceForFolder).mockResolvedValue({
+			type: "id",
+			content: FILLED_PROFILE.id,
+		});
 
-		vi.mocked(getFolderFsrsProfile).mockReturnValue(
-			Promise.resolve(FILLED_PROFILE),
-		);
+		vi.mocked(getFolderFsrsProfile).mockResolvedValue(FILLED_PROFILE);
 
 		const onCloseMock = vi.fn();
 
@@ -58,8 +52,6 @@ describe("FsrsDialog", () => {
 				name=""
 			/>,
 		);
-
-		await Promise.resolve();
 
 		// Act
 
@@ -96,23 +88,17 @@ describe("FsrsDialog", () => {
 	it("Should be able to change chosen profile", async () => {
 		// Arrange
 
-		vi.mocked(getAllFsrsProfiles).mockReturnValue(
-			Promise.resolve([
-				FILLED_PROFILE,
-				{ ...FILLED_PROFILE, name: "profile-2", id: "profile-2" },
-			]),
-		);
+		vi.mocked(getAllFsrsProfiles).mockResolvedValue([
+			FILLED_PROFILE,
+			{ ...FILLED_PROFILE, name: "profile-2", id: "profile-2" },
+		]);
 
-		vi.mocked(getFsrsProfileChoiceForFolder).mockReturnValue(
-			Promise.resolve({
-				type: "id",
-				content: FILLED_PROFILE.id,
-			}),
-		);
+		vi.mocked(getFsrsProfileChoiceForFolder).mockResolvedValue({
+			type: "id",
+			content: FILLED_PROFILE.id,
+		});
 
-		vi.mocked(getFolderFsrsProfile).mockReturnValue(
-			Promise.resolve(FILLED_PROFILE),
-		);
+		vi.mocked(getFolderFsrsProfile).mockResolvedValue(FILLED_PROFILE);
 
 		const onCloseMock = vi.fn();
 
@@ -147,25 +133,17 @@ describe("FsrsDialog", () => {
 
 		const clonedProfile = { ...FILLED_PROFILE, id: "profile-2" };
 		vi.mocked(getAllFsrsProfiles)
-			.mockReturnValueOnce(Promise.resolve([FILLED_PROFILE]))
-			.mockReturnValueOnce(
-				Promise.resolve([FILLED_PROFILE, clonedProfile]),
-			);
+			.mockResolvedValueOnce([FILLED_PROFILE])
+			.mockResolvedValueOnce([FILLED_PROFILE, clonedProfile]);
 
-		vi.mocked(createProfile).mockReturnValue(
-			Promise.resolve(clonedProfile),
-		);
+		vi.mocked(createProfile).mockResolvedValue(clonedProfile);
 
-		vi.mocked(getFsrsProfileChoiceForFolder).mockReturnValue(
-			Promise.resolve({
-				type: "id",
-				content: FILLED_PROFILE.id,
-			}),
-		);
+		vi.mocked(getFsrsProfileChoiceForFolder).mockResolvedValue({
+			type: "id",
+			content: FILLED_PROFILE.id,
+		});
 
-		vi.mocked(getFolderFsrsProfile).mockReturnValue(
-			Promise.resolve(FILLED_PROFILE),
-		);
+		vi.mocked(getFolderFsrsProfile).mockResolvedValue(FILLED_PROFILE);
 
 		renderWithProviders(
 			<FsrsDialog
@@ -213,28 +191,22 @@ describe("FsrsDialog", () => {
 
 		const selectedProfile = { ...FILLED_PROFILE, id: "profile-2" };
 		vi.mocked(getAllFsrsProfiles)
-			.mockReturnValueOnce(
-				Promise.resolve([FILLED_PROFILE, selectedProfile]),
-			)
-			.mockReturnValueOnce(Promise.resolve([FILLED_PROFILE]));
+			.mockResolvedValueOnce([FILLED_PROFILE, selectedProfile])
+			.mockResolvedValue([FILLED_PROFILE]);
 
 		vi.mocked(getFsrsProfileChoiceForFolder)
-			.mockReturnValueOnce(
-				Promise.resolve({
-					type: "id",
-					content: selectedProfile.id,
-				}),
-			)
-			.mockReturnValueOnce(
-				Promise.resolve({
-					type: "id",
-					content: FILLED_PROFILE.id,
-				}),
-			);
+			.mockResolvedValueOnce({
+				type: "id",
+				content: selectedProfile.id,
+			})
+			.mockResolvedValueOnce({
+				type: "id",
+				content: FILLED_PROFILE.id,
+			});
 
 		vi.mocked(getFolderFsrsProfile)
-			.mockReturnValueOnce(Promise.resolve(selectedProfile))
-			.mockReturnValueOnce(Promise.resolve(FILLED_PROFILE));
+			.mockResolvedValueOnce(selectedProfile)
+			.mockResolvedValueOnce(FILLED_PROFILE);
 
 		renderWithProviders(
 			<FsrsDialog

@@ -64,17 +64,15 @@ describe("Reviewer", () => {
 			},
 		];
 
-		vi.mocked(getCellsForFilesWithFsrsProfileIds).mockReturnValue(
-			Promise.resolve(cellsWithFsrsProfileIds),
+		vi.mocked(getCellsForFilesWithFsrsProfileIds).mockResolvedValue(
+			cellsWithFsrsProfileIds,
 		);
 
-		vi.mocked(getAllFsrsProfiles).mockReturnValue(
-			Promise.resolve([
-				{
-					id: "",
-				} as FsrsProfile,
-			]),
-		);
+		vi.mocked(getAllFsrsProfiles).mockResolvedValue([
+			{
+				id: "",
+			} as FsrsProfile,
+		]);
 
 		// Act
 
@@ -130,8 +128,8 @@ describe("Reviewer", () => {
 			},
 		];
 
-		vi.mocked(getCellsForFilesWithFsrsProfileIds).mockReturnValue(
-			Promise.resolve(cellsWithFsrsProfileIds),
+		vi.mocked(getCellsForFilesWithFsrsProfileIds).mockResolvedValue(
+			cellsWithFsrsProfileIds,
 		);
 
 		const fsrsProfile: FsrsProfile = {
@@ -145,9 +143,7 @@ describe("Reviewer", () => {
 			],
 		};
 
-		vi.mocked(getAllFsrsProfiles).mockReturnValue(
-			Promise.resolve([fsrsProfile]),
-		);
+		vi.mocked(getAllFsrsProfiles).mockResolvedValue([fsrsProfile]);
 
 		renderWithProviders(
 			<Reviewer

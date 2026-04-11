@@ -16,11 +16,9 @@ describe("VerifyEmailDialog", () => {
 	test("Should call backend, update user information, and close on successful submit", async () => {
 		// Arrange
 
-		vi.mocked(getUserInformation).mockReturnValue(
-			Promise.resolve({
-				isEmailVerified: true,
-			} as UserInformationDto),
-		);
+		vi.mocked(getUserInformation).mockResolvedValue({
+			isEmailVerified: true,
+		} as UserInformationDto);
 
 		const onCloseMock = vi.fn();
 

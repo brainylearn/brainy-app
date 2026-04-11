@@ -412,7 +412,7 @@ describe("Scrolling", () => {
 			},
 		});
 
-		vi.mocked(createCell).mockReturnValue(Promise.resolve("4"));
+		vi.mocked(createCell).mockResolvedValue("4");
 
 		const cells = [createTestCell(1), createTestCell(2), createTestCell(3)];
 		renderEditableCells({
@@ -740,7 +740,7 @@ describe("EditableCells logic", () => {
 			],
 		});
 
-		vi.mocked(createCell).mockReturnValue(Promise.resolve("4"));
+		vi.mocked(createCell).mockResolvedValue("4");
 
 		// Act
 

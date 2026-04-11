@@ -30,7 +30,7 @@ const getAndSetDefaultSettings = () => {
 		ollamaEmbeddingsModelName: "",
 	};
 	const getSettingsMock = vi.mocked(getSettings);
-	getSettingsMock.mockReturnValue(Promise.resolve(settings));
+	getSettingsMock.mockResolvedValue(settings);
 	return settings;
 };
 

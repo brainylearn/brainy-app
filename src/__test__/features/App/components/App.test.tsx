@@ -2,7 +2,7 @@ import App from "../../../../features/App/components/App.tsx";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders.tsx";
 import useAppDispatch from "../../../../hooks/useAppDispatch.ts";
 import { getReviewTreeFolderForRoot } from "../../../../stores/fileSystem/fileSystemActions.ts";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import { loadInitialUserState } from "../../../../stores/user/userActions.ts";
 import { initialLoadAndApplySettings } from "../../../../stores/settings/settingsActions.ts";
 import { Mock } from "vitest";
@@ -34,6 +34,7 @@ vi.mock(import("../../../../stores/sync/syncActions.ts"));
 vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
 vi.mock(import("../../../../api/cellApi.ts"), () => ({
 	getCellsForFilesWithFsrsProfileIds: () => Promise.resolve([]),
+	getFileCellsOrderedByIndex: () => Promise.resolve([]),
 }));
 vi.mock(import("../../../../utils/tauriUtils.ts"));
 vi.mock(import("@tauri-apps/api/core"));
@@ -111,7 +112,6 @@ describe("App", () => {
 		// Act
 
 		renderWithProviders(<App />);
-		await Promise.resolve();
 
 		// Assert
 
@@ -121,7 +121,7 @@ describe("App", () => {
 		});
 	});
 
-	it("Should prevent default when opening context menu on production", () => {
+	it("Should prevent default when opening context menu on production", async () => {
 		// Arrange
 
 		vi.stubEnv("DEV", false);
@@ -131,14 +131,17 @@ describe("App", () => {
 
 		// Act
 
-		window.dispatchEvent(event);
+		await act(() => {
+			window.dispatchEvent(event);
+			return Promise.resolve();
+		});
 
 		// Assert
 
 		expect(preventDefaultSpy).toHaveBeenCalled();
 	});
 
-	it("Should not prevent default when opening context menu on development", () => {
+	it("Should not prevent default when opening context menu on development", async () => {
 		// Arrange
 
 		vi.stubEnv("DEV", true);
@@ -148,14 +151,17 @@ describe("App", () => {
 
 		// Act
 
-		window.dispatchEvent(event);
+		await act(() => {
+			window.dispatchEvent(event);
+			return Promise.resolve();
+		});
 
 		// Assert
 
 		expect(preventDefaultSpy).not.toHaveBeenCalled();
 	});
 
-	it("Should prevent default when pressing F5", () => {
+	it("Should prevent default when pressing F5", async () => {
 		// Arrange
 
 		const event = new KeyboardEvent("keydown", {
@@ -166,14 +172,17 @@ describe("App", () => {
 
 		// Act
 
-		window.dispatchEvent(event);
+		await act(() => {
+			window.dispatchEvent(event);
+			return Promise.resolve();
+		});
 
 		// Assert
 
 		expect(preventDefaultSpy).toHaveBeenCalled();
 	});
 
-	it("Should prevent default when pressing Ctrl + F", () => {
+	it("Should prevent default when pressing Ctrl + F", async () => {
 		// Arrange
 
 		const event = new KeyboardEvent("keydown", {
@@ -185,14 +194,17 @@ describe("App", () => {
 
 		// Act
 
-		window.dispatchEvent(event);
+		await act(() => {
+			window.dispatchEvent(event);
+			return Promise.resolve();
+		});
 
 		// Assert
 
 		expect(preventDefaultSpy).toHaveBeenCalled();
 	});
 
-	it("Should prevent default when pressing Ctrl + R", () => {
+	it("Should prevent default when pressing Ctrl + R", async () => {
 		// Arrange
 
 		const event = new KeyboardEvent("keydown", {
@@ -204,7 +216,10 @@ describe("App", () => {
 
 		// Act
 
-		window.dispatchEvent(event);
+		await act(() => {
+			window.dispatchEvent(event);
+			return Promise.resolve();
+		});
 
 		// Assert
 
@@ -220,16 +235,20 @@ describe("App", () => {
 		);
 		renderWithProviders(<App />);
 		// Waiting for async callback to finish.
-		await Promise.resolve();
+		await act(async () => {
+			/* Nothing */
+		});
 		const beforeTimes = dispatchMock.mock.calls.filter(
 			c => c[0] === expectedReviewTreeCb,
 		).length;
 
 		// Act
 
-		await defaultGlobalSyncEventManager.notifyListeners(
-			ListenerType.PostSyncComplete,
-		);
+		await act(async () => {
+			await defaultGlobalSyncEventManager.notifyListeners(
+				ListenerType.PostSyncComplete,
+			);
+		});
 
 		// Assert
 
@@ -261,17 +280,15 @@ describe("App", () => {
 	it("Should render updater", async () => {
 		// Arrange
 
-		vi.mocked(check).mockReturnValue(
-			Promise.resolve(
-				new Update({
-					version: "",
-					currentVersion: "",
-					rawJson: {},
-					rid: 1,
-				}),
-			),
+		vi.mocked(check).mockResolvedValue(
+			new Update({
+				version: "",
+				currentVersion: "",
+				rawJson: {},
+				rid: 1,
+			}),
 		);
-		vi.mocked(ask).mockReturnValue(Promise.resolve(true));
+		vi.mocked(ask).mockResolvedValue(true);
 
 		// Act
 

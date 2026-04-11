@@ -59,12 +59,10 @@ describe("Profile & Security tab", () => {
 	it("Should update user information when submitting", async () => {
 		// Arrange
 
-		vi.mocked(getUserInformation).mockReturnValue(
-			Promise.resolve({
-				firstName: "New first name",
-				lastName: "New last name",
-			} as Partial<UserInformationDto> as UserInformationDto),
-		);
+		vi.mocked(getUserInformation).mockResolvedValue({
+			firstName: "New first name",
+			lastName: "New last name",
+		} as Partial<UserInformationDto> as UserInformationDto);
 
 		const onCloseMock = vi.fn();
 
@@ -250,11 +248,9 @@ describe("Appearance & Data tab", () => {
 			},
 		);
 
-		vi.mocked(getSettings).mockReturnValue(
-			Promise.resolve({
-				zoomPercentage: 120,
-			} as SettingsDto),
-		);
+		vi.mocked(getSettings).mockResolvedValue({
+			zoomPercentage: 120,
+		} as SettingsDto);
 
 		// Act
 

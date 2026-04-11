@@ -621,13 +621,11 @@ describe("FileTreeItem", () => {
 			},
 		});
 
-		vi.mocked(createFolder).mockReturnValue(Promise.resolve("1"));
+		vi.mocked(createFolder).mockResolvedValue("1");
 
 		const newRoot = createTestFolder("", ROOT_FOLDER_ID);
 		newRoot.subfolders.push(createTestFolder("test", "1"));
-		vi.mocked(getReviewTreeFolderForRoot).mockReturnValue(
-			Promise.resolve(newRoot),
-		);
+		vi.mocked(getReviewTreeFolderForRoot).mockResolvedValue(newRoot);
 
 		// Act
 
@@ -666,8 +664,8 @@ describe("FileTreeItem", () => {
 			},
 		});
 
-		vi.mocked(getReviewTreeFolderForRoot).mockReturnValue(
-			Promise.resolve(createTestFolder("", ROOT_FOLDER_ID)),
+		vi.mocked(getReviewTreeFolderForRoot).mockResolvedValue(
+			createTestFolder("", ROOT_FOLDER_ID),
 		);
 
 		// Act
@@ -701,7 +699,7 @@ describe("FileTreeItem", () => {
 			},
 		});
 
-		vi.mocked(createFolder).mockReturnValue(Promise.resolve("1"));
+		vi.mocked(createFolder).mockResolvedValue("1");
 
 		// Act
 
