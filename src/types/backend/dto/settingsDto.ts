@@ -1,7 +1,6 @@
 export type Theme = "FollowSystem" | "Light" | "Dark";
 
-// TODO: should be called settings dto
-export default interface Settings {
+export default interface SettingsDto {
 	databaseDirectory: string;
 
 	theme: Theme;

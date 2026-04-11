@@ -22,7 +22,7 @@ import reviewerStyles from "../../../../features/Reviewer/components/styles.modu
 import searcherStyles from "../../../../features/Searcher/components/styles.module.css";
 import { SMALL_SCREEN_MAX_WIDTH_IN_PX } from "../../../../config/constants.ts";
 import { sync } from "../../../../stores/sync/syncActions.ts";
-import Settings from "../../../../types/backend/model/settings.ts";
+import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
 
 vi.mock(import("../../../../hooks/useAppDispatch.ts"), () => ({
 	default: vi.fn(),
@@ -69,7 +69,7 @@ describe("App", () => {
 			if (cb === expectedInitiateSettings) {
 				return Promise.resolve({
 					autoSync: true,
-				} as Partial<Settings>);
+				} as Partial<SettingsDto>);
 			}
 		});
 
@@ -101,7 +101,7 @@ describe("App", () => {
 			if (cb === expectedInitiateSettings) {
 				return Promise.resolve({
 					autoSync: false,
-				} as Partial<Settings>);
+				} as Partial<SettingsDto>);
 			}
 		});
 

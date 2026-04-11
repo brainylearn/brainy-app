@@ -1,4 +1,4 @@
-import { Theme } from "../model/settings";
+import { Theme } from "./settingsDto";
 
 export default interface UpdateSettingsRequest {
 	databaseLocationBaseDir: string | null;

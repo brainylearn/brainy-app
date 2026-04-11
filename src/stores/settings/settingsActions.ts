@@ -1,7 +1,7 @@
 import { getSettings, updateSettings } from "../../api/settingsApi";
 import { AppDispatch } from "../store";
 import { setSettings } from "./settingsReducer";
-import Settings from "../../types/backend/model/settings";
+import SettingsDto from "../../types/backend/dto/settingsDto";
 import { sync } from "../sync/syncActions";
 import { defaultCloseRequestedEventManager } from "../../managers/closeRequestedEventManager";
 import { tryGetCurrentWebView, isMobile } from "../../utils/tauriUtils";
@@ -30,7 +30,7 @@ export function updateAndApplySettings(request: UpdateSettingsRequest) {
 	};
 }
 
-async function applySettings(settings: Settings, dispatch: AppDispatch) {
+async function applySettings(settings: SettingsDto, dispatch: AppDispatch) {
 	try {
 		document.body.classList.add("no-transition");
 

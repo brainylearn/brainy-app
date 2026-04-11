@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import AiChatWidget from "../../../../features/AiChatWidget/components/AiChatWidget";
-import Settings from "../../../../types/backend/model/settings";
+import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 import {
 	acceptToolCall,
@@ -51,7 +51,7 @@ function renderComponent({
 			settings: {
 				settings: {
 					enableAi,
-				} as Partial<Settings> as Settings,
+				} as Partial<SettingsDto> as SettingsDto,
 			},
 			...preloadedState,
 		},

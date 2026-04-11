@@ -13,7 +13,7 @@ import { selectIsSignedIn } from "../../../../stores/user/userSelectors.ts";
 import Settings from "../../../../features/Settings/components/Settings.tsx";
 import { updateSettings } from "../../../../api/settingsApi.ts";
 import { SettingsState } from "../../../../stores/settings/settingsReducer.ts";
-import SettingsType from "../../../../types/backend/model/settings.ts";
+import SettingsType from "../../../../types/backend/dto/settingsDto.ts";
 import { Window } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 import { isMobile } from "../../../../utils/tauriUtils.ts";

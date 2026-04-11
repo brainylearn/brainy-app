@@ -3,12 +3,12 @@ import { FormRows, FormRowsProps } from "../../../../components/Form/Form";
 import CheckBox from "../../../../components/Checkbox/Checkbox";
 import Icon from "@mdi/react";
 import { mdiFolderOpenOutline } from "@mdi/js";
-import Settings from "../../../../types/backend/model/settings";
+import SettingsDto from "../../../../types/backend/dto/settingsDto";
 import { TabProps } from "../../types/tabProps";
 import { isMobile } from "../../../../utils/tauriUtils";
 
 export default function DataTab({ state, setState }: TabProps) {
-	const updateSettings = (newSettings: Partial<Settings>) => {
+	const updateSettings = (newSettings: Partial<SettingsDto>) => {
 		setState({
 			...state,
 			localSettings: {

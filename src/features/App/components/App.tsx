@@ -30,7 +30,7 @@ import {
 } from "../../../stores/sync/managers/syncEventManager";
 import { initialLoadAndApplySettings } from "../../../stores/settings/settingsActions";
 import { sync } from "../../../stores/sync/syncActions";
-import SettingsType from "../../../types/backend/model/settings";
+import SettingsType from "../../../types/backend/dto/settingsDto";
 import useIsSmallScreen from "../../../hooks/useIsSmallScreen";
 import AiChatWidget from "../../AiChatWidget/components/AiChatWidget";
 
