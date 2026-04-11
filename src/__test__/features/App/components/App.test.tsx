@@ -83,10 +83,10 @@ describe("App", () => {
 		// Assert
 
 		await waitFor(() => {
-			expect(dispatchMock).toBeCalledWith(expectedReviewTreeCb);
-			expect(dispatchMock).toBeCalledWith(expectedLoadSettingsCb);
-			expect(dispatchMock).toBeCalledWith(expectedInitiateSettings);
-			expect(dispatchMock).toBeCalledWith(expectedSync);
+			expect(dispatchMock).toHaveBeenCalledWith(expectedReviewTreeCb);
+			expect(dispatchMock).toHaveBeenCalledWith(expectedLoadSettingsCb);
+			expect(dispatchMock).toHaveBeenCalledWith(expectedInitiateSettings);
+			expect(dispatchMock).toHaveBeenCalledWith(expectedSync);
 		});
 	});
 
@@ -116,8 +116,8 @@ describe("App", () => {
 		// Assert
 
 		await waitFor(() => {
-			expect(dispatchMock).toBeCalledWith(expectedInitiateSettings);
-			expect(dispatchMock).not.toBeCalledWith(expectedSync);
+			expect(dispatchMock).toHaveBeenCalledWith(expectedInitiateSettings);
+			expect(dispatchMock).not.toHaveBeenCalledWith(expectedSync);
 		});
 	});
 

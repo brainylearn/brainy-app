@@ -82,7 +82,7 @@ describe("FsrsDialog", () => {
 		const expectedWeights = [...FILLED_PROFILE.weights];
 		expectedWeights[0] = Number("1" + expectedWeights[0].toString());
 
-		expect(vi.mocked(updateProfile)).toBeCalledWith({
+		expect(vi.mocked(updateProfile)).toHaveBeenCalledWith({
 			id: FILLED_PROFILE.id,
 			name: "new name",
 			requestRetention: 8,
@@ -90,7 +90,7 @@ describe("FsrsDialog", () => {
 			weights: expectedWeights,
 		} as FsrsProfile);
 
-		expect(onCloseMock).toBeCalled();
+		expect(onCloseMock).toHaveBeenCalled();
 	});
 
 	it("Should be able to change chosen profile", async () => {
@@ -133,7 +133,7 @@ describe("FsrsDialog", () => {
 
 		// Assert
 
-		expect(vi.mocked(setFsrsProfileChoiceForFolder)).toBeCalledWith(
+		expect(vi.mocked(setFsrsProfileChoiceForFolder)).toHaveBeenCalledWith(
 			ITEM_ID,
 			{
 				type: "id",
@@ -185,14 +185,14 @@ describe("FsrsDialog", () => {
 
 		// Assert
 
-		expect(vi.mocked(createProfile)).toBeCalledWith({
+		expect(vi.mocked(createProfile)).toHaveBeenCalledWith({
 			name: FILLED_PROFILE.name + " clone",
 			maximumInterval: FILLED_PROFILE.maximumInterval,
 			requestRetention: FILLED_PROFILE.requestRetention,
 			weights: FILLED_PROFILE.weights,
 		});
 
-		expect(vi.mocked(setFsrsProfileChoiceForFolder)).toBeCalledWith(
+		expect(vi.mocked(setFsrsProfileChoiceForFolder)).toHaveBeenCalledWith(
 			ITEM_ID,
 			{
 				type: "id",
@@ -200,7 +200,7 @@ describe("FsrsDialog", () => {
 			} as FsrsProfileChoice,
 		);
 
-		expect(vi.mocked(updateProfile)).toBeCalledWith(
+		expect(vi.mocked(updateProfile)).toHaveBeenCalledWith(
 			expect.objectContaining({
 				id: clonedProfile.id,
 				requestRetention: 18,
@@ -255,9 +255,11 @@ describe("FsrsDialog", () => {
 
 		// Assert
 
-		expect(vi.mocked(deleteFsrsProfile)).toBeCalledWith(selectedProfile.id);
+		expect(vi.mocked(deleteFsrsProfile)).toHaveBeenCalledWith(
+			selectedProfile.id,
+		);
 
-		expect(vi.mocked(setFsrsProfileChoiceForFolder)).toBeCalledWith(
+		expect(vi.mocked(setFsrsProfileChoiceForFolder)).toHaveBeenCalledWith(
 			ITEM_ID,
 			{
 				type: "id",
@@ -265,7 +267,7 @@ describe("FsrsDialog", () => {
 			} as FsrsProfileChoice,
 		);
 
-		expect(vi.mocked(updateProfile)).toBeCalledWith(
+		expect(vi.mocked(updateProfile)).toHaveBeenCalledWith(
 			expect.objectContaining({
 				id: FILLED_PROFILE.id,
 				requestRetention: 18,

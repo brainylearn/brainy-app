@@ -73,14 +73,14 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Assert
 
-		expect(dispatch).toBeCalledWith(setSettings(settings));
-		expect(setZoomMock).toBeCalledWith(1.5);
-		expect(setThemeMock).toBeCalledWith("dark");
+		expect(dispatch).toHaveBeenCalledWith(setSettings(settings));
+		expect(setZoomMock).toHaveBeenCalledWith(1.5);
+		expect(setThemeMock).toHaveBeenCalledWith("dark");
 		expect(document.body.classList.contains("dark")).toBe(true);
-		expect(removeHandlerSpy).toBeCalledWith(
+		expect(removeHandlerSpy).toHaveBeenCalledWith(
 			SETTINGS_CLOSE_REQUESTED_HANDLER_NAME,
 		);
-		expect(addHandlerSpy).toBeCalledWith(
+		expect(addHandlerSpy).toHaveBeenCalledWith(
 			SETTINGS_CLOSE_REQUESTED_HANDLER_NAME,
 			expect.anything(),
 		);
@@ -101,7 +101,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Assert
 
-		expect(dispatch).toBeCalledWith(setSettings(settings));
+		expect(dispatch).toHaveBeenCalledWith(setSettings(settings));
 		expect(document.body.classList.contains("dark")).toBe(false);
 	});
 
@@ -126,10 +126,10 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Assert
 
-		expect(dispatch).toBeCalledWith(setSettings(settings));
+		expect(dispatch).toHaveBeenCalledWith(setSettings(settings));
 		expect(document.body.classList.contains("dark")).toBe(true);
-		expect(setThemeMock).toBeCalledWith(null);
-		expect(setThemeMock).toBeCalledWith("dark");
+		expect(setThemeMock).toHaveBeenCalledWith(null);
+		expect(setThemeMock).toHaveBeenCalledWith("dark");
 	});
 
 	it("Should sync on close", async () => {
@@ -153,7 +153,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Assert
 
-		expect(syncSpy).toBeCalledTimes(1);
+		expect(syncSpy).toHaveBeenCalledTimes(1);
 	});
 
 	it("Should not sync on close when auto-sync is false", async () => {
@@ -177,7 +177,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Assert
 
-		expect(syncSpy).toBeCalledTimes(0);
+		expect(syncSpy).toHaveBeenCalledTimes(0);
 	});
 });
 
@@ -200,8 +200,8 @@ describe("updateAndApplySettings", () => {
 
 		// Assert
 
-		expect(updateSettingsSpy).toBeCalled();
-		expect(dispatch).toBeCalledWith(setSettings(settings));
+		expect(updateSettingsSpy).toHaveBeenCalled();
+		expect(dispatch).toHaveBeenCalledWith(setSettings(settings));
 		expect(document.body.classList.contains("dark")).toBe(true);
 	});
 
@@ -234,7 +234,7 @@ describe("updateAndApplySettings", () => {
 
 		// Assert
 
-		expect(dispatch).toBeCalledWith(setSettings(settings));
+		expect(dispatch).toHaveBeenCalledWith(setSettings(settings));
 		expect(document.body.classList.contains("no-transition")).toBe(false);
 	});
 

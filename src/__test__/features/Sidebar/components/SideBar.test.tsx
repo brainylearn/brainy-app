@@ -40,7 +40,7 @@ describe("SideBar", () => {
 
 		// Assert
 
-		expect(vi.mocked(verifyUserEmail)).toBeCalledWith("12345678");
+		expect(vi.mocked(verifyUserEmail)).toHaveBeenCalledWith("12345678");
 	});
 
 	it("Should not see verify email button if verified", () => {
@@ -134,6 +134,6 @@ describe("SideBar", () => {
 
 		// Assert
 
-		expect(vi.mocked(verifyUserEmail)).toBeCalledWith("12345678");
+		expect(vi.mocked(verifyUserEmail)).toHaveBeenCalledWith("12345678");
 	});
 });

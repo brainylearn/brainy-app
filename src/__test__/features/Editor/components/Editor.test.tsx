@@ -160,7 +160,7 @@ describe("Editor", () => {
 
 		// Assert
 
-		expect(onStudyStart).toBeCalled();
+		expect(onStudyStart).toHaveBeenCalled();
 	});
 
 	it("Should retrieve initial state correctly", async () => {

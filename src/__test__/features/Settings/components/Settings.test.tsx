@@ -11,12 +11,12 @@ import { UserState } from "../../../../stores/user/userReducer.ts";
 import useAppSelector from "../../../../hooks/useAppSelector.ts";
 import { selectIsSignedIn } from "../../../../stores/user/userSelectors.ts";
 import Settings from "../../../../features/Settings/components/Settings.tsx";
-import { updateSettings } from "../../../../api/settingsApi.ts";
+import { getSettings, updateSettings } from "../../../../api/settingsApi.ts";
 import { SettingsState } from "../../../../stores/settings/settingsReducer.ts";
-import SettingsType from "../../../../types/backend/dto/settingsDto.ts";
 import { Window } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 import { isMobile } from "../../../../utils/tauriUtils.ts";
+import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
 
 vi.mock(import("../../../../api/authApi.ts"));
 vi.mock(import("../../../../api/userApi.ts"));
@@ -51,7 +51,7 @@ const createInitialUserState = ({
 
 const createInitialSettingsState = () => {
 	return {
-		settings: {} as SettingsType,
+		settings: {} as SettingsDto,
 	} as SettingsState;
 };
 
@@ -87,13 +87,13 @@ describe("Profile & Security tab", () => {
 
 		// Assert
 
-		expect(vi.mocked(updateUserInformation)).toBeCalledWith(
+		expect(vi.mocked(updateUserInformation)).toHaveBeenCalledWith(
 			"New first name",
 			"New last name",
 		);
-		expect(vi.mocked(updatePassword)).not.toBeCalled();
+		expect(vi.mocked(updatePassword)).not.toHaveBeenCalled();
 
-		expect(onCloseMock).toBeCalled();
+		expect(onCloseMock).toHaveBeenCalled();
 
 		expect(store.getState().user.userInformation?.firstName).toBe(
 			"New first name",
@@ -120,8 +120,8 @@ describe("Profile & Security tab", () => {
 
 		// Assert
 
-		expect(vi.mocked(updateUserInformation)).not.toBeCalled();
-		expect(vi.mocked(updatePassword)).not.toBeCalled();
+		expect(vi.mocked(updateUserInformation)).not.toHaveBeenCalled();
+		expect(vi.mocked(updatePassword)).not.toHaveBeenCalled();
 	});
 
 	it("Should sign-out when pressing the button", async () => {
@@ -146,7 +146,7 @@ describe("Profile & Security tab", () => {
 
 		// Assert
 
-		expect(vi.mocked(signOut)).toBeCalled();
+		expect(vi.mocked(signOut)).toHaveBeenCalled();
 		expect(store.getState().user.isSignedIn).toBe(false);
 	});
 
@@ -196,7 +196,7 @@ describe("Profile & Security tab", () => {
 		// Assert
 
 		expect(screen.queryByText("Passwords do not match!")).not.toBeNull();
-		expect(vi.mocked(updatePassword)).not.toBeCalled();
+		expect(vi.mocked(updatePassword)).not.toHaveBeenCalled();
 	});
 
 	it("Should update user passwords when input is given correctly", async () => {
@@ -225,11 +225,11 @@ describe("Profile & Security tab", () => {
 
 		// Assert
 
-		expect(vi.mocked(updatePassword)).toBeCalledWith(
+		expect(vi.mocked(updatePassword)).toHaveBeenCalledWith(
 			"testPassword123",
 			"newPassword123",
 		);
-		expect(vi.mocked(updateUserInformation)).not.toBeCalled();
+		expect(vi.mocked(updateUserInformation)).not.toHaveBeenCalled();
 	});
 });
 
@@ -250,6 +250,12 @@ describe("Appearance & Data tab", () => {
 			},
 		);
 
+		vi.mocked(getSettings).mockReturnValue(
+			Promise.resolve({
+				zoomPercentage: 120,
+			} as SettingsDto),
+		);
+
 		// Act
 
 		await userEvent.click(screen.getByText("Zoom", { exact: false }));
@@ -264,14 +270,14 @@ describe("Appearance & Data tab", () => {
 		// Assert
 
 		expect(store.getState().settings.settings?.zoomPercentage).toBe(120);
-		expect(vi.mocked(updateSettings)).toBeCalledWith(
+		expect(vi.mocked(updateSettings)).toHaveBeenCalledWith(
 			expect.objectContaining({
 				zoomPercentage: 120,
 				autoSync: true,
-			} as SettingsType),
+			} as SettingsDto),
 		);
 
-		expect(onCloseMock).toBeCalled();
+		expect(onCloseMock).toHaveBeenCalled();
 	});
 
 	it("Should not allow too small zoom", async () => {
@@ -297,7 +303,7 @@ describe("Appearance & Data tab", () => {
 				exact: false,
 			}),
 		).not.toBeNull();
-		expect(onCloseMock).not.toBeCalled();
+		expect(onCloseMock).not.toHaveBeenCalled();
 	});
 
 	it("Should be able to set zoom on mobile", () => {

@@ -396,7 +396,7 @@ describe("AiChatWidget", () => {
 
 		// Assert
 
-		expect(vi.mocked(stopAiGeneration)).toBeCalled();
+		expect(vi.mocked(stopAiGeneration)).toHaveBeenCalled();
 	});
 
 	it("Should stop generation when unmounted", () => {
@@ -414,7 +414,7 @@ describe("AiChatWidget", () => {
 
 		// Assert
 
-		expect(vi.mocked(stopAiGeneration)).toBeCalled();
+		expect(vi.mocked(stopAiGeneration)).toHaveBeenCalled();
 	});
 
 	it("Should toggle chat when shortcut is pressed", async () => {
@@ -543,7 +543,10 @@ describe("AiChatWidget", () => {
 
 		// Assert
 
-		expect(vi.mocked(renameAiChat)).toBeCalledWith("chat-1", "New name");
+		expect(vi.mocked(renameAiChat)).toHaveBeenCalledWith(
+			"chat-1",
+			"New name",
+		);
 	});
 });
 
@@ -626,7 +629,7 @@ describe("ToolCallDisplay", () => {
 
 		// Assert
 
-		expect(vi.mocked(acceptToolCall)).toBeCalledWith("message-1");
+		expect(vi.mocked(acceptToolCall)).toHaveBeenCalledWith("message-1");
 		expect(calledEventFileId).toBe("file-1");
 	});
 
@@ -703,7 +706,7 @@ describe("ToolCallDisplay", () => {
 
 		// Assert
 
-		expect(vi.mocked(rejectToolCall)).toBeCalledWith("message-1");
+		expect(vi.mocked(rejectToolCall)).toHaveBeenCalledWith("message-1");
 	});
 
 	it("Should be able to navigate to file", async () => {

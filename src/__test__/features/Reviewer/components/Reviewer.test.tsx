@@ -186,7 +186,7 @@ describe("Reviewer", () => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { due, lastReview, ...newRepetitionCompare } = newRepetition;
 
-		expect(vi.mocked(registerReview)).toBeCalledWith(
+		expect(vi.mocked(registerReview)).toHaveBeenCalledWith(
 			expect.objectContaining(newRepetitionCompare),
 			"Good",
 			expect.anything(),

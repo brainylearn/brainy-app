@@ -34,11 +34,11 @@ describe("VerifyEmailDialog", () => {
 
 		// Assert
 
-		expect(verifyUserEmail).toBeCalledWith("12345678");
+		expect(verifyUserEmail).toHaveBeenCalledWith("12345678");
 		expect(store.getState().user.userInformation?.isEmailVerified).toBe(
 			true,
 		);
-		expect(onCloseMock).toBeCalled();
+		expect(onCloseMock).toHaveBeenCalled();
 	});
 
 	test("Should resend email verification button code when button is clicked, show success message and hide button", async () => {
@@ -52,7 +52,7 @@ describe("VerifyEmailDialog", () => {
 
 		// Assert
 
-		expect(vi.mocked(resendEmailVerificationCode)).toBeCalled();
+		expect(vi.mocked(resendEmailVerificationCode)).toHaveBeenCalled();
 		expect(
 			screen.queryByText(
 				"Verification code has been resent to your email!",
