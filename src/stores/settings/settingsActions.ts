@@ -5,6 +5,7 @@ import Settings from "../../types/backend/model/settings";
 import { sync } from "../sync/syncActions";
 import { defaultCloseRequestedEventManager } from "../../managers/closeRequestedEventManager";
 import { tryGetCurrentWebView, isMobile } from "../../utils/tauriUtils";
+import UpdateSettingsRequest from "../../types/backend/dto/updateSettingsRequest";
 
 export const SETTINGS_CLOSE_REQUESTED_HANDLER_NAME = "Settings handler";
 
@@ -20,11 +21,10 @@ export function initialLoadAndApplySettings() {
 	};
 }
 
-export function updateAndApplySettings(settings: Settings) {
+export function updateAndApplySettings(request: UpdateSettingsRequest) {
 	return async function (dispatch: AppDispatch) {
-		await updateSettings({
-			...settings,
-		});
+		await updateSettings(request);
+		const settings = await getSettings();
 		dispatch(setSettings(settings));
 		await applySettings(settings, dispatch);
 	};

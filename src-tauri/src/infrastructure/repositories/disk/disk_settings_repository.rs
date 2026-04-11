@@ -142,7 +142,7 @@ pub mod tests {
 
         let settings = serde_json::from_str::<Settings>(&file_content).unwrap();
         assert_eq!(
-            *settings.get_database_location().get_path(),
+            *settings.database_location().get_path(),
             app_data_directory.get_path().join("brainy.db")
         );
         assert_eq!(settings.theme, Theme::FollowSystem);

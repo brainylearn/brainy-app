@@ -51,7 +51,7 @@ export default function Settings({ onClose }: Props) {
 	const globalSettings = useAppSelector(selectSettings);
 	const userInformation = useAppSelector(selectUserInformation);
 	const [state, setState] = useState<SettingsState>({
-		localSettings: globalSettings,
+		localSettings: globalSettings!,
 		securityTabState: {
 			currentPassword: "",
 			newPassword: "",
@@ -135,12 +135,13 @@ export default function Settings({ onClose }: Props) {
 			}
 
 			if (state.localSettings) {
+				// TODO: not working
 				await dispatch(updateAndApplySettings(state.localSettings));
 			}
 
 			if (
-				state.localSettings?.databaseLocation !==
-				globalSettings?.databaseLocation
+				state.localSettings?.databaseDirectory !==
+				globalSettings?.databaseDirectory
 			) {
 				// TODO: unit test
 				location.href = "/";

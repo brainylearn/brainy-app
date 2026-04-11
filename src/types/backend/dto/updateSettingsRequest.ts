@@ -1,7 +1,8 @@
 import { Theme } from "../model/settings";
 
 export default interface UpdateSettingsRequest {
-	databaseLocation: string | null;
+	databaseLocationBaseDir: string | null;
+
 	theme: Theme | null;
 	zoomPercentage: number | null;
 	autoSync: boolean | null;

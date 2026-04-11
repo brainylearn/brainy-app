@@ -16,7 +16,6 @@ pub enum SettingsProfile {
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    // TODO: update front-end types
     pub(in crate::settings) base_database_location: PathBuf,
     pub(in crate::settings) profile: SettingsProfile,
 
@@ -53,7 +52,7 @@ impl Settings {
     }
 
     /// The full path to where the database is.
-    pub fn get_database_location(&self) -> DatabaseLocation {
+    pub fn database_location(&self) -> DatabaseLocation {
         DatabaseLocation(self.database_directory().join(DATABASE_FILE_NAME))
     }
 }

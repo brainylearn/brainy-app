@@ -66,10 +66,9 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     let settings = Settings::default();
 
     #[cfg(not(test))]
-    let sqlite_pool =
-        create_sqlite_pool(&format!("sqlite:///{}", settings.get_database_location()))
-            .await
-            .expect("Error connecting to Sqlite database");
+    let sqlite_pool = create_sqlite_pool(&format!("sqlite:///{}", settings.database_location()))
+        .await
+        .expect("Error connecting to Sqlite database");
 
     #[cfg(test)]
     let sqlite_pool = create_sqlite_pool("sqlite::memory:")

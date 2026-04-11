@@ -9,7 +9,6 @@ use crate::{
     },
     settings::{
         dto::update_settings_request::UpdateSettingsRequest,
-        entities::settings::SettingsProfile,
         repositories::settings_repository::{SettingsRepository, SettingsRepositoryError},
     },
 };
@@ -34,14 +33,13 @@ impl SettingsService {
         new_settings: UpdateSettingsRequest,
     ) -> Result<(), SettingsServiceError> {
         let mut settings = self.settings_repository.get_settings().await;
+        let mut change_database_location = false;
 
         if let Some(new_base_dir) = new_settings.database_location_base_dir
             && new_base_dir != settings.base_database_location
         {
             settings.base_database_location = new_base_dir;
-            self.database_connection_manager
-                .change_database_location(&settings.get_database_location())
-                .await?;
+            change_database_location = true;
         }
         if let Some(theme) = new_settings.theme {
             settings.theme = theme;
@@ -62,19 +60,18 @@ impl SettingsService {
             settings.ollama_embeddings_model_name = ollama_embeddings_model_name;
         }
 
+        if change_database_location {
+            self.database_connection_manager
+                .change_database_location(&settings.database_location())
+                .await?;
+            log::info!(
+                "Change database location to {}",
+                settings.database_location()
+            );
+        }
+
         self.settings_repository.save_settings(settings).await?;
 
-        Ok(())
-    }
-
-    // TODO: unit testing
-    pub async fn set_profile(&self, profile: SettingsProfile) -> Result<(), SettingsServiceError> {
-        let mut settings = self.settings_repository.get_settings().await;
-        settings.profile = profile;
-        self.database_connection_manager
-            .change_database_location(&settings.get_database_location())
-            .await?;
-        self.settings_repository.save_settings(settings).await?;
         Ok(())
     }
 }
