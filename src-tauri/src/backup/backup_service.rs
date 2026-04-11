@@ -173,7 +173,9 @@ pub mod tests {
             },
             value_objects::{app_data_directory::AppDataDirectory, db_pool::DbPool},
         },
-        settings::entities::settings::{Settings, SettingsProfile},
+        settings::{
+            entities::settings::Settings, value_objects::settings_profile::SettingsProfile,
+        },
         test_utils::create_temp_directory,
     };
 

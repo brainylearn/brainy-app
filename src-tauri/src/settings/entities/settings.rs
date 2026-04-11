@@ -2,16 +2,11 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::settings::value_objects::{database_location::DatabaseLocation, theme::Theme};
+use crate::settings::value_objects::{
+    database_location::DatabaseLocation, settings_profile::SettingsProfile, theme::Theme,
+};
 
 const DATABASE_FILE_NAME: &str = "brainy.db";
-
-#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum SettingsProfile {
-    #[default]
-    Default,
-    User(String),
-}
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,7 +37,6 @@ impl Settings {
         }
     }
 
-    // TODO: unit testing
     /// The directory that contains the database file.
     pub fn database_directory(&self) -> PathBuf {
         match &self.profile {
@@ -54,5 +48,42 @@ impl Settings {
     /// The full path to where the database is.
     pub fn database_location(&self) -> DatabaseLocation {
         DatabaseLocation(self.database_directory().join(DATABASE_FILE_NAME))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    pub fn database_directory_default_profile_returned_base_directory() {
+        // Arrange
+
+        let base = PathBuf::from("/data/brainy");
+        let settings = Settings::new(base.clone(), SettingsProfile::Default);
+
+        // Act
+
+        let actual = settings.database_directory();
+
+        // Assert
+
+        assert_eq!(base, actual);
+    }
+
+    #[test]
+    pub fn database_directory_user_profile_returned_correct_directory() {
+        // Arrange
+
+        let base = PathBuf::from("/data/brainy");
+        let settings = Settings::new(base.clone(), SettingsProfile::User("user1".into()));
+
+        // Act
+
+        let actual = settings.database_directory();
+
+        // Assert
+
+        assert_eq!(base.join("user1"), actual);
     }
 }

@@ -101,7 +101,7 @@ pub mod tests {
     use tokio::fs::File;
 
     use crate::{
-        settings::{entities::settings::SettingsProfile, value_objects::theme::Theme},
+        settings::value_objects::{settings_profile::SettingsProfile, theme::Theme},
         test_utils::create_temp_directory,
     };
 

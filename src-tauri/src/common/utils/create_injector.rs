@@ -35,8 +35,10 @@ use crate::local_configurations::repositories::local_configuration_repository::L
 #[cfg(test)]
 use crate::settings::entities::settings::Settings;
 #[cfg(not(test))]
-use crate::settings::entities::settings::{Settings, SettingsProfile};
+use crate::settings::entities::settings::Settings;
 use crate::settings::repositories::settings_repository::SettingsRepository;
+#[cfg(not(test))]
+use crate::settings::value_objects::settings_profile::SettingsProfile;
 use crate::sync::repositories::sync_repository::SyncRepository;
 use crate::{
     ai_integration::{ai_service::AiService, ai_state::AiState},
