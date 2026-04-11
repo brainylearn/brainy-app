@@ -22,7 +22,10 @@ export default function AppearanceTab({ state, setState }: TabProps) {
 				labelHtmlFor: "theme",
 				children: (
 					<Select
-						currentValue={state.localSettings?.theme ?? ""}
+						currentValue={
+							state.localSettings?.theme ??
+							("FollowSystem" as Theme)
+						}
 						id="theme"
 						onChangeValue={value =>
 							updateSettings({
@@ -58,7 +61,7 @@ export default function AppearanceTab({ state, setState }: TabProps) {
 				<input
 					id="zoom"
 					type="number"
-					value={state.localSettings?.zoomPercentage}
+					value={state.localSettings?.zoomPercentage ?? ""}
 					onChange={e =>
 						updateSettings({
 							zoomPercentage: Number(e.target.value),

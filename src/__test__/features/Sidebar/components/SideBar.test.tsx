@@ -8,6 +8,7 @@ import useAppDispatch from "../../../../hooks/useAppDispatch";
 import { setUserInformation } from "../../../../stores/user/userReducer";
 
 vi.mock(import("../../../../api/authApi.ts"));
+vi.mock(import("../../../../api/userApi.ts"));
 vi.mock(import("../../../../utils/tauriUtils.ts"));
 
 describe("SideBar", () => {

@@ -72,7 +72,9 @@ describe("FsrsDialog", () => {
 		// Assert
 
 		const expectedWeights = [...FILLED_PROFILE.weights];
-		expectedWeights[0] = Number("1" + expectedWeights[0].toString());
+		expectedWeights[expectedWeights.length - 1] = Number(
+			expectedWeights[expectedWeights.length - 1].toString() + "1",
+		);
 
 		expect(vi.mocked(updateProfile)).toHaveBeenCalledWith({
 			id: FILLED_PROFILE.id,

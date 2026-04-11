@@ -41,7 +41,7 @@ export default function DataTab({ state, setState }: TabProps) {
 				children: (
 					<CheckBox
 						id="auto-sync"
-						checked={state.localSettings?.autoSync}
+						checked={state.localSettings?.autoSync ?? false}
 						onChange={e =>
 							updateSettings({
 								autoSync: e.target.checked,
