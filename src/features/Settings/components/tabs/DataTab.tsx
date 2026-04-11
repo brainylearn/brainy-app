@@ -47,6 +47,7 @@ export default function DataTab({ state, setState }: TabProps) {
 								autoSync: e.target.checked,
 							})
 						}
+						autoFocus
 					/>
 				),
 			},
@@ -65,7 +66,6 @@ export default function DataTab({ state, setState }: TabProps) {
 						value={state.localSettings?.databaseDirectory}
 						style={{ width: "100%" }}
 						readOnly
-						autoFocus
 					/>
 					<button
 						className="transparent"

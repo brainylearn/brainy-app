@@ -30,6 +30,7 @@ export default function AiTab({ state, setState }: TabProps) {
 										enableAi: e.target.checked,
 									})
 								}
+								autoFocus
 							/>
 						),
 					},
@@ -48,7 +49,6 @@ export default function AiTab({ state, setState }: TabProps) {
 										ollamaModelName: e.target.value,
 									})
 								}
-								autoFocus
 							/>
 						),
 					},
@@ -69,7 +69,6 @@ export default function AiTab({ state, setState }: TabProps) {
 											e.target.value,
 									})
 								}
-								autoFocus
 							/>
 						),
 					},
