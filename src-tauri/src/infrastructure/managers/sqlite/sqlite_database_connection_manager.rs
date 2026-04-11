@@ -2,10 +2,9 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
-use tokio::fs;
 
 use crate::{
-    common::utils::create_sqlite_pool::create_sqlite_pool,
+    common::utils::create_sqlite_pool::create_sqlite_pool_from_location,
     database::database_connection_manager::{
         DatabaseConnectionManager, DatabaseConnectionManagerError,
     },
@@ -24,14 +23,7 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
         &self,
         database_location: &DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError> {
-        // TODO: make sure it works with create injector
-        if let Err(err) = fs::create_dir_all(database_location.get_path().parent().unwrap()).await {
-            return Err(DatabaseConnectionManagerError::ErrorChangingDatabase(
-                err.to_string(),
-            ));
-        }
-
-        let new_pool = match create_sqlite_pool(&format!("sqlite:///{}", database_location)).await {
+        let new_pool = match create_sqlite_pool_from_location(database_location).await {
             Err(err) => {
                 return Err(DatabaseConnectionManagerError::ErrorChangingDatabase(
                     err.to_string(),

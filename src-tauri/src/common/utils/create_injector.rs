@@ -8,16 +8,20 @@ use crate::ai_integration::repositories::ai_repository::AiRepository;
 use crate::backup::repositories::backup_repository::BackupRepository;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
+#[cfg(test)]
+use crate::common::utils::create_sqlite_pool::create_sqlite_pool;
+#[cfg(not(test))]
+use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
 use crate::database::database_connection_manager::DatabaseConnectionManager;
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::fsrs::repositories::fsrs_repository::FsrsRepository;
 use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
+use crate::infrastructure::managers::sqlite::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
 use crate::infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_ai_repository::SqliteAiRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_backup_repository::SqliteBackupRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_cell_repository::SqliteCellRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
 use crate::infrastructure::repositories::sqlite::sqlite_file_repository::SqliteFileRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_folder_repository::SqliteFolderRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_fsrs_repository::SqliteFsrsRepository;
@@ -39,7 +43,6 @@ use crate::{
     backend::clients::brainy_backend_client::BrainyBackendClient,
     backup::backup_service::BackupService,
     cells::cell_service::CellService,
-    common::utils::create_sqlite_pool::create_sqlite_pool,
     file_system::file_system_service::FileSystemService,
     fsrs::fsrs_service::FsrsService,
     settings::settings_service::SettingsService,
@@ -66,7 +69,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     let settings = Settings::default();
 
     #[cfg(not(test))]
-    let sqlite_pool = create_sqlite_pool(&format!("sqlite:///{}", settings.database_location()))
+    let sqlite_pool = create_sqlite_pool_from_location(&settings.database_location())
         .await
         .expect("Error connecting to Sqlite database");
 
