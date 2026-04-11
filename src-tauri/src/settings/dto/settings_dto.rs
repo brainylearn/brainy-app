@@ -5,7 +5,6 @@ use crate::settings::{entities::settings::Settings, value_objects::theme::Theme}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SettingsDto {
-    pub database_location: String,
     pub database_directory: String,
 
     pub theme: Theme,
@@ -20,7 +19,6 @@ pub struct SettingsDto {
 impl From<Settings> for SettingsDto {
     fn from(value: Settings) -> Self {
         Self {
-            database_location: value.database_location().to_string(),
             database_directory: value.database_directory().to_string_lossy().to_string(),
 
             theme: value.theme,

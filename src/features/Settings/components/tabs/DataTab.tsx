@@ -20,17 +20,16 @@ export default function DataTab({ state, setState }: TabProps) {
 
 	const handleChangeDatabaseLocationClick = async () => {
 		let location = await open({
-			defaultPath: state.localSettings?.databaseLocation,
+			defaultPath: state.localSettings?.databaseDirectory,
 			directory: true,
 		});
 		if (!location) return;
 
 		const pathCharacter = location.includes("/") ? "/" : "\\";
 		if (!location.endsWith(pathCharacter)) location += pathCharacter;
-		location += "brainy.db";
 
 		updateSettings({
-			databaseLocation: location,
+			databaseDirectory: location,
 		});
 	};
 
@@ -56,14 +55,14 @@ export default function DataTab({ state, setState }: TabProps) {
 
 	if (!isMobile()) {
 		formRowsProps.rows.push({
-			label: "Database Location",
-			labelHtmlFor: "database-location",
+			label: "Database Directory",
+			labelHtmlFor: "database-directory",
 			children: (
 				<div className="row">
 					<input
-						id="database-location"
+						id="database-directory"
 						type="text"
-						value={state.localSettings?.databaseLocation}
+						value={state.localSettings?.databaseDirectory}
 						style={{ width: "100%" }}
 						readOnly
 						autoFocus
