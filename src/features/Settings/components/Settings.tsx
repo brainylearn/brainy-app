@@ -151,7 +151,6 @@ export default function Settings({ onClose }: Props) {
 				state.localSettings?.baseDatabaseDirectory !==
 				globalSettings?.baseDatabaseDirectory
 			) {
-				// TODO: test
 				await dispatch(reloadApplicationState(navigate));
 			}
 

@@ -58,7 +58,6 @@ export default function SignUpForm({
 				firstName,
 				lastName,
 			});
-			// TODO: test
 			await dispatch(reloadApplicationState(navigate, userInformation));
 			onClose();
 		} catch (e) {

@@ -42,7 +42,6 @@ export default function SignInForm({
 		try {
 			onRequestStart();
 			const userInformation = await signIn(username, password);
-			// TODO: test
 			await dispatch(reloadApplicationState(navigate, userInformation));
 			onClose();
 		} catch (e) {
