@@ -65,14 +65,8 @@ impl AuthService {
     ) -> Result<UserInformationDto, AuthServiceError> {
         let user_information = self.backend_client.sign_up(request).await?;
         self.settings_service
-            .update_settings(UpdateSettingsRequest {
-                profile: Some(SettingsProfile::User(user_information.username.clone())),
-                ..Default::default()
-            })
+            .set_profile_for_new_user(user_information.username.clone())
             .await?;
         Ok(user_information)
     }
-
-    // TODO: sign up endpoint (move the files to new profile?)
-    // TODO: is_signed_in should set profile too
 }

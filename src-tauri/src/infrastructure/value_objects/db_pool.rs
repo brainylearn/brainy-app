@@ -3,11 +3,23 @@ use std::ops::{Deref, DerefMut};
 use sqlx::SqlitePool;
 use tokio::sync::Mutex;
 
-pub struct DbPool(Mutex<SqlitePool>);
+use crate::settings::value_objects::database_location::DatabaseLocation;
+
+pub struct DbPool {
+    pool: Mutex<SqlitePool>,
+    location: DatabaseLocation,
+}
 
 impl DbPool {
-    pub fn new(mutex: Mutex<SqlitePool>) -> Self {
-        Self(mutex)
+    pub fn new(pool: SqlitePool, location: DatabaseLocation) -> Self {
+        Self {
+            pool: Mutex::new(pool),
+            location,
+        }
+    }
+
+    pub fn location(&self) -> &DatabaseLocation {
+        &self.location
     }
 }
 
@@ -15,12 +27,12 @@ impl Deref for DbPool {
     type Target = Mutex<SqlitePool>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.pool
     }
 }
 
 impl DerefMut for DbPool {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.pool
     }
 }

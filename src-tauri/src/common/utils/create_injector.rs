@@ -6,7 +6,6 @@ use tokio::sync::Mutex;
 
 use crate::ai_integration::repositories::ai_repository::AiRepository;
 use crate::backend::auth_service::AuthService;
-use crate::backup::repositories::backup_repository::BackupRepository;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
 #[cfg(test)]
@@ -21,7 +20,6 @@ use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHtt
 use crate::infrastructure::managers::sqlite::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
 use crate::infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_ai_repository::SqliteAiRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_backup_repository::SqliteBackupRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_cell_repository::SqliteCellRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_file_repository::SqliteFileRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_folder_repository::SqliteFolderRepository;
@@ -81,7 +79,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
         .await
         .expect("Error connecting to Sqlite database");
 
-    let db_pool = DbPool::new(Mutex::new(sqlite_pool));
+    let db_pool = DbPool::new(sqlite_pool, settings.database_location().clone());
 
     injector.register_singleton(Arc::new(db_pool));
 
@@ -95,7 +93,6 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     injector.register_singleton(Arc::new(SyncLock(Mutex::new(()))));
 
     register_scope!(injector, dyn AiRepository, SqliteAiRepository);
-    register_scope!(injector, dyn BackupRepository, SqliteBackupRepository);
     register_scope!(injector, dyn CellRepository, SqliteCellRepository);
     register_scope!(injector, dyn FileRepository, SqliteFileRepository);
     register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);

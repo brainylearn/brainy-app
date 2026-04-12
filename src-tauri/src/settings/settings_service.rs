@@ -10,6 +10,7 @@ use crate::{
     settings::{
         dto::update_settings_request::UpdateSettingsRequest,
         repositories::settings_repository::{SettingsRepository, SettingsRepositoryError},
+        value_objects::settings_profile::SettingsProfile,
     },
 };
 
@@ -68,7 +69,7 @@ impl SettingsService {
 
         if change_database_location {
             self.database_connection_manager
-                .change_database_location(&settings.database_location())
+                .connect_to_database(&settings.database_location())
                 .await?;
             log::info!(
                 "Changing database location to {}",
@@ -78,6 +79,21 @@ impl SettingsService {
 
         self.settings_repository.save_settings(settings).await?;
 
+        Ok(())
+    }
+
+    /// Sets the profile for settings when the user is newly created, leading to
+    /// database being moved to the new user location.
+    pub async fn set_profile_for_new_user(
+        &self,
+        profile_name: String,
+    ) -> Result<(), SettingsServiceError> {
+        let mut settings = self.settings_repository.get_settings().await;
+        settings.profile = SettingsProfile::User(profile_name);
+        self.database_connection_manager
+            .move_database_to(&settings.database_location())
+            .await?;
+        self.settings_repository.save_settings(settings).await?;
         Ok(())
     }
 }
@@ -132,7 +148,7 @@ mod tests {
 
         let mut database_connection_manager = MockDatabaseConnectionManager::new();
         database_connection_manager
-            .expect_change_database_location()
+            .expect_connect_to_database()
             .with(eq(DatabaseLocation::new_unchecked(
                 PathBuf::from_str("new path").unwrap().join("brainy.db"),
             )))
@@ -157,7 +173,7 @@ mod tests {
 
         let mut database_connection_manager = MockDatabaseConnectionManager::new();
         database_connection_manager
-            .expect_change_database_location()
+            .expect_connect_to_database()
             .never();
 
         let injector = initialize_test_injector(database_connection_manager).await;

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
+use tokio::fs;
 
 use crate::{
     common::utils::create_sqlite_pool::create_sqlite_pool_from_location,
@@ -19,7 +20,7 @@ pub struct SqliteDatabaseConnectionManager {
 
 #[async_trait]
 impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
-    async fn change_database_location(
+    async fn connect_to_database(
         &self,
         database_location: &DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError> {
@@ -36,5 +37,33 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
         *pool = new_pool;
 
         Ok(())
+    }
+
+    async fn move_database_to(
+        &self,
+        new_database_location: &DatabaseLocation,
+    ) -> Result<(), DatabaseConnectionManagerError> {
+        self.copy_database(&new_database_location.get_path().to_string_lossy())
+            .await?;
+        self.connect_to_database(new_database_location).await?;
+
+        if let Err(err) = fs::remove_file(self.pool.location().get_path()).await {
+            return Err(DatabaseConnectionManagerError::Unknown(err.to_string()));
+        }
+
+        Ok(())
+    }
+
+    async fn copy_database(&self, path: &str) -> Result<(), DatabaseConnectionManagerError> {
+        let pool = self.pool.lock().await;
+
+        let result = sqlx::query!("VACUUM main INTO $1", path)
+            .execute(&*pool)
+            .await;
+
+        match result {
+            Ok(_) => Ok(()),
+            Err(err) => Err(DatabaseConnectionManagerError::Unknown(err.to_string())),
+        }
     }
 }
