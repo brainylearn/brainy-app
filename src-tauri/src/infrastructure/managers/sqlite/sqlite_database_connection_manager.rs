@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
@@ -43,8 +43,7 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
         &self,
         new_database_location: &DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError> {
-        self.copy_database(&new_database_location.get_path().to_string_lossy())
-            .await?;
+        self.copy_database(new_database_location.get_path()).await?;
         self.connect_to_database(new_database_location).await?;
 
         if let Err(err) = fs::remove_file(self.pool.location().get_path()).await {
@@ -54,8 +53,15 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
         Ok(())
     }
 
-    async fn copy_database(&self, path: &str) -> Result<(), DatabaseConnectionManagerError> {
+    async fn copy_database(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError> {
         let pool = self.pool.lock().await;
+
+        if let Some(parent) = path.parent()
+            && let Err(err) = fs::create_dir_all(parent).await
+        {
+            return Err(DatabaseConnectionManagerError::Unknown(err.to_string()));
+        }
+        let path = path.to_string_lossy();
 
         let result = sqlx::query!("VACUUM main INTO $1", path)
             .execute(&*pool)

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use async_trait::async_trait;
 use thiserror::Error;
 
@@ -27,5 +29,5 @@ pub trait DatabaseConnectionManager: Send + Sync {
         new_database_location: &DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError>;
 
-    async fn copy_database(&self, path: &str) -> Result<(), DatabaseConnectionManagerError>;
+    async fn copy_database(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError>;
 }
