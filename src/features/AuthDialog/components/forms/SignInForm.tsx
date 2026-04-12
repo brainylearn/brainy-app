@@ -11,8 +11,8 @@ import Alert from "../../../../components/Alert/Alert";
 import Spinner from "../../../../components/Spinner/Spinner";
 import errorToString from "../../../../utils/errorToString";
 import { signIn } from "../../../../api/authApi";
-import { loadApplicationState } from "../../../../stores/common/loadApplicationState";
 import { useNavigate } from "react-router";
+import { reloadApplicationState } from "../../../../stores/app/actions";
 
 interface Props {
 	isSendingRequest: boolean;
@@ -42,7 +42,8 @@ export default function SignInForm({
 		try {
 			onRequestStart();
 			const userInformation = await signIn(username, password);
-			await dispatch(loadApplicationState(navigate, userInformation));
+			// TODO: test
+			await dispatch(reloadApplicationState(navigate, userInformation));
 			onClose();
 		} catch (e) {
 			console.error(e);

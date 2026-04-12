@@ -11,8 +11,9 @@ import Alert from "../../../../components/Alert/Alert";
 import Spinner from "../../../../components/Spinner/Spinner";
 import { signUp } from "../../../../api/authApi";
 import errorToString from "../../../../utils/errorToString";
-import { setUserInformation } from "../../../../stores/user/userReducer";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { reloadApplicationState } from "../../../../stores/app/actions";
+import { useNavigate } from "react-router";
 
 interface Props {
 	isSendingRequest: boolean;
@@ -37,6 +38,7 @@ export default function SignUpForm({
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 
 	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -56,7 +58,8 @@ export default function SignUpForm({
 				firstName,
 				lastName,
 			});
-			dispatch(setUserInformation(userInformation));
+			// TODO: test
+			await dispatch(reloadApplicationState(navigate, userInformation));
 			onClose();
 		} catch (e) {
 			console.error(e);

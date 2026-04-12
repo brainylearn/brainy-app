@@ -29,9 +29,9 @@ import {
 } from "../../../stores/sync/managers/syncEventManager";
 import useIsSmallScreen from "../../../hooks/useIsSmallScreen";
 import AiChatWidget from "../../AiChatWidget/components/AiChatWidget";
-import { loadApplicationState } from "../../../stores/common/loadApplicationState";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSettingsLoaded } from "../../../stores/settings/settingsSelector";
+import { initialLoadApplicationState } from "../../../stores/app/actions";
 
 function App() {
 	const [showSettings, setShowSettings] = useState(false);
@@ -83,7 +83,7 @@ function App() {
 	}, []);
 
 	useEffect(() => {
-		void dispatch(loadApplicationState());
+		void dispatch(initialLoadApplicationState());
 	}, [dispatch]);
 
 	useEffect(() => {
