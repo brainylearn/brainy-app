@@ -36,6 +36,7 @@ import { mdiMenu } from "@mdi/js";
 import Icon from "@mdi/react";
 import AiTab from "./tabs/AiTab";
 import { useNavigate } from "react-router";
+import { loadApplicationState } from "../../../stores/common/loadApplicationState";
 
 interface Props {
 	onClose: () => void;
@@ -150,9 +151,7 @@ export default function Settings({ onClose }: Props) {
 				state.localSettings?.baseDatabaseDirectory !==
 				globalSettings?.baseDatabaseDirectory
 			) {
-				await navigate("/");
-				// Refresh.
-				await navigate(0);
+				await dispatch(loadApplicationState(navigate));
 			}
 
 			onClose();

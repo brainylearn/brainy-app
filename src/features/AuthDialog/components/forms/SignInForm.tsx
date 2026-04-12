@@ -9,9 +9,10 @@ import Form, {
 import { mdiLoginVariant } from "@mdi/js";
 import Alert from "../../../../components/Alert/Alert";
 import Spinner from "../../../../components/Spinner/Spinner";
-import { setUserInformation } from "../../../../stores/user/userReducer";
 import errorToString from "../../../../utils/errorToString";
 import { signIn } from "../../../../api/authApi";
+import { loadApplicationState } from "../../../../stores/common/loadApplicationState";
+import { useNavigate } from "react-router";
 
 interface Props {
 	isSendingRequest: boolean;
@@ -32,6 +33,7 @@ export default function SignInForm({
 	const [password, setPassword] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 
 	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
 		e.preventDefault();
@@ -40,7 +42,7 @@ export default function SignInForm({
 		try {
 			onRequestStart();
 			const userInformation = await signIn(username, password);
-			dispatch(setUserInformation(userInformation));
+			await dispatch(loadApplicationState(navigate, userInformation));
 			onClose();
 		} catch (e) {
 			console.error(e);
