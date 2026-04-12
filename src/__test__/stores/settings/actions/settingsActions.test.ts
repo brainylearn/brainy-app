@@ -22,7 +22,7 @@ vi.mock(import("@tauri-apps/plugin-os"));
 const getAndSetDefaultSettings = () => {
 	const settings: SettingsDto = {
 		autoSync: true,
-		databaseDirectory: "",
+		baseDatabaseDirectory: "",
 		theme: "Dark",
 		zoomPercentage: 150,
 		enableAi: true,

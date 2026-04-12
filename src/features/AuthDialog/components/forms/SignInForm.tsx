@@ -11,7 +11,6 @@ import Alert from "../../../../components/Alert/Alert";
 import Spinner from "../../../../components/Spinner/Spinner";
 import { setUserInformation } from "../../../../stores/user/userReducer";
 import errorToString from "../../../../utils/errorToString";
-import { getUserInformation } from "../../../../api/userApi";
 import { signIn } from "../../../../api/authApi";
 
 interface Props {
@@ -40,8 +39,7 @@ export default function SignInForm({
 
 		try {
 			onRequestStart();
-			await signIn(username, password);
-			const userInformation = await getUserInformation();
+			const userInformation = await signIn(username, password);
 			dispatch(setUserInformation(userInformation));
 			onClose();
 		} catch (e) {

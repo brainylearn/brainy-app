@@ -5,6 +5,7 @@ use tauri::Url;
 use tokio::sync::Mutex;
 
 use crate::ai_integration::repositories::ai_repository::AiRepository;
+use crate::backend::auth_service::AuthService;
 use crate::backup::repositories::backup_repository::BackupRepository;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
@@ -115,6 +116,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);
     register_scope!(injector, SettingsService);
+    register_scope!(injector, AuthService);
 
     register_scope!(
         injector,

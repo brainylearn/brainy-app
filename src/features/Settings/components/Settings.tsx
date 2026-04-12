@@ -140,15 +140,15 @@ export default function Settings({ onClose }: Props) {
 				await dispatch(
 					updateAndApplySettings({
 						databaseLocationBaseDir:
-							state.localSettings.databaseDirectory,
+							state.localSettings.baseDatabaseDirectory,
 						...state.localSettings,
 					}),
 				);
 			}
 
 			if (
-				state.localSettings?.databaseDirectory !==
-				globalSettings?.databaseDirectory
+				state.localSettings?.baseDatabaseDirectory !==
+				globalSettings?.baseDatabaseDirectory
 			) {
 				await navigate("/");
 				// Refresh.

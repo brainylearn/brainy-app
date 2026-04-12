@@ -1,0 +1,63 @@
+use std::sync::Arc;
+
+use injector_derive::ScopeInjectable;
+use thiserror::Error;
+
+use crate::{
+    backend::{
+        clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+        models::UserInformationDto,
+    },
+    settings::{
+        dto::update_settings_request::UpdateSettingsRequest,
+        settings_service::{SettingsService, SettingsServiceError},
+        value_objects::settings_profile::SettingsProfile,
+    },
+};
+
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum AuthServiceError {
+    #[error(transparent)]
+    Backend(#[from] BrainyBackendClientError),
+    #[error(transparent)]
+    SettingsService(#[from] SettingsServiceError),
+}
+
+#[derive(ScopeInjectable)]
+pub struct AuthService {
+    backend_client: Arc<dyn BrainyBackendClient>,
+    settings_service: Arc<SettingsService>,
+}
+
+// TODO: unit test
+impl AuthService {
+    // TODO: synchronize front-end (an event?)
+    pub async fn sign_in(
+        &self,
+        username: String,
+        password: String,
+    ) -> Result<UserInformationDto, AuthServiceError> {
+        let user_information = self.backend_client.sign_in(username, password).await?;
+        self.settings_service
+            .update_settings(UpdateSettingsRequest {
+                profile: Some(SettingsProfile::User(user_information.username.clone())),
+                ..Default::default()
+            })
+            .await?;
+        Ok(user_information)
+    }
+
+    pub async fn sign_out(&self) -> Result<(), AuthServiceError> {
+        self.backend_client.sign_out().await?;
+        self.settings_service
+            .update_settings(UpdateSettingsRequest {
+                profile: Some(SettingsProfile::Default),
+                ..Default::default()
+            })
+            .await?;
+        Ok(())
+    }
+
+    // TODO: sign up endpoint (set profile + move the files to new profile?)
+    // TODO: is_signed_in should set profile too
+}

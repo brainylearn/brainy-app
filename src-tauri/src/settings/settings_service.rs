@@ -36,9 +36,15 @@ impl SettingsService {
         let mut change_database_location = false;
 
         if let Some(new_base_dir) = new_settings.database_location_base_dir
-            && new_base_dir != settings.base_database_location
+            && new_base_dir != settings.base_database_directory
         {
-            settings.base_database_location = new_base_dir;
+            settings.base_database_directory = new_base_dir;
+            change_database_location = true;
+        }
+        if let Some(new_profile) = new_settings.profile
+            && new_profile != settings.profile
+        {
+            settings.profile = new_profile;
             change_database_location = true;
         }
         if let Some(theme) = new_settings.theme {
@@ -65,7 +71,7 @@ impl SettingsService {
                 .change_database_location(&settings.database_location())
                 .await?;
             log::info!(
-                "Change database location to {}",
+                "Changing database location to {}",
                 settings.database_location()
             );
         }

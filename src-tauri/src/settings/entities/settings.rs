@@ -11,7 +11,7 @@ const DATABASE_FILE_NAME: &str = "brainy.db";
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    pub(in crate::settings) base_database_location: PathBuf,
+    pub(in crate::settings) base_database_directory: PathBuf,
     pub(in crate::settings) profile: SettingsProfile,
 
     pub theme: Theme,
@@ -26,7 +26,7 @@ pub struct Settings {
 impl Settings {
     pub fn new(base_database_location: PathBuf, profile: SettingsProfile) -> Self {
         Settings {
-            base_database_location,
+            base_database_directory: base_database_location,
             profile,
             theme: Theme::FollowSystem,
             zoom_percentage: 100f64,
@@ -40,8 +40,8 @@ impl Settings {
     /// The directory that contains the database file.
     pub fn database_directory(&self) -> PathBuf {
         match &self.profile {
-            SettingsProfile::Default => self.base_database_location.clone(),
-            SettingsProfile::User(user) => self.base_database_location.join(user),
+            SettingsProfile::Default => self.base_database_directory.clone(),
+            SettingsProfile::User(user) => self.base_database_directory.join(user),
         }
     }
 

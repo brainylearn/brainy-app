@@ -50,7 +50,13 @@ export default function SignUpForm({
 
 		try {
 			onRequestStart();
-			await signUp(username, password, email, firstName, lastName);
+			await signUp({
+				username,
+				password,
+				email,
+				firstName,
+				lastName,
+			});
 			const userInformation = await getUserInformation();
 			dispatch(setUserInformation(userInformation));
 			onClose();

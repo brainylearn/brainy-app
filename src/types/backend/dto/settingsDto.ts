@@ -1,7 +1,7 @@
 export type Theme = "FollowSystem" | "Light" | "Dark";
 
 export default interface SettingsDto {
-	databaseDirectory: string;
+	baseDatabaseDirectory: string;
 
 	theme: Theme;
 	zoomPercentage: number;

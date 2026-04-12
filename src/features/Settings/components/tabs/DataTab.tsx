@@ -20,7 +20,7 @@ export default function DataTab({ state, setState }: TabProps) {
 
 	const handleChangeDatabaseLocationClick = async () => {
 		let location = await open({
-			defaultPath: state.localSettings?.databaseDirectory,
+			defaultPath: state.localSettings?.baseDatabaseDirectory,
 			directory: true,
 		});
 		if (!location) return;
@@ -29,7 +29,7 @@ export default function DataTab({ state, setState }: TabProps) {
 		if (!location.endsWith(pathCharacter)) location += pathCharacter;
 
 		updateSettings({
-			databaseDirectory: location,
+			baseDatabaseDirectory: location,
 		});
 	};
 
@@ -63,7 +63,7 @@ export default function DataTab({ state, setState }: TabProps) {
 					<input
 						id="database-directory"
 						type="text"
-						value={state.localSettings?.databaseDirectory ?? ""}
+						value={state.localSettings?.baseDatabaseDirectory ?? ""}
 						style={{ width: "100%" }}
 						readOnly
 					/>
