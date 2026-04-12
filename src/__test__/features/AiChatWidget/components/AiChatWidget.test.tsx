@@ -25,6 +25,7 @@ import { RootState } from "../../../../stores/store.ts";
 import { ReviewTreeFolder } from "../../../../types/backend/dto/reviewTreeFolder.ts";
 import { TOOL_CALL_ACCEPTED_EVENT } from "../../../../types/events/toolCallAcceptedEvent.ts";
 import { open } from "@tauri-apps/plugin-dialog";
+import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
 vi.mock(import("../../../../api/aiApi.ts"));
 
@@ -720,7 +721,7 @@ describe("ToolCallDisplay", () => {
 
 		// Assert
 
-		expect(await screen.findByTestId("location-display")).toHaveTextContent(
+		expect(await getCurrentLocation()).toBe(
 			`/editor?${FILE_ID_QUERY_PARAMETER}=file-1`,
 		);
 	});

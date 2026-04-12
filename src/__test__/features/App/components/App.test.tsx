@@ -23,6 +23,7 @@ import searcherStyles from "../../../../features/Searcher/components/styles.modu
 import { SMALL_SCREEN_MAX_WIDTH_IN_PX } from "../../../../config/constants.ts";
 import { sync } from "../../../../stores/sync/syncActions.ts";
 import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
+import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
 vi.mock(import("../../../../hooks/useAppDispatch.ts"), () => ({
 	default: vi.fn(),
@@ -273,9 +274,7 @@ describe("App", () => {
 
 		// Assert
 
-		expect(screen.getByTestId("location-display")).toHaveTextContent(
-			"/home",
-		);
+		expect(await getCurrentLocation()).toBe("/home");
 	});
 
 	it("Should render updater", async () => {

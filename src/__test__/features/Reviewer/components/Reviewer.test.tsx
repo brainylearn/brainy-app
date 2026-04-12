@@ -13,6 +13,7 @@ import { registerReview } from "../../../../api/reviewApi.ts";
 import { FSRS, generatorParameters } from "ts-fsrs";
 import createCardFromRepetition from "../../../../features/Reviewer/utils/createCardFromRepetition.ts";
 import createRepetitionFromCard from "../../../../features/Reviewer/utils/createRepetitionFromCard.ts";
+import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
 vi.mock(import("../../../../api/fsrsApi.ts"));
 vi.mock(import("../../../../api/cellApi.ts"));
@@ -188,8 +189,6 @@ describe("Reviewer", () => {
 			expect.anything(),
 		);
 
-		expect(await screen.findByTestId("location-display")).toHaveTextContent(
-			"/home",
-		);
+		expect(await getCurrentLocation()).toBe("/home");
 	});
 });

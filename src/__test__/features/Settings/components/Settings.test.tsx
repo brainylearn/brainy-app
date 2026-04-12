@@ -18,6 +18,7 @@ import { Webview } from "@tauri-apps/api/webview";
 import { isMobile } from "../../../../utils/tauriUtils.ts";
 import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
 import { open } from "@tauri-apps/plugin-dialog";
+import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
 vi.mock(import("../../../../api/authApi.ts"));
 vi.mock(import("../../../../api/userApi.ts"));
@@ -304,7 +305,7 @@ describe("Appearance & Data tab", () => {
 
 		// Assert
 
-		expect(screen.getByTestId("location-display").textContent).toBe("/");
+		expect(await getCurrentLocation()).toBe("/");
 	});
 
 	it("Should not allow too small zoom", async () => {

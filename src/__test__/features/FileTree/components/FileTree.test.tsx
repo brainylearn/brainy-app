@@ -40,6 +40,7 @@ import DraggedFileItemData, {
 } from "../../../../features/FileTree/types/draggedFileItemData.ts";
 import { DragEndEvent } from "@dnd-kit/react";
 import { pointerIntersection } from "@dnd-kit/collision";
+import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
 vi.mock(import("../../../../api/fileSystemApi.ts"));
 vi.mock(import("../../../../api/exportImportApi.ts"));
@@ -95,9 +96,7 @@ describe("FileTree", () => {
 		// Assert
 
 		expect(vi.mocked(deleteFolder)).toHaveBeenCalledWith("1");
-		expect(screen.getByTestId("location-display")).toHaveTextContent(
-			"/home",
-		);
+		expect(await getCurrentLocation()).toBe("/home");
 	});
 
 	it("Should delete file when pressing DEL", async () => {
@@ -117,9 +116,7 @@ describe("FileTree", () => {
 		// Assert
 
 		expect(vi.mocked(deleteFile)).toHaveBeenCalledWith("1");
-		expect(screen.getByTestId("location-display")).toHaveTextContent(
-			"/home",
-		);
+		expect(await getCurrentLocation()).toBe("/home");
 	});
 
 	it("Should set drag and drop data correctly", () => {
@@ -578,9 +575,7 @@ describe("FileTreeItem", () => {
 
 		// Assert
 
-		expect(screen.getByTestId("location-display")).toHaveTextContent(
-			"/editor?fileId=1",
-		);
+		expect(await getCurrentLocation()).toBe("/editor?fileId=1");
 	});
 
 	it("Should navigate to home on click on root", async () => {
@@ -598,7 +593,7 @@ describe("FileTreeItem", () => {
 
 		// Assert
 
-		expect(screen.getByTestId("location-display")).toHaveTextContent("/");
+		expect(await getCurrentLocation()).toBe("/");
 	});
 
 	it("Should focus new folder after create", async () => {
