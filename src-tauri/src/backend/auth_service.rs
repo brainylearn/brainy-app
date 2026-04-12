@@ -6,6 +6,7 @@ use thiserror::Error;
 use crate::{
     backend::{
         clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+        dto::sign_up_request::SignUpRequest,
         models::UserInformationDto,
     },
     settings::{
@@ -18,7 +19,7 @@ use crate::{
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum AuthServiceError {
     #[error(transparent)]
-    Backend(#[from] BrainyBackendClientError),
+    BrainyBackendClient(#[from] BrainyBackendClientError),
     #[error(transparent)]
     SettingsService(#[from] SettingsServiceError),
 }
@@ -58,6 +59,20 @@ impl AuthService {
         Ok(())
     }
 
-    // TODO: sign up endpoint (set profile + move the files to new profile?)
+    pub async fn sign_up(
+        &self,
+        request: SignUpRequest,
+    ) -> Result<UserInformationDto, AuthServiceError> {
+        let user_information = self.backend_client.sign_up(request).await?;
+        self.settings_service
+            .update_settings(UpdateSettingsRequest {
+                profile: Some(SettingsProfile::User(user_information.username.clone())),
+                ..Default::default()
+            })
+            .await?;
+        Ok(user_information)
+    }
+
+    // TODO: sign up endpoint (move the files to new profile?)
     // TODO: is_signed_in should set profile too
 }

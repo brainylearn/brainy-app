@@ -12,7 +12,7 @@ export function signIn(
 	});
 }
 
-export function signUp(request: SignUpRequest): Promise<void> {
+export function signUp(request: SignUpRequest): Promise<UserInformationDto> {
 	return invoke("sign_up", {
 		request,
 	});

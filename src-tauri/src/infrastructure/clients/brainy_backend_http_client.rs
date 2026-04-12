@@ -110,7 +110,10 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
         }
     }
 
-    async fn sign_up(&self, request: SignUpRequest) -> Result<(), BrainyBackendClientError> {
+    async fn sign_up(
+        &self,
+        request: SignUpRequest,
+    ) -> Result<UserInformationDto, BrainyBackendClientError> {
         let dto = SignUpDto {
             first_name: request.first_name,
             last_name: request.last_name,
@@ -127,10 +130,13 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .send()
             .await;
 
-        ensure_success_response(response).await?;
+        let response = ensure_success_response(response).await?;
         self.persist_cookies();
 
-        Ok(())
+        match response.json::<UserInformationDto>().await {
+            Ok(result) => Ok(result),
+            Err(err) => Err(BrainyBackendClientError::Deserialization(err.to_string())),
+        }
     }
 
     async fn sign_out(&self) -> Result<(), BrainyBackendClientError> {

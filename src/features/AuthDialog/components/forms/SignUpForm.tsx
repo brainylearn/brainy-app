@@ -12,7 +12,6 @@ import Spinner from "../../../../components/Spinner/Spinner";
 import { signUp } from "../../../../api/authApi";
 import errorToString from "../../../../utils/errorToString";
 import { setUserInformation } from "../../../../stores/user/userReducer";
-import { getUserInformation } from "../../../../api/userApi";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 interface Props {
@@ -50,14 +49,13 @@ export default function SignUpForm({
 
 		try {
 			onRequestStart();
-			await signUp({
+			const userInformation = await signUp({
 				username,
 				password,
 				email,
 				firstName,
 				lastName,
 			});
-			const userInformation = await getUserInformation();
 			dispatch(setUserInformation(userInformation));
 			onClose();
 		} catch (e) {

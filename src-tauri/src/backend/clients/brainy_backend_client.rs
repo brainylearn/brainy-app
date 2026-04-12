@@ -36,7 +36,10 @@ pub trait BrainyBackendClient: Send + Sync {
         password: String,
     ) -> Result<UserInformationDto, BrainyBackendClientError>;
 
-    async fn sign_up(&self, request: SignUpRequest) -> Result<(), BrainyBackendClientError>;
+    async fn sign_up(
+        &self,
+        request: SignUpRequest,
+    ) -> Result<UserInformationDto, BrainyBackendClientError>;
 
     async fn sign_out(&self) -> Result<(), BrainyBackendClientError>;
 

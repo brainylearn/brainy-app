@@ -31,14 +31,14 @@ pub async fn sign_in(
 pub async fn sign_up(
     injector: State<'_, Arc<Injector>>,
     request: SignUpRequest,
-) -> Result<(), ApiError> {
+) -> Result<UserInformationDto, ApiError> {
     let scope = injector.start_scope();
-    scope
-        .resolve::<dyn BrainyBackendClient>()
+    let dto = scope
+        .resolve::<AuthService>()
         .await
         .sign_up(request)
         .await?;
-    Ok(())
+    Ok(dto)
 }
 
 #[tauri::command]
