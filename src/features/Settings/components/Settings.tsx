@@ -35,6 +35,7 @@ import useIsSmallScreen from "../../../hooks/useIsSmallScreen";
 import { mdiMenu } from "@mdi/js";
 import Icon from "@mdi/react";
 import AiTab from "./tabs/AiTab";
+import { useNavigate } from "react-router";
 
 interface Props {
 	onClose: () => void;
@@ -62,6 +63,7 @@ export default function Settings({ onClose }: Props) {
 	});
 
 	const isSignedIn = useAppSelector(selectIsSignedIn);
+	const navigate = useNavigate();
 	const dispatch = useAppDispatch();
 
 	if (
@@ -148,8 +150,9 @@ export default function Settings({ onClose }: Props) {
 				state.localSettings?.databaseDirectory !==
 				globalSettings?.databaseDirectory
 			) {
-				// TODO: unit test
-				location.href = "/";
+				await navigate("/");
+				// Refresh.
+				await navigate(0);
 			}
 
 			onClose();

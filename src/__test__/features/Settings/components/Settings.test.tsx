@@ -17,12 +17,14 @@ import { Window } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 import { isMobile } from "../../../../utils/tauriUtils.ts";
 import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
+import { open } from "@tauri-apps/plugin-dialog";
 
 vi.mock(import("../../../../api/authApi.ts"));
 vi.mock(import("../../../../api/userApi.ts"));
 vi.mock(import("../../../../api/settingsApi.ts"));
 vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
 vi.mock(import("../../../../utils/tauriUtils.ts"));
+vi.mock(import("@tauri-apps/plugin-dialog"));
 vi.mock(import("@tauri-apps/api/webview"), () => ({
 	getCurrentWebview: () =>
 		({
@@ -274,6 +276,35 @@ describe("Appearance & Data tab", () => {
 		);
 
 		expect(onCloseMock).toHaveBeenCalled();
+	});
+
+	it("Should refresh when updating database location", async () => {
+		// Arrange
+
+		const onCloseMock = vi.fn();
+		renderWithProviders(<Settings onClose={onCloseMock} />, {
+			memoryRouterProps: {
+				initialEntries: ["/reviewer"],
+			},
+			preloadedState: {
+				settings: createInitialSettingsState(),
+				user: createInitialUserState({
+					isSignedIn: false,
+				}),
+			},
+		});
+
+		vi.mocked(open).mockResolvedValue("new location");
+
+		// Act
+
+		await userEvent.click(screen.getByText("Data"));
+		await userEvent.click(screen.getByTitle("Change database directory"));
+		await userEvent.click(screen.getByText("Apply"));
+
+		// Assert
+
+		expect(screen.getByTestId("location-display").textContent).toBe("/");
 	});
 
 	it("Should not allow too small zoom", async () => {

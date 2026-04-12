@@ -63,16 +63,15 @@ export default function DataTab({ state, setState }: TabProps) {
 					<input
 						id="database-directory"
 						type="text"
-						value={state.localSettings?.databaseDirectory}
+						value={state.localSettings?.databaseDirectory ?? ""}
 						style={{ width: "100%" }}
 						readOnly
 					/>
 					<button
 						className="transparent"
 						type="button"
-						onClick={() =>
-							void handleChangeDatabaseLocationClick()
-						}>
+						onClick={() => void handleChangeDatabaseLocationClick()}
+						title="Change database directory">
 						<Icon path={mdiFolderOpenOutline} size={1} />
 					</button>
 				</div>
