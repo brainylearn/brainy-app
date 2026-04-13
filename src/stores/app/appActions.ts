@@ -1,3 +1,6 @@
+// TODO: error
+//         "error returned from database: (code: 517) database is locked",
+//  Can be fixed by loading the state on start just one time! Issettingsloaded is not enough and should be removed
 import { NavigateFunction } from "react-router";
 import { getReviewTreeFolderForRoot } from "../fileSystem/fileSystemActions";
 import { loadAndApplySettings } from "../settings/settingsActions";
