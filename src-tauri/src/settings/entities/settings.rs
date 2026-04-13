@@ -49,6 +49,10 @@ impl Settings {
     pub fn database_location(&self) -> DatabaseLocation {
         DatabaseLocation(self.database_directory().join(DATABASE_FILE_NAME))
     }
+
+    pub fn base_database_directory_as_string(&self) -> String {
+        self.base_database_directory.to_string_lossy().to_string()
+    }
 }
 
 #[cfg(test)]

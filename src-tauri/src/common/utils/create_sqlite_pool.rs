@@ -19,13 +19,13 @@ pub async fn create_sqlite_pool_from_location(
     Ok(create_sqlite_pool(&format!("sqlite:///{}", database_location)).await?)
 }
 
-pub async fn create_sqlite_pool(path: &str) -> Result<SqlitePool, sqlx::Error> {
+pub async fn create_sqlite_pool(url: &str) -> Result<SqlitePool, sqlx::Error> {
     unsafe {
         #[allow(clippy::missing_transmute_annotations)]
         sqlite3_auto_extension(Some(std::mem::transmute(sqlite3_vec_init as *const ())));
     }
 
-    let options = SqliteConnectOptions::from_str(path)?
+    let options = SqliteConnectOptions::from_str(url)?
         .journal_mode(SqliteJournalMode::Wal)
         .optimize_on_close(true, None)
         .foreign_keys(true)

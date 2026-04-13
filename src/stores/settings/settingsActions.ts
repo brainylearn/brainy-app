@@ -12,7 +12,7 @@ export const SETTINGS_CLOSE_REQUESTED_HANDLER_NAME = "Settings handler";
 /** This function should be called on startup, and it loads the settings and
  * applies them.
  */
-export function initialLoadAndApplySettings() {
+export function loadAndApplySettings() {
 	return async function (dispatch: AppDispatch) {
 		const settings = await getSettings();
 		dispatch(setSettings(settings));

@@ -31,7 +31,6 @@ pub struct AuthService {
 }
 
 // TODO: unit test
-// TODO: use database location every place
 impl AuthService {
     pub async fn sign_in(
         &self,

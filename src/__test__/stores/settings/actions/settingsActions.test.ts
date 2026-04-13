@@ -2,7 +2,7 @@ import { getCurrentWebview, Webview } from "@tauri-apps/api/webview";
 import { getSettings } from "../../../../api/settingsApi.ts";
 import * as settingsApi from "../../../../api/settingsApi.ts";
 import {
-	initialLoadAndApplySettings,
+	loadAndApplySettings,
 	SETTINGS_CLOSE_REQUESTED_HANDLER_NAME,
 	updateAndApplySettings,
 } from "../../../../stores/settings/settingsActions.ts";
@@ -68,7 +68,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Act
 
-		const cb = initialLoadAndApplySettings();
+		const cb = loadAndApplySettings();
 		await cb(dispatch);
 
 		// Assert
@@ -96,7 +96,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Act
 
-		const cb = initialLoadAndApplySettings();
+		const cb = loadAndApplySettings();
 		await cb(dispatch);
 
 		// Assert
@@ -121,7 +121,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Act
 
-		const cb = initialLoadAndApplySettings();
+		const cb = loadAndApplySettings();
 		await cb(dispatch);
 
 		// Assert
@@ -147,7 +147,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Act
 
-		const cb = initialLoadAndApplySettings();
+		const cb = loadAndApplySettings();
 		await cb(dispatch);
 		await addHandlerSpy.mock.calls[0][1].cb();
 
@@ -171,7 +171,7 @@ describe("initialLoadAndApplySettings", () => {
 
 		// Act
 
-		const cb = initialLoadAndApplySettings();
+		const cb = loadAndApplySettings();
 		await cb(dispatch);
 		await addHandlerSpy.mock.calls[0][1].cb();
 

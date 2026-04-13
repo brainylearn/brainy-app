@@ -19,7 +19,7 @@ pub struct SettingsDto {
 impl From<Settings> for SettingsDto {
     fn from(value: Settings) -> Self {
         Self {
-            base_database_directory: value.base_database_directory.to_string_lossy().to_string(),
+            base_database_directory: value.base_database_directory_as_string(),
 
             theme: value.theme,
             zoom_percentage: value.zoom_percentage,
