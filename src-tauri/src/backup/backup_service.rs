@@ -88,7 +88,7 @@ impl BackupService {
             backup_path.to_string_lossy()
         );
         self.database_connection_manager
-            .copy_database(&backup_path)
+            .copy_database_to(&backup_path)
             .await?;
         Ok(())
     }
@@ -329,7 +329,7 @@ pub mod tests {
             ));
 
             database_connection_manager
-                .copy_database(&path)
+                .copy_database_to(&path)
                 .await
                 .unwrap();
 
@@ -369,7 +369,7 @@ pub mod tests {
             ));
 
             database_connection_manager
-                .copy_database(&path)
+                .copy_database_to(&path)
                 .await
                 .unwrap();
 

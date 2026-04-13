@@ -29,5 +29,5 @@ pub trait DatabaseConnectionManager: Send + Sync {
         new_database_location: DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError>;
 
-    async fn copy_database(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError>;
+    async fn copy_database_to(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError>;
 }

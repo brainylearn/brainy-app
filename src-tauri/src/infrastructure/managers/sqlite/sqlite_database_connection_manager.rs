@@ -42,7 +42,8 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
         &self,
         new_database_location: DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError> {
-        self.copy_database(new_database_location.get_path()).await?;
+        self.copy_database_to(new_database_location.get_path())
+            .await?;
         self.connect_to_database(new_database_location).await?;
 
         if let Err(err) = fs::remove_file(self.pool.location().await.get_path()).await {
@@ -52,7 +53,7 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
         Ok(())
     }
 
-    async fn copy_database(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError> {
+    async fn copy_database_to(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError> {
         let pool = self.pool.get_pool().await;
 
         if let Some(parent) = path.parent()
