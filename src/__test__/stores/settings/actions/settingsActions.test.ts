@@ -195,7 +195,10 @@ describe("updateAndApplySettings", () => {
 
 		// Act
 
-		const cb = updateAndApplySettings(settings);
+		const cb = updateAndApplySettings({
+			databaseLocationBaseDir: null,
+			...settings,
+		});
 		await cb(dispatch);
 
 		// Assert
@@ -229,7 +232,10 @@ describe("updateAndApplySettings", () => {
 
 		// Act
 
-		const cb = updateAndApplySettings(settings);
+		const cb = updateAndApplySettings({
+			databaseLocationBaseDir: null,
+			...settings,
+		});
 		await cb(dispatch);
 
 		// Assert
@@ -248,7 +254,10 @@ describe("updateAndApplySettings", () => {
 
 		// Act
 
-		const cb = updateAndApplySettings(settings);
+		const cb = updateAndApplySettings({
+			databaseLocationBaseDir: null,
+			...settings,
+		});
 		await cb(dispatch);
 
 		// Assert
@@ -266,7 +275,10 @@ describe("updateAndApplySettings", () => {
 
 		// Act
 
-		const cb = updateAndApplySettings(settings);
+		const cb = updateAndApplySettings({
+			databaseLocationBaseDir: null,
+			...settings,
+		});
 		await cb(dispatch);
 
 		// Assert
