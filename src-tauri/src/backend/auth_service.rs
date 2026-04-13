@@ -33,7 +33,6 @@ pub struct AuthService {
 // TODO: unit test
 // TODO: use database location every place
 impl AuthService {
-    // TODO: synchronize front-end (an event?)
     pub async fn sign_in(
         &self,
         username: String,

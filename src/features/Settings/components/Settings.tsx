@@ -35,7 +35,7 @@ import useIsSmallScreen from "../../../hooks/useIsSmallScreen";
 import { mdiMenu } from "@mdi/js";
 import Icon from "@mdi/react";
 import AiTab from "./tabs/AiTab";
-import { reloadApplicationState } from "../../../stores/app/actions";
+import { reloadApplicationState } from "../../../stores/app/appActions.ts";
 import { useNavigate } from "react-router";
 
 interface Props {

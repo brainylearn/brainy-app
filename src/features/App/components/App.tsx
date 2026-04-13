@@ -31,7 +31,7 @@ import useIsSmallScreen from "../../../hooks/useIsSmallScreen";
 import AiChatWidget from "../../AiChatWidget/components/AiChatWidget";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectIsSettingsLoaded } from "../../../stores/settings/settingsSelector";
-import { initialLoadApplicationState } from "../../../stores/app/actions";
+import { initialLoadApplicationState } from "../../../stores/app/appActions.ts";
 
 function App() {
 	const [showSettings, setShowSettings] = useState(false);

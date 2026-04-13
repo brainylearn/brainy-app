@@ -12,7 +12,7 @@ import Spinner from "../../../../components/Spinner/Spinner";
 import errorToString from "../../../../utils/errorToString";
 import { signIn } from "../../../../api/authApi";
 import { useNavigate } from "react-router";
-import { reloadApplicationState } from "../../../../stores/app/actions";
+import { reloadApplicationState } from "../../../../stores/app/appActions.ts";
 
 interface Props {
 	isSendingRequest: boolean;

@@ -9,31 +9,39 @@ import { setUserInformation } from "../user/userReducer";
 
 export function initialLoadApplicationState() {
 	return async function (dispatch: AppDispatch): Promise<void> {
-		const settings = await dispatch(initialLoadAndApplySettings());
-		await dispatch(getReviewTreeFolderForRoot());
-		await dispatch(loadInitialUserState());
-		// Sync on app close is added as an event in the settings actions.
-		if (settings?.autoSync) await dispatch(sync());
+		await loadAppState(dispatch);
 	};
 }
 
+/** A common action that reloads the application state,
+ * as if you have refreshed the web page.*/
 export function reloadApplicationState(
 	navigate: NavigateFunction,
 	userInformationDto?: UserInformationDto,
 ) {
 	return async function (dispatch: AppDispatch): Promise<void> {
-		const settings = await dispatch(initialLoadAndApplySettings());
-		await dispatch(getReviewTreeFolderForRoot());
-
-		if (userInformationDto) {
-			dispatch(setUserInformation(userInformationDto));
-		} else {
-			await dispatch(loadInitialUserState());
-		}
-
-		// Sync on app close is added as an event in the settings actions.
-		if (settings?.autoSync) await dispatch(sync());
-
-		await navigate("/");
+		await loadAppState(dispatch, navigate, userInformationDto);
 	};
+}
+
+async function loadAppState(
+	dispatch: AppDispatch,
+	navigate?: NavigateFunction,
+	userInformationDto?: UserInformationDto,
+) {
+	const settings = await dispatch(initialLoadAndApplySettings());
+	await dispatch(getReviewTreeFolderForRoot());
+
+	if (userInformationDto) {
+		dispatch(setUserInformation(userInformationDto));
+	} else {
+		await dispatch(loadInitialUserState());
+	}
+
+	// Sync on app close is added as an event in the settings actions.
+	if (settings?.autoSync) await dispatch(sync());
+
+	if (navigate) {
+		await navigate("/");
+	}
 }

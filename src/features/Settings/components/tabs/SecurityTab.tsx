@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router";
 import { signOut } from "../../../../api/authApi";
 import { FormRows } from "../../../../components/Form/Form";
 import useAppDispatch from "../../../../hooks/useAppDispatch";
+import { reloadApplicationState } from "../../../../stores/app/appActions";
 import { setLoggedOf } from "../../../../stores/user/userReducer";
 import { SecurityTabState } from "../../types/securityTabState";
 import { TabProps } from "../../types/tabProps";
@@ -11,6 +13,7 @@ export default function SecurityTab({
 	executeRequest,
 }: TabProps) {
 	const dispatch = useAppDispatch();
+	const navigate = useNavigate();
 
 	const updateState = (newState: Partial<SecurityTabState>) => {
 		setState({
@@ -26,6 +29,7 @@ export default function SecurityTab({
 		executeRequest(async () => {
 			await signOut();
 			dispatch(setLoggedOf());
+			await dispatch(reloadApplicationState(navigate));
 		});
 
 	return (

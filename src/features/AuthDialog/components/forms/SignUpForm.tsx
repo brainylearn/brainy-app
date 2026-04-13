@@ -12,7 +12,7 @@ import Spinner from "../../../../components/Spinner/Spinner";
 import { signUp } from "../../../../api/authApi";
 import errorToString from "../../../../utils/errorToString";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { reloadApplicationState } from "../../../../stores/app/actions";
+import { reloadApplicationState } from "../../../../stores/app/appActions.ts";
 import { useNavigate } from "react-router";
 
 interface Props {
