@@ -47,7 +47,7 @@ impl<'a> UnitOfWorkExt for InjectorScope<'a> {
 async fn replace_current_transaction_with_new_one(scope: &InjectorScope<'_>) -> SqliteTransaction {
     let tx = scope.resolve::<DbTransaction>().await;
     let pool = scope.resolve::<DbPool>().await;
-    let pool = pool.lock().await;
+    let pool = pool.get_pool().await;
 
     let mut guard = tx.lock().await;
     let new_tx = pool.begin().await.expect("Cannot create a new transaction");

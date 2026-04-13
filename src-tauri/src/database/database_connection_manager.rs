@@ -21,12 +21,12 @@ pub enum DatabaseConnectionManagerError {
 pub trait DatabaseConnectionManager: Send + Sync {
     async fn connect_to_database(
         &self,
-        database_location: &DatabaseLocation,
+        database_location: DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError>;
 
     async fn move_database_to(
         &self,
-        new_database_location: &DatabaseLocation,
+        new_database_location: DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError>;
 
     async fn copy_database(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError>;

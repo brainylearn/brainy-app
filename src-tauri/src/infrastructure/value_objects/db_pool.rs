@@ -1,38 +1,34 @@
-use std::ops::{Deref, DerefMut};
-
 use sqlx::SqlitePool;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, MutexGuard};
 
 use crate::settings::value_objects::database_location::DatabaseLocation;
 
 pub struct DbPool {
     pool: Mutex<SqlitePool>,
-    location: DatabaseLocation,
+    location: Mutex<DatabaseLocation>,
 }
 
 impl DbPool {
     pub fn new(pool: SqlitePool, location: DatabaseLocation) -> Self {
         Self {
             pool: Mutex::new(pool),
-            location,
+            location: Mutex::new(location),
         }
     }
 
-    pub fn location(&self) -> &DatabaseLocation {
-        &self.location
+    pub async fn location(&self) -> DatabaseLocation {
+        self.location.lock().await.clone()
     }
-}
 
-impl Deref for DbPool {
-    type Target = Mutex<SqlitePool>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.pool
+    pub async fn get_pool(&self) -> MutexGuard<'_, SqlitePool> {
+        self.pool.lock().await
     }
-}
 
-impl DerefMut for DbPool {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.pool
+    pub async fn set_pool(&self, new_pool: SqlitePool, new_location: DatabaseLocation) {
+        let mut pool = self.pool.lock().await;
+        *pool = new_pool;
+
+        let mut location = self.location.lock().await;
+        *location = new_location;
     }
 }

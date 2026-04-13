@@ -22,9 +22,9 @@ pub struct SqliteDatabaseConnectionManager {
 impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
     async fn connect_to_database(
         &self,
-        database_location: &DatabaseLocation,
+        database_location: DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError> {
-        let new_pool = match create_sqlite_pool_from_location(database_location).await {
+        let new_pool = match create_sqlite_pool_from_location(&database_location).await {
             Err(err) => {
                 return Err(DatabaseConnectionManagerError::ErrorChangingDatabase(
                     err.to_string(),
@@ -33,20 +33,19 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
             Ok(pool) => pool,
         };
 
-        let mut pool = self.pool.lock().await;
-        *pool = new_pool;
+        self.pool.set_pool(new_pool, database_location).await;
 
         Ok(())
     }
 
     async fn move_database_to(
         &self,
-        new_database_location: &DatabaseLocation,
+        new_database_location: DatabaseLocation,
     ) -> Result<(), DatabaseConnectionManagerError> {
         self.copy_database(new_database_location.get_path()).await?;
         self.connect_to_database(new_database_location).await?;
 
-        if let Err(err) = fs::remove_file(self.pool.location().get_path()).await {
+        if let Err(err) = fs::remove_file(self.pool.location().await.get_path()).await {
             return Err(DatabaseConnectionManagerError::Unknown(err.to_string()));
         }
 
@@ -54,7 +53,7 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
     }
 
     async fn copy_database(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError> {
-        let pool = self.pool.lock().await;
+        let pool = self.pool.get_pool().await;
 
         if let Some(parent) = path.parent()
             && let Err(err) = fs::create_dir_all(parent).await

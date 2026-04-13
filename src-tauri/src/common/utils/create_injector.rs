@@ -130,7 +130,7 @@ pub fn register_scoped_tx(injector: &mut Injector) {
     injector.register_scope_factory::<DbTransaction>(|scope| {
         Box::pin(async move {
             let pool = scope.resolve::<DbPool>().await;
-            let pool = pool.lock().await;
+            let pool = pool.get_pool().await;
             let tx = pool.begin().await.expect("Cannot create a new transaction");
             let db_transaction = DbTransaction::new(Mutex::new(tx));
             Arc::new(db_transaction)

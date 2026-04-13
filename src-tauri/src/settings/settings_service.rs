@@ -69,7 +69,7 @@ impl SettingsService {
 
         if change_database_location {
             self.database_connection_manager
-                .connect_to_database(&settings.database_location())
+                .connect_to_database(settings.database_location())
                 .await?;
             log::info!(
                 "Changing database location to {}",
@@ -91,7 +91,7 @@ impl SettingsService {
         let mut settings = self.settings_repository.get_settings().await;
         settings.profile = SettingsProfile::User(profile_name);
         self.database_connection_manager
-            .move_database_to(&settings.database_location())
+            .move_database_to(settings.database_location())
             .await?;
         self.settings_repository.save_settings(settings).await?;
         Ok(())
