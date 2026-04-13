@@ -54,7 +54,7 @@ impl DatabaseConnectionManager for SqliteDatabaseConnectionManager {
     }
 
     async fn copy_database_to(&self, path: &Path) -> Result<(), DatabaseConnectionManagerError> {
-        let pool = self.pool.get_pool().await;
+        let pool = self.pool.pool().await;
 
         if let Some(parent) = path.parent()
             && let Err(err) = fs::create_dir_all(parent).await

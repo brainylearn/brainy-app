@@ -20,7 +20,7 @@ impl DbPool {
         self.location.lock().await.clone()
     }
 
-    pub async fn get_pool(&self) -> MutexGuard<'_, SqlitePool> {
+    pub async fn pool(&self) -> MutexGuard<'_, SqlitePool> {
         self.pool.lock().await
     }
 
