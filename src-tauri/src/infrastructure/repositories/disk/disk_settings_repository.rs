@@ -108,7 +108,7 @@ pub mod tests {
     use super::*;
 
     #[tokio::test]
-    pub async fn init_settings_and_get_new_settings_created_and_saved_to_disk() {
+    pub async fn get_or_create_settings_new_settings_created_and_saved_to_disk() {
         // Arrange
 
         let app_data_directory = AppDataDirectory::new(create_temp_directory().await);
@@ -151,7 +151,7 @@ pub mod tests {
     }
 
     #[tokio::test]
-    pub async fn init_settings_and_get_existing_setting_read_from_disk() {
+    pub async fn get_or_create_settings_existing_setting_read_from_disk() {
         // Arrange
 
         let app_data_directory = AppDataDirectory::new(create_temp_directory().await);
