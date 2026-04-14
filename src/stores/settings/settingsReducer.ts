@@ -3,11 +3,9 @@ import SettingsDto from "../../types/backend/dto/settingsDto";
 
 export interface SettingsState {
 	settings: SettingsDto | null;
-	isSettingsLoaded: boolean;
 }
 
 const initialState: SettingsState = {
-	isSettingsLoaded: false,
 	settings: null,
 };
 
@@ -16,7 +14,6 @@ export const settingsSlice = createSlice({
 	initialState,
 	reducers: {
 		setSettings: (state, payload: PayloadAction<SettingsDto>) => {
-			state.isSettingsLoaded = true;
 			state.settings = payload.payload;
 		},
 	},

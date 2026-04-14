@@ -1,17 +1,21 @@
-// TODO: error
-//         "error returned from database: (code: 517) database is locked",
-//  Can be fixed by loading the state on start just one time! Issettingsloaded is not enough and should be removed
 import { NavigateFunction } from "react-router";
 import { getReviewTreeFolderForRoot } from "../fileSystem/fileSystemActions";
 import { loadAndApplySettings } from "../settings/settingsActions";
-import { AppDispatch } from "../store";
+import { AppDispatch, RootState } from "../store";
 import { sync } from "../sync/syncActions";
 import { loadInitialUserState } from "../user/userActions";
 import { UserInformationDto } from "../../types/backend/dto/userInformationDto";
 import { setUserInformation } from "../user/userReducer";
+import { selectIsInitialStateLoaded } from "./appSelectors";
+import { markInitialStateAsLoaded } from "./appReducer";
 
 export function initialLoadApplicationState() {
-	return async function (dispatch: AppDispatch): Promise<void> {
+	return async function (
+		dispatch: AppDispatch,
+		getState: () => RootState,
+	): Promise<void> {
+		if (selectIsInitialStateLoaded(getState())) return;
+		dispatch(markInitialStateAsLoaded());
 		await loadAppState(dispatch);
 	};
 }
