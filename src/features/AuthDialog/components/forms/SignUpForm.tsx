@@ -9,11 +9,10 @@ import Form, {
 import { mdiAccountBoxPlusOutline } from "@mdi/js";
 import Alert from "../../../../components/Alert/Alert";
 import Spinner from "../../../../components/Spinner/Spinner";
-import { signUp } from "../../../../api/authApi";
 import errorToString from "../../../../utils/errorToString";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { reloadApplicationState } from "../../../../stores/app/appActions.ts";
 import { useNavigate } from "react-router";
+import { signUp } from "../../../../stores/user/userActions";
 
 interface Props {
 	isSendingRequest: boolean;
@@ -51,14 +50,15 @@ export default function SignUpForm({
 
 		try {
 			onRequestStart();
-			const userInformation = await signUp({
-				username,
-				password,
-				email,
-				firstName,
-				lastName,
-			});
-			await dispatch(reloadApplicationState(navigate, userInformation));
+			await dispatch(
+				signUp(navigate, {
+					username,
+					password,
+					email,
+					firstName,
+					lastName,
+				}),
+			);
 			onClose();
 		} catch (e) {
 			console.error(e);

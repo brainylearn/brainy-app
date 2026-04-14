@@ -34,6 +34,7 @@ pub async fn create_sqlite_pool(url: &str) -> Result<SqlitePool, sqlx::Error> {
         .pragma("temp_store", "memory")
         .create_if_missing(true);
     let pool = SqlitePoolOptions::new().connect_with(options).await?;
+    // TODO: sign up created error
     sqlx::migrate!("./migrations/").run(&pool).await?;
 
     Ok(pool)

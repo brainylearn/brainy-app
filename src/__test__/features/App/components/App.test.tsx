@@ -22,7 +22,7 @@ import { SMALL_SCREEN_MAX_WIDTH_IN_PX } from "../../../../config/constants.ts";
 import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 import { MemoryRouterProps } from "react-router";
 import { RootState } from "../../../../stores/store.ts";
-import { AppState } from "../../../../stores/app/appReducer.ts";
+import { SettingsState } from "../../../../stores/settings/settingsReducer.ts";
 
 vi.mock(import("../../../../hooks/useAppDispatch.ts"), () => ({
 	default: vi.fn(),
@@ -50,9 +50,7 @@ function renderApp({
 	return renderWithProviders(<App />, {
 		memoryRouterProps,
 		preloadedState: {
-			app: {
-				isInitialStateLoaded: true,
-			} as AppState,
+			settings: {} as SettingsState,
 			...preloadedState,
 		},
 	});

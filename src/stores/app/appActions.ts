@@ -3,7 +3,7 @@ import { getReviewTreeFolderForRoot } from "../fileSystem/fileSystemActions";
 import { loadAndApplySettings } from "../settings/settingsActions";
 import { AppDispatch, RootState } from "../store";
 import { sync } from "../sync/syncActions";
-import { loadInitialUserState } from "../user/userActions";
+import { loadUserState } from "../user/userActions";
 import { UserInformationDto } from "../../types/backend/dto/userInformationDto";
 import { setUserInformation } from "../user/userReducer";
 import { selectStartedInitialStateLoading } from "./appSelectors";
@@ -42,7 +42,7 @@ async function loadAppState(
 	if (userInformationDto) {
 		dispatch(setUserInformation(userInformationDto));
 	} else {
-		await dispatch(loadInitialUserState());
+		await dispatch(loadUserState());
 	}
 
 	// Sync on app close is added as an event in the settings actions.

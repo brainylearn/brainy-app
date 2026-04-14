@@ -21,8 +21,18 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
 vi.mock(import("../../../../api/authApi.ts"));
+vi.mock(import("../../../../api/fileSystemApi.ts"));
 vi.mock(import("../../../../api/userApi.ts"));
-vi.mock(import("../../../../api/settingsApi.ts"));
+vi.mock(import("../../../../api/settingsApi.ts"), async importOriginal => {
+	const getSettings = vi.fn();
+	getSettings.mockResolvedValue({} as SettingsDto);
+
+	return {
+		...(await importOriginal()),
+		getSettings,
+		updateSettings: vi.fn(),
+	};
+});
 vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
 vi.mock(import("../../../../utils/tauriUtils.ts"));
 vi.mock(import("@tauri-apps/plugin-dialog"));

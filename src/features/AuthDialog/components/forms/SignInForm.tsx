@@ -10,9 +10,8 @@ import { mdiLoginVariant } from "@mdi/js";
 import Alert from "../../../../components/Alert/Alert";
 import Spinner from "../../../../components/Spinner/Spinner";
 import errorToString from "../../../../utils/errorToString";
-import { signIn } from "../../../../api/authApi";
 import { useNavigate } from "react-router";
-import { reloadApplicationState } from "../../../../stores/app/appActions.ts";
+import { signIn } from "../../../../stores/user/userActions.ts";
 
 interface Props {
 	isSendingRequest: boolean;
@@ -41,8 +40,7 @@ export default function SignInForm({
 
 		try {
 			onRequestStart();
-			const userInformation = await signIn(username, password);
-			await dispatch(reloadApplicationState(navigate, userInformation));
+			await dispatch(signIn(navigate, username, password));
 			onClose();
 		} catch (e) {
 			console.error(e);

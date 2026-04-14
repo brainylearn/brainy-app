@@ -50,7 +50,6 @@ function renderComponent({
 		memoryRouterProps,
 		preloadedState: {
 			settings: {
-				isSettingsLoaded: true,
 				settings: {
 					enableAi,
 				} as SettingsDto,

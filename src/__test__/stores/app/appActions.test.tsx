@@ -1,4 +1,4 @@
-import { loadInitialUserState } from "../../../stores/user/userActions.ts";
+import { loadUserState } from "../../../stores/user/userActions.ts";
 import { loadAndApplySettings } from "../../../stores/settings/settingsActions.ts";
 import { sync } from "../../../stores/sync/syncActions.ts";
 import SettingsDto from "../../../types/backend/dto/settingsDto.ts";
@@ -8,6 +8,7 @@ import { Procedure } from "@vitest/spy";
 import useAppDispatch from "../../../hooks/useAppDispatch.ts";
 import { initialLoadApplicationState } from "../../../stores/app/appActions.ts";
 import { RootState } from "../../../stores/store.ts";
+import { AppState } from "../../../stores/app/appReducer.ts";
 
 vi.mock(import("../../../hooks/useAppDispatch.ts"), () => ({
 	default: vi.fn(),
@@ -34,7 +35,7 @@ describe("appActions", () => {
 		);
 
 		const expectedLoadSettingsCb = vi.fn();
-		vi.mocked(loadInitialUserState).mockReturnValue(expectedLoadSettingsCb);
+		vi.mocked(loadUserState).mockReturnValue(expectedLoadSettingsCb);
 
 		const expectedInitiateSettings = vi.fn();
 		vi.mocked(loadAndApplySettings).mockReturnValue(
@@ -53,9 +54,7 @@ describe("appActions", () => {
 
 		const getState = vi.fn();
 		getState.mockReturnValue({
-			app: {
-				isInitialStateLoaded: false,
-			},
+			app: {} as AppState,
 		} as RootState);
 
 		// Act
@@ -79,7 +78,7 @@ describe("appActions", () => {
 		);
 
 		const expectedLoadSettingsCb = vi.fn();
-		vi.mocked(loadInitialUserState).mockReturnValue(expectedLoadSettingsCb);
+		vi.mocked(loadUserState).mockReturnValue(expectedLoadSettingsCb);
 
 		const expectedInitiateSettings = vi.fn();
 		vi.mocked(loadAndApplySettings).mockReturnValue(
@@ -99,8 +98,8 @@ describe("appActions", () => {
 		const getState = vi.fn();
 		getState.mockReturnValue({
 			app: {
-				isInitialStateLoaded: true,
-			},
+				startedInitialStateLoading: true,
+			} as AppState,
 		} as RootState);
 
 		// Act
@@ -135,9 +134,7 @@ describe("appActions", () => {
 
 		const getState = vi.fn();
 		getState.mockReturnValue({
-			app: {
-				isInitialStateLoaded: false,
-			},
+			app: {} as AppState,
 		} as RootState);
 
 		// Act
