@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-interface AppState {
+export interface AppState {
 	isInitialStateLoaded: boolean;
 }
 

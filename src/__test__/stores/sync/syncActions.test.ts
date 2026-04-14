@@ -1,14 +1,14 @@
 import {
 	defaultGlobalSyncEventManager,
 	ListenerType,
-} from "../../../../stores/sync/managers/syncEventManager";
-import { sync } from "../../../../stores/sync/syncActions";
-import { setIsSyncing } from "../../../../stores/sync/syncReducer";
-import { sync as syncApi } from "../../../../api/syncApi";
-import { RootState } from "../../../../stores/store";
+} from "../../../stores/sync/managers/syncEventManager";
+import { sync } from "../../../stores/sync/syncActions";
+import { setIsSyncing } from "../../../stores/sync/syncReducer";
+import { sync as syncApi } from "../../../api/syncApi";
+import { RootState } from "../../../stores/store";
 
-vi.mock("../../../../stores/sync/managers/syncEventManager");
-vi.mock("../../../../api/syncApi.ts");
+vi.mock("../../../stores/sync/managers/syncEventManager");
+vi.mock("../../../api/syncApi.ts");
 
 const createGetState = ({
 	isSignedIn,

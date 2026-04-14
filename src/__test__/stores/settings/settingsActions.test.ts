@@ -1,22 +1,22 @@
 import { getCurrentWebview, Webview } from "@tauri-apps/api/webview";
-import { getSettings } from "../../../../api/settingsApi.ts";
-import * as settingsApi from "../../../../api/settingsApi.ts";
+import { getSettings } from "../../../api/settingsApi.ts";
+import * as settingsApi from "../../../api/settingsApi.ts";
 import {
 	loadAndApplySettings,
 	SETTINGS_CLOSE_REQUESTED_HANDLER_NAME,
 	updateAndApplySettings,
-} from "../../../../stores/settings/settingsActions.ts";
-import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
-import { setSettings } from "../../../../stores/settings/settingsReducer.ts";
-import { defaultCloseRequestedEventManager } from "../../../../managers/closeRequestedEventManager.ts";
-import * as syncActions from "../../../../stores/sync/syncActions.ts";
+} from "../../../stores/settings/settingsActions.ts";
+import SettingsDto from "../../../types/backend/dto/settingsDto.ts";
+import { setSettings } from "../../../stores/settings/settingsReducer.ts";
+import { defaultCloseRequestedEventManager } from "../../../managers/closeRequestedEventManager.ts";
+import * as syncActions from "../../../stores/sync/syncActions.ts";
 import { Window } from "@tauri-apps/api/window";
 import { type } from "@tauri-apps/plugin-os";
 
 vi.mock(import("@tauri-apps/api/webview"));
-vi.mock(import("../../../../api/settingsApi.ts"));
-vi.mock(import("../../../../stores/sync/syncActions.ts"));
-vi.mock(import("../../../../managers/closeRequestedEventManager.ts"));
+vi.mock(import("../../../api/settingsApi.ts"));
+vi.mock(import("../../../stores/sync/syncActions.ts"));
+vi.mock(import("../../../managers/closeRequestedEventManager.ts"));
 vi.mock(import("@tauri-apps/plugin-os"));
 
 const getAndSetDefaultSettings = () => {

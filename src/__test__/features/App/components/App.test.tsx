@@ -3,8 +3,6 @@ import { renderWithProviders } from "../../../test-utils/renderWithProviders.tsx
 import useAppDispatch from "../../../../hooks/useAppDispatch.ts";
 import { getReviewTreeFolderForRoot } from "../../../../stores/fileSystem/fileSystemActions.ts";
 import { act, screen, waitFor } from "@testing-library/react";
-import { loadInitialUserState } from "../../../../stores/user/userActions.ts";
-import { loadAndApplySettings } from "../../../../stores/settings/settingsActions.ts";
 import { Mock } from "vitest";
 import { Procedure } from "@vitest/spy";
 import {
@@ -21,12 +19,10 @@ import editorStyles from "../../../../features/Editor/components/styles.module.c
 import reviewerStyles from "../../../../features/Reviewer/components/styles.module.css";
 import searcherStyles from "../../../../features/Searcher/components/styles.module.css";
 import { SMALL_SCREEN_MAX_WIDTH_IN_PX } from "../../../../config/constants.ts";
-import { sync } from "../../../../stores/sync/syncActions.ts";
-import SettingsDto from "../../../../types/backend/dto/settingsDto.ts";
 import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
-import { SettingsState } from "../../../../stores/settings/settingsReducer.ts";
 import { MemoryRouterProps } from "react-router";
 import { RootState } from "../../../../stores/store.ts";
+import { AppState } from "../../../../stores/app/appReducer.ts";
 
 vi.mock(import("../../../../hooks/useAppDispatch.ts"), () => ({
 	default: vi.fn(),
@@ -54,9 +50,9 @@ function renderApp({
 	return renderWithProviders(<App />, {
 		memoryRouterProps,
 		preloadedState: {
-			settings: {
-				isSettingsLoaded: true,
-			} as SettingsState,
+			app: {
+				isInitialStateLoaded: true,
+			} as AppState,
 			...preloadedState,
 		},
 	});
@@ -67,80 +63,7 @@ describe("App", () => {
 
 	beforeEach(() => {
 		dispatchMock = vi.fn();
-		const useAppDispatchMock = vi.mocked(useAppDispatch);
-		vi.mocked(useAppDispatchMock).mockReturnValue(dispatchMock);
-	});
-
-	// TODO: move to action
-	it("Should load initial state", async () => {
-		// Arrange
-
-		const expectedReviewTreeCb = vi.fn();
-		vi.mocked(getReviewTreeFolderForRoot).mockReturnValue(
-			expectedReviewTreeCb,
-		);
-
-		const expectedLoadSettingsCb = vi.fn();
-		vi.mocked(loadInitialUserState).mockReturnValue(expectedLoadSettingsCb);
-
-		const expectedInitiateSettings = vi.fn();
-		vi.mocked(loadAndApplySettings).mockReturnValue(
-			expectedInitiateSettings,
-		);
-		dispatchMock.mockImplementation(cb => {
-			if (cb === expectedInitiateSettings) {
-				return Promise.resolve({
-					autoSync: true,
-				} as Partial<SettingsDto>);
-			}
-		});
-
-		const expectedSync = vi.fn();
-		vi.mocked(sync).mockReturnValue(expectedSync);
-
-		// Act
-
-		renderApp();
-
-		// Assert
-
-		await waitFor(() => {
-			expect(dispatchMock).toHaveBeenCalledWith(expectedReviewTreeCb);
-			expect(dispatchMock).toHaveBeenCalledWith(expectedLoadSettingsCb);
-			expect(dispatchMock).toHaveBeenCalledWith(expectedInitiateSettings);
-			expect(dispatchMock).toHaveBeenCalledWith(expectedSync);
-		});
-	});
-
-	// TODO: move to action
-	it("Should not auto-sync on start if it is not enabled", async () => {
-		// Arrange
-
-		const expectedInitiateSettings = vi.fn();
-		vi.mocked(loadAndApplySettings).mockReturnValue(
-			expectedInitiateSettings,
-		);
-		dispatchMock.mockImplementation(cb => {
-			if (cb === expectedInitiateSettings) {
-				return Promise.resolve({
-					autoSync: false,
-				} as Partial<SettingsDto>);
-			}
-		});
-
-		const expectedSync = vi.fn();
-		vi.mocked(sync).mockReturnValue(expectedSync);
-
-		// Act
-
-		renderApp();
-
-		// Assert
-
-		await waitFor(() => {
-			expect(dispatchMock).toHaveBeenCalledWith(expectedInitiateSettings);
-			expect(dispatchMock).not.toHaveBeenCalledWith(expectedSync);
-		});
+		vi.mocked(useAppDispatch).mockReturnValue(dispatchMock);
 	});
 
 	it("Should prevent default when opening context menu on production", async () => {
