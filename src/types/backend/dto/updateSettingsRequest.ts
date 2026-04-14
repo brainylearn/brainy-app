@@ -1,7 +1,7 @@
 import { Theme } from "./settingsDto";
 
 export default interface UpdateSettingsRequest {
-	databaseLocationBaseDir: string | null;
+	baseDatabaseDirectory: string | null;
 
 	theme: Theme | null;
 	zoomPercentage: number | null;

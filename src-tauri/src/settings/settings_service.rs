@@ -36,7 +36,7 @@ impl SettingsService {
         let mut settings = self.settings_repository.get_settings().await;
         let mut change_database_location = false;
 
-        if let Some(new_base_dir) = new_settings.database_location_base_dir
+        if let Some(new_base_dir) = new_settings.base_database_directory
             && new_base_dir != settings.base_database_directory
         {
             settings.base_database_directory = new_base_dir;
@@ -142,7 +142,7 @@ mod tests {
         // Arrange
 
         let request = UpdateSettingsRequest {
-            database_location_base_dir: Some("new path".into()),
+            base_database_directory: Some("new path".into()),
             ..Default::default()
         };
 

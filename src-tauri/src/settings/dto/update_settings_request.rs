@@ -7,7 +7,7 @@ use crate::settings::value_objects::{settings_profile::SettingsProfile, theme::T
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateSettingsRequest {
-    pub database_location_base_dir: Option<PathBuf>,
+    pub base_database_directory: Option<PathBuf>,
     pub profile: Option<SettingsProfile>,
 
     pub theme: Option<Theme>,

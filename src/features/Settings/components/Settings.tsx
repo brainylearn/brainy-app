@@ -140,8 +140,6 @@ export default function Settings({ onClose }: Props) {
 			if (state.localSettings) {
 				await dispatch(
 					updateAndApplySettings({
-						databaseLocationBaseDir:
-							state.localSettings.baseDatabaseDirectory,
 						...state.localSettings,
 					}),
 				);
