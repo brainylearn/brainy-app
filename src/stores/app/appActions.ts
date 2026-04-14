@@ -6,16 +6,16 @@ import { sync } from "../sync/syncActions";
 import { loadInitialUserState } from "../user/userActions";
 import { UserInformationDto } from "../../types/backend/dto/userInformationDto";
 import { setUserInformation } from "../user/userReducer";
-import { selectIsInitialStateLoaded } from "./appSelectors";
-import { markInitialStateAsLoaded } from "./appReducer";
+import { selectStartedInitialStateLoading } from "./appSelectors";
+import { markStartLoadingOfInitialState } from "./appReducer";
 
 export function initialLoadApplicationState() {
 	return async function (
 		dispatch: AppDispatch,
 		getState: () => RootState,
 	): Promise<void> {
-		if (selectIsInitialStateLoaded(getState())) return;
-		dispatch(markInitialStateAsLoaded());
+		if (selectStartedInitialStateLoading(getState())) return;
+		dispatch(markStartLoadingOfInitialState());
 		await loadAppState(dispatch);
 	};
 }
@@ -36,8 +36,8 @@ async function loadAppState(
 	navigate?: NavigateFunction,
 	userInformationDto?: UserInformationDto,
 ) {
-	const settings = await dispatch(loadAndApplySettings());
 	await dispatch(getReviewTreeFolderForRoot());
+	const settings = await dispatch(loadAndApplySettings());
 
 	if (userInformationDto) {
 		dispatch(setUserInformation(userInformationDto));

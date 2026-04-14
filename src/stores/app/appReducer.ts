@@ -1,23 +1,23 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 export interface AppState {
-	isInitialStateLoaded: boolean;
+	startedInitialStateLoading: boolean;
 }
 
 const initialState: AppState = {
-	isInitialStateLoaded: false,
+	startedInitialStateLoading: false,
 };
 
 export const appSlice = createSlice({
 	name: "settings",
 	initialState,
 	reducers: {
-		markInitialStateAsLoaded: state => {
-			state.isInitialStateLoaded = true;
+		markStartLoadingOfInitialState: state => {
+			state.startedInitialStateLoading = true;
 		},
 	},
 });
 
 export default appSlice.reducer;
 
-export const { markInitialStateAsLoaded } = appSlice.actions;
+export const { markStartLoadingOfInitialState } = appSlice.actions;

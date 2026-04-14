@@ -29,9 +29,9 @@ import {
 } from "../../../stores/sync/managers/syncEventManager";
 import useIsSmallScreen from "../../../hooks/useIsSmallScreen";
 import AiChatWidget from "../../AiChatWidget/components/AiChatWidget";
-import useAppSelector from "../../../hooks/useAppSelector";
 import { initialLoadApplicationState } from "../../../stores/app/appActions.ts";
-import { selectIsInitialStateLoaded } from "../../../stores/app/appSelectors.ts";
+import useAppSelector from "../../../hooks/useAppSelector.ts";
+import { selectAreSettingsLoaded } from "../../../stores/settings/settingsSelector.ts";
 
 function App() {
 	const [showSettings, setShowSettings] = useState(false);
@@ -46,7 +46,7 @@ function App() {
 	const [previousLocation, setPreviousLocation] = useState(location);
 	const selectedFileId = searchParams.get(FILE_ID_QUERY_PARAMETER);
 	const isSmallScreen = useIsSmallScreen();
-	const isSettingsLoaded = useAppSelector(selectIsInitialStateLoaded);
+	const areSettingsLoaded = useAppSelector(selectAreSettingsLoaded);
 	const dispatch = useAppDispatch();
 	const navigate = useNavigate();
 
@@ -125,7 +125,7 @@ function App() {
 	};
 
 	// Used to avoid showing in wrong theme, or zoom before settings are loaded.
-	if (!isSettingsLoaded) return null;
+	if (!areSettingsLoaded) return null;
 
 	return (
 		<div className={`${styles.workspace}`}>
