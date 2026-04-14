@@ -28,7 +28,7 @@ pub struct DiskSettingsRepository {
 }
 
 impl DiskSettingsRepository {
-    pub async fn init_settings_and_get(
+    pub async fn get_or_create_settings(
         app_data_directory: &AppDataDirectory,
         settings_if_non_existing: Settings,
     ) -> Result<Settings, SettingsRepositoryError> {
@@ -119,7 +119,7 @@ pub mod tests {
 
         // Act
 
-        DiskSettingsRepository::init_settings_and_get(&app_data_directory, default_settings)
+        DiskSettingsRepository::get_or_create_settings(&app_data_directory, default_settings)
             .await
             .unwrap();
 
@@ -159,7 +159,7 @@ pub mod tests {
             app_data_directory.get_path().clone(),
             SettingsProfile::Default,
         );
-        let mut settings = DiskSettingsRepository::init_settings_and_get(
+        let mut settings = DiskSettingsRepository::get_or_create_settings(
             &app_data_directory,
             default_settings.clone(),
         )
@@ -176,7 +176,7 @@ pub mod tests {
         // Act
 
         let actual =
-            DiskSettingsRepository::init_settings_and_get(&app_data_directory, default_settings)
+            DiskSettingsRepository::get_or_create_settings(&app_data_directory, default_settings)
                 .await
                 .unwrap();
 

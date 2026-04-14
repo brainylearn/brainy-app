@@ -56,7 +56,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     injector.register_singleton(Arc::new(app_data_directory.clone()));
 
     #[cfg(not(test))]
-    let settings = DiskSettingsRepository::init_settings_and_get(
+    let settings = DiskSettingsRepository::get_or_create_settings(
         &app_data_directory,
         Settings::new(
             app_data_directory.get_path().clone(),
@@ -129,8 +129,8 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 pub fn register_scoped_tx(injector: &mut Injector) {
     injector.register_scope_factory::<DbTransaction>(|scope| {
         Box::pin(async move {
-            let pool = scope.resolve::<DbPool>().await;
-            let pool = pool.pool().await;
+            let db_pool = scope.resolve::<DbPool>().await;
+            let pool = db_pool.pool().await;
             let tx = pool.begin().await.expect("Cannot create a new transaction");
             let db_transaction = DbTransaction::new(Mutex::new(tx));
             Arc::new(db_transaction)
