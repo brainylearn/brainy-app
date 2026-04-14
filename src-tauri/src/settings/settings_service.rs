@@ -68,13 +68,13 @@ impl SettingsService {
         }
 
         if change_database_location {
-            self.database_connection_manager
-                .connect_to_database(settings.database_location())
-                .await?;
             log::info!(
                 "Changing database location to {}",
                 settings.database_location()
             );
+            self.database_connection_manager
+                .connect_to_database(settings.database_location())
+                .await?;
         }
 
         self.settings_repository.save_settings(settings).await?;
