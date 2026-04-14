@@ -30,7 +30,6 @@ pub struct AuthService {
     settings_service: Arc<SettingsService>,
 }
 
-// TODO: unit test
 impl AuthService {
     pub async fn sign_in(
         &self,
