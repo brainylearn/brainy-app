@@ -9,6 +9,9 @@ dependencies = [
  "async-stream",
  "async-trait",
  "base64 0.22.1",
+ "brainy_application",
+ "brainy_domain",
+ "brainy_infrastructure",
  "chrono",
  "cookie_store",
  "dirs",
@@ -480,6 +483,25 @@ dependencies = [
  "futures-io",
  "futures-lite",
  "piper",
+]
+
+[[package]]
+name = "brainy_application"
+version = "0.1.0"
+dependencies = [
+ "brainy_domain",
+]
+
+[[package]]
+name = "brainy_domain"
+version = "0.1.0"
+
+[[package]]
+name = "brainy_infrastructure"
+version = "0.1.0"
+dependencies = [
+ "brainy_application",
+ "brainy_domain",
 ]
 
 [[package]]

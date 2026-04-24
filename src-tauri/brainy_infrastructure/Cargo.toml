@@ -1,0 +1,8 @@
+[package]
+name = "brainy_infrastructure"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+brainy_domain = { path = "../brainy_domain" }
+brainy_application = { path = "../brainy_application" }

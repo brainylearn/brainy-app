@@ -60,6 +60,10 @@ tokio-rusqlite = "0.6.0"
 tokio-stream = "0.1.18"
 uuid = { version = "1.23.1", features = [ "v4", "serde" ] }
 
+brainy_domain = { path = "./brainy_domain" }
+brainy_application = { path = "./brainy_application" }
+brainy_infrastructure = { path = "./brainy_infrastructure" }
+
 [dev-dependencies]
 mockall = "0.14.0"
 
@@ -73,6 +77,9 @@ openssl = { version = "*", features = ["vendored"] }
 
 [workspace]
 members = [
+    "brainy_domain",
+    "brainy_application",
+    "brainy_infrastructure",
     "injector",
     "injector_derive"
 ]
