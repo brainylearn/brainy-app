@@ -6,3 +6,11 @@ edition = "2024"
 [dependencies]
 async-trait = "0.1.89"
 thiserror = "2.0.18"
+log = "0.4.29"
+
+# TODO: remove  from domain
+serde = { version = "1.0.228", features = ["derive"] }
+
+# TODO: remove
+[dev-dependencies]
+mockall = "0.14.0"

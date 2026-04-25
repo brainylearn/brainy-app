@@ -1,7 +1,6 @@
+use brainy_domain::settings::value_objects::database_location::DatabaseLocation;
 use sqlx::SqlitePool;
 use tokio::sync::{Mutex, MutexGuard};
-
-use crate::settings::value_objects::database_location::DatabaseLocation;
 
 pub struct DbPool {
     pool: Mutex<SqlitePool>,

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
+use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, Utc};
 use injector_derive::ScopeInjectable;
 use sqlx::{QueryBuilder, SqliteConnection};
@@ -18,12 +19,9 @@ use crate::{
         },
         repositories::cell_repository::{CellRepository, MoveDirection},
     },
-    infrastructure::{
-        repositories::sqlite::sqlite_rows::{
-            cell_row::{CellRow, convert_rows_to_cells},
-            repetition_row::RepetitionRow,
-        },
-        value_objects::db_transaction::DbTransaction,
+    infrastructure::repositories::sqlite::sqlite_rows::{
+        cell_row::{CellRow, convert_rows_to_cells},
+        repetition_row::RepetitionRow,
     },
 };
 use brainy_domain::common::repository_error::RepositoryError;

@@ -1,10 +1,9 @@
 use async_trait::async_trait;
-use injector::injector_scope::InjectorScope;
-
-use crate::infrastructure::value_objects::{
+use brainy_infrastructure::common::{
     db_pool::DbPool,
     db_transaction::{DbTransaction, SqliteTransaction},
 };
+use injector::injector_scope::InjectorScope;
 
 #[async_trait]
 pub trait UnitOfWorkExt {

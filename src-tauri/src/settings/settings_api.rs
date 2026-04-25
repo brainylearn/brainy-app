@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
-use crate::{
-    common::api_error::ApiError,
-    settings::{
-        dto::{settings_dto::SettingsDto, update_settings_request::UpdateSettingsRequest},
-        repositories::settings_repository::SettingsRepository,
-        settings_service::SettingsService,
-    },
+use crate::common::api_error::ApiError;
+use brainy_application::settings::{
+    dto::{settings_dto::SettingsDto, update_settings_request::UpdateSettingsRequest},
+    settings_service::SettingsService,
 };
+use brainy_domain::settings::repositories::settings_repository::SettingsRepository;
 use injector::injector::Injector;
 use tauri::State;
 

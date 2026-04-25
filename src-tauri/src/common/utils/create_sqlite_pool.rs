@@ -8,7 +8,7 @@ use sqlx::{
 use tokio::fs;
 use tokio_rusqlite::ffi::sqlite3_auto_extension;
 
-use crate::settings::value_objects::database_location::DatabaseLocation;
+use brainy_domain::settings::value_objects::database_location::DatabaseLocation;
 
 pub async fn create_sqlite_pool_from_location(
     database_location: &DatabaseLocation,

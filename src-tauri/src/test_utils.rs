@@ -1,14 +1,15 @@
 use std::{env, path::PathBuf, sync::Arc};
 
+use brainy_infrastructure::common::db_pool::DbPool;
 use injector::injector::Injector;
 use tokio::fs;
 
 use crate::{
     Guid,
     common::utils::{create_injector::register_scoped_tx, create_sqlite_pool::create_sqlite_pool},
-    infrastructure::value_objects::{app_data_directory::AppDataDirectory, db_pool::DbPool},
-    settings::value_objects::database_location::DatabaseLocation,
+    infrastructure::value_objects::app_data_directory::AppDataDirectory,
 };
+use brainy_domain::settings::value_objects::database_location::DatabaseLocation;
 
 pub async fn create_temp_directory() -> PathBuf {
     let path = env::temp_dir().join(Guid::new_v4().to_string());

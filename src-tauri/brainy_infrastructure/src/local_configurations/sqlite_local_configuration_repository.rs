@@ -3,10 +3,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
 
-use crate::infrastructure::{
-    repositories::sqlite::sqlite_rows::local_configuration_row::LocalConfigurationRow,
-    value_objects::db_transaction::DbTransaction,
-};
+use crate::common::db_transaction::DbTransaction;
+use crate::local_configurations::local_configuration_row::LocalConfigurationRow;
 use brainy_domain::common::repository_error::RepositoryError;
 use brainy_domain::local_configurations::{
     entities::local_configuration::LocalConfiguration,

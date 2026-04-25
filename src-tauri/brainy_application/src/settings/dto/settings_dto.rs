@@ -1,6 +1,5 @@
+use brainy_domain::settings::{entities::settings::Settings, value_objects::theme::Theme};
 use serde::{Deserialize, Serialize};
-
-use crate::settings::{entities::settings::Settings, value_objects::theme::Theme};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

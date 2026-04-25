@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_infrastructure::common::db_transaction::DbTransaction;
 use injector_derive::ScopeInjectable;
 
 use crate::{
@@ -12,15 +13,12 @@ use crate::{
         },
         repositories::ai_repository::AiRepository,
     },
-    infrastructure::{
-        repositories::sqlite::sqlite_rows::{
-            chat_row::ChatRow,
-            message_row::{
-                ASSISTANT_CONTENT_TYPE, DOCUMENT_CONTENT_TYPE, HUMAN_CONTENT_TYPE, MessageRow,
-                TOOL_CALL_CONTENT_TYPE,
-            },
+    infrastructure::repositories::sqlite::sqlite_rows::{
+        chat_row::ChatRow,
+        message_row::{
+            ASSISTANT_CONTENT_TYPE, DOCUMENT_CONTENT_TYPE, HUMAN_CONTENT_TYPE, MessageRow,
+            TOOL_CALL_CONTENT_TYPE,
         },
-        value_objects::db_transaction::DbTransaction,
     },
 };
 use brainy_domain::common::repository_error::RepositoryError;

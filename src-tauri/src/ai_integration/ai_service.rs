@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use brainy_domain::settings::repositories::settings_repository::{
+    SettingsRepository, SettingsRepositoryError,
+};
 use injector_derive::ScopeInjectable;
 use rig::client::EmbeddingsClient;
 #[cfg(not(test))]
@@ -53,9 +56,6 @@ use crate::ai_integration::{
 use crate::cells::cell_service::CellService;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
-use crate::settings::repositories::settings_repository::{
-    SettingsRepository, SettingsRepositoryError,
-};
 use brainy_domain::common::repository_error::RepositoryError;
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
@@ -510,6 +510,9 @@ pub mod tests {
         sync::atomic::{AtomicBool, AtomicU32, Ordering},
     };
 
+    use brainy_domain::settings::{
+        entities::settings::Settings, value_objects::settings_profile::SettingsProfile,
+    };
     use injector::{injector::Injector, register_scope};
     use rig::{
         OneOrMany,
@@ -545,10 +548,6 @@ pub mod tests {
                 sqlite_folder_repository::SqliteFolderRepository,
                 sqlite_review_repository::SqliteReviewRepository,
             },
-        },
-        settings::{
-            entities::settings::Settings, repositories::settings_repository::SettingsRepository,
-            value_objects::settings_profile::SettingsProfile,
         },
         test_utils::{create_temp_directory, create_test_injector},
     };

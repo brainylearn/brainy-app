@@ -1,0 +1,2 @@
+pub mod local_configuration_row;
+pub mod sqlite_local_configuration_repository;

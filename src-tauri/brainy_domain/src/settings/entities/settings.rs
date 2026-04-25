@@ -11,8 +11,8 @@ const DATABASE_FILE_NAME: &str = "brainy.db";
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    pub(in crate::settings) base_database_directory: PathBuf,
-    pub(in crate::settings) profile: SettingsProfile,
+    pub base_database_directory: PathBuf,
+    pub profile: SettingsProfile,
 
     pub theme: Theme,
     pub zoom_percentage: f64,

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
@@ -10,10 +11,7 @@ use crate::{
         entities::folder::Folder, repositories::folder_repository::FolderRepository,
         value_objects::file_system_item_name::FileSystemItemName,
     },
-    infrastructure::{
-        repositories::sqlite::sqlite_rows::folder_row::FolderRow,
-        value_objects::db_transaction::DbTransaction,
-    },
+    infrastructure::repositories::sqlite::sqlite_rows::folder_row::FolderRow,
 };
 use brainy_domain::common::repository_error::RepositoryError;
 

@@ -1,14 +1,12 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
-use crate::{
-    infrastructure::value_objects::db_transaction::DbTransaction,
-    sync::{
-        entities::deleted_entity::DeletedEntity, repositories::sync_repository::SyncRepository,
-    },
+use crate::sync::{
+    entities::deleted_entity::DeletedEntity, repositories::sync_repository::SyncRepository,
 };
 use brainy_domain::common::repository_error::RepositoryError;
 

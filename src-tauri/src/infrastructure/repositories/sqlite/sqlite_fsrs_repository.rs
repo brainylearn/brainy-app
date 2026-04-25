@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
@@ -10,10 +11,7 @@ use crate::{
         entities::fsrs_profile::FsrsProfile,
         repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
     },
-    infrastructure::{
-        repositories::sqlite::sqlite_rows::fsrs_profile_row::FsrsProfileRow,
-        value_objects::db_transaction::DbTransaction,
-    },
+    infrastructure::repositories::sqlite::sqlite_rows::fsrs_profile_row::FsrsProfileRow,
 };
 use brainy_domain::common::repository_error::RepositoryError;
 

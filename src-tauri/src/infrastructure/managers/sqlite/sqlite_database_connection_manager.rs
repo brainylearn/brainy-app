@@ -1,17 +1,17 @@
 use std::{path::Path, sync::Arc};
 
 use async_trait::async_trait;
-use injector_derive::ScopeInjectable;
-use tokio::fs;
-
-use crate::{
-    common::utils::create_sqlite_pool::create_sqlite_pool_from_location,
+use brainy_domain::{
     database::database_connection_manager::{
         DatabaseConnectionManager, DatabaseConnectionManagerError,
     },
-    infrastructure::value_objects::db_pool::DbPool,
     settings::value_objects::database_location::DatabaseLocation,
 };
+use brainy_infrastructure::common::db_pool::DbPool;
+use injector_derive::ScopeInjectable;
+use tokio::fs;
+
+use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteDatabaseConnectionManager {

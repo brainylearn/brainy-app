@@ -1,5 +1,14 @@
 use std::sync::Arc;
 
+use brainy_application::settings::settings_service::SettingsService;
+use brainy_domain::settings::repositories::settings_repository::SettingsRepository;
+use brainy_domain::{
+    database::database_connection_manager::DatabaseConnectionManager,
+    settings::entities::settings::Settings,
+};
+use brainy_infrastructure::common::db_pool::DbPool;
+use brainy_infrastructure::common::db_transaction::DbTransaction;
+use brainy_infrastructure::local_configurations::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
 use injector::{injector::Injector, register_scope};
 use tauri::Url;
 use tokio::sync::Mutex;
@@ -12,7 +21,6 @@ use crate::cells::repositories::review_repository::ReviewRepository;
 use crate::common::utils::create_sqlite_pool::create_sqlite_pool;
 #[cfg(not(test))]
 use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
-use crate::database::database_connection_manager::DatabaseConnectionManager;
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::fsrs::repositories::fsrs_repository::FsrsRepository;
@@ -24,19 +32,9 @@ use crate::infrastructure::repositories::sqlite::sqlite_cell_repository::SqliteC
 use crate::infrastructure::repositories::sqlite::sqlite_file_repository::SqliteFileRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_folder_repository::SqliteFolderRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_fsrs_repository::SqliteFsrsRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_review_repository::SqliteReviewRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_sync_repository::SqliteSyncRepository;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
-use crate::infrastructure::value_objects::db_pool::DbPool;
-use crate::infrastructure::value_objects::db_transaction::DbTransaction;
-#[cfg(test)]
-use crate::settings::entities::settings::Settings;
-#[cfg(not(test))]
-use crate::settings::entities::settings::Settings;
-use crate::settings::repositories::settings_repository::SettingsRepository;
-#[cfg(not(test))]
-use crate::settings::value_objects::settings_profile::SettingsProfile;
 use crate::sync::repositories::sync_repository::SyncRepository;
 use crate::{
     ai_integration::{ai_service::AiService, ai_state::AiState},
@@ -45,10 +43,11 @@ use crate::{
     cells::cell_service::CellService,
     file_system::file_system_service::FileSystemService,
     fsrs::fsrs_service::FsrsService,
-    settings::settings_service::SettingsService,
     sync::sync_service::{SyncLock, SyncService},
 };
 use brainy_domain::local_configurations::repositories::local_configuration_repository::LocalConfigurationRepository;
+#[cfg(not(test))]
+use brainy_domain::settings::value_objects::settings_profile::SettingsProfile;
 
 pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     let mut injector = Injector::default();

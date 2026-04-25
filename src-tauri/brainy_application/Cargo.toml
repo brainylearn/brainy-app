@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-brainy_domain = { path = "../brainy_domain" }
-
 async-trait = "0.1.89"
 thiserror = "2.0.18"
+serde = { version = "1.0.228", features = ["derive"] }
+log = "0.4.29"
+
+brainy_domain = { path = "../brainy_domain" }
+injector = { path = "../injector" }
+injector_derive = { path = "../injector_derive" }

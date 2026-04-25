@@ -1,19 +1,17 @@
 use std::sync::Arc;
 
+use brainy_application::settings::{
+    dto::update_settings_request::UpdateSettingsRequest,
+    settings_service::{SettingsService, SettingsServiceError},
+};
+use brainy_domain::settings::value_objects::settings_profile::SettingsProfile;
 use injector_derive::ScopeInjectable;
 use thiserror::Error;
 
-use crate::{
-    backend::{
-        clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
-        dto::sign_up_request::SignUpRequest,
-        models::UserInformationDto,
-    },
-    settings::{
-        dto::update_settings_request::UpdateSettingsRequest,
-        settings_service::{SettingsService, SettingsServiceError},
-        value_objects::settings_profile::SettingsProfile,
-    },
+use crate::backend::{
+    clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+    dto::sign_up_request::SignUpRequest,
+    models::UserInformationDto,
 };
 
 #[derive(Error, Debug, PartialEq, Eq)]

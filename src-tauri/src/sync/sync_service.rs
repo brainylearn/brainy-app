@@ -542,6 +542,7 @@ impl SyncService {
 
 #[cfg(test)]
 mod tests {
+    use brainy_infrastructure::local_configurations::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
     use chrono::Duration;
     use injector::{injector::Injector, register_scope};
 
@@ -560,7 +561,6 @@ mod tests {
                 sqlite_file_repository::SqliteFileRepository,
                 sqlite_folder_repository::SqliteFolderRepository,
                 sqlite_fsrs_repository::SqliteFsrsRepository,
-                sqlite_local_configuration_repository::SqliteLocalConfigurationRepository,
                 sqlite_review_repository::SqliteReviewRepository,
                 sqlite_sync_repository::SqliteSyncRepository,
             },
