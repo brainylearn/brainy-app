@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# TODO: rexport them from domain
 async-trait = "0.1.89"
 thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"] }
 log = "0.4.29"
+chrono = { version = "0.4.44", features = ["serde"] }
+tokio = { version = "1.51.0", features = ["full"] }
 
 brainy_domain = { path = "../brainy_domain" }
 injector = { path = "../injector" }

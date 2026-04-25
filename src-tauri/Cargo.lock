@@ -491,11 +491,13 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "brainy_domain",
+ "chrono",
  "injector",
  "injector_derive",
  "log",
  "serde",
  "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]

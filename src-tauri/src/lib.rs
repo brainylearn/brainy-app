@@ -1,6 +1,5 @@
 mod ai_integration;
 mod backend;
-mod backup;
 mod cells;
 mod common;
 mod file_system;
@@ -35,9 +34,9 @@ pub use file_system::api::export_import_api::*;
 use tauri_plugin_window_state::StateFlags;
 use tokio::runtime::Handle;
 
-use crate::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 use crate::common::utils::create_injector::create_injector;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
+use brainy_application::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 
 pub type Guid = uuid::Uuid;
 
