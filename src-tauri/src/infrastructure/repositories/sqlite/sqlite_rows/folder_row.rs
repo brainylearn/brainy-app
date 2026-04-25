@@ -1,7 +1,7 @@
 use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 
-use crate::file_system::{
+use brainy_domain::file_system::{
     entities::folder::Folder, value_objects::file_system_item_name::FileSystemItemName,
 };
 

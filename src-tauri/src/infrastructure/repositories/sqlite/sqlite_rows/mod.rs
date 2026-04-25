@@ -1,3 +1,4 @@
+// TODO: move to infrastructure
 pub mod cell_row;
 pub mod chat_row;
 pub mod file_row;

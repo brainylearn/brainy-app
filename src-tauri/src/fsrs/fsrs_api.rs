@@ -1,18 +1,16 @@
 use std::sync::Arc;
 
-use crate::{
-    common::api_error::ApiError,
+use crate::{common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt};
+use brainy_application::fsrs::fsrs_service::FsrsService;
+use brainy_domain::{
+    Guid,
+    common::repository_error::RepositoryError,
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
     },
-    fsrs::{
-        entities::fsrs_profile::FsrsProfile, fsrs_service::FsrsService,
-        repositories::fsrs_repository::FsrsRepository,
-    },
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
+    fsrs::{entities::fsrs_profile::FsrsProfile, repositories::fsrs_repository::FsrsRepository},
 };
-use brainy_domain::{Guid, common::repository_error::RepositoryError};
 use injector::{injector::Injector, injector_scope::InjectorScope};
 use tauri::State;
 
@@ -257,7 +255,6 @@ pub async fn delete_fsrs_profile(
 mod tests {
     use super::*;
     use crate::{
-        file_system::entities::{file::File, folder::Folder},
         infrastructure::repositories::sqlite::{
             sqlite_file_repository::SqliteFileRepository,
             sqlite_folder_repository::SqliteFolderRepository,
@@ -265,7 +262,10 @@ mod tests {
         },
         test_utils::create_test_injector,
     };
-    use brainy_domain::{DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID};
+    use brainy_domain::{
+        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
+        file_system::entities::{file::File, folder::Folder},
+    };
     use chrono::Utc;
     use injector::register_scope;
 

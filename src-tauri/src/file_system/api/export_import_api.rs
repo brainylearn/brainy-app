@@ -1,11 +1,8 @@
 use std::sync::Arc;
 
-use crate::{
-    common::api_error::ApiError,
-    file_system::{file_system_service::FileSystemService, models::exported_item::ExportedItem},
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
-};
-use brainy_domain::Guid;
+use crate::{common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt};
+use brainy_application::file_system::file_system_service::FileSystemService;
+use brainy_domain::{Guid, file_system::models::exported_item::ExportedItem};
 use injector::injector::Injector;
 use tauri::State;
 use tokio::{

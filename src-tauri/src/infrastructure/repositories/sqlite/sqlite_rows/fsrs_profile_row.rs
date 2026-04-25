@@ -1,7 +1,7 @@
 use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 
-use crate::fsrs::entities::fsrs_profile::FsrsProfile;
+use brainy_domain::fsrs::entities::fsrs_profile::FsrsProfile;
 
 pub struct FsrsProfileRow {
     pub id: Guid,

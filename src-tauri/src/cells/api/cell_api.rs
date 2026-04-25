@@ -1,18 +1,16 @@
 use std::sync::Arc;
 
 use crate::common::api_error::ApiError;
-use crate::{
-    file_system::{
-        repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
-        value_objects::fsrs_profile_choice::FsrsProfileChoice,
-    },
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
-};
+use crate::infrastructure::extensions::unit_of_work::UnitOfWorkExt;
 use brainy_application::cells::{
     cell_service::CellService,
     dto::{
         cell_with_fsrs_profile_id::CellWithFsrsProfileId, update_cell_request::UpdateCellRequest,
     },
+};
+use brainy_domain::file_system::{
+    repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
+    value_objects::fsrs_profile_choice::FsrsProfileChoice,
 };
 use brainy_domain::{
     Guid,

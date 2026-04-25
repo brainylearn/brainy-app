@@ -5,12 +5,10 @@ use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
-use crate::{
-    fsrs::{
-        entities::fsrs_profile::FsrsProfile,
-        repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
-    },
-    infrastructure::repositories::sqlite::sqlite_rows::fsrs_profile_row::FsrsProfileRow,
+use crate::infrastructure::repositories::sqlite::sqlite_rows::fsrs_profile_row::FsrsProfileRow;
+use brainy_domain::fsrs::{
+    entities::fsrs_profile::FsrsProfile,
+    repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
 };
 use brainy_domain::{Guid, common::repository_error::RepositoryError};
 

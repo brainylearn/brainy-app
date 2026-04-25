@@ -510,9 +510,14 @@ pub mod tests {
         sync::atomic::{AtomicBool, AtomicU32, Ordering},
     };
 
+    use brainy_application::file_system::file_system_service::FileSystemService;
     use brainy_domain::{
         ROOT_FOLDER_ID,
         cells::repositories::review_repository::ReviewRepository,
+        file_system::{
+            repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
+            value_objects::file_system_item_name::FileSystemItemName,
+        },
         settings::{
             entities::settings::Settings, value_objects::settings_profile::SettingsProfile,
         },
@@ -533,11 +538,6 @@ pub mod tests {
             tools::{
                 create_flash_card::CreateFlashcardArgs, search_documents::SearchDocumentsArgs,
             },
-        },
-        file_system::{
-            file_system_service::FileSystemService,
-            repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
-            value_objects::file_system_item_name::FileSystemItemName,
         },
         infrastructure::repositories::{
             disk::disk_settings_repository::DiskSettingsRepository,

@@ -5,14 +5,15 @@ use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
-use crate::{
+use crate::infrastructure::repositories::sqlite::sqlite_rows::folder_row::FolderRow;
+use brainy_domain::{
+    Guid,
+    common::repository_error::RepositoryError,
     file_system::{
         entities::folder::Folder, repositories::folder_repository::FolderRepository,
         value_objects::file_system_item_name::FileSystemItemName,
     },
-    infrastructure::repositories::sqlite::sqlite_rows::folder_row::FolderRow,
 };
-use brainy_domain::{Guid, common::repository_error::RepositoryError};
 
 #[derive(ScopeInjectable)]
 pub struct SqliteFolderRepository {
@@ -286,14 +287,16 @@ impl FolderRepository for SqliteFolderRepository {
 
 #[cfg(test)]
 pub mod tests {
-    use brainy_domain::ROOT_FOLDER_ID;
-    use injector::{injector::Injector, register_scope};
-
-    use crate::{
+    use brainy_domain::{
+        ROOT_FOLDER_ID,
         file_system::{
             entities::file::File, repositories::file_repository::FileRepository,
             value_objects::fsrs_profile_choice::FsrsProfileChoice,
         },
+    };
+    use injector::{injector::Injector, register_scope};
+
+    use crate::{
         infrastructure::{
             extensions::unit_of_work::UnitOfWorkExt,
             repositories::sqlite::sqlite_file_repository::SqliteFileRepository,

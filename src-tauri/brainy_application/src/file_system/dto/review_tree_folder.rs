@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::file_system::{
+use brainy_domain::file_system::{
     entities::{file::File, folder::Folder},
     value_objects::file_system_item_name::FileSystemItemName,
 };
@@ -8,7 +8,6 @@ use brainy_domain::{
     Guid, ROOT_FOLDER_ID, cells::models::file_repetitions_count::FileRepetitionCounts,
 };
 use serde::Serialize;
-use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -69,8 +68,8 @@ impl ReviewTreeFolder {
     fn parse_folder(
         folder: &Folder,
         study_repetitions: &mut HashMap<Guid, FileRepetitionCounts>,
-        folder_subfolders_by_id: &HashMap<Option<Uuid>, Vec<&Folder>>,
-        folder_files_by_id: &HashMap<Option<Uuid>, Vec<&File>>,
+        folder_subfolders_by_id: &HashMap<Option<Guid>, Vec<&Folder>>,
+        folder_files_by_id: &HashMap<Option<Guid>, Vec<&File>>,
     ) -> ReviewTreeFolder {
         let mut result = ReviewTreeFolder {
             id: folder.id(),
@@ -114,7 +113,7 @@ impl ReviewTreeFolder {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
+    use brainy_domain::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
     use chrono::Utc;
 
     use super::*;

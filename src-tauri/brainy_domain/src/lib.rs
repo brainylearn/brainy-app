@@ -1,6 +1,8 @@
 pub mod cells;
 pub mod common;
 pub mod database;
+pub mod file_system;
+pub mod fsrs;
 pub mod local_configurations;
 pub mod settings;
 

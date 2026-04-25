@@ -1,18 +1,18 @@
 use std::sync::Arc;
 
-use crate::{
-    common::api_error::ApiError,
-    file_system::{
-        file_system_service::FileSystemService,
-        repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
+use crate::{common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt};
+use brainy_application::file_system::file_system_service::FileSystemService;
+use brainy_domain::{
+    Guid,
+    cells::repositories::cell_repository::CellRepository,
+    file_system::repositories::{
+        file_repository::FileRepository, folder_repository::FolderRepository,
     },
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
-use brainy_domain::{Guid, cells::repositories::cell_repository::CellRepository};
 use injector::injector::Injector;
 use tauri::State;
 
-use crate::file_system::dto::review_tree_folder::ReviewTreeFolder;
+use brainy_application::file_system::dto::review_tree_folder::ReviewTreeFolder;
 
 #[tauri::command]
 pub async fn get_review_tree_folder_for_root(

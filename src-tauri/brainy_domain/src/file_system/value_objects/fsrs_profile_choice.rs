@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use brainy_domain::Guid;
+use crate::Guid;
 
 /// Represents which FSRS-profile is chosen in a given item, e.g. file or a folder.
 #[derive(Copy, Debug, Clone, PartialEq, Serialize, Deserialize)]

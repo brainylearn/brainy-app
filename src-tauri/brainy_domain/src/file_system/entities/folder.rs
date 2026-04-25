@@ -1,4 +1,4 @@
-use brainy_domain::Guid;
+use crate::Guid;
 use chrono::{DateTime, Utc};
 
 use crate::file_system::value_objects::{
@@ -6,7 +6,7 @@ use crate::file_system::value_objects::{
 };
 
 #[derive(Debug, Clone)]
-pub struct File {
+pub struct Folder {
     id: Guid,
     created_date: DateTime<Utc>,
     modified_date: DateTime<Utc>,
@@ -15,14 +15,14 @@ pub struct File {
     fsrs_profile_choice: FsrsProfileChoice,
 }
 
-impl File {
-    pub(in crate::file_system) fn new(
+impl Folder {
+    pub fn new(
         id: Option<Guid>,
         parent_id: Option<Guid>,
         name: FileSystemItemName,
         fsrs_profile_choice: FsrsProfileChoice,
-    ) -> File {
-        File {
+    ) -> Folder {
+        Folder {
             id: id.unwrap_or(Guid::new_v4()),
             created_date: Utc::now(),
             modified_date: Utc::now(),
@@ -39,8 +39,8 @@ impl File {
         parent_id: Option<Guid>,
         name: FileSystemItemName,
         fsrs_profile_choice: FsrsProfileChoice,
-    ) -> File {
-        File {
+    ) -> Self {
+        Folder {
             id,
             created_date,
             modified_date,
@@ -70,11 +70,11 @@ impl File {
         self.name.clone()
     }
 
-    pub(in crate::file_system) fn set_name(&mut self, new_name: FileSystemItemName) {
+    pub fn set_name(&mut self, new_name: FileSystemItemName) {
         self.name = new_name;
     }
 
-    pub(in crate::file_system) fn set_parent_id(&mut self, parent_id: Option<Guid>) {
+    pub fn set_parent_id(&mut self, parent_id: Option<Guid>) {
         self.parent_id = parent_id;
     }
 
@@ -92,14 +92,14 @@ pub mod tests {
     use super::*;
 
     #[test]
-    fn new_with_id_created_file_correctly() {
+    fn new_with_id_created_folder_correctly() {
         // Arrange
 
         let id = Guid::new_v4();
 
         // Act
 
-        let actual = File::new(
+        let actual = Folder::new(
             Some(id),
             None,
             "test".try_into().unwrap(),
@@ -120,7 +120,7 @@ pub mod tests {
     fn new_without_id_generated_id_automatically() {
         // Act
 
-        let actual = File::new(
+        let actual = Folder::new(
             None,
             Some(Guid::new_v4()),
             FileSystemItemName::new_unchecked("test".to_string()),

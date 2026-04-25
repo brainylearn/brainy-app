@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
 use crate::fsrs::entities::fsrs_profile::FsrsProfile;
-use brainy_domain::{Guid, common::repository_error::RepositoryError};
+use crate::{Guid, common::repository_error::RepositoryError};
 
 #[async_trait]
 pub trait FsrsRepository: Send + Sync {
@@ -26,8 +26,9 @@ pub struct DeleteFsrsRequest {
     id: Guid,
 }
 
+// TODO: not need probably
 impl DeleteFsrsRequest {
-    pub(in crate::fsrs) fn new(id: Guid) -> Self {
+    pub fn new(id: Guid) -> Self {
         Self { id }
     }
 
