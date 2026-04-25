@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
-use crate::{
-    backend::{clients::brainy_backend_client::BrainyBackendClient, models::UserInformationDto},
-    common::api_error::ApiError,
+use brainy_application::backend::{
+    clients::brainy_backend_client::BrainyBackendClient, models::UserInformationDto,
 };
 use injector::injector::Injector;
 use tauri::State;
+
+use crate::common::api_error::ApiError;
 
 #[tauri::command]
 pub async fn get_user_information(

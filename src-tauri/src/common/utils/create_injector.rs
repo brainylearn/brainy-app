@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
+use brainy_application::backend::clients::brainy_backend_client::BrainyBackendClient;
 use brainy_application::backup::backup_service::BackupService;
 use brainy_application::cells::cell_service::CellService;
 use brainy_application::file_system::file_system_service::FileSystemService;
 use brainy_application::fsrs::fsrs_service::FsrsService;
 use brainy_application::settings::settings_service::SettingsService;
+use brainy_application::sync::sync_service::{SyncLock, SyncService};
 use brainy_domain::settings::repositories::settings_repository::SettingsRepository;
 use brainy_domain::{
     database::database_connection_manager::DatabaseConnectionManager,
@@ -23,7 +25,7 @@ use tauri::Url;
 use tokio::sync::Mutex;
 
 use crate::ai_integration::repositories::ai_repository::AiRepository;
-use crate::backend::auth_service::AuthService;
+use crate::ai_integration::{ai_service::AiService, ai_state::AiState};
 use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
 use crate::infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_ai_repository::SqliteAiRepository;
@@ -34,12 +36,7 @@ use crate::infrastructure::repositories::sqlite::sqlite_fsrs_repository::SqliteF
 use crate::infrastructure::repositories::sqlite::sqlite_review_repository::SqliteReviewRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_sync_repository::SqliteSyncRepository;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
-use crate::sync::repositories::sync_repository::SyncRepository;
-use crate::{
-    ai_integration::{ai_service::AiService, ai_state::AiState},
-    backend::clients::brainy_backend_client::BrainyBackendClient,
-    sync::sync_service::{SyncLock, SyncService},
-};
+use brainy_application::backend::auth_service::AuthService;
 use brainy_domain::cells::repositories::cell_repository::CellRepository;
 use brainy_domain::cells::repositories::review_repository::ReviewRepository;
 use brainy_domain::file_system::repositories::file_repository::FileRepository;
@@ -48,6 +45,7 @@ use brainy_domain::fsrs::repositories::fsrs_repository::FsrsRepository;
 use brainy_domain::local_configurations::repositories::local_configuration_repository::LocalConfigurationRepository;
 #[cfg(not(test))]
 use brainy_domain::settings::value_objects::settings_profile::SettingsProfile;
+use brainy_domain::sync::repositories::sync_repository::SyncRepository;
 
 pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     let mut injector = Injector::default();

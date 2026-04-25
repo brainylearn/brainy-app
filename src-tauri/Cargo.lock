@@ -490,12 +490,17 @@ name = "brainy_application"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "brainy_domain",
  "chrono",
  "injector",
  "injector_derive",
  "log",
  "lol_html",
+ "mockall",
+ "prost",
+ "prost-build",
+ "prost-types",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -507,12 +512,14 @@ name = "brainy_domain"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "chrono",
  "log",
  "mockall",
  "regex",
  "serde",
  "serde_json",
+ "serde_repr",
  "thiserror 2.0.18",
  "uuid",
 ]

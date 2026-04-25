@@ -38,10 +38,6 @@ use crate::common::utils::create_injector::create_injector;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 use brainy_application::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 
-pub mod generated_code {
-    include!(concat!(env!("OUT_DIR"), "/generated_code.rs"));
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() -> Result<(), String> {
     simple_logger::init_with_level(log::Level::Info).unwrap();

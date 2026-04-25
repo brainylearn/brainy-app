@@ -3,7 +3,8 @@ use std::{
     sync::Arc,
 };
 
-use crate::backend::{
+use async_trait::async_trait;
+use brainy_application::backend::{
     clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
     dto::sign_up_request::SignUpRequest,
     models::{
@@ -11,7 +12,6 @@ use crate::backend::{
         UpdatePasswordDto, UpdateUserInformationDto, UserInformationDto, VerifyEmailDto,
     },
 };
-use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use keyring::Entry;
 use reqwest::{Response, StatusCode, Url};

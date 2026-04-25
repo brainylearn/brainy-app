@@ -1,7 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
+use crate::cells::cell_service::{CellService, CellServiceError};
 use base64::{Engine as _, engine::general_purpose};
-use brainy_application::cells::cell_service::{CellService, CellServiceError};
 use chrono::{DateTime, TimeZone, Utc};
 use injector_derive::ScopeInjectable;
 use prost::Message;
@@ -17,13 +17,6 @@ use crate::{
         into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
     },
     generated_code::{self},
-    sync::{
-        entities::{
-            deleted_entity::DeletedEntity,
-            synced_entity::{EntityType, SyncedEntity},
-        },
-        repositories::sync_repository::SyncRepository,
-    },
 };
 use brainy_domain::local_configurations::{
     entities::local_configuration::LocalConfiguration,
@@ -42,6 +35,13 @@ use brainy_domain::{
         value_objects::file_system_item_name::FileSystemItemName,
     },
     fsrs::{entities::fsrs_profile::FsrsProfile, repositories::fsrs_repository::FsrsRepository},
+    sync::{
+        entities::{
+            deleted_entity::DeletedEntity,
+            synced_entity::{EntityType, SyncedEntity},
+        },
+        repositories::sync_repository::SyncRepository,
+    },
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use brainy_application::settings::{
+use crate::settings::{
     dto::update_settings_request::UpdateSettingsRequest,
     settings_service::{SettingsService, SettingsServiceError},
 };

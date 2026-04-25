@@ -47,6 +47,7 @@ interface Props {
 
 export default function FsrsDialog({ id, isFolder, name, onClose }: Props) {
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
+	// TODO: make common hook for this type of things
 	const [errorMessage, setErrorMessage] = useState("");
 	const [state, setState] = useState<FsrsDialogState | null>(null);
 	const [showDeleteProfileDialog, setShowDeleteProfileDialog] =

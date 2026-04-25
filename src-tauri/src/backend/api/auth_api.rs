@@ -1,16 +1,15 @@
 use std::sync::Arc;
 
-use crate::{
-    backend::{
-        auth_service::AuthService,
-        clients::brainy_backend_client::BrainyBackendClient,
-        dto::sign_up_request::SignUpRequest,
-        models::{UpdatePasswordDto, UserInformationDto},
-    },
-    common::api_error::ApiError,
+use brainy_application::backend::{
+    auth_service::AuthService,
+    clients::brainy_backend_client::BrainyBackendClient,
+    dto::sign_up_request::SignUpRequest,
+    models::{UpdatePasswordDto, UserInformationDto},
 };
 use injector::injector::Injector;
 use tauri::State;
+
+use crate::common::api_error::ApiError;
 
 #[tauri::command]
 pub async fn sign_in(

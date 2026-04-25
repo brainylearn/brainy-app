@@ -3,6 +3,9 @@ name = "brainy_application"
 version = "0.1.0"
 edition = "2024"
 
+[build-dependencies]
+prost-build = "0.14.3"
+
 [dependencies]
 # TODO: rexport them from domain
 async-trait = "0.1.89"
@@ -13,7 +16,13 @@ chrono = { version = "0.4.44", features = ["serde"] }
 tokio = { version = "1.51.0", features = ["full"] }
 serde_json = "1.0.149"
 lol_html = "2.7.2"
+base64 = "0.22.1"
+prost = "0.14.3"
+prost-types = "0.14.3"
 
 brainy_domain = { path = "../brainy_domain" }
 injector = { path = "../injector" }
 injector_derive = { path = "../injector_derive" }
+
+[dev-dependencies]
+mockall = "0.14.0"

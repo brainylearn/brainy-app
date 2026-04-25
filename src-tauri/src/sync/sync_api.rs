@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use crate::{
-    common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt,
-    sync::sync_service::SyncService,
-};
+use crate::{common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt};
+use brainy_application::sync::sync_service::SyncService;
 use injector::injector::Injector;
 use tauri::State;
 
