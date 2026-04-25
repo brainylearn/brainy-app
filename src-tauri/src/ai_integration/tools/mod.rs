@@ -5,8 +5,8 @@ use thiserror::Error;
 
 use crate::{
     ai_integration::entities::message::ToolCallContent, cells::cell_service::CellServiceError,
-    common::repository_error::RepositoryError,
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 pub mod create_flash_card;
 pub mod search_documents;

@@ -6,15 +6,15 @@ use thiserror::Error;
 use tokio::fs;
 
 use crate::{
-    common::repository_error::RepositoryError,
     database::database_connection_manager::{
         DatabaseConnectionManager, DatabaseConnectionManagerError,
     },
-    local_configurations::{
-        entities::local_configuration::LocalConfiguration,
-        repositories::local_configuration_repository::LocalConfigurationRepository,
-    },
     settings::repositories::settings_repository::SettingsRepository,
+};
+use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::local_configurations::{
+    entities::local_configuration::LocalConfiguration,
+    repositories::local_configuration_repository::LocalConfigurationRepository,
 };
 
 #[derive(Error, Debug, PartialEq, Eq)]

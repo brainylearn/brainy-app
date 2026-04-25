@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
-use crate::{cells::entities::review::Review, common::repository_error::RepositoryError};
+use crate::cells::entities::review::Review;
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[async_trait]
 pub trait ReviewRepository: Send + Sync {

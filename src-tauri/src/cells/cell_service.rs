@@ -18,8 +18,8 @@ use crate::{
         },
         value_objects::repetition_update::RepetitionUpdate,
     },
-    common::repository_error::RepositoryError,
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum CellServiceError {

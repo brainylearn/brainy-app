@@ -30,7 +30,6 @@ use crate::infrastructure::repositories::sqlite::sqlite_sync_repository::SqliteS
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 use crate::infrastructure::value_objects::db_pool::DbPool;
 use crate::infrastructure::value_objects::db_transaction::DbTransaction;
-use crate::local_configurations::repositories::local_configuration_repository::LocalConfigurationRepository;
 #[cfg(test)]
 use crate::settings::entities::settings::Settings;
 #[cfg(not(test))]
@@ -49,6 +48,7 @@ use crate::{
     settings::settings_service::SettingsService,
     sync::sync_service::{SyncLock, SyncService},
 };
+use brainy_domain::local_configurations::repositories::local_configuration_repository::LocalConfigurationRepository;
 
 pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     let mut injector = Injector::default();

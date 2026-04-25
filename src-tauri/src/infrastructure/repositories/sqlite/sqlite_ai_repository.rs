@@ -12,7 +12,6 @@ use crate::{
         },
         repositories::ai_repository::AiRepository,
     },
-    common::repository_error::RepositoryError,
     infrastructure::{
         repositories::sqlite::sqlite_rows::{
             chat_row::ChatRow,
@@ -24,6 +23,7 @@ use crate::{
         value_objects::db_transaction::DbTransaction,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteAiRepository {

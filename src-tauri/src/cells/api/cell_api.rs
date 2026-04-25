@@ -7,7 +7,6 @@ use crate::{
         entities::cell::{Cell, CellType},
         repositories::cell_repository::CellRepository,
     },
-    common::repository_error::RepositoryError,
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
@@ -20,6 +19,7 @@ use crate::{
     },
     common::api_error::ApiError,
 };
+use brainy_domain::common::repository_error::RepositoryError;
 use injector::{injector::Injector, injector_scope::InjectorScope};
 use tauri::State;
 

@@ -19,6 +19,10 @@ prost-build = "0.14.3"
 tauri-build = { version = "2.5.6", features = [] }
 
 [dependencies]
+brainy_domain = { path = "./brainy_domain" }
+brainy_application = { path = "./brainy_application" }
+brainy_infrastructure = { path = "./brainy_infrastructure" }
+
 async-stream = "0.3.6"
 async-trait = "0.1.89"
 base64 = "0.22.1"
@@ -59,10 +63,6 @@ tokio = { version = "1.51.0", features = ["full"] }
 tokio-rusqlite = "0.6.0"
 tokio-stream = "0.1.18"
 uuid = { version = "1.23.1", features = [ "v4", "serde" ] }
-
-brainy_domain = { path = "./brainy_domain" }
-brainy_application = { path = "./brainy_application" }
-brainy_infrastructure = { path = "./brainy_infrastructure" }
 
 [dev-dependencies]
 mockall = "0.14.0"

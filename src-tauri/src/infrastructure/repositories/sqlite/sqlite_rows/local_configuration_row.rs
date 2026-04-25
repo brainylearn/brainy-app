@@ -1,4 +1,4 @@
-use crate::local_configurations::entities::local_configuration::LocalConfiguration;
+use brainy_domain::local_configurations::entities::local_configuration::LocalConfiguration;
 
 pub struct LocalConfigurationRow {
     pub name: String,

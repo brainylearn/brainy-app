@@ -6,7 +6,6 @@ use injector_derive::ScopeInjectable;
 
 use crate::{
     Guid,
-    common::repository_error::RepositoryError,
     fsrs::{
         entities::fsrs_profile::FsrsProfile,
         repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
@@ -16,6 +15,7 @@ use crate::{
         value_objects::db_transaction::DbTransaction,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteFsrsRepository {

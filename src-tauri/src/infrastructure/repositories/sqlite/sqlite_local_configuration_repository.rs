@@ -3,16 +3,14 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
 
-use crate::{
-    common::repository_error::RepositoryError,
-    infrastructure::{
-        repositories::sqlite::sqlite_rows::local_configuration_row::LocalConfigurationRow,
-        value_objects::db_transaction::DbTransaction,
-    },
-    local_configurations::{
-        entities::local_configuration::LocalConfiguration,
-        repositories::local_configuration_repository::LocalConfigurationRepository,
-    },
+use crate::infrastructure::{
+    repositories::sqlite::sqlite_rows::local_configuration_row::LocalConfigurationRow,
+    value_objects::db_transaction::DbTransaction,
+};
+use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::local_configurations::{
+    entities::local_configuration::LocalConfiguration,
+    repositories::local_configuration_repository::LocalConfigurationRepository,
 };
 
 #[derive(ScopeInjectable)]

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     Guid,
-    common::{api_error::ApiError, repository_error::RepositoryError},
+    common::api_error::ApiError,
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
@@ -13,6 +13,7 @@ use crate::{
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
+use brainy_domain::common::repository_error::RepositoryError;
 use injector::{injector::Injector, injector_scope::InjectorScope};
 use tauri::State;
 

@@ -6,7 +6,6 @@ use injector_derive::ScopeInjectable;
 
 use crate::{
     Guid,
-    common::repository_error::RepositoryError,
     file_system::{
         entities::folder::Folder, repositories::folder_repository::FolderRepository,
         value_objects::file_system_item_name::FileSystemItemName,
@@ -16,6 +15,7 @@ use crate::{
         value_objects::db_transaction::DbTransaction,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteFolderRepository {

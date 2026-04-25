@@ -5,12 +5,12 @@ use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
 use crate::{
-    common::repository_error::RepositoryError,
     infrastructure::value_objects::db_transaction::DbTransaction,
     sync::{
         entities::deleted_entity::DeletedEntity, repositories::sync_repository::SyncRepository,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteSyncRepository {

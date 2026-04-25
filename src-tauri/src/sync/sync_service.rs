@@ -18,11 +18,8 @@ use crate::{
         entities::{cell::Cell, repetition::Repetition, review::Review},
         repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
     },
-    common::{
-        extensions::{
-            into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
-        },
-        repository_error::RepositoryError,
+    common::extensions::{
+        into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
     },
     file_system::{
         entities::{file::File, folder::Folder},
@@ -31,10 +28,6 @@ use crate::{
     },
     fsrs::{entities::fsrs_profile::FsrsProfile, repositories::fsrs_repository::FsrsRepository},
     generated_code::{self},
-    local_configurations::{
-        entities::local_configuration::LocalConfiguration,
-        repositories::local_configuration_repository::LocalConfigurationRepository,
-    },
     sync::{
         entities::{
             deleted_entity::DeletedEntity,
@@ -42,6 +35,11 @@ use crate::{
         },
         repositories::sync_repository::SyncRepository,
     },
+};
+use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::local_configurations::{
+    entities::local_configuration::LocalConfiguration,
+    repositories::local_configuration_repository::LocalConfigurationRepository,
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";

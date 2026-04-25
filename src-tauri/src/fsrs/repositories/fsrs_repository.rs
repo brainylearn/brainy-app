@@ -1,9 +1,8 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
-use crate::{
-    Guid, common::repository_error::RepositoryError, fsrs::entities::fsrs_profile::FsrsProfile,
-};
+use crate::{Guid, fsrs::entities::fsrs_profile::FsrsProfile};
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[async_trait]
 pub trait FsrsRepository: Send + Sync {

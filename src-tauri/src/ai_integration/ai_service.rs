@@ -38,27 +38,25 @@ use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
 use crate::ai_integration::tools::search_documents::SearchDocuments;
 use crate::ai_integration::tools::{AcceptToolCallError, AcceptToolCallFromJson};
+use crate::ai_integration::{
+    ai_state::AiState,
+    clients::multi_client::{MultiClient, multi_completion_model::MultiCompletionModel},
+    entities::{
+        chat::Chat,
+        message::{Message, MessageContent},
+    },
+    json_schemas::generate_title::GenerateTitle,
+    repositories::ai_repository::AiRepository,
+    state_cancellation_hook::StateCancellationHook,
+    tools::create_flash_card::CreateFlashCard,
+};
 use crate::cells::cell_service::CellService;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 use crate::settings::repositories::settings_repository::{
     SettingsRepository, SettingsRepositoryError,
 };
-use crate::{
-    ai_integration::{
-        ai_state::AiState,
-        clients::multi_client::{MultiClient, multi_completion_model::MultiCompletionModel},
-        entities::{
-            chat::Chat,
-            message::{Message, MessageContent},
-        },
-        json_schemas::generate_title::GenerateTitle,
-        repositories::ai_repository::AiRepository,
-        state_cancellation_hook::StateCancellationHook,
-        tools::create_flash_card::CreateFlashCard,
-    },
-    common::repository_error::RepositoryError,
-};
+use brainy_domain::common::repository_error::RepositoryError;
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
 const DEFAULT_MAX_TURN: usize = 16;

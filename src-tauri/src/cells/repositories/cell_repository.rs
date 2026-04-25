@@ -12,8 +12,8 @@ use crate::{
             file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics,
         },
     },
-    common::repository_error::RepositoryError,
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[async_trait]
 pub trait CellRepository: Send + Sync {

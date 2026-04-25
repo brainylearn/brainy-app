@@ -1,9 +1,7 @@
 use async_trait::async_trait;
 
-use crate::{
-    common::repository_error::RepositoryError,
-    local_configurations::entities::local_configuration::LocalConfiguration,
-};
+use crate::common::repository_error::RepositoryError;
+use crate::local_configurations::entities::local_configuration::LocalConfiguration;
 
 #[async_trait]
 pub trait LocalConfigurationRepository: Send + Sync {

@@ -1,9 +1,8 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
-use crate::{
-    common::repository_error::RepositoryError, sync::entities::deleted_entity::DeletedEntity,
-};
+use crate::sync::entities::deleted_entity::DeletedEntity;
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[async_trait]
 pub trait SyncRepository: Send + Sync {

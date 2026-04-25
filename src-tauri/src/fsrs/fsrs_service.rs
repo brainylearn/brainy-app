@@ -5,13 +5,13 @@ use thiserror::Error;
 
 use crate::{
     Guid, ROOT_FOLDER_ID,
-    common::repository_error::RepositoryError,
     file_system::{
         repositories::folder_repository::FolderRepository,
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
     },
     fsrs::repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum FsrsServiceError {

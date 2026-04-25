@@ -7,7 +7,6 @@ mod database;
 mod file_system;
 mod fsrs;
 mod infrastructure;
-mod local_configurations;
 mod settings;
 mod sync;
 #[cfg(test)]

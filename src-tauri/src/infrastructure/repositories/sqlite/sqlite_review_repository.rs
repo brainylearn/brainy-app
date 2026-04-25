@@ -6,12 +6,12 @@ use injector_derive::ScopeInjectable;
 
 use crate::{
     cells::{entities::review::Review, repositories::review_repository::ReviewRepository},
-    common::repository_error::RepositoryError,
     infrastructure::{
         repositories::sqlite::sqlite_rows::review_row::ReviewRow,
         value_objects::db_transaction::DbTransaction,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteReviewRepository {

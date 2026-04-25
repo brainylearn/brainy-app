@@ -18,7 +18,6 @@ use crate::{
         },
         repositories::cell_repository::{CellRepository, MoveDirection},
     },
-    common::repository_error::RepositoryError,
     infrastructure::{
         repositories::sqlite::sqlite_rows::{
             cell_row::{CellRow, convert_rows_to_cells},
@@ -27,6 +26,7 @@ use crate::{
         value_objects::db_transaction::DbTransaction,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteCellRepository {

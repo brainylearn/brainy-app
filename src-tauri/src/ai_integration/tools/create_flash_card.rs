@@ -18,8 +18,8 @@ use crate::{
         cell_service::CellService, entities::cell::CellType, models::flash_card::FlashCard,
         repositories::cell_repository::CellRepository,
     },
-    common::repository_error::RepositoryError,
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct CreateFlashcardArgs {

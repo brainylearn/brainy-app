@@ -1,11 +1,11 @@
 use crate::{
     Guid,
-    common::repository_error::RepositoryError,
     file_system::{
         entities::folder::Folder, value_objects::file_system_item_name::FileSystemItemName,
     },
 };
 use async_trait::async_trait;
+use brainy_domain::common::repository_error::RepositoryError;
 use chrono::{DateTime, Utc};
 
 #[async_trait]

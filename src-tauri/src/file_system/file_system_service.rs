@@ -12,13 +12,13 @@ use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
 use crate::{
     Guid,
     cells::cell_service::{CellService, CellServiceError},
-    common::repository_error::RepositoryError,
     file_system::{
         entities::{file::File, folder::Folder},
         models::exported_item::{ExportedItem, ExportedItemType},
         value_objects::file_system_item_name::FileSystemItemName,
     },
 };
+use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum FileServiceError {
