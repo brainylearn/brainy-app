@@ -1,15 +1,17 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_domain::{
+    cells::{entities::review::Review, repositories::review_repository::ReviewRepository},
+    common::repository_error::RepositoryError,
+};
 use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
-use crate::{
-    cells::{entities::review::Review, repositories::review_repository::ReviewRepository},
-    infrastructure::repositories::sqlite::sqlite_rows::review_row::ReviewRow,
+use crate::infrastructure::repositories::sqlite::sqlite_rows::review_row::{
+    ReviewRow, rating_sqlite_impls::RatingSqlite,
 };
-use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]
 pub struct SqliteReviewRepository {
@@ -31,6 +33,7 @@ impl ReviewRepository for SqliteReviewRepository {
             date,
             rating,
         } = review;
+        let rating = RatingSqlite(rating.clone());
 
         let result = sqlx::query!(
             r#"INSERT INTO reviews(
@@ -106,6 +109,7 @@ impl ReviewRepository for SqliteReviewRepository {
             rating,
             ..
         } = review;
+        let rating = RatingSqlite(rating.clone());
 
         let result = sqlx::query!(
             r#"INSERT INTO reviews(

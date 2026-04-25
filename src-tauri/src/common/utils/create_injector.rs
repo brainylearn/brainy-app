@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use brainy_application::backup::backup_service::BackupService;
+use brainy_application::cells::cell_service::CellService;
 use brainy_application::settings::settings_service::SettingsService;
 use brainy_domain::settings::repositories::settings_repository::SettingsRepository;
 use brainy_domain::{
@@ -21,8 +22,6 @@ use tokio::sync::Mutex;
 
 use crate::ai_integration::repositories::ai_repository::AiRepository;
 use crate::backend::auth_service::AuthService;
-use crate::cells::repositories::cell_repository::CellRepository;
-use crate::cells::repositories::review_repository::ReviewRepository;
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::fsrs::repositories::fsrs_repository::FsrsRepository;
@@ -40,11 +39,12 @@ use crate::sync::repositories::sync_repository::SyncRepository;
 use crate::{
     ai_integration::{ai_service::AiService, ai_state::AiState},
     backend::clients::brainy_backend_client::BrainyBackendClient,
-    cells::cell_service::CellService,
     file_system::file_system_service::FileSystemService,
     fsrs::fsrs_service::FsrsService,
     sync::sync_service::{SyncLock, SyncService},
 };
+use brainy_domain::cells::repositories::cell_repository::CellRepository;
+use brainy_domain::cells::repositories::review_repository::ReviewRepository;
 use brainy_domain::local_configurations::repositories::local_configuration_repository::LocalConfigurationRepository;
 #[cfg(not(test))]
 use brainy_domain::settings::value_objects::settings_profile::SettingsProfile;

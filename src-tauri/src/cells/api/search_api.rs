@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use crate::{
-    cells::{entities::cell::Cell, repositories::cell_repository::CellRepository},
-    common::api_error::ApiError,
-};
+use crate::common::api_error::ApiError;
+use brainy_domain::cells::{entities::cell::Cell, repositories::cell_repository::CellRepository};
 use injector::injector::Injector;
 use tauri::State;
 

@@ -1,6 +1,7 @@
+use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 
-use crate::{Guid, ai_integration::entities::chat::Chat};
+use crate::ai_integration::entities::chat::Chat;
 
 pub struct ChatRow {
     pub id: Guid,

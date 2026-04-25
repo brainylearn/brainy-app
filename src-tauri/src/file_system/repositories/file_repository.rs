@@ -1,9 +1,8 @@
-use crate::{
-    Guid,
-    file_system::{entities::file::File, value_objects::file_system_item_name::FileSystemItemName},
+use crate::file_system::{
+    entities::file::File, value_objects::file_system_item_name::FileSystemItemName,
 };
 use async_trait::async_trait;
-use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::{Guid, common::repository_error::RepositoryError};
 use chrono::{DateTime, Utc};
 
 #[async_trait]

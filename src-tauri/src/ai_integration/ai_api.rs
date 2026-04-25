@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::{
-    Guid,
     ai_integration::{
         ai_service::{AiService, StreamLlmResponseEvent},
         ai_state::AiState,
@@ -15,6 +14,7 @@ use crate::{
     common::api_error::ApiError,
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
+use brainy_domain::Guid;
 use injector::injector::Injector;
 use tauri::{State, ipc::Channel};
 

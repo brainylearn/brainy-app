@@ -1,8 +1,8 @@
+use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 
-use crate::{
-    Guid,
-    file_system::{entities::file::File, value_objects::file_system_item_name::FileSystemItemName},
+use crate::file_system::{
+    entities::file::File, value_objects::file_system_item_name::FileSystemItemName,
 };
 
 pub struct FileRow {

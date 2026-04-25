@@ -1,4 +1,4 @@
-use crate::{Guid, cells::entities::cell::Cell};
+use brainy_domain::{Guid, cells::entities::cell::Cell};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

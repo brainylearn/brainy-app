@@ -1,9 +1,8 @@
 use chrono::{DateTime, Utc};
 
-use crate::{
-    Guid,
-    cells::entities::repetition::{Repetition, State},
-};
+use brainy_domain::{Guid, cells::entities::repetition::Repetition};
+
+use crate::infrastructure::repositories::sqlite::sqlite_rows::cell_row::state_sqlite_impls::StateSqlite;
 
 pub struct RepetitionRow {
     pub id: Guid,
@@ -18,7 +17,7 @@ pub struct RepetitionRow {
     pub scheduled_days: i64,
     pub reps: i64,
     pub lapses: i64,
-    pub state: State,
+    pub state: StateSqlite,
     pub last_review: Option<DateTime<Utc>>,
     pub additional_content: Option<String>,
 }
@@ -38,7 +37,7 @@ impl From<RepetitionRow> for Repetition {
             value.scheduled_days,
             value.reps,
             value.lapses,
-            value.state,
+            value.state.into(),
             value.last_review,
             value.additional_content,
         )

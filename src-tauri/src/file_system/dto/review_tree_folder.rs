@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{
-    Guid, ROOT_FOLDER_ID,
-    cells::models::file_repetitions_count::FileRepetitionCounts,
-    file_system::{
-        entities::{file::File, folder::Folder},
-        value_objects::file_system_item_name::FileSystemItemName,
-    },
+use crate::file_system::{
+    entities::{file::File, folder::Folder},
+    value_objects::file_system_item_name::FileSystemItemName,
+};
+use brainy_domain::{
+    Guid, ROOT_FOLDER_ID, cells::models::file_repetitions_count::FileRepetitionCounts,
 };
 use serde::Serialize;
 use uuid::Uuid;
@@ -115,9 +114,7 @@ impl ReviewTreeFolder {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::{
-        ROOT_FOLDER_ID, file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice,
-    };
+    use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
     use chrono::Utc;
 
     use super::*;

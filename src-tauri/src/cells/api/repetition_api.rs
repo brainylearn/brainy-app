@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::Guid;
-use crate::cells::models::file_repetitions_count::FileRepetitionCounts;
-use crate::cells::repositories::cell_repository::CellRepository;
 use crate::common::api_error::ApiError;
 use crate::infrastructure::extensions::unit_of_work::UnitOfWorkExt;
+use brainy_domain::Guid;
+use brainy_domain::cells::models::file_repetitions_count::FileRepetitionCounts;
+use brainy_domain::cells::repositories::cell_repository::CellRepository;
 use injector::injector::Injector;
 use tauri::State;
 

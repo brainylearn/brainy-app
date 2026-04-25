@@ -7,7 +7,7 @@ use rig::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::Guid;
+use brainy_domain::Guid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

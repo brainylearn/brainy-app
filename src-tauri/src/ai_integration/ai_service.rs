@@ -30,7 +30,6 @@ use tokio::sync::Mutex;
 use tokio_rusqlite::Connection;
 use tokio_stream::StreamExt;
 
-use crate::Guid;
 #[cfg(test)]
 use crate::ai_integration::clients::mock_client::MockClient;
 use crate::ai_integration::clients::multi_client::multi_embedding_model::MultiEmbeddingModel;
@@ -53,9 +52,10 @@ use crate::ai_integration::{
     state_cancellation_hook::StateCancellationHook,
     tools::create_flash_card::CreateFlashCard,
 };
-use crate::cells::cell_service::CellService;
-use crate::cells::repositories::cell_repository::CellRepository;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
+use brainy_application::cells::cell_service::CellService;
+use brainy_domain::Guid;
+use brainy_domain::cells::repositories::cell_repository::CellRepository;
 use brainy_domain::common::repository_error::RepositoryError;
 
 const DEFAULT_TEMPERATURE: f64 = 0.5;
@@ -510,8 +510,12 @@ pub mod tests {
         sync::atomic::{AtomicBool, AtomicU32, Ordering},
     };
 
-    use brainy_domain::settings::{
-        entities::settings::Settings, value_objects::settings_profile::SettingsProfile,
+    use brainy_domain::{
+        ROOT_FOLDER_ID,
+        cells::repositories::review_repository::ReviewRepository,
+        settings::{
+            entities::settings::Settings, value_objects::settings_profile::SettingsProfile,
+        },
     };
     use injector::{injector::Injector, register_scope};
     use rig::{
@@ -523,16 +527,12 @@ pub mod tests {
     };
 
     use crate::{
-        ROOT_FOLDER_ID,
         ai_integration::{
             clients::multi_client::multi_response::MultiResponse,
             entities::message::ToolCallContent,
             tools::{
                 create_flash_card::CreateFlashcardArgs, search_documents::SearchDocumentsArgs,
             },
-        },
-        cells::repositories::{
-            cell_repository::CellRepository, review_repository::ReviewRepository,
         },
         file_system::{
             file_system_service::FileSystemService,

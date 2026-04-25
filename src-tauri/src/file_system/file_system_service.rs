@@ -1,23 +1,21 @@
 use std::sync::Arc;
 
+use brainy_application::cells::cell_service::{CellService, CellServiceError};
+use brainy_domain::Guid;
 use injector_derive::ScopeInjectable;
 use lol_html::html_content::Element;
 use lol_html::{RewriteStrSettings, element, rewrite_str};
 use thiserror::Error;
 
-use crate::cells::repositories::cell_repository::CellRepository;
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
-use crate::{
-    Guid,
-    cells::cell_service::{CellService, CellServiceError},
-    file_system::{
-        entities::{file::File, folder::Folder},
-        models::exported_item::{ExportedItem, ExportedItemType},
-        value_objects::file_system_item_name::FileSystemItemName,
-    },
+use crate::file_system::{
+    entities::{file::File, folder::Folder},
+    models::exported_item::{ExportedItem, ExportedItemType},
+    value_objects::file_system_item_name::FileSystemItemName,
 };
+use brainy_domain::cells::repositories::cell_repository::CellRepository;
 use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(Error, Debug, PartialEq, Eq)]
@@ -363,12 +361,14 @@ fn purify_html(html: &str) -> String {
 
 #[cfg(test)]
 pub mod tests {
+    use brainy_domain::{
+        ROOT_FOLDER_ID,
+        cells::{entities::cell::CellType, repositories::review_repository::ReviewRepository},
+    };
     use injector::{injector::Injector, register_scope};
 
     use super::*;
     use crate::{
-        ROOT_FOLDER_ID,
-        cells::{entities::cell::CellType, repositories::review_repository::ReviewRepository},
         infrastructure::{
             extensions::unit_of_work::UnitOfWorkExt,
             repositories::sqlite::{

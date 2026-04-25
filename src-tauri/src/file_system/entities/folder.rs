@@ -1,10 +1,8 @@
+use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 
-use crate::{
-    Guid,
-    file_system::value_objects::{
-        file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
-    },
+use crate::file_system::value_objects::{
+    file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
 };
 
 #[derive(Debug, Clone)]

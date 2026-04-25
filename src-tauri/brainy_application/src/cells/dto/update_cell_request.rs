@@ -1,4 +1,4 @@
-use crate::Guid;
+use brainy_domain::Guid;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]

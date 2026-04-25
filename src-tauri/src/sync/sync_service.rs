@@ -1,6 +1,7 @@
 use std::{collections::HashSet, sync::Arc};
 
 use base64::{Engine as _, engine::general_purpose};
+use brainy_application::cells::cell_service::{CellService, CellServiceError};
 use chrono::{DateTime, TimeZone, Utc};
 use injector_derive::ScopeInjectable;
 use prost::Message;
@@ -8,15 +9,9 @@ use thiserror::Error;
 use tokio::sync::Mutex;
 
 use crate::{
-    Guid,
     backend::{
         clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
         models::SyncEntityDto,
-    },
-    cells::{
-        cell_service::{CellService, CellServiceError},
-        entities::{cell::Cell, repetition::Repetition, review::Review},
-        repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
     },
     common::extensions::{
         into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
@@ -36,10 +31,17 @@ use crate::{
         repositories::sync_repository::SyncRepository,
     },
 };
-use brainy_domain::common::repository_error::RepositoryError;
 use brainy_domain::local_configurations::{
     entities::local_configuration::LocalConfiguration,
     repositories::local_configuration_repository::LocalConfigurationRepository,
+};
+use brainy_domain::{
+    Guid,
+    cells::{
+        entities::{cell::Cell, repetition::Repetition, review::Review},
+        repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
+    },
+    common::repository_error::RepositoryError,
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
@@ -542,16 +544,18 @@ impl SyncService {
 
 #[cfg(test)]
 mod tests {
+    use brainy_domain::{
+        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
+        cells::entities::{cell::CellType, repetition::State, review::Rating},
+    };
     use brainy_infrastructure::local_configurations::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
     use chrono::Duration;
     use injector::{injector::Injector, register_scope};
 
     use crate::{
-        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
         backend::{
             clients::brainy_backend_client::MockBrainyBackendClient, models::SyncedEntitiesPageDto,
         },
-        cells::entities::{cell::CellType, repetition::State, review::Rating},
         common::extensions::{into_base64::IntoBase64, into_timestamp::IntoTimestamp},
         file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice,
         infrastructure::{

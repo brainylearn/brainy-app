@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
 use crate::{
-    Guid,
-    cells::repositories::cell_repository::CellRepository,
     common::api_error::ApiError,
     file_system::{
         file_system_service::FileSystemService,
@@ -10,6 +8,7 @@ use crate::{
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
+use brainy_domain::{Guid, cells::repositories::cell_repository::CellRepository};
 use injector::injector::Injector;
 use tauri::State;
 

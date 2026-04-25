@@ -1,10 +1,8 @@
+use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    Guid,
-    sync::entities::synced_entity::{EntityType, SyncedEntity},
-};
+use crate::sync::entities::synced_entity::{EntityType, SyncedEntity};
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]

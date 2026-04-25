@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::{
-    Guid,
     common::api_error::ApiError,
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
@@ -13,7 +12,7 @@ use crate::{
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
-use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::{Guid, common::repository_error::RepositoryError};
 use injector::{injector::Injector, injector_scope::InjectorScope};
 use tauri::State;
 
@@ -258,7 +257,6 @@ pub async fn delete_fsrs_profile(
 mod tests {
     use super::*;
     use crate::{
-        DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
         file_system::entities::{file::File, folder::Folder},
         infrastructure::repositories::sqlite::{
             sqlite_file_repository::SqliteFileRepository,
@@ -267,6 +265,7 @@ mod tests {
         },
         test_utils::create_test_injector,
     };
+    use brainy_domain::{DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID};
     use chrono::Utc;
     use injector::register_scope;
 

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use brainy_domain::Guid;
 use rig::{
     completion::ToolDefinition,
     tool::Tool,
@@ -12,12 +13,9 @@ use schemars::schema_for;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{
-    Guid,
-    ai_integration::{
-        clients::multi_client::multi_embedding_model::MultiEmbeddingModel,
-        entities::document::{CHAT_ID_COLUMN_NAME, Document},
-    },
+use crate::ai_integration::{
+    clients::multi_client::multi_embedding_model::MultiEmbeddingModel,
+    entities::document::{CHAT_ID_COLUMN_NAME, Document},
 };
 
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]

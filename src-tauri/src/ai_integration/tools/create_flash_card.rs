@@ -1,25 +1,26 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_application::cells::cell_service::CellService;
 use rig::{completion::ToolDefinition, tool::Tool};
 use schemars::schema_for;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::sync::Mutex;
 
-use crate::{
+use crate::ai_integration::{
+    ai_service::{OnEventCallback, StreamLlmResponseEvent},
+    entities::message::{Message, MessageContent, ToolCallContent, ToolCallStatus},
+    tools::{AcceptToolCall, AcceptToolCallError},
+};
+use brainy_domain::{
     Guid,
-    ai_integration::{
-        ai_service::{OnEventCallback, StreamLlmResponseEvent},
-        entities::message::{Message, MessageContent, ToolCallContent, ToolCallStatus},
-        tools::{AcceptToolCall, AcceptToolCallError},
-    },
     cells::{
-        cell_service::CellService, entities::cell::CellType, models::flash_card::FlashCard,
+        entities::cell::CellType, models::flash_card::FlashCard,
         repositories::cell_repository::CellRepository,
     },
+    common::repository_error::RepositoryError,
 };
-use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(Deserialize, Debug, Clone, Serialize, schemars::JsonSchema)]
 pub struct CreateFlashcardArgs {
@@ -239,11 +240,10 @@ pub mod create_flash_card_test {
 
 #[cfg(test)]
 pub mod accept_create_flash_card_test {
+    use brainy_domain::{ROOT_FOLDER_ID, cells::repositories::review_repository::ReviewRepository};
     use injector::{injector::Injector, register_scope};
 
     use crate::{
-        ROOT_FOLDER_ID,
-        cells::repositories::review_repository::ReviewRepository,
         file_system::{
             file_system_service::FileSystemService,
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},

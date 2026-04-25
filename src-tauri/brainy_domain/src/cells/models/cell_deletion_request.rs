@@ -1,9 +1,10 @@
 use crate::Guid;
 
-pub struct CellDeletionRequest(Guid);
+// TODO: not needed longer
+pub struct CellDeletionRequest(pub Guid);
 
 impl CellDeletionRequest {
-    pub(in crate::cells) fn new(uuid: Guid) -> Self {
+    pub fn new(uuid: Guid) -> Self {
         Self(uuid)
     }
 

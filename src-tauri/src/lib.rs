@@ -38,11 +38,6 @@ use crate::common::utils::create_injector::create_injector;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 use brainy_application::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 
-pub type Guid = uuid::Uuid;
-
-pub const ROOT_FOLDER_ID: Guid = uuid::uuid!("00000000-0000-0000-0000-000000000001");
-pub const DEFAULT_FSRS_PROFILE_ID: Guid = uuid::uuid!("00000000-0000-0000-0000-000000000002");
-
 pub mod generated_code {
     include!(concat!(env!("OUT_DIR"), "/generated_code.rs"));
 }

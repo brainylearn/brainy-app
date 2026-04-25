@@ -4,14 +4,13 @@ use injector_derive::ScopeInjectable;
 use thiserror::Error;
 
 use crate::{
-    Guid, ROOT_FOLDER_ID,
     file_system::{
         repositories::folder_repository::FolderRepository,
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
     },
     fsrs::repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
 };
-use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::{Guid, ROOT_FOLDER_ID, common::repository_error::RepositoryError};
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum FsrsServiceError {
@@ -58,11 +57,11 @@ impl FsrsService {
 
 #[cfg(test)]
 pub mod tests {
+    use brainy_domain::DEFAULT_FSRS_PROFILE_ID;
     use chrono::Utc;
     use injector::{injector::Injector, register_scope};
 
     use crate::{
-        DEFAULT_FSRS_PROFILE_ID,
         fsrs::entities::fsrs_profile::FsrsProfile,
         infrastructure::repositories::sqlite::{
             sqlite_folder_repository::SqliteFolderRepository,

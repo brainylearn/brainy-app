@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
-use crate::{
-    cells::{
-        cell_service::CellService, entities::review::Rating,
-        models::home_statistics::HomeStatistics, repositories::cell_repository::CellRepository,
-        value_objects::repetition_update::RepetitionUpdate,
-    },
-    common::api_error::ApiError,
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
+use crate::{common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt};
+use brainy_application::cells::cell_service::CellService;
+use brainy_domain::cells::{
+    entities::review::Rating, models::home_statistics::HomeStatistics,
+    repositories::cell_repository::CellRepository,
+    value_objects::repetition_update::RepetitionUpdate,
 };
 use injector::injector::Injector;
 use tauri::State;

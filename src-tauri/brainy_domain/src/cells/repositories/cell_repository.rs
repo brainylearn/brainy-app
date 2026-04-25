@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
+use crate::common::repository_error::RepositoryError;
 use crate::{
     Guid,
     cells::{
@@ -13,7 +14,6 @@ use crate::{
         },
     },
 };
-use brainy_domain::common::repository_error::RepositoryError;
 
 #[async_trait]
 pub trait CellRepository: Send + Sync {

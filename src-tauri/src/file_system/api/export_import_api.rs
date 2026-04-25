@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use crate::{
-    Guid,
     common::api_error::ApiError,
     file_system::{file_system_service::FileSystemService, models::exported_item::ExportedItem},
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
+use brainy_domain::Guid;
 use injector::injector::Injector;
 use tauri::State;
 use tokio::{

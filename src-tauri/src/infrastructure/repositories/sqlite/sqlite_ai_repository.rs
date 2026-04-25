@@ -5,7 +5,6 @@ use brainy_infrastructure::common::db_transaction::DbTransaction;
 use injector_derive::ScopeInjectable;
 
 use crate::{
-    Guid,
     ai_integration::{
         entities::{
             chat::Chat,
@@ -21,6 +20,7 @@ use crate::{
         },
     },
 };
+use brainy_domain::Guid;
 use brainy_domain::common::repository_error::RepositoryError;
 
 #[derive(ScopeInjectable)]

@@ -45,7 +45,7 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub(in crate::cells) fn new(
+    pub fn new(
         id: Option<Guid>,
         file_id: Guid,
         content: String,
@@ -126,7 +126,7 @@ impl Cell {
         &self.searchable_content
     }
 
-    pub(in crate::cells) fn set_index(&mut self, index: u32) {
+    pub fn set_index(&mut self, index: u32) {
         self.index = index;
     }
 
@@ -222,6 +222,10 @@ impl Cell {
                 self.create_repetition_with_content(Some(index));
             }
         }
+    }
+
+    pub fn repetitions_mut(&mut self) -> &mut Vec<Repetition> {
+        &mut self.repetitions
     }
 }
 

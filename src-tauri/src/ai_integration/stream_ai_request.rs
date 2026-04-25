@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::Guid;
+use brainy_domain::Guid;
 
 #[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

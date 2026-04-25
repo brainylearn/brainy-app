@@ -6,14 +6,13 @@ use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
 use crate::{
-    Guid,
     file_system::{
         entities::folder::Folder, repositories::folder_repository::FolderRepository,
         value_objects::file_system_item_name::FileSystemItemName,
     },
     infrastructure::repositories::sqlite::sqlite_rows::folder_row::FolderRow,
 };
-use brainy_domain::common::repository_error::RepositoryError;
+use brainy_domain::{Guid, common::repository_error::RepositoryError};
 
 #[derive(ScopeInjectable)]
 pub struct SqliteFolderRepository {
@@ -287,10 +286,10 @@ impl FolderRepository for SqliteFolderRepository {
 
 #[cfg(test)]
 pub mod tests {
+    use brainy_domain::ROOT_FOLDER_ID;
     use injector::{injector::Injector, register_scope};
 
     use crate::{
-        ROOT_FOLDER_ID,
         file_system::{
             entities::file::File, repositories::file_repository::FileRepository,
             value_objects::fsrs_profile_choice::FsrsProfileChoice,

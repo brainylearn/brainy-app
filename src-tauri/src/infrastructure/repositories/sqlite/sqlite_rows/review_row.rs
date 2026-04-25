@@ -1,9 +1,8 @@
 use chrono::{DateTime, Utc};
 
-use crate::{
-    Guid,
-    cells::entities::review::{Rating, Review},
-};
+use brainy_domain::{Guid, cells::entities::review::Review};
+
+use crate::infrastructure::repositories::sqlite::sqlite_rows::review_row::rating_sqlite_impls::RatingSqlite;
 
 pub struct ReviewRow {
     pub id: Guid,
@@ -12,7 +11,7 @@ pub struct ReviewRow {
     pub cell_id: Option<Guid>,
     pub study_time: u32,
     pub date: DateTime<Utc>,
-    pub rating: Rating,
+    pub rating: RatingSqlite,
 }
 
 impl From<ReviewRow> for Review {
@@ -24,41 +23,54 @@ impl From<ReviewRow> for Review {
             value.cell_id,
             value.study_time,
             value.date,
-            value.rating,
+            value.rating.into(),
         )
     }
 }
 
+// TODO: maybe use the micro provided by claude
 pub mod rating_sqlite_impls {
+    use brainy_domain::cells::entities::review::Rating;
     use sqlx::Sqlite;
 
-    use crate::cells::entities::review::Rating;
+    #[derive(Clone, Debug)]
+    pub struct RatingSqlite(pub Rating);
 
-    impl sqlx::Type<Sqlite> for Rating {
-        fn type_info() -> <Sqlite as sqlx::Database>::TypeInfo {
-            <str as sqlx::Type<sqlx::Sqlite>>::type_info()
+    impl From<Rating> for RatingSqlite {
+        fn from(r: Rating) -> Self {
+            Self(r)
+        }
+    }
+    impl From<RatingSqlite> for Rating {
+        fn from(r: RatingSqlite) -> Self {
+            r.0
         }
     }
 
-    impl<'r> sqlx::Decode<'r, Sqlite> for Rating {
+    impl sqlx::Type<Sqlite> for RatingSqlite {
+        fn type_info() -> <Sqlite as sqlx::Database>::TypeInfo {
+            <str as sqlx::Type<Sqlite>>::type_info()
+        }
+    }
+
+    impl<'r> sqlx::Decode<'r, Sqlite> for RatingSqlite {
         fn decode(
             value: <Sqlite as sqlx::Database>::ValueRef<'r>,
         ) -> Result<Self, sqlx::error::BoxDynError> {
-            let value = <&'r str as sqlx::decode::Decode<'r, sqlx::sqlite::Sqlite>>::decode(value)?;
-            match serde_json::from_str(value) {
-                Ok(cell_type) => Ok(cell_type),
-                _ => Err(format!("invalid value {:?} for enum {}", value, "Rating").into()),
-            }
+            let s = <&'r str as sqlx::Decode<'r, Sqlite>>::decode(value)?;
+            serde_json::from_str(s)
+                .map(RatingSqlite)
+                .map_err(|_| format!("invalid value {:?} for Rating", s).into())
         }
     }
 
-    impl<'q> sqlx::Encode<'q, Sqlite> for Rating {
+    impl<'q> sqlx::Encode<'q, Sqlite> for RatingSqlite {
         fn encode_by_ref(
             &self,
             buf: &mut <Sqlite as sqlx::Database>::ArgumentBuffer<'q>,
         ) -> Result<sqlx::encode::IsNull, sqlx::error::BoxDynError> {
-            let val = serde_json::to_string(&self).expect("Cannot serialize Rating");
-            <String as sqlx::encode::Encode<'q, Sqlite>>::encode(val, buf)
+            let val = serde_json::to_string(&self.0).expect("Cannot serialize Rating");
+            <String as sqlx::Encode<'q, Sqlite>>::encode(val, buf)
         }
     }
 }

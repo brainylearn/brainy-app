@@ -1,9 +1,7 @@
+use brainy_domain::cells::entities::cell::{Cell, CellType};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    cells::entities::cell::{Cell, CellType},
-    file_system::value_objects::file_system_item_name::FileSystemItemName,
-};
+use crate::file_system::value_objects::file_system_item_name::FileSystemItemName;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
