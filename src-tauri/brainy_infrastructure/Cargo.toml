@@ -10,6 +10,8 @@ thiserror = "2.0.18"
 tokio = { version = "1.51.0", features = ["full"] }
 uuid = { version = "1.23.1", features = [ "v4", "serde" ] }
 log = "0.4.29"
+sqlite-vec = "0.1.9"
+tokio-rusqlite = "0.6.0"
 
 injector = { path = "../injector" }
 injector_derive = { path = "../injector_derive" }

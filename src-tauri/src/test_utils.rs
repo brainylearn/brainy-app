@@ -1,12 +1,13 @@
 use std::{env, path::PathBuf, sync::Arc};
 
-use brainy_infrastructure::common::db_pool::DbPool;
+use brainy_infrastructure::common::{
+    db_pool::DbPool, utils::create_sqlite_pool::create_sqlite_pool,
+};
 use injector::injector::Injector;
 use tokio::fs;
 
 use crate::{
-    Guid,
-    common::utils::{create_injector::register_scoped_tx, create_sqlite_pool::create_sqlite_pool},
+    Guid, common::utils::create_injector::register_scoped_tx,
     infrastructure::value_objects::app_data_directory::AppDataDirectory,
 };
 use brainy_domain::settings::value_objects::database_location::DatabaseLocation;

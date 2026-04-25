@@ -9,6 +9,11 @@ use brainy_domain::{
 };
 use brainy_infrastructure::common::db_pool::DbPool;
 use brainy_infrastructure::common::db_transaction::DbTransaction;
+#[cfg(test)]
+use brainy_infrastructure::common::utils::create_sqlite_pool::create_sqlite_pool;
+#[cfg(not(test))]
+use brainy_infrastructure::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
+use brainy_infrastructure::database::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
 use brainy_infrastructure::local_configurations::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
 use injector::{injector::Injector, register_scope};
 use tauri::Url;
@@ -18,15 +23,10 @@ use crate::ai_integration::repositories::ai_repository::AiRepository;
 use crate::backend::auth_service::AuthService;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
-#[cfg(test)]
-use crate::common::utils::create_sqlite_pool::create_sqlite_pool;
-#[cfg(not(test))]
-use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::fsrs::repositories::fsrs_repository::FsrsRepository;
 use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
-use crate::infrastructure::managers::sqlite::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
 use crate::infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_ai_repository::SqliteAiRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_cell_repository::SqliteCellRepository;

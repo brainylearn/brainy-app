@@ -7,11 +7,10 @@ use brainy_domain::{
     },
     settings::value_objects::database_location::DatabaseLocation,
 };
-use brainy_infrastructure::common::db_pool::DbPool;
 use injector_derive::ScopeInjectable;
 use tokio::fs;
 
-use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
+use crate::common::{db_pool::DbPool, utils::create_sqlite_pool::create_sqlite_pool_from_location};
 
 #[derive(ScopeInjectable)]
 pub struct SqliteDatabaseConnectionManager {
