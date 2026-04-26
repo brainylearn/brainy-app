@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-test-utils = []
+test-utils = ["dep:mockall"]
 
 [build-dependencies]
 prost-build = "0.14.3"
@@ -31,6 +31,7 @@ tokio-rusqlite = "0.6.0"
 tokio-stream = "0.1.18"
 async-stream = "0.3.6"
 markdown = "1.0.0"
+mockall = { version = "0.14.0", optional = true }
 
 brainy_domain = { path = "../brainy_domain" }
 injector = { path = "../injector" }
@@ -38,4 +39,3 @@ injector_derive = { path = "../injector_derive" }
 
 [dev-dependencies]
 brainy_test_utils = { path = "../integration_tests/brainy_test_utils" }
-mockall = "0.14.0"

@@ -1,7 +1,7 @@
 use crate::backend::{dto::sign_up_request::SignUpRequest, models::SyncEntityDto};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 use mockall::automock;
 use thiserror::Error;
 
@@ -27,7 +27,7 @@ pub enum BrainyBackendClientError {
     Timeout,
 }
 
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "test-utils"), automock)]
 #[async_trait]
 pub trait BrainyBackendClient: Send + Sync {
     async fn sign_in(

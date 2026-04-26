@@ -44,7 +44,7 @@ use brainy_domain::{
     },
 };
 
-const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
+pub const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
 
 #[derive(Error, Debug, PartialEq, Eq)]
 #[allow(clippy::enum_variant_names)]

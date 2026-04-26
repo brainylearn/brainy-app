@@ -5,8 +5,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# TODO: share mock all using the test utils
+mockall = "0.14.0"
+serde_json = "1.0.149"
 brainy_domain = { path = "../../brainy_domain", features = ["test-utils"] }
-brainy_application = { path = "../../brainy_application" }
+brainy_application = { path = "../../brainy_application", features = ["test-utils"] }
 brainy_infrastructure = { path = "../../brainy_infrastructure" }
 brainy_test_utils = { path = "../brainy_test_utils" }
 injector = { path = "../../injector" }

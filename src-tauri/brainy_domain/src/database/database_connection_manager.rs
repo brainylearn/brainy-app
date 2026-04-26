@@ -3,7 +3,7 @@ use std::path::Path;
 use async_trait::async_trait;
 use thiserror::Error;
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-utils"))]
 use mockall::automock;
 
 use crate::settings::value_objects::database_location::DatabaseLocation;
@@ -17,7 +17,7 @@ pub enum DatabaseConnectionManagerError {
 }
 
 #[async_trait]
-#[cfg_attr(test, automock)]
+#[cfg_attr(any(test, feature = "test-utils"), automock)]
 pub trait DatabaseConnectionManager: Send + Sync {
     async fn connect_to_database(
         &self,
