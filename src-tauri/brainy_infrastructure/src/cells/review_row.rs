@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 use brainy_domain::{Guid, cells::entities::review::Review};
 
-use crate::infrastructure::repositories::sqlite::sqlite_rows::review_row::rating_sqlite_impls::RatingSqlite;
+use crate::cells::review_row::rating_sqlite_impls::RatingSqlite;
 
 pub struct ReviewRow {
     pub id: Guid,

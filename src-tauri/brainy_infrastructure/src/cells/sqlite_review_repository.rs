@@ -5,12 +5,12 @@ use brainy_domain::{
     cells::{entities::review::Review, repositories::review_repository::ReviewRepository},
     common::repository_error::RepositoryError,
 };
-use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
-use crate::infrastructure::repositories::sqlite::sqlite_rows::review_row::{
-    ReviewRow, rating_sqlite_impls::RatingSqlite,
+use crate::{
+    cells::review_row::{ReviewRow, rating_sqlite_impls::RatingSqlite},
+    common::db_transaction::DbTransaction,
 };
 
 #[derive(ScopeInjectable)]

@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 use brainy_domain::{Guid, cells::entities::repetition::Repetition};
 
-use crate::infrastructure::repositories::sqlite::sqlite_rows::cell_row::state_sqlite_impls::StateSqlite;
+use crate::cells::cell_row::state_sqlite_impls::StateSqlite;
 
 pub struct RepetitionRow {
     pub id: Guid,

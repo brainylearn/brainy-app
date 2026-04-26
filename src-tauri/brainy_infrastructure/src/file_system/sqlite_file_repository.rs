@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
+use crate::common::db_transaction::DbTransaction;
+use crate::file_system::file_row::FileRow;
 use async_trait::async_trait;
-use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
-use crate::infrastructure::repositories::sqlite::sqlite_rows::file_row::FileRow;
 use brainy_domain::file_system::{
     entities::file::File, repositories::file_repository::FileRepository,
     value_objects::file_system_item_name::FileSystemItemName,

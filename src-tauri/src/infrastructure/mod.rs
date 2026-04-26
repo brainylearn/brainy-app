@@ -1,3 +1,2 @@
-pub mod clients;
+// TODO: move extensions?
 pub mod extensions;
-pub mod repositories;

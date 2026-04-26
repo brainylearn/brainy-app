@@ -13,6 +13,9 @@ use brainy_domain::{
     database::database_connection_manager::DatabaseConnectionManager,
     settings::entities::settings::Settings,
 };
+use brainy_infrastructure::ai_integration::sqlite_ai_repository::SqliteAiRepository;
+use brainy_infrastructure::cells::sqlite_cell_repository::SqliteCellRepository;
+use brainy_infrastructure::cells::sqlite_review_repository::SqliteReviewRepository;
 use brainy_infrastructure::common::db_pool::DbPool;
 use brainy_infrastructure::common::db_transaction::DbTransaction;
 #[cfg(test)]
@@ -20,20 +23,16 @@ use brainy_infrastructure::common::utils::create_sqlite_pool::create_sqlite_pool
 #[cfg(not(test))]
 use brainy_infrastructure::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
 use brainy_infrastructure::database::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
+use brainy_infrastructure::file_system::sqlite_file_repository::SqliteFileRepository;
+use brainy_infrastructure::file_system::sqlite_folder_repository::SqliteFolderRepository;
+use brainy_infrastructure::fsrs::sqlite_fsrs_repository::SqliteFsrsRepository;
 use brainy_infrastructure::local_configurations::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
+use brainy_infrastructure::settings::disk_settings_repository::DiskSettingsRepository;
+use brainy_infrastructure::sync::sqlite_sync_repository::SqliteSyncRepository;
 use injector::{injector::Injector, register_scope};
 use tauri::Url;
 use tokio::sync::Mutex;
 
-use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
-use crate::infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_ai_repository::SqliteAiRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_cell_repository::SqliteCellRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_file_repository::SqliteFileRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_folder_repository::SqliteFolderRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_fsrs_repository::SqliteFsrsRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_review_repository::SqliteReviewRepository;
-use crate::infrastructure::repositories::sqlite::sqlite_sync_repository::SqliteSyncRepository;
 use brainy_application::ai_integration::{ai_service::AiService, ai_state::AiState};
 use brainy_application::backend::auth_service::AuthService;
 use brainy_domain::ai_integration::repositories::ai_repository::AiRepository;
@@ -46,6 +45,7 @@ use brainy_domain::local_configurations::repositories::local_configuration_repos
 #[cfg(not(test))]
 use brainy_domain::settings::value_objects::settings_profile::SettingsProfile;
 use brainy_domain::sync::repositories::sync_repository::SyncRepository;
+use brainy_infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
 
 pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     let mut injector = Injector::default();

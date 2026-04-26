@@ -12,6 +12,16 @@ uuid = { version = "1.23.1", features = [ "v4", "serde" ] }
 log = "0.4.29"
 sqlite-vec = "0.1.9"
 tokio-rusqlite = "0.6.0"
+chrono = { version = "0.4.44", features = ["serde"] }
+keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
+cookie_store = "0.22.1"
+reqwest = { version = "0.13.2", features = ["json", "cookies", "query"] }
+reqwest-middleware = { version = "0.5.1", features = ["json", "query"] }
+reqwest-retry = "0.9.1"
+reqwest_cookie_store = "0.10.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+serde_repr = "0.1.20"
 
 injector = { path = "../injector" }
 injector_derive = { path = "../injector_derive" }

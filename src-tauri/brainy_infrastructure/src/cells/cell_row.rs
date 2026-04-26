@@ -10,7 +10,7 @@ use brainy_domain::{
     },
 };
 
-use crate::infrastructure::repositories::sqlite::sqlite_rows::cell_row::{
+use crate::cells::cell_row::{
     cell_type_sqlite_impls::CellTypeSqlite, state_sqlite_impls::StateSqlite,
 };
 

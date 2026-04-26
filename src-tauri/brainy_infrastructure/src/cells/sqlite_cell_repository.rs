@@ -1,7 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
-use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Datelike, NaiveDate, NaiveTime, Utc};
 use injector_derive::ScopeInjectable;
 use sqlx::{QueryBuilder, SqliteConnection};
@@ -21,14 +20,18 @@ use brainy_domain::{
     },
 };
 
-use crate::infrastructure::repositories::sqlite::sqlite_rows::{
-    cell_row::{
-        CellRow, cell_type_sqlite_impls::CellTypeSqlite, convert_rows_to_cells,
-        state_sqlite_impls::StateSqlite,
-    },
-    repetition_row::RepetitionRow,
-};
 use brainy_domain::common::repository_error::RepositoryError;
+
+use crate::{
+    cells::{
+        cell_row::{
+            CellRow, cell_type_sqlite_impls::CellTypeSqlite, convert_rows_to_cells,
+            state_sqlite_impls::StateSqlite,
+        },
+        repetition_row::RepetitionRow,
+    },
+    common::db_transaction::DbTransaction,
+};
 
 #[derive(ScopeInjectable)]
 pub struct SqliteCellRepository {

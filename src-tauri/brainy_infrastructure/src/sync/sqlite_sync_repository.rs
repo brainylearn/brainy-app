@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use crate::common::db_transaction::DbTransaction;
 use async_trait::async_trait;
-use brainy_infrastructure::common::db_transaction::DbTransaction;
 use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
