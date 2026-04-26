@@ -1,4 +1,5 @@
 // TODO: resort imports
+pub mod ai_integration;
 pub mod backend;
 pub mod backup;
 pub mod cells;

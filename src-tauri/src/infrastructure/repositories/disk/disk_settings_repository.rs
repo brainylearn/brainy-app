@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use brainy_application::common::app_data_directory::AppDataDirectory;
 use brainy_domain::settings::{
     entities::settings::Settings,
     repositories::settings_repository::{SettingsRepository, SettingsRepositoryError},
@@ -11,8 +12,6 @@ use tokio::{
     io::AsyncReadExt,
     sync::Mutex,
 };
-
-use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 
 #[cfg(not(debug_assertions))]
 const SETTINGS_FILE_NAME: &str = "settings.json";

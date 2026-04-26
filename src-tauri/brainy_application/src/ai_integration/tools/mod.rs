@@ -1,10 +1,10 @@
+use crate::cells::cell_service::CellServiceError;
 use async_trait::async_trait;
-use brainy_application::cells::cell_service::CellServiceError;
 use serde::Deserialize;
 use serde_json::Value;
 use thiserror::Error;
 
-use crate::ai_integration::entities::message::ToolCallContent;
+use brainy_domain::ai_integration::entities::message::ToolCallContent;
 use brainy_domain::common::repository_error::RepositoryError;
 
 pub mod create_flash_card;

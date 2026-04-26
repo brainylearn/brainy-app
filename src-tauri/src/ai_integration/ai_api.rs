@@ -1,22 +1,22 @@
 use std::sync::Arc;
 
-use crate::{
-    ai_integration::{
-        ai_service::{AiService, StreamLlmResponseEvent},
-        ai_state::AiState,
-        entities::{
-            chat::Chat,
-            message::{Message, MessageContent, ToolCallStatus},
-        },
-        repositories::ai_repository::AiRepository,
-        stream_ai_request::StreamAiRequest,
-    },
-    common::api_error::ApiError,
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
+use brainy_application::ai_integration::{
+    ai_service::{AiService, StreamLlmResponseEvent},
+    ai_state::AiState,
+    stream_ai_request::StreamAiRequest,
 };
 use brainy_domain::Guid;
+use brainy_domain::ai_integration::{
+    entities::{
+        chat::Chat,
+        message::{Message, MessageContent, ToolCallStatus},
+    },
+    repositories::ai_repository::AiRepository,
+};
 use injector::injector::Injector;
 use tauri::{State, ipc::Channel};
+
+use crate::{common::api_error::ApiError, infrastructure::extensions::unit_of_work::UnitOfWorkExt};
 
 #[tauri::command]
 pub async fn stream_ai_response(

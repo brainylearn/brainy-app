@@ -7,7 +7,7 @@ use rig::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use brainy_domain::Guid;
+use crate::Guid;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -81,13 +81,13 @@ pub struct DocumentContent {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolCallContent {
-    pub(in crate::ai_integration) id: String,
-    pub(in crate::ai_integration) name: String,
-    pub(in crate::ai_integration) display_name: String,
-    pub(in crate::ai_integration) display_description_markdown: String,
-    pub(in crate::ai_integration) arguments: Value,
-    pub(in crate::ai_integration) status: ToolCallStatus,
-    pub(in crate::ai_integration) file_id: Option<Guid>,
+    pub id: String,
+    pub name: String,
+    pub display_name: String,
+    pub display_description_markdown: String,
+    pub arguments: Value,
+    pub status: ToolCallStatus,
+    pub file_id: Option<Guid>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

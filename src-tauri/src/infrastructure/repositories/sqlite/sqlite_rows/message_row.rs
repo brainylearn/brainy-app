@@ -1,7 +1,7 @@
 use brainy_domain::Guid;
 use chrono::{DateTime, Utc};
 
-use crate::ai_integration::entities::message::{Message, MessageContent};
+use brainy_domain::ai_integration::entities::message::{Message, MessageContent};
 
 pub const HUMAN_CONTENT_TYPE: &str = "human";
 pub const ASSISTANT_CONTENT_TYPE: &str = "assistant";

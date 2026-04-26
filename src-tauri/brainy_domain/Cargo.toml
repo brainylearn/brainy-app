@@ -10,6 +10,9 @@ log = "0.4.29"
 uuid = { version = "1.23.1", features = [ "v4", "serde" ] }
 chrono = { version = "0.4.44", features = ["serde"] }
 regex = "1.12.3"
+# TODO: should not be in domain!
+rig-core = { version = "0.35.0", features = ["pdf", "derive"] }
+rig-sqlite = "0.2.4"
 
 # TODO: remove  from domain
 serde = { version = "1.0.228", features = ["derive"] }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use crate::cells::cell_service::CellService;
 use async_trait::async_trait;
-use brainy_application::cells::cell_service::CellService;
 use rig::{completion::ToolDefinition, tool::Tool};
 use schemars::schema_for;
 use serde::{Deserialize, Serialize};
@@ -10,11 +10,11 @@ use tokio::sync::Mutex;
 
 use crate::ai_integration::{
     ai_service::{OnEventCallback, StreamLlmResponseEvent},
-    entities::message::{Message, MessageContent, ToolCallContent, ToolCallStatus},
     tools::{AcceptToolCall, AcceptToolCallError},
 };
 use brainy_domain::{
     Guid,
+    ai_integration::entities::message::{Message, MessageContent, ToolCallContent, ToolCallStatus},
     cells::{
         entities::cell::CellType, models::flash_card::FlashCard,
         repositories::cell_repository::CellRepository,

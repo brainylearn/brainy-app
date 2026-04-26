@@ -2,7 +2,7 @@ use rig::Embed;
 use rig_sqlite::{Column, ColumnValue, SqliteVectorStoreTable};
 use serde::{Deserialize, Serialize};
 
-use brainy_domain::Guid;
+use crate::Guid;
 
 pub const CHAT_ID_COLUMN_NAME: &str = "chat_id";
 

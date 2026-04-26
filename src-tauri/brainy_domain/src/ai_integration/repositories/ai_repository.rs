@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::ai_integration::entities::{chat::Chat, message::Message};
-use brainy_domain::{Guid, common::repository_error::RepositoryError};
+use crate::{Guid, common::repository_error::RepositoryError};
 
 #[async_trait]
 pub trait AiRepository: Send + Sync {

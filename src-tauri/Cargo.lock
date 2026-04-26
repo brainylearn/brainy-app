@@ -489,6 +489,7 @@ dependencies = [
 name = "brainy_application"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
  "async-trait",
  "base64 0.22.1",
  "brainy_domain",
@@ -497,14 +498,21 @@ dependencies = [
  "injector_derive",
  "log",
  "lol_html",
+ "markdown",
  "mockall",
  "prost",
  "prost-build",
  "prost-types",
+ "rig-core",
+ "rig-sqlite",
+ "schemars 1.2.1",
  "serde",
  "serde_json",
+ "text-splitter",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-rusqlite",
+ "tokio-stream",
 ]
 
 [[package]]
@@ -517,6 +525,8 @@ dependencies = [
  "log",
  "mockall",
  "regex",
+ "rig-core",
+ "rig-sqlite",
  "serde",
  "serde_json",
  "serde_repr",

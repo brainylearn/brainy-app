@@ -1,3 +1,4 @@
+pub mod ai_integration;
 pub mod cells;
 pub mod common;
 pub mod database;

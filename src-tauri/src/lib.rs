@@ -13,6 +13,7 @@ mod test_utils;
 use std::sync::Arc;
 use std::time::Duration;
 
+use brainy_application::common::app_data_directory::AppDataDirectory;
 use tauri::Manager;
 
 use ai_integration::ai_api::*;
@@ -35,7 +36,6 @@ use tauri_plugin_window_state::StateFlags;
 use tokio::runtime::Handle;
 
 use crate::common::utils::create_injector::create_injector;
-use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 use brainy_application::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
