@@ -12,10 +12,7 @@ use brainy_domain::{
             cell::Cell,
             repetition::{Repetition, State},
         },
-        models::{
-            cell_deletion_request::CellDeletionRequest,
-            file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics,
-        },
+        models::{file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics},
         repositories::cell_repository::{CellRepository, MoveDirection},
     },
 };
@@ -545,15 +542,11 @@ impl CellRepository for SqliteCellRepository {
         }
     }
 
-    async fn delete_by_id(
-        &self,
-        deletion_request: CellDeletionRequest,
-    ) -> Result<(), RepositoryError> {
+    async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
-        let cell_id = deletion_request.id();
-        let result = sqlx::query!(r#"DELETE FROM cells WHERE id = $1"#, cell_id,)
+        let result = sqlx::query!(r#"DELETE FROM cells WHERE id = $1"#, id,)
             .execute(&mut *tx)
             .await;
 

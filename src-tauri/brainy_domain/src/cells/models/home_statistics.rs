@@ -3,12 +3,13 @@ use std::collections::HashMap;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
+// TODO: wrongly placed
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HomeStatistics {
     /// Number of reviews done today.
     pub number_of_reviews: u64,
-    /// Total time studying toay.
+    /// Total time studying today.
     pub total_time: u64,
     /// Number of review counts for each day in the year.
     pub review_counts: HashMap<NaiveDate, u64>,

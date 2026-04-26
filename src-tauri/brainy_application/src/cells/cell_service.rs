@@ -12,7 +12,6 @@ use brainy_domain::{
             cell::{Cell, CellType},
             review::{Rating, Review},
         },
-        models::cell_deletion_request::CellDeletionRequest,
         repositories::{
             cell_repository::{CellRepository, MoveDirection},
             review_repository::ReviewRepository,
@@ -59,9 +58,7 @@ impl CellService {
         log::info!("Deleting cell with id {id}.");
         let cell = self.cell_repository.get_by_id(id).await?;
 
-        self.cell_repository
-            .delete_by_id(CellDeletionRequest::new(id))
-            .await?;
+        self.cell_repository.delete_by_id(id).await?;
 
         self.cell_repository
             .move_cells_indices_starting_from(cell.file_id(), cell.index(), MoveDirection::Up)

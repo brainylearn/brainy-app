@@ -2,6 +2,7 @@ use std::ops;
 
 use serde::{Deserialize, Serialize};
 
+// TODO: do not belong here in this module!
 #[derive(Default, Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileRepetitionCounts {

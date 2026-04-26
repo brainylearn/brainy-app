@@ -3,16 +3,12 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
+use crate::cells::models::file_repetitions_count::FileRepetitionCounts;
+use crate::cells::models::home_statistics::HomeStatistics;
 use crate::common::repository_error::RepositoryError;
 use crate::{
     Guid,
-    cells::{
-        entities::{cell::Cell, repetition::Repetition},
-        models::{
-            cell_deletion_request::CellDeletionRequest,
-            file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics,
-        },
-    },
+    cells::entities::{cell::Cell, repetition::Repetition},
 };
 
 #[async_trait]
@@ -67,7 +63,7 @@ pub trait CellRepository: Send + Sync {
         direction: MoveDirection,
     ) -> Result<(), RepositoryError>;
 
-    async fn delete_by_id(&self, id: CellDeletionRequest) -> Result<(), RepositoryError>;
+    async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;
 
     async fn search_cells(&self, search_text: &str) -> Result<Vec<Cell>, RepositoryError>;
 
