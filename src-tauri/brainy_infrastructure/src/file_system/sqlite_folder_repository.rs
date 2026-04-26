@@ -284,126 +284,122 @@ impl FolderRepository for SqliteFolderRepository {
     }
 }
 
-// TODO:
-// #[cfg(test)]
-// pub mod tests {
-//     use brainy_domain::{
-//         ROOT_FOLDER_ID,
-//         file_system::{
-//             entities::file::File, repositories::file_repository::FileRepository,
-//             value_objects::fsrs_profile_choice::FsrsProfileChoice,
-//         },
-//     };
-//     use injector::{injector::Injector, register_scope};
-//
-//     use crate::{
-//         infrastructure::{
-//             extensions::unit_of_work::UnitOfWorkExt,
-//             repositories::sqlite::sqlite_file_repository::SqliteFileRepository,
-//         },
-//         test_utils::create_test_injector,
-//     };
-//
-//     use super::*;
-//
-//     async fn initialize_test_injector() -> Injector {
-//         let mut injector = create_test_injector().await;
-//         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
-//         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
-//         injector
-//     }
-//
-//     #[tokio::test]
-//     pub async fn get_all_folders_valid_input_returned_all_files() {
-//         // Arrange
-//
-//         let injector = initialize_test_injector().await;
-//         let scope = injector.start_scope();
-//         let repository = scope.resolve::<dyn FolderRepository>().await;
-//
-//         repository
-//             .create(&Folder::new_unchecked(
-//                 Guid::new_v4(),
-//                 Utc::now(),
-//                 Utc::now(),
-//                 Some(ROOT_FOLDER_ID),
-//                 "folder".try_into().unwrap(),
-//                 FsrsProfileChoice::Inherit,
-//             ))
-//             .await
-//             .unwrap();
-//         scope.save_changes().await.unwrap();
-//
-//         // Act
-//
-//         let actual = repository.get_all_folders().await.unwrap();
-//
-//         // Assert
-//
-//         assert_eq!(2, actual.len());
-//         assert!(
-//             actual
-//                 .iter()
-//                 .any(|f| f.name() == FileSystemItemName::new_unchecked("folder".to_string()))
-//         );
-//     }
-//
-//     #[tokio::test]
-//     pub async fn delete_by_id_valid_input_deleted_recursively() {
-//         // Arrange
-//
-//         let injector = initialize_test_injector().await;
-//         let scope = injector.start_scope();
-//         let repository = scope.resolve::<dyn FolderRepository>().await;
-//
-//         let parent_id = Guid::new_v4();
-//         repository
-//             .create(&Folder::new_unchecked(
-//                 parent_id,
-//                 Utc::now(),
-//                 Utc::now(),
-//                 Some(ROOT_FOLDER_ID),
-//                 "folder".try_into().unwrap(),
-//                 FsrsProfileChoice::Inherit,
-//             ))
-//             .await
-//             .unwrap();
-//         repository
-//             .create(&Folder::new_unchecked(
-//                 Guid::new_v4(),
-//                 Utc::now(),
-//                 Utc::now(),
-//                 Some(parent_id),
-//                 "sub folder".try_into().unwrap(),
-//                 FsrsProfileChoice::Inherit,
-//             ))
-//             .await
-//             .unwrap();
-//         scope
-//             .resolve::<dyn FileRepository>()
-//             .await
-//             .create(&File::new_unchecked(
-//                 Guid::new_v4(),
-//                 Utc::now(),
-//                 Utc::now(),
-//                 Some(parent_id),
-//                 "file".try_into().unwrap(),
-//                 FsrsProfileChoice::Inherit,
-//             ))
-//             .await
-//             .unwrap();
-//
-//         scope.save_changes().await.unwrap();
-//
-//         // Act
-//
-//         repository.delete_by_id(parent_id).await.unwrap();
-//         scope.save_changes().await.unwrap();
-//
-//         // Assert
-//
-//         let actual = repository.get_all_folders().await.unwrap();
-//         // Only root should exist!
-//         assert_eq!(1, actual.len());
-//     }
-// }
+#[cfg(test)]
+pub mod tests {
+    use brainy_domain::{
+        ROOT_FOLDER_ID,
+        file_system::{
+            entities::file::File, repositories::file_repository::FileRepository,
+            value_objects::fsrs_profile_choice::FsrsProfileChoice,
+        },
+    };
+    use injector::{injector::Injector, register_scope};
+
+    use crate::common::test_utils::create_test_injector;
+    use crate::common::unit_of_work::UnitOfWorkExt;
+
+    use crate::file_system::sqlite_file_repository::SqliteFileRepository;
+
+    use super::*;
+
+    async fn initialize_test_injector() -> Injector {
+        let mut injector = create_test_injector().await;
+        register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
+        register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+        injector
+    }
+
+    #[tokio::test]
+    pub async fn get_all_folders_valid_input_returned_all_files() {
+        // Arrange
+
+        let injector = initialize_test_injector().await;
+        let scope = injector.start_scope();
+        let repository = scope.resolve::<dyn FolderRepository>().await;
+
+        repository
+            .create(&Folder::new_unchecked(
+                Guid::new_v4(),
+                Utc::now(),
+                Utc::now(),
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+                FsrsProfileChoice::Inherit,
+            ))
+            .await
+            .unwrap();
+        scope.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = repository.get_all_folders().await.unwrap();
+
+        // Assert
+
+        assert_eq!(2, actual.len());
+        assert!(
+            actual
+                .iter()
+                .any(|f| f.name() == FileSystemItemName::new_unchecked("folder".to_string()))
+        );
+    }
+
+    #[tokio::test]
+    pub async fn delete_by_id_valid_input_deleted_recursively() {
+        // Arrange
+
+        let injector = initialize_test_injector().await;
+        let scope = injector.start_scope();
+        let repository = scope.resolve::<dyn FolderRepository>().await;
+
+        let parent_id = Guid::new_v4();
+        repository
+            .create(&Folder::new_unchecked(
+                parent_id,
+                Utc::now(),
+                Utc::now(),
+                Some(ROOT_FOLDER_ID),
+                "folder".try_into().unwrap(),
+                FsrsProfileChoice::Inherit,
+            ))
+            .await
+            .unwrap();
+        repository
+            .create(&Folder::new_unchecked(
+                Guid::new_v4(),
+                Utc::now(),
+                Utc::now(),
+                Some(parent_id),
+                "sub folder".try_into().unwrap(),
+                FsrsProfileChoice::Inherit,
+            ))
+            .await
+            .unwrap();
+        scope
+            .resolve::<dyn FileRepository>()
+            .await
+            .create(&File::new_unchecked(
+                Guid::new_v4(),
+                Utc::now(),
+                Utc::now(),
+                Some(parent_id),
+                "file".try_into().unwrap(),
+                FsrsProfileChoice::Inherit,
+            ))
+            .await
+            .unwrap();
+
+        scope.save_changes().await.unwrap();
+
+        // Act
+
+        repository.delete_by_id(parent_id).await.unwrap();
+        scope.save_changes().await.unwrap();
+
+        // Assert
+
+        let actual = repository.get_all_folders().await.unwrap();
+        // Only root should exist!
+        assert_eq!(1, actual.len());
+    }
+}

@@ -544,7 +544,6 @@ dependencies = [
  "async-trait",
  "brainy_application",
  "brainy_domain",
- "brainy_test_utils",
  "chrono",
  "cookie_store",
  "injector",
