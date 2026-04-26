@@ -7,8 +7,6 @@ mod fsrs;
 mod infrastructure;
 mod settings;
 mod sync;
-#[cfg(test)]
-mod test_utils;
 
 use std::sync::Arc;
 use std::time::Duration;

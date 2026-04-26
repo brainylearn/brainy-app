@@ -17,7 +17,7 @@ use brainy_infrastructure::ai_integration::sqlite_ai_repository::SqliteAiReposit
 use brainy_infrastructure::cells::sqlite_cell_repository::SqliteCellRepository;
 use brainy_infrastructure::cells::sqlite_review_repository::SqliteReviewRepository;
 use brainy_infrastructure::common::db_pool::DbPool;
-use brainy_infrastructure::common::db_transaction::DbTransaction;
+use brainy_infrastructure::common::register_scoped_tx::register_scoped_tx;
 #[cfg(test)]
 use brainy_infrastructure::common::utils::create_sqlite_pool::create_sqlite_pool;
 #[cfg(not(test))]
@@ -123,39 +123,25 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     injector
 }
 
-pub fn register_scoped_tx(injector: &mut Injector) {
-    injector.register_scope_factory::<DbTransaction>(|scope| {
-        Box::pin(async move {
-            let db_pool = scope.resolve::<DbPool>().await;
-            let pool = db_pool.pool().await;
-            let tx = pool.begin().await.expect("Cannot create a new transaction");
-            let db_transaction = DbTransaction::new(Mutex::new(tx));
-            Arc::new(db_transaction)
-        })
-    });
-}
+#[cfg(test)]
+mod tests {
+    use brainy_application::ai_integration::clients::mock_client::MockClient;
+    use brainy_test_utils::create_temp_directory;
 
-// TODO:
-// #[cfg(test)]
-// mod tests {
-//     use brainy_application::ai_integration::clients::mock_client::MockClient;
-//
-//     use crate::test_utils::create_temp_directory;
-//
-//     use super::*;
-//
-//     #[tokio::test]
-//     pub async fn validate_created_injector() {
-//         // Arrange
-//
-//         let app_data_directory = AppDataDirectory::new(create_temp_directory().await);
-//         let mut injector = create_injector(app_data_directory).await;
-//
-//         // Needed for testing.
-//         injector.register_singleton(Arc::new(MockClient::default()));
-//
-//         // Act & Assert
-//
-//         injector.validate().await;
-//     }
-// }
+    use super::*;
+
+    #[tokio::test]
+    pub async fn validate_created_injector() {
+        // Arrange
+
+        let app_data_directory = AppDataDirectory::new(create_temp_directory().await);
+        let mut injector = create_injector(app_data_directory).await;
+
+        // Needed for testing.
+        injector.register_singleton(Arc::new(MockClient::default()));
+
+        // Act & Assert
+
+        injector.validate().await;
+    }
+}

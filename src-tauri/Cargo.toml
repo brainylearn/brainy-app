@@ -66,6 +66,8 @@ tokio-stream = "0.1.18"
 uuid = { version = "1.23.1", features = [ "v4", "serde" ] }
 
 [dev-dependencies]
+brainy_application = { path = "./brainy_application", features = ["test-utils"] }
+brainy_test_utils = { path = "./brainy_test_utils" }
 mockall = "0.14.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
@@ -81,6 +83,7 @@ members = [
     "brainy_domain",
     "brainy_application",
     "brainy_infrastructure",
+    "brainy_test_utils",
     "injector",
     "injector_derive"
 ]

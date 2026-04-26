@@ -28,3 +28,6 @@ injector_derive = { path = "../injector_derive" }
 
 brainy_domain = { path = "../brainy_domain" }
 brainy_application = { path = "../brainy_application" }
+
+[dev-dependencies]
+brainy_test_utils = { path = "../brainy_test_utils" }

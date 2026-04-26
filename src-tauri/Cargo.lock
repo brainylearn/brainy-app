@@ -12,6 +12,7 @@ dependencies = [
  "brainy_application",
  "brainy_domain",
  "brainy_infrastructure",
+ "brainy_test_utils",
  "chrono",
  "cookie_store",
  "dirs",
@@ -493,6 +494,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "brainy_domain",
+ "brainy_test_utils",
  "chrono",
  "injector",
  "injector_derive",
@@ -521,6 +523,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
+ "brainy_test_utils",
  "chrono",
  "log",
  "mockall",
@@ -541,6 +544,7 @@ dependencies = [
  "async-trait",
  "brainy_application",
  "brainy_domain",
+ "brainy_test_utils",
  "chrono",
  "cookie_store",
  "injector",
@@ -560,6 +564,17 @@ dependencies = [
  "tokio",
  "tokio-rusqlite",
  "uuid",
+]
+
+[[package]]
+name = "brainy_test_utils"
+version = "0.1.0"
+dependencies = [
+ "brainy_application",
+ "brainy_domain",
+ "brainy_infrastructure",
+ "injector",
+ "tokio",
 ]
 
 [[package]]

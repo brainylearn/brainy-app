@@ -3,6 +3,9 @@ name = "brainy_application"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+test-utils = []
+
 [build-dependencies]
 prost-build = "0.14.3"
 
@@ -34,4 +37,5 @@ injector = { path = "../injector" }
 injector_derive = { path = "../injector_derive" }
 
 [dev-dependencies]
+brainy_test_utils = { path = "../brainy_test_utils" }
 mockall = "0.14.0"
