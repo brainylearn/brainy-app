@@ -16,21 +16,21 @@ pub enum State {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Repetition {
-    pub(in crate::cells) id: Guid,
-    pub(in crate::cells) created_date: DateTime<Utc>,
-    pub(in crate::cells) modified_date: DateTime<Utc>,
-    pub(in crate::cells) file_id: Guid,
-    pub(in crate::cells) cell_id: Guid,
-    pub(in crate::cells) due: DateTime<Utc>,
-    pub(in crate::cells) stability: f64,
-    pub(in crate::cells) difficulty: f64,
-    pub(in crate::cells) elapsed_days: i64,
-    pub(in crate::cells) scheduled_days: i64,
-    pub(in crate::cells) reps: i64,
-    pub(in crate::cells) lapses: i64,
-    pub(in crate::cells) state: State,
-    pub(in crate::cells) last_review: Option<DateTime<Utc>>,
-    pub(in crate::cells) additional_content: Option<String>,
+    pub id: Guid,
+    pub created_date: DateTime<Utc>,
+    pub modified_date: DateTime<Utc>,
+    pub file_id: Guid,
+    pub cell_id: Guid,
+    pub due: DateTime<Utc>,
+    pub stability: f64,
+    pub difficulty: f64,
+    pub elapsed_days: i64,
+    pub scheduled_days: i64,
+    pub reps: i64,
+    pub lapses: i64,
+    pub state: State,
+    pub last_review: Option<DateTime<Utc>>,
+    pub additional_content: Option<String>,
 }
 
 impl Repetition {

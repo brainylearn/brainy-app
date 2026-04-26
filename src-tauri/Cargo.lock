@@ -518,6 +518,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "brainy_application_tests"
+version = "0.1.0"
+dependencies = [
+ "brainy_application",
+ "brainy_domain",
+ "brainy_infrastructure",
+ "brainy_test_utils",
+ "chrono",
+ "injector",
+ "tokio",
+]
+
+[[package]]
 name = "brainy_domain"
 version = "0.1.0"
 dependencies = [
@@ -563,6 +576,20 @@ dependencies = [
  "tokio",
  "tokio-rusqlite",
  "uuid",
+]
+
+[[package]]
+name = "brainy_infrastructure_tests"
+version = "0.1.0"
+dependencies = [
+ "brainy_application",
+ "brainy_domain",
+ "brainy_infrastructure",
+ "brainy_test_utils",
+ "chrono",
+ "injector",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

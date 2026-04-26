@@ -1,0 +1,14 @@
+# TODO: recopy tests from github to restore all comments
+[package]
+name = "brainy_application_tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+brainy_domain = { path = "../../brainy_domain", features = ["test-utils"] }
+brainy_application = { path = "../../brainy_application" }
+brainy_infrastructure = { path = "../../brainy_infrastructure" }
+brainy_test_utils = { path = "../brainy_test_utils" }
+injector = { path = "../../injector" }
+chrono = { version = "0.4.44", features = ["serde"] }
+tokio = { version = "1.51.0", features = ["full"] }

@@ -1,0 +1,11 @@
+[package]
+name = "brainy_test_utils"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+brainy_domain = { path = "../../brainy_domain" }
+brainy_application = { path = "../../brainy_application" }
+brainy_infrastructure = { path = "../../brainy_infrastructure", features = ["test-utils"] }
+injector = { path = "../../injector" }
+tokio = { version = "1.51.0", features = ["full"] }
