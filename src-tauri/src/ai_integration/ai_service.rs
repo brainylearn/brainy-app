@@ -389,7 +389,7 @@ impl AiService {
         let embeddings = embeddings_builder.build().await?;
 
         let vector_store = self.get_sqlite_vector_store(&embed_model).await?;
-        vector_store.add_rows(embeddings).await.unwrap();
+        vector_store.add_rows(embeddings).await?;
 
         self.ai_repository
             .upsert_message(&Message::new(

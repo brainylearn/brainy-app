@@ -12,13 +12,8 @@
 (the application and presentation layer for my app is the same)
 (It is okay not to use a dto and return an entity directly, dtos are just for special cases)
 
-## High Priority
-
-- [ ] **`unwrap()` on vector store insert** — `src/ai_integration/ai_service.rs:392`: Disk-full or schema mismatch panics the upload task; use `?` and propagate as `AiServiceError`
-
 ## Medium Priority
 
-- [x] **Incomplete HTML sanitizer** — `src/file_system/file_system_service.rs:341`: Missing `href="javascript:..."` and data URI injection; switch to an allowlist-based approach
 - [ ] **`rewrite_str` panics mid-import** — `src/file_system/file_system_service.rs:361`: `rewrite_str(...).unwrap()` on user-supplied HTML can panic, leaving DB in partially-imported state; propagate as `FileServiceError`
 - [ ] **FTS query uses `LIKE` instead of `MATCH`** — `src/infrastructure/repositories/sqlite/sqlite_cell_repository.rs:563`: Bypasses the full-text index entirely; use `WHERE cells_fts MATCH $1`
 - [ ] **N+1 queries in `update_cells_contents`** — `src/cells/api/cell_api.rs:94-99`: Issues 2N SQL round-trips for N cells; add a bulk-fetch + batch-update path
