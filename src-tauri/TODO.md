@@ -36,5 +36,3 @@ Documentation:
 - [ ] **Regex compiled per call** — `src/cells/entities/cell.rs:159,203`: `Regex::new(...)` called on every `update_searchable_content`; use `OnceLock<Regex>` statics
 - [ ] **`std::sync::Mutex` unwrap in async context** — `src/infrastructure/clients/brainy_backend_http_client.rs:207,325`: Panics on mutex poison and causes latency jitter; handle the poison case
 - [ ] **Backup interval burst behavior** — `src/lib.rs:110-122`: Default `MissedTickBehavior::Burst` piles up ticks if backup runs long; use `MissedTickBehavior::Skip`
-- [ ] **`unwrap()` on keyring write** — `src/infrastructure/clients/brainy_backend_http_client.rs:333`: Panics if OS keychain is locked; log a warning and continue instead
-- [ ] **Transaction factory `panic!`** — `src/common/utils/create_injector.rs:133`, `src/sync/unit_of_work.rs:53`: `begin().await.expect(...)` should propagate through `Result`

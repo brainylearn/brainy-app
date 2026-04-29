@@ -25,6 +25,8 @@ pub enum BrainyBackendClientError {
     Connect,
     #[error("The request has timed out, please try again!")]
     Timeout,
+    #[error("Cannot save authentication cookies")]
+    CannotSaveAuthenticationCookies(String),
 }
 
 #[cfg_attr(test, automock)]

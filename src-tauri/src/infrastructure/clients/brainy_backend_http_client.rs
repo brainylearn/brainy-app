@@ -102,7 +102,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
         }
         let response = status?;
 
-        self.persist_cookies();
+        self.persist_cookies()?;
 
         match response.json::<UserInformationDto>().await {
             Ok(result) => Ok(result),
@@ -131,7 +131,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .await;
 
         let response = ensure_success_response(response).await?;
-        self.persist_cookies();
+        self.persist_cookies()?;
 
         match response.json::<UserInformationDto>().await {
             Ok(result) => Ok(result),
@@ -147,7 +147,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .send()
             .await;
         ensure_success_response(response).await?;
-        self.persist_cookies();
+        self.persist_cookies()?;
         Ok(())
     }
 
@@ -169,7 +169,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .await;
 
         ensure_success_response(response).await?;
-        self.persist_cookies();
+        self.persist_cookies()?;
 
         Ok(())
     }
@@ -290,7 +290,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .await;
 
         ensure_success_response(response).await?;
-        self.persist_cookies();
+        self.persist_cookies()?;
 
         Ok(())
     }
@@ -313,14 +313,14 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
             .await;
 
         ensure_success_response(response).await?;
-        self.persist_cookies();
+        self.persist_cookies()?;
 
         Ok(())
     }
 }
 
 impl BrainyBackendHttpClient {
-    fn persist_cookies(&self) {
+    fn persist_cookies(&self) -> Result<(), BrainyBackendClientError> {
         let mut writer = std::io::BufWriter::new(Vec::new());
         let store = self.cookie_store.lock().unwrap();
         cookie_store::serde::json::save(&store, &mut writer).unwrap();
@@ -329,8 +329,14 @@ impl BrainyBackendHttpClient {
         if let Some(keyring_entry) = self.keyring_entry.as_ref() {
             #[cfg(debug_assertions)]
             log::info!("Saving the following cookies to keyring: {cookies_json}");
-            keyring_entry.set_password(&cookies_json).unwrap();
+            if let Err(err) = keyring_entry.set_password(&cookies_json) {
+                return Err(BrainyBackendClientError::CannotSaveAuthenticationCookies(
+                    err.to_string(),
+                ));
+            }
         }
+
+        Ok(())
     }
 }
 
