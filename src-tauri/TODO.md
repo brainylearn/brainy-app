@@ -2,22 +2,20 @@
 <!--TODO: remove at end-->
 
 ## Critical 
-- [ ] Split the services into smaller where each one is responsible for one thing
+- [ ] Split the services into smaller where each one is responsible for one thing, all services are helper
 - [ ] Make a hook in the front end for calling {value, isLoading, error} the backend, remove all (Remove Request)
 - [ ] Refactor front-end types, move the to `api` folder
 - [ ] Better errors, one per use case instead of one per service
 - [ ] Make CLAUDE.md file
 - [ ] Let claude take a round for the front-end
 
-(the application and presentation layer for my app is the same)
-(It is okay not to use a dto and return an entity directly, dtos are just for special cases)
+Documentation:
+- the application and presentation layer for my app is the same, called API
+- It is okay not to use a dto and return an entity directly, dtos are just for special cases
 
 ## Medium Priority
 
-- [ ] **`rewrite_str` panics mid-import** — `src/file_system/file_system_service.rs:361`: `rewrite_str(...).unwrap()` on user-supplied HTML can panic, leaving DB in partially-imported state; propagate as `FileServiceError`
 - [ ] **FTS query uses `LIKE` instead of `MATCH`** — `src/infrastructure/repositories/sqlite/sqlite_cell_repository.rs:563`: Bypasses the full-text index entirely; use `WHERE cells_fts MATCH $1`
-- [ ] **N+1 queries in `update_cells_contents`** — `src/cells/api/cell_api.rs:94-99`: Issues 2N SQL round-trips for N cells; add a bulk-fetch + batch-update path
-- [ ] **N+1 queries in `get_cells_for_files_with_fsrs_profile_ids`** — `src/cells/api/cell_api.rs:114-133`: O(files × folder depth) queries due to per-file parent traversal
 - [ ] **`deleted_entities` table missing UNIQUE constraint** — `migrations/0001_create_tables.sql:160`: Duplicate rows accumulate on sync retry; add `UNIQUE(entity_id, entity_name)` and use upsert
 - [ ] **`defer_foreign_keys` does not disable FK checks** — `src/infrastructure/extensions/unit_of_work.rs:36`: `PRAGMA defer_foreign_keys = ON` defers but doesn't disable; if a Cell arrives before its File during sync the transaction fails at commit; review sync ordering or use `PRAGMA foreign_keys = OFF` outside the transaction
 - [ ] **Sync push uses `>=` instead of `>` for last_sync_date** — `src/sync/sync_service.rs:356-528`: Entities modified exactly at `last_sync_date` are re-uploaded every sync cycle; change to `>`
@@ -41,4 +39,3 @@
 - [ ] **`unwrap()` on keyring write** — `src/infrastructure/clients/brainy_backend_http_client.rs:333`: Panics if OS keychain is locked; log a warning and continue instead
 - [ ] **Transaction factory `panic!`** — `src/common/utils/create_injector.rs:133`, `src/sync/unit_of_work.rs:53`: `begin().await.expect(...)` should propagate through `Result`
 - [ ] **`get_fsrs_profile_id_for_item_recursively` panics** — `src/cells/api/cell_api.rs:148`: `parent_id.unwrap()` panics when `Inherit` is set on a root-level file; return an error instead
-- [ ] **`path.to_str().unwrap()` on non-UTF-8 paths** — `src/ai_integration/ai_service.rs:340,366,494`: Panics on valid non-UTF-8 filesystem paths; use `to_string_lossy()` or propagate an error

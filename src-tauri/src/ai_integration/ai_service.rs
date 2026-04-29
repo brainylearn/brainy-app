@@ -337,7 +337,8 @@ impl AiService {
         if let Some(extension) = path.extension()
             && extension == "pdf"
         {
-            let loader = PdfFileLoader::with_glob(path.to_str().unwrap())?;
+            let path = &path.to_string_lossy();
+            let loader = PdfFileLoader::with_glob(path)?;
 
             let pages = loader
                 .load_with_path()
@@ -363,7 +364,8 @@ impl AiService {
 
             embeddings_builder = embeddings_builder.documents(pages)?;
         } else {
-            let loader = FileLoader::with_glob(path.to_str().unwrap())?;
+            let path = &path.to_string_lossy();
+            let loader = FileLoader::with_glob(path)?;
 
             let contents = loader
                 .read()
@@ -491,7 +493,8 @@ impl AiService {
         embed_model: &MultiEmbeddingModel,
     ) -> Result<SqliteVectorStore<MultiEmbeddingModel, Document>, AiServiceError> {
         let path = self.app_data_directory.get_path().join("vector_store.db");
-        let conn = match Connection::open(path.to_str().unwrap()).await {
+        let path = &*path.to_string_lossy();
+        let conn = match Connection::open(path).await {
             Err(err) => {
                 return Err(AiServiceError::ConnectingToEmbeddingsDatabase(
                     err.to_string(),
