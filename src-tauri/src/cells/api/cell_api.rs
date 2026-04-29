@@ -7,7 +7,6 @@ use crate::{
         entities::cell::{Cell, CellType},
         repositories::cell_repository::CellRepository,
     },
-    common::repository_error::RepositoryError,
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
@@ -141,10 +140,15 @@ async fn get_fsrs_profile_id_for_item_recursively(
     scope: &InjectorScope<'_>,
     mut fsrs_profile_choice: FsrsProfileChoice,
     mut parent_id: Option<Guid>,
-) -> Result<Guid, RepositoryError> {
+) -> Result<Guid, ApiError> {
     let folder_repository = scope.resolve::<dyn FolderRepository>().await;
 
     while FsrsProfileChoice::Inherit == fsrs_profile_choice {
+        if parent_id.is_none() {
+            return Err(ApiError::new(
+                "The root folder cannot have inherit FSRS profile!".into(),
+            ));
+        }
         let parent = folder_repository.get_by_id(parent_id.unwrap()).await?;
         fsrs_profile_choice = parent.fsrs_profile_choice();
         parent_id = parent.parent_id();

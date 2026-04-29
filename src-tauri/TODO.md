@@ -38,4 +38,3 @@ Documentation:
 - [ ] **Backup interval burst behavior** — `src/lib.rs:110-122`: Default `MissedTickBehavior::Burst` piles up ticks if backup runs long; use `MissedTickBehavior::Skip`
 - [ ] **`unwrap()` on keyring write** — `src/infrastructure/clients/brainy_backend_http_client.rs:333`: Panics if OS keychain is locked; log a warning and continue instead
 - [ ] **Transaction factory `panic!`** — `src/common/utils/create_injector.rs:133`, `src/sync/unit_of_work.rs:53`: `begin().await.expect(...)` should propagate through `Result`
-- [ ] **`get_fsrs_profile_id_for_item_recursively` panics** — `src/cells/api/cell_api.rs:148`: `parent_id.unwrap()` panics when `Inherit` is set on a root-level file; return an error instead
