@@ -15,7 +15,7 @@
 ## High Priority
 
 - [x] **`into_datetime` discards nanoseconds + panics on out-of-range** — `src/common/extensions/into_datetime.rs:10`: Always passes `0` for nanos and uses deprecated `from_timestamp` with `expect`; use `DateTime::from_timestamp(seconds, nanos as u32)` and propagate errors
-- [ ] **`modified_date` double-move in sync** — `src/sync/sync_service.rs:185-322`: `fsrs_profile.modified_date.unwrap()` is called twice (moves the `Option` value on the first call, panics on the second); store in a local variable and reuse across all entity branches
+- [X] **`modified_date` double-move in sync** — `src/sync/sync_service.rs:185-322`: `fsrs_profile.modified_date.unwrap()` is called twice (moves the `Option` value on the first call, panics on the second); store in a local variable and reuse across all entity branches
 - [ ] **`into_timestamp` nanosecond overflow** — `src/common/extensions/into_timestamp.rs:12`: `timestamp_nanos_opt()` returns total nanos since epoch cast to `i32` — silently truncates; use `timestamp_subsec_nanos() as i32` for the sub-second component only
 - [ ] **`unwrap()` on vector store insert** — `src/ai_integration/ai_service.rs:392`: Disk-full or schema mismatch panics the upload task; use `?` and propagate as `AiServiceError`
 

@@ -193,10 +193,7 @@ impl SyncService {
                 log::info!("Parsed entity {:#?}", entity);
 
                 self.fsrs_repository
-                    .upsert_with_modified_date_if_modified_before(
-                        &entity,
-                        fsrs_profile.modified_date.unwrap().into_datetime().unwrap(),
-                    )
+                    .upsert_with_modified_date_if_modified_before(&entity, entity.modified_date())
                     .await?
             }
             EntityType::Folder => {
@@ -214,10 +211,7 @@ impl SyncService {
                 log::info!("Parsed entity {:#?}", entity);
 
                 self.folder_repository
-                    .upsert_with_modified_date_if_modified_before(
-                        &entity,
-                        folder.modified_date.unwrap().into_datetime().unwrap(),
-                    )
+                    .upsert_with_modified_date_if_modified_before(&entity, entity.modified_date())
                     .await?
             }
             EntityType::File => {
@@ -235,10 +229,7 @@ impl SyncService {
                 log::info!("Parsed entity {:#?}", entity);
 
                 self.file_repository
-                    .upsert_with_modified_date_if_modified_before(
-                        &entity,
-                        file.modified_date.unwrap().into_datetime().unwrap(),
-                    )
+                    .upsert_with_modified_date_if_modified_before(&entity, entity.modified_date())
                     .await?
             }
             EntityType::Cell => {
@@ -262,7 +253,7 @@ impl SyncService {
                     .cell_repository
                     .upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
                         &entity,
-                        cell.modified_date.unwrap().into_datetime().unwrap(),
+                        entity.modified_date(),
                     )
                     .await?;
                 self.cell_service
@@ -298,7 +289,7 @@ impl SyncService {
                 self.cell_repository
                     .upsert_repetition_with_modified_date_if_modified_before(
                         &entity,
-                        repetition.modified_date.unwrap().into_datetime().unwrap(),
+                        entity.modified_date(),
                     )
                     .await?
             }
@@ -318,10 +309,7 @@ impl SyncService {
                 log::info!("Parsed entity {:#?}", entity);
 
                 self.review_repository
-                    .upsert_with_modified_date_if_modified_before(
-                        &entity,
-                        review.modified_date.unwrap().into_datetime().unwrap(),
-                    )
+                    .upsert_with_modified_date_if_modified_before(&entity, entity.modified_date())
                     .await?
             }
             EntityType::DeletedEntity => {
