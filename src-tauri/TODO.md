@@ -21,7 +21,7 @@
 
 ## Medium Priority
 
-- [ ] **Incomplete HTML sanitizer** — `src/file_system/file_system_service.rs:341`: Missing `href="javascript:..."` and data URI injection; switch to an allowlist-based approach
+- [x] **Incomplete HTML sanitizer** — `src/file_system/file_system_service.rs:341`: Missing `href="javascript:..."` and data URI injection; switch to an allowlist-based approach
 - [ ] **`rewrite_str` panics mid-import** — `src/file_system/file_system_service.rs:361`: `rewrite_str(...).unwrap()` on user-supplied HTML can panic, leaving DB in partially-imported state; propagate as `FileServiceError`
 - [ ] **FTS query uses `LIKE` instead of `MATCH`** — `src/infrastructure/repositories/sqlite/sqlite_cell_repository.rs:563`: Bypasses the full-text index entirely; use `WHERE cells_fts MATCH $1`
 - [ ] **N+1 queries in `update_cells_contents`** — `src/cells/api/cell_api.rs:94-99`: Issues 2N SQL round-trips for N cells; add a bulk-fetch + batch-update path
@@ -50,4 +50,3 @@
 - [ ] **Transaction factory `panic!`** — `src/common/utils/create_injector.rs:133`, `src/sync/unit_of_work.rs:53`: `begin().await.expect(...)` should propagate through `Result`
 - [ ] **`get_fsrs_profile_id_for_item_recursively` panics** — `src/cells/api/cell_api.rs:148`: `parent_id.unwrap()` panics when `Inherit` is set on a root-level file; return an error instead
 - [ ] **`path.to_str().unwrap()` on non-UTF-8 paths** — `src/ai_integration/ai_service.rs:340,366,494`: Panics on valid non-UTF-8 filesystem paths; use `to_string_lossy()` or propagate an error
-- [ ] **`test_utils.rs` in `cells/` not gated by `#[cfg(test)]`** — `src/cells/test_utils.rs`: Public test helper compiles into the production binary; add `#[cfg(test)]` at the module declaration

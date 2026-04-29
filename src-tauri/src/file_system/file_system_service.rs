@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use injector_derive::ScopeInjectable;
-use lol_html::html_content::Element;
-use lol_html::{RewriteStrSettings, element, rewrite_str};
+use std::collections::HashSet;
+
+use ammonia::Builder;
 use thiserror::Error;
 
 use crate::cells::repositories::cell_repository::CellRepository;
@@ -338,27 +339,12 @@ impl FileSystemService {
 }
 
 fn purify_html(html: &str) -> String {
-    let handler = |el: &mut Element| {
-        if el.tag_name().to_lowercase() == "script"
-            || el
-                .attributes()
-                .iter()
-                .any(|attr| attr.name().to_lowercase().starts_with("on"))
-        {
-            el.remove();
-        }
-
-        Ok(())
-    };
-
-    rewrite_str(
-        html,
-        RewriteStrSettings {
-            element_content_handlers: vec![element!("*", handler)],
-            ..RewriteStrSettings::default()
-        },
-    )
-    .unwrap()
+    Builder::new()
+        .add_tags(&["cloze"])
+        .add_tag_attributes("cloze", &["index"])
+        .url_schemes(HashSet::from(["http", "https", "mailto", "data"]))
+        .clean(html)
+        .to_string()
 }
 
 #[cfg(test)]
