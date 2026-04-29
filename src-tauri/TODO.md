@@ -6,13 +6,15 @@
 - [ ] Make a hook in the front end for calling {value, isLoading, error} the backend, remove all (Remove Request)
 - [ ] Refactor front-end types, move the to `api` folder
 - [ ] Better errors, one per use case instead of one per service
+- [ ] Make CLAUDE.md file
+- [ ] Let claude take a round for the front-end
 
 (the application and presentation layer for my app is the same)
 (It is okay not to use a dto and return an entity directly, dtos are just for special cases)
 
 ## High Priority
 
-- [ ] **`into_datetime` discards nanoseconds + panics on out-of-range** — `src/common/extensions/into_datetime.rs:10`: Always passes `0` for nanos and uses deprecated `from_timestamp` with `expect`; use `DateTime::from_timestamp(seconds, nanos as u32)` and propagate errors
+- [x] **`into_datetime` discards nanoseconds + panics on out-of-range** — `src/common/extensions/into_datetime.rs:10`: Always passes `0` for nanos and uses deprecated `from_timestamp` with `expect`; use `DateTime::from_timestamp(seconds, nanos as u32)` and propagate errors
 - [ ] **`modified_date` double-move in sync** — `src/sync/sync_service.rs:185-322`: `fsrs_profile.modified_date.unwrap()` is called twice (moves the `Option` value on the first call, panics on the second); store in a local variable and reuse across all entity branches
 - [ ] **`into_timestamp` nanosecond overflow** — `src/common/extensions/into_timestamp.rs:12`: `timestamp_nanos_opt()` returns total nanos since epoch cast to `i32` — silently truncates; use `timestamp_subsec_nanos() as i32` for the sub-second component only
 - [ ] **`unwrap()` on vector store insert** — `src/ai_integration/ai_service.rs:392`: Disk-full or schema mismatch panics the upload task; use `?` and propagate as `AiServiceError`

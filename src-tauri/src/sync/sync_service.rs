@@ -182,7 +182,7 @@ impl SyncService {
                 let entity = FsrsProfile::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
-                    fsrs_profile.modified_date.unwrap().into_datetime(),
+                    fsrs_profile.modified_date.unwrap().into_datetime().unwrap(),
                     fsrs_profile.name,
                     fsrs_profile.request_retention,
                     fsrs_profile.maximum_interval,
@@ -195,7 +195,7 @@ impl SyncService {
                 self.fsrs_repository
                     .upsert_with_modified_date_if_modified_before(
                         &entity,
-                        fsrs_profile.modified_date.unwrap().into_datetime(),
+                        fsrs_profile.modified_date.unwrap().into_datetime().unwrap(),
                     )
                     .await?
             }
@@ -204,7 +204,7 @@ impl SyncService {
                 let entity = Folder::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
-                    folder.modified_date.unwrap().into_datetime(),
+                    folder.modified_date.unwrap().into_datetime().unwrap(),
                     folder.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(folder.name),
                     folder.fsrs_profile_id.into(),
@@ -216,7 +216,7 @@ impl SyncService {
                 self.folder_repository
                     .upsert_with_modified_date_if_modified_before(
                         &entity,
-                        folder.modified_date.unwrap().into_datetime(),
+                        folder.modified_date.unwrap().into_datetime().unwrap(),
                     )
                     .await?
             }
@@ -225,7 +225,7 @@ impl SyncService {
                 let entity = File::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
-                    file.modified_date.unwrap().into_datetime(),
+                    file.modified_date.unwrap().into_datetime().unwrap(),
                     file.parent_id.map(|val| Guid::parse_str(&val).unwrap()),
                     FileSystemItemName::new_unchecked(file.name),
                     file.fsrs_profile_id.into(),
@@ -237,7 +237,7 @@ impl SyncService {
                 self.file_repository
                     .upsert_with_modified_date_if_modified_before(
                         &entity,
-                        file.modified_date.unwrap().into_datetime(),
+                        file.modified_date.unwrap().into_datetime().unwrap(),
                     )
                     .await?
             }
@@ -246,7 +246,7 @@ impl SyncService {
                 let entity = Cell::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
-                    cell.modified_date.unwrap().into_datetime(),
+                    cell.modified_date.unwrap().into_datetime().unwrap(),
                     Guid::parse_str(&cell.file_id).unwrap(),
                     cell.content,
                     serde_json::from_str(&cell.cell_type).unwrap(),
@@ -262,7 +262,7 @@ impl SyncService {
                     .cell_repository
                     .upsert_cell_without_repetition_and_with_modified_date_if_modified_before(
                         &entity,
-                        cell.modified_date.unwrap().into_datetime(),
+                        cell.modified_date.unwrap().into_datetime().unwrap(),
                     )
                     .await?;
                 self.cell_service
@@ -275,10 +275,10 @@ impl SyncService {
                 let entity = Repetition::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
-                    repetition.modified_date.unwrap().into_datetime(),
+                    repetition.modified_date.unwrap().into_datetime().unwrap(),
                     Guid::parse_str(&repetition.file_id).unwrap(),
                     Guid::parse_str(&repetition.cell_id).unwrap(),
-                    repetition.due.unwrap().into_datetime(),
+                    repetition.due.unwrap().into_datetime().unwrap(),
                     repetition.stability,
                     repetition.difficulty,
                     repetition.elapsed_days,
@@ -286,7 +286,9 @@ impl SyncService {
                     repetition.reps,
                     repetition.lapses,
                     serde_json::from_str(&repetition.state).unwrap(),
-                    repetition.last_review.map(|value| value.into_datetime()),
+                    repetition
+                        .last_review
+                        .and_then(|value| value.into_datetime()),
                     repetition.additional_content,
                 );
 
@@ -296,7 +298,7 @@ impl SyncService {
                 self.cell_repository
                     .upsert_repetition_with_modified_date_if_modified_before(
                         &entity,
-                        repetition.modified_date.unwrap().into_datetime(),
+                        repetition.modified_date.unwrap().into_datetime().unwrap(),
                     )
                     .await?
             }
@@ -305,10 +307,10 @@ impl SyncService {
                 let entity = Review::new_unchecked(
                     synced_entity.entity_id,
                     synced_entity.created_date,
-                    review.modified_date.unwrap().into_datetime(),
+                    review.modified_date.unwrap().into_datetime().unwrap(),
                     review.cell_id.map(|value| Guid::parse_str(&value).unwrap()),
                     review.study_time,
-                    review.date.unwrap().into_datetime(),
+                    review.date.unwrap().into_datetime().unwrap(),
                     serde_json::from_str(&review.rating).unwrap(),
                 );
 
@@ -318,7 +320,7 @@ impl SyncService {
                 self.review_repository
                     .upsert_with_modified_date_if_modified_before(
                         &entity,
-                        review.modified_date.unwrap().into_datetime(),
+                        review.modified_date.unwrap().into_datetime().unwrap(),
                     )
                     .await?
             }
@@ -328,7 +330,11 @@ impl SyncService {
                     synced_entity.entity_id,
                     deleted_entity.entity_name,
                     synced_entity.created_date,
-                    deleted_entity.deleted_date.unwrap().into_datetime(),
+                    deleted_entity
+                        .deleted_date
+                        .unwrap()
+                        .into_datetime()
+                        .unwrap(),
                 );
 
                 #[cfg(debug_assertions)]
