@@ -14,20 +14,20 @@ import { useRef, useState } from "react";
 import useOutsideClick from "../../../hooks/useOutsideClick";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 import { resetRepetitionsForCell } from "../../../api/repetitionApi";
-import errorToString from "../../../utils/errorToString";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import RepetitionsInfo from "./RepetitionsInfo";
+import { CallApiFn } from "../../../hooks/useApi";
 
 interface Props {
 	repetitions: Repetition[];
 	cell: Cell;
 	enableFileSpecificFunctionality: boolean;
 	fileMode: "single" | "global search";
+	callApi: CallApiFn;
 	setHandleDragRef: (element: Element | null) => void;
 	onInsertClick: (e: React.MouseEvent) => void;
 	onShowRepetitionsInfo: () => void;
 	onResetRepetitions: () => void;
-	onError: (error: string) => void;
 	onCellDeleteConfirm: () => void;
 	onEditButtonClick?: (fileId: string, cellId: string) => void;
 }
@@ -37,12 +37,12 @@ function FocusTools({
 	cell,
 	enableFileSpecificFunctionality,
 	fileMode,
+	callApi,
 	setHandleDragRef,
 	onInsertClick,
 	onShowRepetitionsInfo,
 	onResetRepetitions,
 	onCellDeleteConfirm,
-	onError,
 	onEditButtonClick,
 }: Props) {
 	const [showRepetitionsInfo, setShowRepetitionsInfo] = useState(false);
@@ -68,14 +68,11 @@ function FocusTools({
 	};
 
 	const handleResetRepetitionsConfirm = async () => {
-		try {
+		await callApi(async () => {
 			setShowResetRepetitionsDialog(false);
 			await resetRepetitionsForCell(cell.id);
 			onResetRepetitions();
-		} catch (e) {
-			console.error(e);
-			onError(errorToString(e));
-		}
+		});
 	};
 
 	const handleCellDeleteConfirm = () => {

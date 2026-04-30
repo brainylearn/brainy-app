@@ -3,20 +3,20 @@ import Cell from "../../../types/backend/entity/cell";
 import useBeforeUnload from "../../../hooks/useBeforeUnload";
 import UpdateCellRequest from "../../../types/backend/dto/updateCellRequest";
 import { updateCellsContents } from "../../../api/cellApi";
-import errorToString from "../../../utils/errorToString";
 import { AUTO_SAVE_DELAY_IN_MILLISECONDS } from "../../../config/constants";
 import {
 	defaultGlobalSyncEventManager,
 	ListenerType,
 } from "../../../stores/sync/managers/syncEventManager";
 import { defaultCloseRequestedEventManager } from "../../../managers/closeRequestedEventManager";
+import { CallApiFn } from "../../../hooks/useApi";
 
 export const CLOSE_REQUESTED_HANDLER_NAME = "useAutoSave handler";
 
 interface Props {
 	cells: Cell[];
 	onCellsUpdateSave: () => Promise<void>;
-	onError: (error: string) => void;
+	callApi: CallApiFn;
 }
 
 interface ReturnValue {
@@ -33,7 +33,7 @@ interface ReturnValue {
 function useAutoSave({
 	cells,
 	onCellsUpdateSave,
-	onError,
+	callApi,
 }: Props): ReturnValue {
 	// This ref is only used for keeping updated cells that are not yet saved.
 	const updatedCells = useRef(cells);
@@ -49,7 +49,8 @@ function useAutoSave({
 		}
 
 		if (changedCellsIds.current.size === 0) return;
-		try {
+
+		await callApi(async () => {
 			const requests: UpdateCellRequest[] = [];
 
 			for (const id of changedCellsIds.current) {
@@ -64,11 +65,8 @@ function useAutoSave({
 			await updateCellsContents(requests);
 			changedCellsIds.current.clear();
 			await onCellsUpdateSave();
-		} catch (e) {
-			console.error(e);
-			onError(errorToString(e));
-		}
-	}, [onError, onCellsUpdateSave]);
+		});
+	}, [callApi, onCellsUpdateSave]);
 
 	const handleCellContentUpdate = (id: string, content: string) => {
 		changedCellsIds.current.add(id);

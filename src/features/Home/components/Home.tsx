@@ -5,7 +5,6 @@ import ReviewTree from "./ReviewTree";
 import styles from "./styles.module.css";
 import ReviewHeatmap from "./ReviewHeatmap";
 import HomeStatistics from "../../../types/backend/dto/homeStatistics";
-import errorToString from "../../../utils/errorToString";
 import secondsToLongString from "../utils/secondsToLongString";
 import { getHomeStatistics } from "../../../api/reviewApi";
 import {
@@ -18,13 +17,14 @@ import {
 } from "../../../stores/sync/managers/syncEventManager";
 import useAppDispatch from "../../../hooks/useAppDispatch";
 import { getReviewTreeFolderForRoot } from "../../../stores/fileSystem/fileSystemActions";
+import { CallApiFn } from "../../../hooks/useApi";
 
 interface Props {
 	onStudyClick: (fileIds: string[]) => void;
-	onError: (message: string) => void;
+	callApi: CallApiFn;
 }
 
-function Home({ onStudyClick, onError }: Props) {
+function Home({ onStudyClick, callApi }: Props) {
 	const [homeStatistics, setHomeStatistics] = useState<HomeStatistics | null>(
 		null,
 	);
@@ -32,13 +32,8 @@ function Home({ onStudyClick, onError }: Props) {
 	const dispatch = useAppDispatch();
 
 	const fetchHomeStatistics = useCallback(async () => {
-		try {
-			setHomeStatistics(await getHomeStatistics());
-		} catch (e) {
-			console.error(e);
-			onError(errorToString(e));
-		}
-	}, [onError]);
+		await callApi(async () => setHomeStatistics(await getHomeStatistics()));
+	}, [callApi]);
 
 	useEffect(() => {
 		void (async () => await fetchHomeStatistics())();
