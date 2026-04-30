@@ -8,6 +8,7 @@
 - [ ] Better errors, one per use case instead of one per service
 - [ ] Make CLAUDE.md file
 - [ ] Let claude take a round for the front-end
+- [ ] Better repository error
 
 Documentation:
 - the application and presentation layer for my app is the same, called API
