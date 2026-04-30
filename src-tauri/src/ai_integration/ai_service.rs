@@ -536,8 +536,11 @@ pub mod tests {
             services::implementations::default_cell_creator::DefaultCellCreator,
         },
         file_system::{
-            file_system_service::FileSystemService,
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
+            services::{
+                implementations::default_item_creator::DefaultItemCreator,
+                item_creator::{FileCreator, FolderCreator},
+            },
             value_objects::file_system_item_name::FileSystemItemName,
         },
         infrastructure::repositories::{
@@ -576,7 +579,8 @@ pub mod tests {
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
         register_scope!(injector, dyn SettingsRepository, DiskSettingsRepository);
         register_scope!(injector, dyn CellCreator, DefaultCellCreator);
-        register_scope!(injector, FileSystemService);
+        register_scope!(injector, dyn FolderCreator, DefaultItemCreator);
+        register_scope!(injector, dyn FileCreator, DefaultItemCreator);
         register_scope!(injector, AiService);
 
         injector
@@ -1035,7 +1039,7 @@ pub mod tests {
             .unwrap();
 
         let file_id = scope
-            .resolve::<FileSystemService>()
+            .resolve::<dyn FileCreator>()
             .await
             .create_file(
                 Some(ROOT_FOLDER_ID),

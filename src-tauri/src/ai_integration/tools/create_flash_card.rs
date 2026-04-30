@@ -254,8 +254,11 @@ pub mod accept_create_flash_card_test {
             },
         },
         file_system::{
-            file_system_service::FileSystemService,
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
+            services::{
+                implementations::default_item_creator::DefaultItemCreator,
+                item_creator::{FileCreator, FolderCreator},
+            },
             value_objects::file_system_item_name::FileSystemItemName,
         },
         infrastructure::repositories::sqlite::{
@@ -277,7 +280,8 @@ pub mod accept_create_flash_card_test {
         register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
-        register_scope!(injector, FileSystemService);
+        register_scope!(injector, dyn FolderCreator, DefaultItemCreator);
+        register_scope!(injector, dyn FileCreator, DefaultItemCreator);
 
         injector
     }
@@ -290,7 +294,7 @@ pub mod accept_create_flash_card_test {
         let scope = injector.start_scope();
 
         let file_id = scope
-            .resolve::<FileSystemService>()
+            .resolve::<dyn FileCreator>()
             .await
             .create_file(
                 Some(ROOT_FOLDER_ID),

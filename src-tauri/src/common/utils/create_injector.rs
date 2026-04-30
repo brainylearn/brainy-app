@@ -51,7 +51,18 @@ use crate::{
         implementations::default_cell_mover::DefaultCellMover,
         implementations::default_review_registrar::DefaultReviewRegistrar,
     },
-    file_system::file_system_service::FileSystemService,
+    file_system::services::{
+        implementations::{
+            default_item_creator::DefaultItemCreator, default_item_exporter::DefaultItemExporter,
+            default_item_importer::DefaultItemImporter, default_item_mover::DefaultItemMover,
+            default_item_renamer::DefaultItemRenamer,
+        },
+        item_creator::{FileCreator, FolderCreator},
+        item_exporter::ItemExporter,
+        item_importer::ItemImporter,
+        item_mover::{FileMover, FolderMover},
+        item_renamer::{FileRenamer, FolderRenamer},
+    },
     fsrs::fsrs_service::FsrsService,
     settings::settings_service::SettingsService,
     sync::sync_service::{SyncLock, SyncService},
@@ -123,9 +134,20 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     register_scope!(injector, dyn CellMover, DefaultCellMover);
     register_scope!(injector, dyn ReviewRegistrar, DefaultReviewRegistrar);
 
+    register_scope!(injector, dyn FolderCreator, DefaultItemCreator);
+    register_scope!(injector, dyn FileCreator, DefaultItemCreator);
+
+    register_scope!(injector, dyn ItemExporter, DefaultItemExporter);
+    register_scope!(injector, dyn ItemImporter, DefaultItemImporter);
+
+    register_scope!(injector, dyn FolderMover, DefaultItemMover);
+    register_scope!(injector, dyn FileMover, DefaultItemMover);
+
+    register_scope!(injector, dyn FolderRenamer, DefaultItemRenamer);
+    register_scope!(injector, dyn FileRenamer, DefaultItemRenamer);
+
     register_scope!(injector, AiService);
     register_scope!(injector, BackupService);
-    register_scope!(injector, FileSystemService);
     register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);
     register_scope!(injector, SettingsService);
