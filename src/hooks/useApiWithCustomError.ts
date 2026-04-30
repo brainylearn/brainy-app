@@ -1,8 +1,11 @@
 import { useCallback, useState } from "react";
-import useApi from "./useApi";
+import useApi, { CallApiFn } from "./useApi";
 
 /** A hook that lets you combine an error message with the useApi hook into
- * a single state so that you don't have to manage to error messages. */
+ * a single state so that you don't have to manage to error messages.
+ * Be aware that the custom error message is cleared whenever a call to the API
+ * is made.
+ */
 export default function useApiWithCustomError() {
 	const [customErrorMessage, setCustomErrorMessage] = useState<string | null>(
 		null,
@@ -12,19 +15,30 @@ export default function useApiWithCustomError() {
 		errorMessage: apiErrorMessage,
 		clearErrorMessage: clearApiErrorMessage,
 		callApi,
-	} = useApi({
-		onFinally: () => setCustomErrorMessage(null),
-	});
+	} = useApi();
 
 	const clearErrorMessage = useCallback(() => {
 		clearApiErrorMessage();
 		setCustomErrorMessage(null);
 	}, [clearApiErrorMessage]);
 
+	const customCallApi: CallApiFn = useCallback(
+		async (fetch, ...rest) => {
+			await callApi(
+				async () => {
+					setCustomErrorMessage(null);
+					return await fetch();
+				},
+				...rest,
+			);
+		},
+		[callApi],
+	);
+
 	return {
 		isSendingRequest,
 		errorMessage: apiErrorMessage ?? customErrorMessage,
-		callApi,
+		callApi: customCallApi,
 		clearErrorMessage,
 		setCustomErrorMessage,
 	};

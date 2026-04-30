@@ -11,7 +11,7 @@ import { Icon } from "@mdi/react";
 interface Props {
 	messages: Message[];
 	isSendingRequest: boolean;
-	errorMessage: string;
+	errorMessage: string | null;
 	selectedChatId: string | null;
 	onToolCallUpdate: () => Promise<void>;
 	onCloseError: () => void;

@@ -119,8 +119,8 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 			return;
 		}
 		setIsSendingRequest(true);
-		await callApi(async () => {
-			try {
+		await callApi(
+			async () => {
 				const card = recordLog[grade]?.card;
 				const newRepetition = createRepetitionFromCard(
 					card,
@@ -135,10 +135,12 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 					studyTime.current,
 				);
 				studyTime.current = 0;
-			} finally {
+			},
+			() => {
 				setIsSendingRequest(false);
-			}
-		});
+				return Promise.resolve();
+			},
+		);
 		setShowAnswer(false);
 
 		if (currentCellIndex + 1 === dueToday.length) {
