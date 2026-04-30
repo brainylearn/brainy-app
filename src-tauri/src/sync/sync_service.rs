@@ -14,9 +14,9 @@ use crate::{
         models::SyncEntityDto,
     },
     cells::{
-        cell_service::{CellService, CellServiceError},
         entities::{cell::Cell, repetition::Repetition, review::Review},
         repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
+        services::cell_invariants_enforcer::{CellInvariantsEnforcer, CellInvariantsEnforcerError},
     },
     common::{
         extensions::{
@@ -54,7 +54,7 @@ pub enum SyncError {
     #[error(transparent)]
     Client(#[from] BrainyBackendClientError),
     #[error(transparent)]
-    CellService(#[from] CellServiceError),
+    CellInvariantsEnforcer(#[from] CellInvariantsEnforcerError),
 }
 
 pub struct SyncLock(pub Mutex<()>);
@@ -69,7 +69,7 @@ pub struct SyncService {
     sync_repository: Arc<dyn SyncRepository>,
     local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
     fsrs_repository: Arc<dyn FsrsRepository>,
-    cell_service: Arc<CellService>,
+    cell_invariants_enforcer: Arc<dyn CellInvariantsEnforcer>,
     sync_lock: Arc<SyncLock>,
 }
 
@@ -256,7 +256,7 @@ impl SyncService {
                         entity.modified_date(),
                     )
                     .await?;
-                self.cell_service
+                self.cell_invariants_enforcer
                     .enforce_cell_invariants_on_cell(synced_entity.entity_id)
                     .await?;
                 result
@@ -546,7 +546,13 @@ mod tests {
         backend::{
             clients::brainy_backend_client::MockBrainyBackendClient, models::SyncedEntitiesPageDto,
         },
-        cells::entities::{cell::CellType, repetition::State, review::Rating},
+        cells::{
+            entities::{cell::CellType, repetition::State, review::Rating},
+            services::{
+                cell_invariants_enforcer::CellInvariantsEnforcer,
+                implementations::default_cell_invariants_enforcer::DefaultCellInvariantsEnforcer,
+            },
+        },
         common::extensions::{into_base64::IntoBase64, into_timestamp::IntoTimestamp},
         file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice,
         infrastructure::{
@@ -582,7 +588,11 @@ mod tests {
             SqliteLocalConfigurationRepository
         );
         register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
-        register_scope!(injector, CellService);
+        register_scope!(
+            injector,
+            dyn CellInvariantsEnforcer,
+            DefaultCellInvariantsEnforcer
+        );
         register_scope!(injector, SyncService);
         injector
     }

@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use crate::{
     cells::{
-        cell_service::CellService, entities::review::Rating,
-        models::home_statistics::HomeStatistics, repositories::cell_repository::CellRepository,
+        entities::review::Rating, models::home_statistics::HomeStatistics,
+        repositories::cell_repository::CellRepository, services::review_registrar::ReviewRegistrar,
         value_objects::repetition_update::RepetitionUpdate,
     },
     common::api_error::ApiError,
@@ -34,7 +34,7 @@ pub async fn register_review(
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
-        .resolve::<CellService>()
+        .resolve::<dyn ReviewRegistrar>()
         .await
         .register_review(repetition_update, rating, study_time)
         .await?;

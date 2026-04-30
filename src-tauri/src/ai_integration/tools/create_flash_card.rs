@@ -15,8 +15,8 @@ use crate::{
         tools::{AcceptToolCall, AcceptToolCallError},
     },
     cells::{
-        cell_service::CellService, entities::cell::CellType, models::flash_card::FlashCard,
-        repositories::cell_repository::CellRepository,
+        entities::cell::CellType, models::flash_card::FlashCard,
+        repositories::cell_repository::CellRepository, services::cell_creator::CellCreator,
     },
     common::repository_error::RepositoryError,
 };
@@ -120,14 +120,17 @@ impl Tool for CreateFlashCard {
 
 pub struct AcceptCreateFlashCard {
     cell_repository: Arc<dyn CellRepository>,
-    cell_service: Arc<CellService>,
+    cell_creator: Arc<dyn CellCreator>,
 }
 
 impl AcceptCreateFlashCard {
-    pub fn new(cell_repository: Arc<dyn CellRepository>, cell_service: Arc<CellService>) -> Self {
+    pub fn new(
+        cell_repository: Arc<dyn CellRepository>,
+        cell_creator: Arc<dyn CellCreator>,
+    ) -> Self {
         Self {
             cell_repository,
-            cell_service,
+            cell_creator,
         }
     }
 }
@@ -165,7 +168,7 @@ impl AcceptToolCall for AcceptCreateFlashCard {
             flash_card
         );
 
-        self.cell_service
+        self.cell_creator
             .create_cell(file_id, flash_card, CellType::FlashCard, cell_index)
             .await?;
 
@@ -243,7 +246,13 @@ pub mod accept_create_flash_card_test {
 
     use crate::{
         ROOT_FOLDER_ID,
-        cells::repositories::review_repository::ReviewRepository,
+        cells::{
+            repositories::review_repository::ReviewRepository,
+            services::{
+                cell_creator::CellCreator,
+                implementations::default_cell_creator::DefaultCellCreator,
+            },
+        },
         file_system::{
             file_system_service::FileSystemService,
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
@@ -263,11 +272,11 @@ pub mod accept_create_flash_card_test {
     async fn initialize_test_injector() -> Injector {
         let mut injector = create_test_injector().await;
 
+        register_scope!(injector, dyn CellCreator, DefaultCellCreator);
         register_scope!(injector, dyn CellRepository, SqliteCellRepository);
         register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
-        register_scope!(injector, CellService);
         register_scope!(injector, FileSystemService);
 
         injector
@@ -290,12 +299,12 @@ pub mod accept_create_flash_card_test {
             .await
             .unwrap();
 
-        let cell_service = scope.resolve::<CellService>().await;
-        cell_service
+        let cell_creator = scope.resolve::<dyn CellCreator>().await;
+        cell_creator
             .create_cell(file_id, "".to_string(), CellType::Note, 0)
             .await
             .unwrap();
-        cell_service
+        cell_creator
             .create_cell(file_id, "".to_string(), CellType::Note, 1)
             .await
             .unwrap();
@@ -308,7 +317,7 @@ pub mod accept_create_flash_card_test {
         };
         let accept_create_flash_card = AcceptCreateFlashCard {
             cell_repository: cell_repository.clone(),
-            cell_service,
+            cell_creator,
         };
 
         // Act

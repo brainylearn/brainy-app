@@ -3,9 +3,9 @@ use std::sync::Arc;
 use crate::{
     Guid,
     cells::{
-        cell_service::CellService,
         entities::cell::{Cell, CellType},
         repositories::cell_repository::CellRepository,
+        services::{cell_creator::CellCreator, cell_deleter::CellDeleter, cell_mover::CellMover},
     },
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
@@ -46,7 +46,7 @@ pub async fn create_cell(
 ) -> Result<Guid, ApiError> {
     let scope = injector.start_scope();
     let id = scope
-        .resolve::<CellService>()
+        .resolve::<dyn CellCreator>()
         .await
         .create_cell(file_id, content, cell_type, index)
         .await?;
@@ -58,7 +58,7 @@ pub async fn create_cell(
 pub async fn delete_cell(injector: State<'_, Arc<Injector>>, id: Guid) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
-        .resolve::<CellService>()
+        .resolve::<dyn CellDeleter>()
         .await
         .delete_by_id(id)
         .await?;
@@ -74,7 +74,7 @@ pub async fn move_cell(
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
-        .resolve::<CellService>()
+        .resolve::<dyn CellMover>()
         .await
         .move_cell(id, new_index)
         .await?;

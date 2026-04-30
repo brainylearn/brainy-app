@@ -12,7 +12,7 @@ use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::file_system::value_objects::fsrs_profile_choice::FsrsProfileChoice;
 use crate::{
     Guid,
-    cells::cell_service::{CellService, CellServiceError},
+    cells::services::cell_creator::{CellCreator, CellCreatorError},
     common::repository_error::RepositoryError,
     file_system::{
         entities::{file::File, folder::Folder},
@@ -30,14 +30,14 @@ pub enum FileServiceError {
     #[error("Cannot move folder to a nested folder within the current folder")]
     CannotMoveChildIntoInnerFolder,
     #[error(transparent)]
-    CellService(#[from] CellServiceError),
+    CellCreator(#[from] CellCreatorError),
     #[error(transparent)]
     Repository(#[from] RepositoryError),
 }
 
 #[derive(ScopeInjectable)]
 pub struct FileSystemService {
-    cell_service: Arc<CellService>,
+    cell_creator: Arc<dyn CellCreator>,
     folder_repository: Arc<dyn FolderRepository>,
     file_repository: Arc<dyn FileRepository>,
     cell_repository: Arc<dyn CellRepository>,
@@ -316,7 +316,7 @@ impl FileSystemService {
                     .enumerate()
                 {
                     let purified_html = purify_html(&cell.content);
-                    self.cell_service
+                    self.cell_creator
                         .create_cell(file_id, purified_html, cell.cell_type, i as u32)
                         .await?;
                 }
@@ -354,7 +354,14 @@ pub mod tests {
     use super::*;
     use crate::{
         ROOT_FOLDER_ID,
-        cells::{entities::cell::CellType, repositories::review_repository::ReviewRepository},
+        cells::{
+            entities::cell::CellType,
+            repositories::review_repository::ReviewRepository,
+            services::{
+                cell_creator::CellCreator,
+                implementations::default_cell_creator::DefaultCellCreator,
+            },
+        },
         infrastructure::{
             extensions::unit_of_work::UnitOfWorkExt,
             repositories::sqlite::{
@@ -373,7 +380,7 @@ pub mod tests {
         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
         register_scope!(injector, dyn CellRepository, SqliteCellRepository);
         register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
-        register_scope!(injector, CellService);
+        register_scope!(injector, dyn CellCreator, DefaultCellCreator);
         register_scope!(injector, FileSystemService);
         injector
     }
@@ -1175,12 +1182,12 @@ pub mod tests {
             .unwrap();
 
         service
-            .cell_service
+            .cell_creator
             .create_cell(file_id, "note 1".to_string(), CellType::Note, 0)
             .await
             .unwrap();
         service
-            .cell_service
+            .cell_creator
             .create_cell(file_id, "note 2".to_string(), CellType::Note, 1)
             .await
             .unwrap();
@@ -1278,12 +1285,12 @@ pub mod tests {
             .unwrap();
 
         service
-            .cell_service
+            .cell_creator
             .create_cell(file_id, "note 1".to_string(), CellType::Note, 0)
             .await
             .unwrap();
         service
-            .cell_service
+            .cell_creator
             .create_cell(
                 file_id,
                 "content<script>alert('hello')</script><button onLoad='alert'>button</button>"

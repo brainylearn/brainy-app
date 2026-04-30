@@ -8,6 +8,9 @@ use crate::ai_integration::repositories::ai_repository::AiRepository;
 use crate::backend::auth_service::AuthService;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
+use crate::cells::services::cell_deleter::CellDeleter;
+use crate::cells::services::cell_mover::CellMover;
+use crate::cells::services::review_registrar::ReviewRegistrar;
 #[cfg(test)]
 use crate::common::utils::create_sqlite_pool::create_sqlite_pool;
 #[cfg(not(test))]
@@ -40,7 +43,14 @@ use crate::{
     ai_integration::{ai_service::AiService, ai_state::AiState},
     backend::clients::brainy_backend_client::BrainyBackendClient,
     backup::backup_service::BackupService,
-    cells::cell_service::CellService,
+    cells::services::{
+        cell_creator::CellCreator, cell_invariants_enforcer::CellInvariantsEnforcer,
+        implementations::default_cell_creator::DefaultCellCreator,
+        implementations::default_cell_deleter::DefaultCellDeleter,
+        implementations::default_cell_invariants_enforcer::DefaultCellInvariantsEnforcer,
+        implementations::default_cell_mover::DefaultCellMover,
+        implementations::default_review_registrar::DefaultReviewRegistrar,
+    },
     file_system::file_system_service::FileSystemService,
     fsrs::fsrs_service::FsrsService,
     settings::settings_service::SettingsService,
@@ -103,9 +113,18 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
         SqliteLocalConfigurationRepository
     );
 
+    register_scope!(injector, dyn CellCreator, DefaultCellCreator);
+    register_scope!(injector, dyn CellDeleter, DefaultCellDeleter);
+    register_scope!(
+        injector,
+        dyn CellInvariantsEnforcer,
+        DefaultCellInvariantsEnforcer
+    );
+    register_scope!(injector, dyn CellMover, DefaultCellMover);
+    register_scope!(injector, dyn ReviewRegistrar, DefaultReviewRegistrar);
+
     register_scope!(injector, AiService);
     register_scope!(injector, BackupService);
-    register_scope!(injector, CellService);
     register_scope!(injector, FileSystemService);
     register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);

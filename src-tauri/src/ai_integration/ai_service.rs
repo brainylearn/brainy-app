@@ -38,8 +38,8 @@ use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::create_flash_card::AcceptCreateFlashCard;
 use crate::ai_integration::tools::search_documents::SearchDocuments;
 use crate::ai_integration::tools::{AcceptToolCallError, AcceptToolCallFromJson};
-use crate::cells::cell_service::CellService;
 use crate::cells::repositories::cell_repository::CellRepository;
+use crate::cells::services::cell_creator::CellCreator;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 use crate::settings::repositories::settings_repository::{
     SettingsRepository, SettingsRepositoryError,
@@ -122,7 +122,7 @@ pub struct AiService {
     state: Arc<AiState>,
     ai_repository: Arc<dyn AiRepository>,
     cell_repository: Arc<dyn CellRepository>,
-    cell_service: Arc<CellService>,
+    cell_creator: Arc<dyn CellCreator>,
     #[cfg(test)]
     mock_client: Arc<MockClient>,
 }
@@ -303,7 +303,7 @@ impl AiService {
         if tool_call.name == CreateFlashCard::NAME {
             tool = Box::new(AcceptCreateFlashCard::new(
                 self.cell_repository.clone(),
-                self.cell_service.clone(),
+                self.cell_creator.clone(),
             ));
         } else {
             return Err(AiServiceError::UnknownToolName);
@@ -531,8 +531,9 @@ pub mod tests {
                 create_flash_card::CreateFlashcardArgs, search_documents::SearchDocumentsArgs,
             },
         },
-        cells::repositories::{
-            cell_repository::CellRepository, review_repository::ReviewRepository,
+        cells::{
+            repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
+            services::implementations::default_cell_creator::DefaultCellCreator,
         },
         file_system::{
             file_system_service::FileSystemService,
@@ -574,7 +575,7 @@ pub mod tests {
         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
         register_scope!(injector, dyn SettingsRepository, DiskSettingsRepository);
-        register_scope!(injector, CellService);
+        register_scope!(injector, dyn CellCreator, DefaultCellCreator);
         register_scope!(injector, FileSystemService);
         register_scope!(injector, AiService);
 
