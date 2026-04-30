@@ -63,7 +63,10 @@ use crate::{
         item_mover::{FileMover, FolderMover},
         item_renamer::{FileRenamer, FolderRenamer},
     },
-    fsrs::fsrs_service::FsrsService,
+    fsrs::services::{
+        fsrs_profile_deleter::FsrsProfileDeleter,
+        implementations::default_fsrs_profile_deleter::DefaultFsrsProfileDeleter,
+    },
     settings::settings_service::SettingsService,
     sync::sync_service::{SyncLock, SyncService},
 };
@@ -146,9 +149,10 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     register_scope!(injector, dyn FolderRenamer, DefaultItemRenamer);
     register_scope!(injector, dyn FileRenamer, DefaultItemRenamer);
 
+    register_scope!(injector, dyn FsrsProfileDeleter, DefaultFsrsProfileDeleter);
+
     register_scope!(injector, AiService);
     register_scope!(injector, BackupService);
-    register_scope!(injector, FsrsService);
     register_scope!(injector, SyncService);
     register_scope!(injector, SettingsService);
     register_scope!(injector, AuthService);

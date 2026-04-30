@@ -8,8 +8,8 @@ use crate::{
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
     },
     fsrs::{
-        entities::fsrs_profile::FsrsProfile, fsrs_service::FsrsService,
-        repositories::fsrs_repository::FsrsRepository,
+        entities::fsrs_profile::FsrsProfile, repositories::fsrs_repository::FsrsRepository,
+        services::fsrs_profile_deleter::FsrsProfileDeleter,
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
@@ -245,7 +245,7 @@ pub async fn delete_fsrs_profile(
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope
-        .resolve::<FsrsService>()
+        .resolve::<dyn FsrsProfileDeleter>()
         .await
         .delete_by_id(id)
         .await?;

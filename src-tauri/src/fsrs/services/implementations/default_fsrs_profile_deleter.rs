@@ -1,43 +1,35 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
-use thiserror::Error;
 
 use crate::{
     Guid, ROOT_FOLDER_ID,
-    common::repository_error::RepositoryError,
     file_system::{
         repositories::folder_repository::FolderRepository,
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
     },
-    fsrs::repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
+    fsrs::{
+        repositories::fsrs_repository::{DeleteFsrsRequest, FsrsRepository},
+        services::fsrs_profile_deleter::{FsrsProfileDeleter, FsrsProfileDeleterError},
+    },
 };
 
-#[derive(Error, Debug, PartialEq, Eq)]
-pub enum FsrsServiceError {
-    #[error(transparent)]
-    Repository(#[from] RepositoryError),
-
-    #[error(
-        "You cannot delete the last profile, please create another one before deleting the current one"
-    )]
-    CannotDeleteLastProfile,
-}
-
 #[derive(ScopeInjectable)]
-pub struct FsrsService {
+pub struct DefaultFsrsProfileDeleter {
     folder_repository: Arc<dyn FolderRepository>,
     fsrs_repository: Arc<dyn FsrsRepository>,
 }
 
-impl FsrsService {
-    pub async fn delete_by_id(&self, id: Guid) -> Result<(), FsrsServiceError> {
+#[async_trait]
+impl FsrsProfileDeleter for DefaultFsrsProfileDeleter {
+    async fn delete_by_id(&self, id: Guid) -> Result<(), FsrsProfileDeleterError> {
         let mut root = self.folder_repository.get_by_id(ROOT_FOLDER_ID).await?;
 
         let all_profiles = self.fsrs_repository.get_all_fsrs_profiles().await?;
 
         if all_profiles.len() == 1 {
-            return Err(FsrsServiceError::CannotDeleteLastProfile);
+            return Err(FsrsProfileDeleterError::CannotDeleteLastProfile);
         }
 
         if let FsrsProfileChoice::Id(root_profile_id) = root.fsrs_profile_choice()
@@ -61,9 +53,15 @@ pub mod tests {
     use chrono::Utc;
     use injector::{injector::Injector, register_scope};
 
+    use super::*;
     use crate::{
         DEFAULT_FSRS_PROFILE_ID,
-        fsrs::entities::fsrs_profile::FsrsProfile,
+        file_system::repositories::folder_repository::FolderRepository,
+        fsrs::{
+            entities::fsrs_profile::FsrsProfile,
+            repositories::fsrs_repository::FsrsRepository,
+            services::fsrs_profile_deleter::{FsrsProfileDeleter, FsrsProfileDeleterError},
+        },
         infrastructure::repositories::sqlite::{
             sqlite_folder_repository::SqliteFolderRepository,
             sqlite_fsrs_repository::SqliteFsrsRepository,
@@ -71,13 +69,11 @@ pub mod tests {
         test_utils::create_test_injector,
     };
 
-    use super::*;
-
     async fn initialize_test_injector() -> Injector {
         let mut injector = create_test_injector().await;
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
         register_scope!(injector, dyn FsrsRepository, SqliteFsrsRepository);
-        register_scope!(injector, FsrsService);
+        register_scope!(injector, DefaultFsrsProfileDeleter);
         injector
     }
 
@@ -87,7 +83,7 @@ pub mod tests {
 
         let injector = initialize_test_injector().await;
         let scope = injector.start_scope();
-        let service = scope.resolve::<FsrsService>().await;
+        let service = scope.resolve::<DefaultFsrsProfileDeleter>().await;
 
         // Act
 
@@ -95,7 +91,10 @@ pub mod tests {
 
         // Assert
 
-        assert_eq!(result, Err(FsrsServiceError::CannotDeleteLastProfile));
+        assert_eq!(
+            result,
+            Err(FsrsProfileDeleterError::CannotDeleteLastProfile)
+        );
     }
 
     #[tokio::test]
@@ -106,7 +105,7 @@ pub mod tests {
         let scope = injector.start_scope();
         let fsrs_repository = scope.resolve::<dyn FsrsRepository>().await;
         let folder_repository = scope.resolve::<dyn FolderRepository>().await;
-        let service = scope.resolve::<FsrsService>().await;
+        let service = scope.resolve::<DefaultFsrsProfileDeleter>().await;
 
         let profile = FsrsProfile::new_unchecked(
             Guid::new_v4(),
