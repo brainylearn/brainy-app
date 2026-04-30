@@ -1,38 +1,30 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
-use thiserror::Error;
 
 use crate::{
-    database::database_connection_manager::{
-        DatabaseConnectionManager, DatabaseConnectionManagerError,
-    },
+    database::database_connection_manager::DatabaseConnectionManager,
     settings::{
         dto::update_settings_request::UpdateSettingsRequest,
-        repositories::settings_repository::{SettingsRepository, SettingsRepositoryError},
+        repositories::settings_repository::SettingsRepository,
+        services::settings_updater::{SettingsUpdater, SettingsUpdaterError},
         value_objects::settings_profile::SettingsProfile,
     },
 };
 
-#[derive(Error, Debug, PartialEq, Eq)]
-pub enum SettingsServiceError {
-    #[error(transparent)]
-    SettingsRepository(#[from] SettingsRepositoryError),
-    #[error(transparent)]
-    DatabaseConnectionManager(#[from] DatabaseConnectionManagerError),
-}
-
 #[derive(ScopeInjectable)]
-pub struct SettingsService {
+pub struct DefaultSettingsUpdater {
     settings_repository: Arc<dyn SettingsRepository>,
     database_connection_manager: Arc<dyn DatabaseConnectionManager>,
 }
 
-impl SettingsService {
-    pub async fn update_settings(
+#[async_trait]
+impl SettingsUpdater for DefaultSettingsUpdater {
+    async fn update_settings(
         &self,
         new_settings: UpdateSettingsRequest,
-    ) -> Result<(), SettingsServiceError> {
+    ) -> Result<(), SettingsUpdaterError> {
         let mut settings = self.settings_repository.get_settings().await;
         let mut change_database_location = false;
 
@@ -84,10 +76,10 @@ impl SettingsService {
 
     /// Sets the profile for settings when the user is newly created, leading to
     /// database being moved to the new user location.
-    pub async fn set_profile_for_new_user(
+    async fn set_profile_for_new_user(
         &self,
         profile_name: String,
-    ) -> Result<(), SettingsServiceError> {
+    ) -> Result<(), SettingsUpdaterError> {
         let mut settings = self.settings_repository.get_settings().await;
         settings.profile = SettingsProfile::User(profile_name);
         self.database_connection_manager
@@ -110,7 +102,9 @@ mod tests {
         database::database_connection_manager::MockDatabaseConnectionManager,
         infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository,
         settings::{
-            entities::settings::Settings, value_objects::database_location::DatabaseLocation,
+            dto::update_settings_request::UpdateSettingsRequest, entities::settings::Settings,
+            services::settings_updater::SettingsUpdater,
+            value_objects::database_location::DatabaseLocation,
         },
         test_utils::create_test_injector,
     };
@@ -132,7 +126,7 @@ mod tests {
         ));
 
         register_scope!(injector, dyn SettingsRepository, DiskSettingsRepository);
-        register_scope!(injector, SettingsService);
+        register_scope!(injector, DefaultSettingsUpdater);
 
         injector
     }
@@ -156,7 +150,7 @@ mod tests {
 
         let injector = initialize_test_injector(database_connection_manager).await;
         let scope = injector.start_scope();
-        let service = scope.resolve::<SettingsService>().await;
+        let service = scope.resolve::<DefaultSettingsUpdater>().await;
 
         // Act & Assert
 
@@ -178,7 +172,7 @@ mod tests {
 
         let injector = initialize_test_injector(database_connection_manager).await;
         let scope = injector.start_scope();
-        let service = scope.resolve::<SettingsService>().await;
+        let service = scope.resolve::<DefaultSettingsUpdater>().await;
 
         // Act & Assert
 

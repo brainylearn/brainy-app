@@ -5,7 +5,7 @@ use crate::{
     settings::{
         dto::{settings_dto::SettingsDto, update_settings_request::UpdateSettingsRequest},
         repositories::settings_repository::SettingsRepository,
-        settings_service::SettingsService,
+        services::settings_updater::SettingsUpdater,
     },
 };
 use injector::injector::Injector;
@@ -25,7 +25,10 @@ pub async fn update_settings(
     new_settings: UpdateSettingsRequest,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
-    let settings_service = scope.resolve::<SettingsService>().await;
-    settings_service.update_settings(new_settings).await?;
+    scope
+        .resolve::<dyn SettingsUpdater>()
+        .await
+        .update_settings(new_settings)
+        .await?;
     Ok(())
 }

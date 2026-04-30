@@ -11,7 +11,7 @@ use crate::{
     },
     settings::{
         dto::update_settings_request::UpdateSettingsRequest,
-        settings_service::{SettingsService, SettingsServiceError},
+        services::settings_updater::{SettingsUpdater, SettingsUpdaterError},
         value_objects::settings_profile::SettingsProfile,
     },
 };
@@ -21,13 +21,13 @@ pub enum AuthServiceError {
     #[error(transparent)]
     BrainyBackendClient(#[from] BrainyBackendClientError),
     #[error(transparent)]
-    SettingsService(#[from] SettingsServiceError),
+    SettingsUpdater(#[from] SettingsUpdaterError),
 }
 
 #[derive(ScopeInjectable)]
 pub struct AuthService {
     backend_client: Arc<dyn BrainyBackendClient>,
-    settings_service: Arc<SettingsService>,
+    settings_updater: Arc<dyn SettingsUpdater>,
 }
 
 impl AuthService {
@@ -37,7 +37,7 @@ impl AuthService {
         password: String,
     ) -> Result<UserInformationDto, AuthServiceError> {
         let user_information = self.backend_client.sign_in(username, password).await?;
-        self.settings_service
+        self.settings_updater
             .update_settings(UpdateSettingsRequest {
                 profile: Some(SettingsProfile::User(user_information.username.clone())),
                 ..Default::default()
@@ -48,7 +48,7 @@ impl AuthService {
 
     pub async fn sign_out(&self) -> Result<(), AuthServiceError> {
         self.backend_client.sign_out().await?;
-        self.settings_service
+        self.settings_updater
             .update_settings(UpdateSettingsRequest {
                 profile: Some(SettingsProfile::Default),
                 ..Default::default()
@@ -62,7 +62,7 @@ impl AuthService {
         request: SignUpRequest,
     ) -> Result<UserInformationDto, AuthServiceError> {
         let user_information = self.backend_client.sign_up(request).await?;
-        self.settings_service
+        self.settings_updater
             .set_profile_for_new_user(user_information.username.clone())
             .await?;
         Ok(user_information)
