@@ -1,28 +1,21 @@
 use std::{collections::HashSet, sync::Arc};
 
+use async_trait::async_trait;
 use base64::{Engine as _, engine::general_purpose};
 use chrono::{DateTime, TimeZone, Utc};
 use injector_derive::ScopeInjectable;
 use prost::Message;
-use thiserror::Error;
-use tokio::sync::Mutex;
 
 use crate::{
     Guid,
-    backend::{
-        clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
-        models::SyncEntityDto,
-    },
+    backend::{clients::brainy_backend_client::BrainyBackendClient, models::SyncEntityDto},
     cells::{
         entities::{cell::Cell, repetition::Repetition, review::Review},
         repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
-        services::cell_invariants_enforcer::{CellInvariantsEnforcer, CellInvariantsEnforcerError},
+        services::cell_invariants_enforcer::CellInvariantsEnforcer,
     },
-    common::{
-        extensions::{
-            into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
-        },
-        repository_error::RepositoryError,
+    common::extensions::{
+        into_base64::IntoBase64, into_datetime::IntoDateTime, into_timestamp::IntoTimestamp,
     },
     file_system::{
         entities::{file::File, folder::Folder},
@@ -41,26 +34,14 @@ use crate::{
             synced_entity::{EntityType, SyncedEntity},
         },
         repositories::sync_repository::SyncRepository,
+        services::syncer::{SyncError, SyncLock, Syncer},
     },
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
 
-#[derive(Error, Debug, PartialEq, Eq)]
-#[allow(clippy::enum_variant_names)]
-pub enum SyncError {
-    #[error(transparent)]
-    Repository(#[from] RepositoryError),
-    #[error(transparent)]
-    Client(#[from] BrainyBackendClientError),
-    #[error(transparent)]
-    CellInvariantsEnforcer(#[from] CellInvariantsEnforcerError),
-}
-
-pub struct SyncLock(pub Mutex<()>);
-
 #[derive(ScopeInjectable)]
-pub struct SyncService {
+pub struct DefaultSyncer {
     backend_client: Arc<dyn BrainyBackendClient>,
     folder_repository: Arc<dyn FolderRepository>,
     file_repository: Arc<dyn FileRepository>,
@@ -73,10 +54,11 @@ pub struct SyncService {
     sync_lock: Arc<SyncLock>,
 }
 
-impl SyncService {
+#[async_trait]
+impl Syncer for DefaultSyncer {
     /// Gets the entities from the backend since last sync and uploads all changed
     /// entities that were not overwritten by the server during the pull phase.
-    pub async fn sync_with_backend(&self) -> Result<(), SyncError> {
+    async fn sync_with_backend(&self) -> Result<(), SyncError> {
         // Only allowing one sync at a time.
         let _guard = self.sync_lock.0.lock().await;
 
@@ -128,7 +110,9 @@ impl SyncService {
 
         Ok(())
     }
+}
 
+impl DefaultSyncer {
     /// Fetches and processes the next sync page.
     ///
     /// Returns `true` if there are more pages to process, `false` once the last
@@ -540,6 +524,7 @@ impl SyncService {
 mod tests {
     use chrono::Duration;
     use injector::{injector::Injector, register_scope};
+    use tokio::sync::Mutex;
 
     use crate::{
         DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
@@ -567,7 +552,10 @@ mod tests {
                 sqlite_sync_repository::SqliteSyncRepository,
             },
         },
-        sync::repositories::sync_repository::SyncRepository,
+        sync::{
+            repositories::sync_repository::SyncRepository,
+            services::syncer::{SyncLock, Syncer},
+        },
         test_utils::create_test_injector,
     };
 
@@ -593,7 +581,7 @@ mod tests {
             dyn CellInvariantsEnforcer,
             DefaultCellInvariantsEnforcer
         );
-        register_scope!(injector, SyncService);
+        register_scope!(injector, DefaultSyncer);
         injector
     }
 
@@ -720,7 +708,7 @@ mod tests {
         // Act
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -869,7 +857,7 @@ mod tests {
         // Act
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -952,7 +940,7 @@ mod tests {
         // Act
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -1077,7 +1065,7 @@ mod tests {
         // Act
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -1212,7 +1200,7 @@ mod tests {
         // Act
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -1267,7 +1255,7 @@ mod tests {
         // Act
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -1333,7 +1321,7 @@ mod tests {
         // Act & Assert
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -1393,7 +1381,7 @@ mod tests {
         // Act & Assert
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await
@@ -1457,7 +1445,7 @@ mod tests {
         // Act & Assert
 
         scope
-            .resolve::<SyncService>()
+            .resolve::<DefaultSyncer>()
             .await
             .sync_with_backend()
             .await

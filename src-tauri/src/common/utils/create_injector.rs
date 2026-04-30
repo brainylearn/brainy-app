@@ -71,7 +71,10 @@ use crate::{
         implementations::default_settings_updater::DefaultSettingsUpdater,
         settings_updater::SettingsUpdater,
     },
-    sync::sync_service::{SyncLock, SyncService},
+    sync::services::{
+        implementations::default_syncer::DefaultSyncer,
+        syncer::{SyncLock, Syncer},
+    },
 };
 
 pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
@@ -116,6 +119,8 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     injector.register_singleton(Arc::new(AiState::default()));
     injector.register_singleton(Arc::new(SyncLock(Mutex::new(()))));
 
+    // Repositories
+
     register_scope!(injector, dyn AiRepository, SqliteAiRepository);
     register_scope!(injector, dyn CellRepository, SqliteCellRepository);
     register_scope!(injector, dyn FileRepository, SqliteFileRepository);
@@ -130,6 +135,8 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
         SqliteLocalConfigurationRepository
     );
 
+    // Cell services
+
     register_scope!(injector, dyn CellCreator, DefaultCellCreator);
     register_scope!(injector, dyn CellDeleter, DefaultCellDeleter);
     register_scope!(
@@ -139,6 +146,8 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     );
     register_scope!(injector, dyn CellMover, DefaultCellMover);
     register_scope!(injector, dyn ReviewRegistrar, DefaultReviewRegistrar);
+
+    // File system services
 
     register_scope!(injector, dyn FolderCreator, DefaultItemCreator);
     register_scope!(injector, dyn FileCreator, DefaultItemCreator);
@@ -152,13 +161,20 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     register_scope!(injector, dyn FolderRenamer, DefaultItemRenamer);
     register_scope!(injector, dyn FileRenamer, DefaultItemRenamer);
 
+    // FSRS services
+
     register_scope!(injector, dyn FsrsProfileDeleter, DefaultFsrsProfileDeleter);
+
+    // Settings services
 
     register_scope!(injector, dyn SettingsUpdater, DefaultSettingsUpdater);
 
+    // Syncer services
+
+    register_scope!(injector, dyn Syncer, DefaultSyncer);
+
     register_scope!(injector, AiService);
     register_scope!(injector, BackupService);
-    register_scope!(injector, SyncService);
     register_scope!(injector, AuthService);
 
     register_scope!(
