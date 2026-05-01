@@ -7,7 +7,9 @@ use tokio::sync::Mutex;
 use crate::ai_integration::repositories::ai_repository::AiRepository;
 use crate::ai_integration::services::ai_client_provider::AiClientProvider;
 use crate::ai_integration::services::implementations::default_ai_client_provider::DefaultAiClientProvider;
-use crate::backend::auth_service::AuthService;
+use crate::backend::services::{
+    authenticator::Authenticator, implementations::default_authenticator::DefaultAuthenticator,
+};
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
 use crate::cells::services::cell_deleter::CellDeleter;
@@ -203,7 +205,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     // Auth services
 
-    register_scope!(injector, AuthService);
+    register_scope!(injector, dyn Authenticator, DefaultAuthenticator);
 
     register_scope!(
         injector,

@@ -1,41 +1,35 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use injector_derive::ScopeInjectable;
-use thiserror::Error;
 
 use crate::{
     backend::{
-        clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+        clients::brainy_backend_client::BrainyBackendClient,
         dto::sign_up_request::SignUpRequest,
         models::UserInformationDto,
+        services::authenticator::{Authenticator, AuthenticatorError},
     },
     settings::{
         dto::update_settings_request::UpdateSettingsRequest,
-        services::settings_updater::{SettingsUpdater, SettingsUpdaterError},
+        services::settings_updater::SettingsUpdater,
         value_objects::settings_profile::SettingsProfile,
     },
 };
 
-#[derive(Error, Debug, PartialEq, Eq)]
-pub enum AuthServiceError {
-    #[error(transparent)]
-    BrainyBackendClient(#[from] BrainyBackendClientError),
-    #[error(transparent)]
-    SettingsUpdater(#[from] SettingsUpdaterError),
-}
-
 #[derive(ScopeInjectable)]
-pub struct AuthService {
+pub struct DefaultAuthenticator {
     backend_client: Arc<dyn BrainyBackendClient>,
     settings_updater: Arc<dyn SettingsUpdater>,
 }
 
-impl AuthService {
-    pub async fn sign_in(
+#[async_trait]
+impl Authenticator for DefaultAuthenticator {
+    async fn sign_in(
         &self,
         username: String,
         password: String,
-    ) -> Result<UserInformationDto, AuthServiceError> {
+    ) -> Result<UserInformationDto, AuthenticatorError> {
         let user_information = self.backend_client.sign_in(username, password).await?;
         self.settings_updater
             .update_settings(UpdateSettingsRequest {
@@ -46,7 +40,7 @@ impl AuthService {
         Ok(user_information)
     }
 
-    pub async fn sign_out(&self) -> Result<(), AuthServiceError> {
+    async fn sign_out(&self) -> Result<(), AuthenticatorError> {
         self.backend_client.sign_out().await?;
         self.settings_updater
             .update_settings(UpdateSettingsRequest {
@@ -57,10 +51,10 @@ impl AuthService {
         Ok(())
     }
 
-    pub async fn sign_up(
+    async fn sign_up(
         &self,
         request: SignUpRequest,
-    ) -> Result<UserInformationDto, AuthServiceError> {
+    ) -> Result<UserInformationDto, AuthenticatorError> {
         let user_information = self.backend_client.sign_up(request).await?;
         self.settings_updater
             .set_profile_for_new_user(user_information.username.clone())
