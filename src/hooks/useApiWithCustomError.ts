@@ -23,11 +23,11 @@ export default function useApiWithCustomError() {
 	}, [clearApiErrorMessage]);
 
 	const customCallApi: CallApiFn = useCallback(
-		async (fetch, ...rest) => {
+		async (cb, ...rest) => {
 			await callApi(
 				async () => {
 					setCustomErrorMessage(null);
-					return await fetch();
+					return await cb();
 				},
 				...rest,
 			);

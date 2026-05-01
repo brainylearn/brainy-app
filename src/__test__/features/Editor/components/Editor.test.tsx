@@ -8,6 +8,7 @@ import { getStudyRepetitionCounts } from "../../../../api/repetitionApi";
 import { getFileCellsOrderedByIndex } from "../../../../api/cellApi";
 import Cell from "../../../../types/backend/entity/cell";
 import createDefaultCell from "../../../../features/EditableCells/utils/createDefaultCell";
+import callApiMock from "../../../test-utils/callApiMock";
 
 vi.mock(import("../../../../features/EditableCells/components/EditableCells"));
 vi.mock(import("../../../../api/repetitionApi"));
@@ -29,7 +30,7 @@ describe("TitleBar", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={vi.fn()}
 			/>,
 		);
@@ -53,7 +54,7 @@ describe("TitleBar", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={vi.fn()}
 			/>,
 		);
@@ -76,7 +77,7 @@ describe("TitleBar", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={vi.fn()}
 			/>,
 		);
@@ -106,7 +107,7 @@ describe("TitleBar", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={vi.fn()}
 			/>,
 		);
@@ -145,7 +146,7 @@ describe("Editor", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={onStudyStart}
 			/>,
 		);
@@ -176,7 +177,7 @@ describe("Editor", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={vi.fn()}
 			/>,
 		);
@@ -214,7 +215,7 @@ describe("Editor", () => {
 		renderWithProviders(
 			<Editor
 				initialSelectedCellId={null}
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onStudyStart={vi.fn()}
 			/>,
 		);

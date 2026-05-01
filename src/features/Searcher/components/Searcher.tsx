@@ -1,7 +1,7 @@
 import { mdiMagnify } from "@mdi/js";
 import InputWithIcon from "../../../components/InputWithIcon/InputWithIcon";
 import styles from "./styles.module.css";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import EditableCells from "../../EditableCells/components/EditableCells";
 import { searchCells } from "../../../api/searchApi";
@@ -36,8 +36,11 @@ function Searcher({ callApi, onEditButtonClick }: Props) {
 	if (previousSearchParamsSearchText !== searchParamsSearchText) {
 		setPreviousSearchParamsSearchText(searchParamsSearchText);
 		setSearchText(searchParamsSearchText);
-		void retrieveSearchResult();
 	}
+
+	useEffect(() => {
+		void retrieveSearchResult();
+	}, [searchParamsSearchText, retrieveSearchResult]);
 
 	useGlobalKey(e => {
 		if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "f") {
@@ -50,6 +53,7 @@ function Searcher({ callApi, onEditButtonClick }: Props) {
 		e.preventDefault();
 		searchParams.set(searchTextQueryParameter, searchText);
 		setSearchParams(searchParams);
+		// Retrieving the results happens during re-render useEffect.
 	};
 
 	return (

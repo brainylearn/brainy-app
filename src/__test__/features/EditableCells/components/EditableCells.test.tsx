@@ -27,6 +27,7 @@ import DraggedCellData, {
 } from "../../../../features/EditableCells/types/draggedCellData.ts";
 import { DragDropEventHandlers } from "@dnd-kit/react";
 import { Feedback } from "@dnd-kit/dom";
+import callApiMock from "../../../test-utils/callApiMock.ts";
 
 vi.mock(import("../../../../managers/closeRequestedEventManager"));
 vi.mock(import("../../../../api/cellApi"));
@@ -76,7 +77,7 @@ function renderEditableCells({
 		return (
 			<EditableCells
 				fileMode="single"
-				onError={vi.fn()}
+				callApi={callApiMock}
 				onCellsUpdateSave={() => {
 					if (onCellsUpdateSave) {
 						setCells(onCellsUpdateSave());
@@ -502,7 +503,7 @@ describe("Scrolling", () => {
 					/>
 					<EditableCells
 						fileMode="single"
-						onError={vi.fn()}
+						callApi={callApiMock}
 						onCellsUpdateSave={vi.fn()}
 						cells={cells}
 						searchText={searchText}

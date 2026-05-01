@@ -10,6 +10,7 @@ import {
 	ListenerType,
 } from "../../../../stores/sync/managers/syncEventManager";
 import * as cellApi from "../../../../api/cellApi";
+import callApiMock from "../../../test-utils/callApiMock.ts";
 
 const cellId = "1";
 
@@ -27,9 +28,7 @@ const renderAutoSave = () => {
 		useAutoSave({
 			cells: [cell],
 			onCellsUpdateSave: onCellsUpdateSaveCb,
-			onError: () => {
-				/* Empty */
-			},
+			callApi: callApiMock,
 		}),
 	);
 
