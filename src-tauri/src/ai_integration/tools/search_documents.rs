@@ -110,7 +110,7 @@ pub mod tests {
     use tokio_rusqlite::{Connection, ffi::sqlite3_auto_extension};
 
     use crate::ai_integration::{
-        ai_service::EMBEDDINGS_DIMENSIONS, clients::mock_client::MockClient,
+        clients::mock_client::MockClient, services::EMBEDDINGS_DIMENSIONS,
     };
 
     use super::*;

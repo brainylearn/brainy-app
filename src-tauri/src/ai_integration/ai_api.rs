@@ -1,15 +1,20 @@
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::{
     Guid,
     ai_integration::{
-        ai_service::{AiService, StreamLlmResponseEvent},
         ai_state::AiState,
         entities::{
             chat::Chat,
             message::{Message, MessageContent, ToolCallStatus},
         },
         repositories::ai_repository::AiRepository,
+        services::{
+            ai_streamer::{AiStreamer, StreamLlmResponseEvent},
+            ai_tool_call_acceptor::AiToolCallAcceptor,
+            document_uploader::DocumentUploader,
+        },
         stream_ai_request::StreamAiRequest,
     },
     common::api_error::ApiError,
@@ -27,13 +32,13 @@ pub async fn stream_ai_response(
     let scope = injector.start_scope();
 
     let result = scope
-        .resolve::<AiService>()
+        .resolve::<dyn AiStreamer>()
         .await
         .stream(
             request,
-            Arc::new(move |event| match on_event.send(event) {
-                Ok(_) => Ok(()),
-                Err(err) => Err(err.to_string()),
+            Arc::new(move |event| {
+                on_event.send(event)?;
+                Ok(())
             }),
         )
         .await;
@@ -72,8 +77,11 @@ pub async fn accept_tool_call(
     message_id: Guid,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
-    let service = scope.resolve::<AiService>().await;
-    service.accept_tool_call(message_id).await?;
+    scope
+        .resolve::<dyn AiToolCallAcceptor>()
+        .await
+        .accept_tool_call(message_id)
+        .await?;
     scope.save_changes().await?;
     Ok(())
 }
@@ -147,8 +155,11 @@ pub async fn upload_document(
     chat_id: Guid,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
-    let service = scope.resolve::<AiService>().await;
-    service.upload_document(path, chat_id).await?;
+    scope
+        .resolve::<dyn DocumentUploader>()
+        .await
+        .upload_document(PathBuf::from(path), chat_id)
+        .await?;
     scope.save_changes().await?;
     Ok(())
 }

@@ -10,8 +10,8 @@ use tokio::sync::Mutex;
 use crate::{
     Guid,
     ai_integration::{
-        ai_service::{OnEventCallback, StreamLlmResponseEvent},
         entities::message::{Message, MessageContent, ToolCallContent, ToolCallStatus},
+        services::ai_streamer::{OnEventCallback, OnEventCallbackError, StreamLlmResponseEvent},
         tools::{AcceptToolCall, AcceptToolCallError},
     },
     cells::{
@@ -37,8 +37,8 @@ pub enum CreateFlashCardError {
     Serde(#[from] serde_json::Error),
     #[error(transparent)]
     Repository(#[from] RepositoryError),
-    #[error("{0}")]
-    OnEvent(String),
+    #[error(transparent)]
+    OnEventCallback(#[from] OnEventCallbackError),
 }
 
 pub struct CreateFlashCard {
@@ -107,10 +107,8 @@ impl Tool for CreateFlashCard {
             }),
         );
 
-        if let Some(on_event) = self.on_event.as_ref()
-            && let Err(err) = on_event(StreamLlmResponseEvent::ToolCalled(message.clone()))
-        {
-            return Err(CreateFlashCardError::OnEvent(err));
+        if let Some(on_event) = self.on_event.as_ref() {
+            on_event(StreamLlmResponseEvent::ToolCalled(message.clone()))?;
         }
 
         messages_to_upsert.push(message);

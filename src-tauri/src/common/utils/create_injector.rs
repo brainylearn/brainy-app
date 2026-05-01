@@ -5,6 +5,8 @@ use tauri::Url;
 use tokio::sync::Mutex;
 
 use crate::ai_integration::repositories::ai_repository::AiRepository;
+use crate::ai_integration::services::ai_client_provider::AiClientProvider;
+use crate::ai_integration::services::implementations::default_ai_client_provider::DefaultAiClientProvider;
 use crate::backend::auth_service::AuthService;
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
@@ -40,7 +42,19 @@ use crate::settings::repositories::settings_repository::SettingsRepository;
 use crate::settings::value_objects::settings_profile::SettingsProfile;
 use crate::sync::repositories::sync_repository::SyncRepository;
 use crate::{
-    ai_integration::{ai_service::AiService, ai_state::AiState},
+    ai_integration::{
+        ai_state::AiState,
+        services::{
+            ai_streamer::AiStreamer,
+            ai_tool_call_acceptor::AiToolCallAcceptor,
+            document_uploader::DocumentUploader,
+            implementations::{
+                default_ai_streamer::DefaultAiStreamer,
+                default_ai_tool_call_acceptor::DefaultAiToolCallAcceptor,
+                default_document_uploader::DefaultDocumentUploader,
+            },
+        },
+    },
     backend::clients::brainy_backend_client::BrainyBackendClient,
     backup::services::{
         backup_service::BackupService,
@@ -180,7 +194,15 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     register_scope!(injector, dyn BackupService, DefaultBackupService);
 
-    register_scope!(injector, AiService);
+    // AI services
+
+    register_scope!(injector, dyn AiClientProvider, DefaultAiClientProvider);
+    register_scope!(injector, dyn AiStreamer, DefaultAiStreamer);
+    register_scope!(injector, dyn AiToolCallAcceptor, DefaultAiToolCallAcceptor);
+    register_scope!(injector, dyn DocumentUploader, DefaultDocumentUploader);
+
+    // Auth services
+
     register_scope!(injector, AuthService);
 
     register_scope!(
