@@ -42,7 +42,10 @@ use crate::sync::repositories::sync_repository::SyncRepository;
 use crate::{
     ai_integration::{ai_service::AiService, ai_state::AiState},
     backend::clients::brainy_backend_client::BrainyBackendClient,
-    backup::backup_service::BackupService,
+    backup::services::{
+        backup_service::BackupService,
+        implementations::default_backup_service::DefaultBackupService,
+    },
     cells::services::{
         cell_creator::CellCreator, cell_invariants_enforcer::CellInvariantsEnforcer,
         implementations::default_cell_creator::DefaultCellCreator,
@@ -173,8 +176,11 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     register_scope!(injector, dyn Syncer, DefaultSyncer);
 
+    // Backup services
+
+    register_scope!(injector, dyn BackupService, DefaultBackupService);
+
     register_scope!(injector, AiService);
-    register_scope!(injector, BackupService);
     register_scope!(injector, AuthService);
 
     register_scope!(

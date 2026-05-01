@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
 use injector_derive::ScopeInjectable;
-use thiserror::Error;
 use tokio::fs;
 
 use crate::{
-    common::repository_error::RepositoryError,
-    database::database_connection_manager::{
-        DatabaseConnectionManager, DatabaseConnectionManagerError,
+    backup::services::backup_service::{
+        BackupService, BackupServiceError, TIME_BETWEEN_BACKUPS_IN_MINUTES,
     },
+    database::database_connection_manager::DatabaseConnectionManager,
     local_configurations::{
         entities::local_configuration::LocalConfiguration,
         repositories::local_configuration_repository::LocalConfigurationRepository,
@@ -17,34 +17,20 @@ use crate::{
     settings::repositories::settings_repository::SettingsRepository,
 };
 
-#[derive(Error, Debug, PartialEq, Eq)]
-pub enum BackupServiceError {
-    #[error(transparent)]
-    Repository(#[from] RepositoryError),
-    #[error(transparent)]
-    DatabaseConnectionManager(#[from] DatabaseConnectionManagerError),
-    #[error("The application is not able to list the entries in the settings folder!")]
-    CannotListEntriesInFolder(String),
-}
-
-pub const TIME_BETWEEN_BACKUPS_IN_MINUTES: u64 = 120;
 const LAST_BACKUP_DATE_CONFIGURATION_NAME: &str = "LAST_BACKUP_DATE";
 const MAX_NUMBER_OF_BACKUPS: usize = 8;
 const DATETIME_FORMAT_IN_FILE_NAMES: &str = "%Y_%m_%d_%H_%M_%S";
 
 #[derive(ScopeInjectable)]
-pub struct BackupService {
+pub struct DefaultBackupService {
     local_configuration_repository: Arc<dyn LocalConfigurationRepository>,
     database_connection_manager: Arc<dyn DatabaseConnectionManager>,
     settings_repository: Arc<dyn SettingsRepository>,
 }
 
-impl BackupService {
-    /// This methods checks if the minimum time between backups have passed, and
-    /// if so, it creates a new backup and saves it in the same directory as
-    /// the settings. If the total number of backups exceeds [`MAX_NUMBER_OF_BACKUPS`]
-    /// then it deletes the oldest backup.
-    pub async fn ensure_backup(&self) -> Result<(), BackupServiceError> {
+#[async_trait]
+impl BackupService for DefaultBackupService {
+    async fn ensure_backup(&self) -> Result<(), BackupServiceError> {
         let last_backup_date = self.get_last_backup_date().await?;
 
         if Utc::now() - last_backup_date < Duration::minutes(TIME_BETWEEN_BACKUPS_IN_MINUTES as i64)
@@ -58,7 +44,9 @@ impl BackupService {
 
         Ok(())
     }
+}
 
+impl DefaultBackupService {
     async fn get_last_backup_date(&self) -> Result<DateTime<Utc>, BackupServiceError> {
         let last_backup_date = self
             .local_configuration_repository
@@ -221,7 +209,8 @@ pub mod tests {
             dyn DatabaseConnectionManager,
             SqliteDatabaseConnectionManager
         );
-        register_scope!(injector, BackupService);
+        register_scope!(injector, dyn BackupService, DefaultBackupService);
+        register_scope!(injector, DefaultBackupService);
 
         injector
     }
@@ -234,7 +223,7 @@ pub mod tests {
         let scope = injector.start_scope();
         let local_configuration_repository =
             scope.resolve::<dyn LocalConfigurationRepository>().await;
-        let service = scope.resolve::<BackupService>().await;
+        let service = scope.resolve::<DefaultBackupService>().await;
 
         // Inserting a random row in the database to see if it exists in the new backup.
         local_configuration_repository
@@ -279,7 +268,7 @@ pub mod tests {
         let scope = injector.start_scope();
         let local_configuration_repository =
             scope.resolve::<dyn LocalConfigurationRepository>().await;
-        let service = scope.resolve::<BackupService>().await;
+        let service = scope.resolve::<DefaultBackupService>().await;
 
         // Act
 
@@ -316,7 +305,7 @@ pub mod tests {
         let database_connection_manager = scope.resolve::<dyn DatabaseConnectionManager>().await;
         let settings_repository = scope.resolve::<dyn SettingsRepository>().await;
         let settings = settings_repository.get_settings().await;
-        let service = scope.resolve::<BackupService>().await;
+        let service = scope.resolve::<DefaultBackupService>().await;
 
         let mut oldest_backup_path = None;
 
@@ -356,7 +345,7 @@ pub mod tests {
         let database_connection_manager = scope.resolve::<dyn DatabaseConnectionManager>().await;
         let settings_repository = scope.resolve::<dyn SettingsRepository>().await;
         let settings = settings_repository.get_settings().await;
-        let service = scope.resolve::<BackupService>().await;
+        let service = scope.resolve::<DefaultBackupService>().await;
 
         let mut oldest_backup_path = None;
 

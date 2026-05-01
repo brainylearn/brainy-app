@@ -37,7 +37,7 @@ pub use file_system::api::export_import_api::*;
 use tauri_plugin_window_state::StateFlags;
 use tokio::runtime::Handle;
 
-use crate::backup::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
+use crate::backup::services::backup_service::{BackupService, TIME_BETWEEN_BACKUPS_IN_MINUTES};
 use crate::common::utils::create_injector::create_injector;
 use crate::infrastructure::value_objects::app_data_directory::AppDataDirectory;
 
@@ -115,7 +115,12 @@ pub async fn run() -> Result<(), String> {
                     interval.tick().await;
                     let scope = injector.start_scope();
 
-                    if let Err(err) = scope.resolve::<BackupService>().await.ensure_backup().await {
+                    if let Err(err) = scope
+                        .resolve::<dyn BackupService>()
+                        .await
+                        .ensure_backup()
+                        .await
+                    {
                         log::error!("An error happened when creating a backup {:?}", err);
                     }
                 }
