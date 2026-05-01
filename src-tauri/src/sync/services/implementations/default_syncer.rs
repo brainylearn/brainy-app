@@ -2,7 +2,7 @@ use std::{collections::HashSet, sync::Arc};
 
 use async_trait::async_trait;
 use base64::{Engine as _, engine::general_purpose};
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, TimeZone, Utc};
 use injector_derive::ScopeInjectable;
 use prost::Message;
 
@@ -39,6 +39,7 @@ use crate::{
 };
 
 const LAST_SYNC_DATE_CONFIGURATION_NAME: &str = "LAST_SYNC_DATE";
+const STALE_SYNC_THRESHOLD_DAYS: i64 = 183;
 
 #[derive(ScopeInjectable)]
 pub struct DefaultSyncer {
@@ -73,7 +74,9 @@ impl Syncer for DefaultSyncer {
                     .unwrap()
                     .with_timezone(&Utc)
             })
-            .unwrap_or(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap());
+            // Discard stale sync dates so we re-pull data purged from the local DB.
+            .filter(|date| Utc::now() - *date <= Duration::days(STALE_SYNC_THRESHOLD_DAYS))
+            .unwrap_or(Utc.with_ymd_and_hms(2001, 1, 1, 0, 0, 0).unwrap());
 
         let mut sync_page = 0;
         // Tracks entities whose local state was overwritten by the server during the
@@ -1377,6 +1380,95 @@ mod tests {
             .await
             .unwrap();
         scope.save_changes().await.unwrap();
+
+        // Act & Assert
+
+        scope
+            .resolve::<DefaultSyncer>()
+            .await
+            .sync_with_backend()
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    pub async fn sync_with_backend_last_sync_date_stale_used_initial_date() {
+        // Arrange
+
+        let mut backend_client = MockBrainyBackendClient::new();
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .withf(|date, _| {
+                (*date - Utc.with_ymd_and_hms(2001, 1, 1, 0, 0, 0).unwrap()).abs()
+                    <= Duration::seconds(1)
+            })
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: Vec::new(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let injector = initialize_test_injector(backend_client).await;
+        let scope = injector.start_scope();
+
+        scope
+            .resolve::<dyn LocalConfigurationRepository>()
+            .await
+            .upsert(&LocalConfiguration {
+                name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
+                value: (Utc::now() - Duration::days(200)).to_rfc3339(),
+            })
+            .await
+            .unwrap();
+
+        // Act & Assert
+
+        scope
+            .resolve::<DefaultSyncer>()
+            .await
+            .sync_with_backend()
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    pub async fn sync_with_backend_last_sync_date_recent_used_stored_date() {
+        // Arrange
+
+        let stored_sync_date = Utc::now() - Duration::days(30);
+
+        let mut backend_client = MockBrainyBackendClient::new();
+        backend_client
+            .expect_get_synced_entities_after_ordered_by_created_date()
+            .withf(move |date, _| (*date - stored_sync_date).abs() <= Duration::seconds(1))
+            .returning(move |_, _| {
+                Ok(SyncedEntitiesPageDto {
+                    synced_entities: Vec::new(),
+                    has_more: false,
+                })
+            });
+
+        backend_client
+            .expect_send_synced_entities()
+            .returning(move |_| Ok(()));
+
+        let injector = initialize_test_injector(backend_client).await;
+        let scope = injector.start_scope();
+
+        scope
+            .resolve::<dyn LocalConfigurationRepository>()
+            .await
+            .upsert(&LocalConfiguration {
+                name: LAST_SYNC_DATE_CONFIGURATION_NAME.to_string(),
+                value: stored_sync_date.to_rfc3339(),
+            })
+            .await
+            .unwrap();
 
         // Act & Assert
 
