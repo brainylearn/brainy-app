@@ -511,12 +511,14 @@ impl DefaultSyncer {
 
         synced_entities.retain(|entity| !excluded_entities.contains(&entity.entity_id));
 
-        if !synced_entities.is_empty() {
-            log::info!("Sending to backend {} entities", synced_entities.len());
+        if synced_entities.is_empty() {
+            return Ok(());
+        }
 
-            self.backend_client
-                .send_synced_entities(&synced_entities)
-                .await?;
+        log::info!("Sending to backend {} entities", synced_entities.len());
+
+        for batch in synced_entities.chunks(50) {
+            self.backend_client.send_synced_entities(batch).await?;
         }
 
         Ok(())
