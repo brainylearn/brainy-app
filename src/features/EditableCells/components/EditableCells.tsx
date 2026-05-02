@@ -128,11 +128,13 @@ function EditableCells({
 	}, [searchText, scrollToCurrentCell]);
 
 	useEffect(() => {
-		const cb = async () => {
-			if (!containerRef.current) return;
-			containerScrollTopBeforeSync.current =
-				containerRef.current.scrollTop;
-			await Promise.resolve();
+		const cb = () => {
+			if (containerRef.current) {
+				containerScrollTopBeforeSync.current =
+					containerRef.current.scrollTop;
+			}
+
+			return Promise.resolve();
 		};
 		defaultGlobalSyncEventManager.addListener(
 			ListenerType.PreSyncStart,

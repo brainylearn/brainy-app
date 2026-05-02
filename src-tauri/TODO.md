@@ -12,16 +12,6 @@
 - [ ] Better repository error
 - [X] Update dependencies
 
-## Front-end Medium
-
-- [ ] **Pointless `await Promise.resolve()` in event callbacks** — `src/features/EditableCells/components/EditableCells.tsx:135,153` and `src/features/SideBar/components/SyncRow.tsx:35,58`: callbacks are marked `async` and await a no-op; remove `async`/`await` or add actual async work
-- [ ] **`getReviewTreeFolderForRoot` does nothing** — `src/stores/fileSystem/fileSystemActions.ts:21-22`: action body is `() => Promise.resolve()` so it always refetches unconditionally; implement real logic or remove the callback indirection
-- [ ] **Reviewer bounds check missing** — `src/features/Reviewer/components/Reviewer.tsx:100-106`: `dueToday[currentCellIndex]` is accessed without a bounds check; if `currentCellIndex` is stale after cards are rated, this is `undefined`
-- [ ] **Non-null assertions on Redux state in Settings** — e.g. `src/features/Settings/components/Settings.tsx:96-97`: `state.userInformation!` will throw if the user slice hasn't loaded yet; use optional chaining or a loading guard
-- [ ] **No error boundaries** — a single component throw crashes the entire app; add error boundaries at the route level and around major feature areas (Editor, Reviewer, Sync)
-- [ ] **Selectors not memoized** — most selectors in `src/stores/` are plain arrow functions; only `selectFileById` uses `createSelector`; add memoization to selectors that derive non-primitive values to avoid unnecessary re-renders
-- [ ] **`void (async () => await fn())()` IIFE pattern** — `src/features/Home/components/Home.tsx:37-39` and elsewhere: replace with `void fn()` or a `useEffect`; the IIFE wrapper adds noise without benefit
-
 Documentation:
 - the application and presentation layer for my app is the same, called API
 - It is okay not to use a dto and return an entity directly, dtos are just for special cases
