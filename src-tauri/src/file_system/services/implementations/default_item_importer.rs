@@ -9,11 +9,11 @@ use crate::{
     Guid,
     cells::services::cell_creator::CellCreator,
     file_system::{
-        models::exported_item::{ExportedItem, ExportedItemType},
         services::{
             item_creator::{FileCreator, FolderCreator},
             item_importer::{ItemImporter, ItemImporterError},
         },
+        value_objects::exported_item::{ExportedItem, ExportedItemType},
     },
 };
 

@@ -4,8 +4,8 @@ use crate::{
     Guid,
     common::api_error::ApiError,
     file_system::{
-        models::exported_item::ExportedItem,
         services::{item_exporter::ItemExporter, item_importer::ItemImporter},
+        value_objects::exported_item::ExportedItem,
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };

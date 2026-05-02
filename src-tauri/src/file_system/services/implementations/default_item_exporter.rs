@@ -7,9 +7,9 @@ use crate::{
     Guid,
     cells::repositories::cell_repository::CellRepository,
     file_system::{
-        models::exported_item::{ExportedItem, ExportedItemType},
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
         services::item_exporter::{ItemExporter, ItemExporterError},
+        value_objects::exported_item::{ExportedItem, ExportedItemType},
     },
 };
 

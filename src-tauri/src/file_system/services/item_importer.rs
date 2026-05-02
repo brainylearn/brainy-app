@@ -6,8 +6,8 @@ use crate::{
     cells::services::cell_creator::CellCreatorError,
     common::repository_error::RepositoryError,
     file_system::{
-        models::exported_item::ExportedItem,
         services::item_creator::{FileCreatorError, FolderCreatorError},
+        value_objects::exported_item::ExportedItem,
     },
 };
 

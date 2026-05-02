@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use crate::{
     Guid, common::repository_error::RepositoryError,
-    file_system::models::exported_item::ExportedItem,
+    file_system::value_objects::exported_item::ExportedItem,
 };
 
 #[derive(Error, Debug, PartialEq, Eq)]
