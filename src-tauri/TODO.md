@@ -6,11 +6,11 @@
 - [X] Make a hook in the front end for calling {value, isLoading, error} the backend, remove all (Remove Request)
 - [X] Refactor front-end types, move the to `api` folder
 - [ ] There should nothing be as request and response without DTO suffix, it is either a value object or a DTO, look at models folders in front-end
-- [ ] Better errors, one per use case instead of one per service
+- [X] Better errors, one per use case instead of one per service
 - [ ] Make CLAUDE.md file
 - [ ] Let Claude take a round for the front-end
 - [ ] Better repository error
-- [ ] Update dependencies
+- [X] Update dependencies
 
 Documentation:
 - the application and presentation layer for my app is the same, called API

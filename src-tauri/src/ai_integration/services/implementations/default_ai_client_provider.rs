@@ -41,8 +41,13 @@ impl AiClientProvider for DefaultAiClientProvider {
 
         #[cfg(not(test))]
         {
-            let client = MultiClient::Ollama(ollama::Client::from_val(Nothing));
-            Ok(client)
+            match ollama::Client::from_val(Nothing.into()) {
+                Ok(client) => Ok(MultiClient::Ollama(client)),
+                Err(err) => {
+                    log::error!("Error creating the Ollama client: {:?}", err);
+                    Err(AiClientProviderError::CreateClient)
+                }
+            }
         }
     }
 

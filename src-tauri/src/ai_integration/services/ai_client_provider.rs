@@ -21,6 +21,9 @@ pub enum AiClientProviderError {
     ConnectingToEmbeddingsDatabase(String),
     #[error(transparent)]
     VectorStore(#[from] VectorStoreError),
+    #[cfg(not(test))]
+    #[error("Erfror creating the client")]
+    CreateClient,
 }
 
 #[async_trait]
