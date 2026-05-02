@@ -106,7 +106,11 @@ impl DefaultBackupService {
             }
         };
 
-        while let Some(entry) = entries.next_entry().await.unwrap() {
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .expect("Cannot list file system files")
+        {
             let path = entry.path();
 
             if !path.is_file() {
