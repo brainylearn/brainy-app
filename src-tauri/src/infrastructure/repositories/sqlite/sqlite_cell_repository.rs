@@ -561,45 +561,83 @@ impl CellRepository for SqliteCellRepository {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
 
-        let search_match = format!("%{}%", search_text);
-        let rows = sqlx::query_as!(
-            CellRow,
-            r#"SELECT
-                cell.id as "cell_id: _",
-                cell.created_date as "cell_created_date: _",
-                cell.modified_date as "cell_modified_date: _",
-                cell.file_id as "cell_file_id: _",
-                cell.content as cell_content,
-                cell.cell_index as "cell_index: _",
-                cell.cell_type as "cell_type: _",
-                cell.searchable_content as cell_searchable_content,
-
-                repetition.id as "repetition_id: _",
-                repetition.created_date as "repetition_created_date: _",
-                repetition.modified_date as "repetition_modified_date: _",
-                repetition.file_id as "repetition_file_id: _",
-                repetition.cell_id as "repetition_cell_id: _",
-                repetition.due as "repetition_due: _",
-                repetition.stability as "repetition_stability: _",
-                repetition.difficulty as "repetition_difficulty: _",
-                repetition.elapsed_days as "repetition_elapsed_days: _",
-                repetition.scheduled_days as "repetition_scheduled_days",
-                repetition.reps as "repetition_reps: _",
-                repetition.lapses as "repetition_lapses: _",
-                repetition.state as "repetition_state: _",
-                repetition.last_review as "repetition_last_review: _",
-                repetition.additional_content as "repetition_additional_content: _"
-
-            FROM cells_fts AS fts
-            JOIN cells AS cell ON fts.rowid = cell.rowid
-            LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
-
-            WHERE fts.searchable_content LIKE $1
-            LIMIT 150"#,
-            search_match
-        )
-        .fetch_all(&mut *tx)
-        .await;
+        // Trigram tokenizer requires ≥3 chars to use the FTS index.
+        // Shorter inputs (including empty, which becomes '%%' = all) fall back to LIKE.
+        let rows = if search_text.chars().count() >= 3 {
+            let fts_query = format!("\"{}\"", search_text.replace('"', "\"\""));
+            sqlx::query_as!(
+                CellRow,
+                r#"SELECT
+                    cell.id as "cell_id: _",
+                    cell.created_date as "cell_created_date: _",
+                    cell.modified_date as "cell_modified_date: _",
+                    cell.file_id as "cell_file_id: _",
+                    cell.content as cell_content,
+                    cell.cell_index as "cell_index: _",
+                    cell.cell_type as "cell_type: _",
+                    cell.searchable_content as cell_searchable_content,
+                    repetition.id as "repetition_id: _",
+                    repetition.created_date as "repetition_created_date: _",
+                    repetition.modified_date as "repetition_modified_date: _",
+                    repetition.file_id as "repetition_file_id: _",
+                    repetition.cell_id as "repetition_cell_id: _",
+                    repetition.due as "repetition_due: _",
+                    repetition.stability as "repetition_stability: _",
+                    repetition.difficulty as "repetition_difficulty: _",
+                    repetition.elapsed_days as "repetition_elapsed_days: _",
+                    repetition.scheduled_days as "repetition_scheduled_days",
+                    repetition.reps as "repetition_reps: _",
+                    repetition.lapses as "repetition_lapses: _",
+                    repetition.state as "repetition_state: _",
+                    repetition.last_review as "repetition_last_review: _",
+                    repetition.additional_content as "repetition_additional_content: _"
+                FROM cells_fts AS fts
+                JOIN cells AS cell ON fts.rowid = cell.rowid
+                LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
+                WHERE cells_fts MATCH $1
+                LIMIT 150"#,
+                fts_query
+            )
+            .fetch_all(&mut *tx)
+            .await
+        } else {
+            let like_pattern = format!("%{}%", search_text);
+            sqlx::query_as!(
+                CellRow,
+                r#"SELECT
+                    cell.id as "cell_id: _",
+                    cell.created_date as "cell_created_date: _",
+                    cell.modified_date as "cell_modified_date: _",
+                    cell.file_id as "cell_file_id: _",
+                    cell.content as cell_content,
+                    cell.cell_index as "cell_index: _",
+                    cell.cell_type as "cell_type: _",
+                    cell.searchable_content as cell_searchable_content,
+                    repetition.id as "repetition_id: _",
+                    repetition.created_date as "repetition_created_date: _",
+                    repetition.modified_date as "repetition_modified_date: _",
+                    repetition.file_id as "repetition_file_id: _",
+                    repetition.cell_id as "repetition_cell_id: _",
+                    repetition.due as "repetition_due: _",
+                    repetition.stability as "repetition_stability: _",
+                    repetition.difficulty as "repetition_difficulty: _",
+                    repetition.elapsed_days as "repetition_elapsed_days: _",
+                    repetition.scheduled_days as "repetition_scheduled_days",
+                    repetition.reps as "repetition_reps: _",
+                    repetition.lapses as "repetition_lapses: _",
+                    repetition.state as "repetition_state: _",
+                    repetition.last_review as "repetition_last_review: _",
+                    repetition.additional_content as "repetition_additional_content: _"
+                FROM cells_fts AS fts
+                JOIN cells AS cell ON fts.rowid = cell.rowid
+                LEFT JOIN repetitions AS repetition ON repetition.cell_id = cell.id
+                WHERE fts.searchable_content LIKE $1
+                LIMIT 150"#,
+                like_pattern
+            )
+            .fetch_all(&mut *tx)
+            .await
+        };
 
         match rows {
             Err(err) => Err(RepositoryError::Unknown(err.to_string())),
