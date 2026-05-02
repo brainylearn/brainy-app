@@ -2,12 +2,12 @@
 <!--TODO: remove at end-->
 
 ## Critical 
-- [ ] Split the services into smaller where each one is responsible for one thing, all services are helper
-- [ ] Make a hook in the front end for calling {value, isLoading, error} the backend, remove all (Remove Request)
+- [X] Split the services into smaller where each one is responsible for one thing, all services are helper
+- [X] Make a hook in the front end for calling {value, isLoading, error} the backend, remove all (Remove Request)
 - [ ] Refactor front-end types, move the to `api` folder
 - [ ] Better errors, one per use case instead of one per service
 - [ ] Make CLAUDE.md file
-- [ ] Let claude take a round for the front-end
+- [ ] Let Claude take a round for the front-end
 - [ ] Better repository error
 - [ ] Update dependencies
 
@@ -18,7 +18,6 @@ Documentation:
 ## Medium Priority
 
 - [ ] **FTS query uses `LIKE` instead of `MATCH`** — `src/infrastructure/repositories/sqlite/sqlite_cell_repository.rs:563`: Bypasses the full-text index entirely; use `WHERE cells_fts MATCH $1`
-- [ ] **`deleted_entities` table missing UNIQUE constraint** — `migrations/0001_create_tables.sql:160`: Duplicate rows accumulate on sync retry; add `UNIQUE(entity_id, entity_name)` and use upsert
 - [ ] **`defer_foreign_keys` does not disable FK checks** — `src/infrastructure/extensions/unit_of_work.rs:36`: `PRAGMA defer_foreign_keys = ON` defers but doesn't disable; if a Cell arrives before its File during sync the transaction fails at commit; review sync ordering or use `PRAGMA foreign_keys = OFF` outside the transaction
 - [ ] **Sync push uses `>=` instead of `>` for last_sync_date** — `src/sync/sync_service.rs:356-528`: Entities modified exactly at `last_sync_date` are re-uploaded every sync cycle; change to `>`
 - [ ] **`backup_service` only deletes 1 excess backup** — `src/backup/backup_service.rs:146`: When count exceeds limit by more than 1 only one file is deleted; loop until within limit
