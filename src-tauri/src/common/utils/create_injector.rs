@@ -86,7 +86,11 @@ use crate::{
     },
     fsrs::services::{
         fsrs_profile_deleter::FsrsProfileDeleter,
-        implementations::default_fsrs_profile_deleter::DefaultFsrsProfileDeleter,
+        fsrs_profile_resolver::FsrsProfileResolver,
+        implementations::{
+            default_fsrs_profile_deleter::DefaultFsrsProfileDeleter,
+            default_fsrs_profile_resolver::DefaultFsrsProfileResolver,
+        },
     },
     settings::services::{
         implementations::default_settings_updater::DefaultSettingsUpdater,
@@ -187,6 +191,11 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     // FSRS services
 
     register_scope!(injector, dyn FsrsProfileDeleter, DefaultFsrsProfileDeleter);
+    register_scope!(
+        injector,
+        dyn FsrsProfileResolver,
+        DefaultFsrsProfileResolver
+    );
 
     // Settings services
 
