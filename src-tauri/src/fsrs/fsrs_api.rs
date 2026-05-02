@@ -8,6 +8,7 @@ use crate::{
         value_objects::fsrs_profile_choice::FsrsProfileChoice,
     },
     fsrs::{
+        dto::create_profile_request_dto::CreateProfileRequestDto,
         entities::fsrs_profile::FsrsProfile,
         repositories::fsrs_repository::FsrsRepository,
         services::{
@@ -147,13 +148,16 @@ pub async fn get_parent_fsrs_profile_for_file(
 #[tauri::command]
 pub async fn create_profile(
     injector: State<'_, Arc<Injector>>,
-    name: String,
-    request_retention: f64,
-    maximum_interval: f64,
-    weights: Vec<f64>,
+    request: CreateProfileRequestDto,
 ) -> Result<FsrsProfile, ApiError> {
     let scope = injector.start_scope();
-    let profile = FsrsProfile::new(None, name, request_retention, maximum_interval, weights)?;
+    let profile = FsrsProfile::new(
+        None,
+        request.name,
+        request.request_retention,
+        request.maximum_interval,
+        request.weights,
+    )?;
     scope
         .resolve::<dyn FsrsRepository>()
         .await

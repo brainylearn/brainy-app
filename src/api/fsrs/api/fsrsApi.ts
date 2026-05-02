@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import FsrsProfile from "../entities/fsrsProfile";
 import { FsrsProfileChoice } from "../../fileSystem/valueObjects/fsrsProfileChoice";
+import CreateProfileRequestDto from "../dto/createProfileRequestDto";
 
 export function getAllFsrsProfiles(): Promise<FsrsProfile[]> {
 	return invoke("get_all_fsrs_profiles");
@@ -56,14 +57,10 @@ export function setFsrsProfileChoiceForFolder(
 	});
 }
 
-// TODO: should get its own dto
-export function createProfile(profile: {
-	name: string;
-	requestRetention: number;
-	maximumInterval: number;
-	weights: number[];
-}): Promise<FsrsProfile> {
-	return invoke("create_profile", profile);
+export function createProfile(
+	request: CreateProfileRequestDto,
+): Promise<FsrsProfile> {
+	return invoke("create_profile", { request });
 }
 
 export function updateProfile(profile: FsrsProfile): Promise<void> {
