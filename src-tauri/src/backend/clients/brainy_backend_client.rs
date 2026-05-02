@@ -1,11 +1,11 @@
-use crate::backend::{dto::sign_up_request::SignUpRequest, models::SyncEntityDto};
+use crate::backend::{backend_dto::SyncEntityDto, dto::sign_up_request_dto::SignUpRequestDto};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 #[cfg(test)]
 use mockall::automock;
 use thiserror::Error;
 
-use crate::backend::models::{SyncedEntitiesPageDto, UpdatePasswordDto, UserInformationDto};
+use crate::backend::backend_dto::{SyncedEntitiesPageDto, UpdatePasswordDto, UserInformationDto};
 
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum BrainyBackendClientError {
@@ -42,7 +42,7 @@ pub trait BrainyBackendClient: Send + Sync {
 
     async fn sign_up(
         &self,
-        request: SignUpRequest,
+        request: SignUpRequestDto,
     ) -> Result<UserInformationDto, BrainyBackendClientError>;
 
     async fn sign_out(&self) -> Result<(), BrainyBackendClientError>;

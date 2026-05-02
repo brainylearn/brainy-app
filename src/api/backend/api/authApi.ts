@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { UserInformationDto } from "../dto/userInformationDto";
-import SignUpRequest from "../dto/signUpRequest";
+import SignUpRequestDto from "../dto/signUpRequestDto";
 
 export function signIn(
 	username: string,
@@ -12,7 +12,7 @@ export function signIn(
 	});
 }
 
-export function signUp(request: SignUpRequest): Promise<UserInformationDto> {
+export function signUp(request: SignUpRequestDto): Promise<UserInformationDto> {
 	return invoke("sign_up", {
 		request,
 	});

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import Cell from "../../../api/cells/entities/cell";
 import useBeforeUnload from "../../../hooks/useBeforeUnload";
-import UpdateCellRequest from "../../../api/cells/dto/updateCellRequest";
+import UpdateCellRequestDto from "../../../api/cells/dto/updateCellRequestDto";
 import { updateCellsContents } from "../../../api/cells/api/cellApi";
 import { AUTO_SAVE_DELAY_IN_MILLISECONDS } from "../../../config/constants";
 import {
@@ -51,7 +51,7 @@ function useAutoSave({
 		if (changedCellsIds.current.size === 0) return;
 
 		await callApi(async () => {
-			const requests: UpdateCellRequest[] = [];
+			const requests: UpdateCellRequestDto[] = [];
 
 			for (const id of changedCellsIds.current) {
 				const cell = updatedCells.current.find(c => c.id === id);

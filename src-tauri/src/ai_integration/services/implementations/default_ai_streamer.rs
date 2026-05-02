@@ -16,6 +16,7 @@ use tokio_stream::StreamExt;
 use crate::Guid;
 use crate::ai_integration::ai_state::AiState;
 use crate::ai_integration::clients::multi_client::multi_completion_model::MultiCompletionModel;
+use crate::ai_integration::dto::stream_ai_request_dto::StreamAiRequestDto;
 use crate::ai_integration::entities::chat::Chat;
 use crate::ai_integration::entities::message::{Message, MessageContent};
 use crate::ai_integration::json_schemas::generate_title::GenerateTitle;
@@ -27,7 +28,6 @@ use crate::ai_integration::services::ai_streamer::{
     AiStreamer, AiStreamerError, OnEventCallback, StreamLlmResponseEvent,
 };
 use crate::ai_integration::state_cancellation_hook::StateCancellationHook;
-use crate::ai_integration::stream_ai_request::StreamAiRequest;
 use crate::ai_integration::tools::create_flash_card::CreateFlashCard;
 use crate::ai_integration::tools::search_documents::SearchDocuments;
 
@@ -45,7 +45,7 @@ pub struct DefaultAiStreamer {
 impl AiStreamer for DefaultAiStreamer {
     async fn stream(
         &self,
-        request: StreamAiRequest,
+        request: StreamAiRequestDto,
         on_event: OnEventCallback,
     ) -> Result<(), AiStreamerError> {
         let _guard = self.state.start_generation().await;
@@ -167,7 +167,7 @@ impl DefaultAiStreamer {
 
     async fn get_agent(
         &self,
-        request: &StreamAiRequest,
+        request: &StreamAiRequestDto,
         chat_id: Guid,
         messages_to_upsert: Arc<Mutex<Vec<Message>>>,
         on_event: OnEventCallback,
@@ -234,7 +234,6 @@ pub mod tests {
                 ai_streamer::{AiStreamer, StreamLlmResponseEvent},
                 implementations::default_ai_client_provider::DefaultAiClientProvider,
             },
-            stream_ai_request::StreamAiRequest,
             tools::create_flash_card::CreateFlashCard,
         },
         infrastructure::repositories::{
@@ -326,7 +325,7 @@ pub mod tests {
         let received_create_chat_clone = Arc::clone(&received_create_chat);
         let received_in_progress_clone = Arc::clone(&received_in_progress);
 
-        let request = StreamAiRequest {
+        let request = StreamAiRequestDto {
             prompt: "User prompt".to_string(),
             ..Default::default()
         };
@@ -427,7 +426,7 @@ pub mod tests {
         let scope = injector.start_scope();
         let service = scope.resolve::<dyn AiStreamer>().await;
 
-        let request = StreamAiRequest {
+        let request = StreamAiRequestDto {
             prompt: "User prompt".to_string(),
             file_id: Some(crate::Guid::new_v4()),
             ..Default::default()
@@ -488,7 +487,7 @@ pub mod tests {
         let scope = injector.start_scope();
         let service = scope.resolve::<dyn AiStreamer>().await;
 
-        let request = StreamAiRequest {
+        let request = StreamAiRequestDto {
             prompt: "User prompt".to_string(),
             file_id: None,
             ..Default::default()
@@ -561,7 +560,7 @@ pub mod tests {
         let service = scope.resolve::<dyn AiStreamer>().await;
         let repository = scope.resolve::<dyn AiRepository>().await;
 
-        let request = StreamAiRequest {
+        let request = StreamAiRequestDto {
             prompt: "User prompt".to_string(),
             ..Default::default()
         };
@@ -646,7 +645,7 @@ pub mod tests {
         let received_error = Arc::new(AtomicBool::new(false));
         let received_error_clone = received_error.clone();
 
-        let request = StreamAiRequest {
+        let request = StreamAiRequestDto {
             prompt: "User prompt".to_string(),
             ..Default::default()
         };

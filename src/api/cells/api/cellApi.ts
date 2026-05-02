@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import Cell from "../entities/cell";
-import UpdateCellRequest from "../dto/updateCellRequest";
-import { CellWithFsrsProfileId } from "../dto/cellWithFsrsProfileId";
+import UpdateCellRequestDto from "../dto/updateCellRequestDto";
+import { CellWithFsrsProfileIdDto } from "../dto/cellWithFsrsProfileIdDto";
 
 export function getFileCellsOrderedByIndex(fileId: string): Promise<Cell[]> {
 	return invoke("get_file_cells_ordered_by_index", {
@@ -9,7 +9,7 @@ export function getFileCellsOrderedByIndex(fileId: string): Promise<Cell[]> {
 	});
 }
 
-export function updateCellsContents(requests: UpdateCellRequest[]) {
+export function updateCellsContents(requests: UpdateCellRequestDto[]) {
 	return invoke("update_cells_contents", { requests });
 }
 
@@ -31,6 +31,6 @@ export function moveCell(id: string, newIndex: number) {
 
 export function getCellsForFilesWithFsrsProfileIds(
 	fileIds: string[],
-): Promise<CellWithFsrsProfileId[]> {
+): Promise<CellWithFsrsProfileIdDto[]> {
 	return invoke("get_cells_for_files_with_fsrs_profile_ids", { fileIds });
 }

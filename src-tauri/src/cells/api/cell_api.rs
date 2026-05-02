@@ -15,7 +15,8 @@ use crate::{
 };
 use crate::{
     cells::dto::{
-        cell_with_fsrs_profile_id::CellWithFsrsProfileId, update_cell_request::UpdateCellRequest,
+        cell_with_fsrs_profile_id_dto::CellWithFsrsProfileIdDto,
+        update_cell_request_dto::UpdateCellRequestDto,
     },
     common::api_error::ApiError,
 };
@@ -85,7 +86,7 @@ pub async fn move_cell(
 #[tauri::command]
 pub async fn update_cells_contents(
     injector: State<'_, Arc<Injector>>,
-    requests: Vec<UpdateCellRequest>,
+    requests: Vec<UpdateCellRequestDto>,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     let cell_repository = scope.resolve::<dyn CellRepository>().await;
@@ -103,7 +104,7 @@ pub async fn update_cells_contents(
 pub async fn get_cells_for_files_with_fsrs_profile_ids(
     injector: State<'_, Arc<Injector>>,
     file_ids: Vec<Guid>,
-) -> Result<Vec<CellWithFsrsProfileId>, ApiError> {
+) -> Result<Vec<CellWithFsrsProfileIdDto>, ApiError> {
     let scope = injector.start_scope();
     let file_repository = scope.resolve::<dyn FileRepository>().await;
     let cell_repository = scope.resolve::<dyn CellRepository>().await;
@@ -124,7 +125,7 @@ pub async fn get_cells_for_files_with_fsrs_profile_ids(
             .get_file_cells_ordered_by_index(file_id)
             .await?
             .into_iter()
-            .map(|cell| CellWithFsrsProfileId {
+            .map(|cell| CellWithFsrsProfileIdDto {
                 cell,
                 fsrs_profile_id,
             })

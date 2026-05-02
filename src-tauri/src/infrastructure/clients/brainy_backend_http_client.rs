@@ -4,12 +4,12 @@ use std::{
 };
 
 use crate::backend::{
-    clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
-    dto::sign_up_request::SignUpRequest,
-    models::{
+    backend_dto::{
         ProblemDetails, SignInDto, SignUpDto, SyncEntityDto, SyncedEntitiesPageDto,
         UpdatePasswordDto, UpdateUserInformationDto, UserInformationDto, VerifyEmailDto,
     },
+    clients::brainy_backend_client::{BrainyBackendClient, BrainyBackendClientError},
+    dto::sign_up_request_dto::SignUpRequestDto,
 };
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -112,7 +112,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
 
     async fn sign_up(
         &self,
-        request: SignUpRequest,
+        request: SignUpRequestDto,
     ) -> Result<UserInformationDto, BrainyBackendClientError> {
         let dto = SignUpDto {
             first_name: request.first_name,

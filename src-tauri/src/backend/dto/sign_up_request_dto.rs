@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SignUpRequest {
+pub struct SignUpRequestDto {
     pub username: String,
     pub password: String,
     pub email: String,

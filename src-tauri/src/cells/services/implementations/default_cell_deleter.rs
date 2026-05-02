@@ -6,8 +6,7 @@ use injector_derive::ScopeInjectable;
 use crate::{
     Guid,
     cells::{
-        models::cell_deletion_request::CellDeletionRequest,
-        repositories::cell_repository::{CellRepository, MoveDirection},
+        repositories::cell_repository::{CellDeletionRequest, CellRepository, MoveDirection},
         services::cell_deleter::{CellDeleter, CellDeleterError},
     },
 };

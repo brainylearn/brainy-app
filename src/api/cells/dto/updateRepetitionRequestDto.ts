@@ -1,6 +1,6 @@
 import { RepetitionState } from "../entities/repetition";
 
-export default interface RepetitionUpdate {
+export default interface UpdateRepetitionRequestDto {
 	id: string;
 	fileId: string;
 	cellId: string;

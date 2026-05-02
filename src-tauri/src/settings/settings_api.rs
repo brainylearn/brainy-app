@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     common::api_error::ApiError,
     settings::{
-        dto::{settings_dto::SettingsDto, update_settings_request::UpdateSettingsRequest},
+        dto::{settings_dto::SettingsDto, update_settings_request_dto::UpdateSettingsRequestDto},
         repositories::settings_repository::SettingsRepository,
         services::settings_updater::SettingsUpdater,
     },
@@ -22,7 +22,7 @@ pub async fn get_settings(injector: State<'_, Arc<Injector>>) -> Result<Settings
 #[tauri::command]
 pub async fn update_settings(
     injector: State<'_, Arc<Injector>>,
-    new_settings: UpdateSettingsRequest,
+    new_settings: UpdateSettingsRequestDto,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
     scope

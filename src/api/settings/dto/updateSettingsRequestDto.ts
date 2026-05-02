@@ -1,6 +1,6 @@
 export type Theme = "FollowSystem" | "Light" | "Dark";
 
-export default interface SettingsDto {
+export default interface UpdateSettingsRequestDto {
 	baseDatabaseDirectory: string;
 
 	theme: Theme;

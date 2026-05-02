@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Default, Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RepetitionUpdate {
+pub struct UpdateRepetitionRequestDto {
     pub id: Guid,
     pub file_id: Guid,
     pub cell_id: Guid,
@@ -24,7 +24,7 @@ pub struct RepetitionUpdate {
     pub additional_content: Option<String>,
 }
 
-impl RepetitionUpdate {
+impl UpdateRepetitionRequestDto {
     pub fn apply_update(self, repetition: &mut Repetition) {
         repetition.id = self.id;
         repetition.file_id = self.file_id;

@@ -6,9 +6,9 @@ use thiserror::Error;
 
 use crate::{
     ai_integration::{
+        dto::stream_ai_request_dto::StreamAiRequestDto,
         entities::{chat::Chat, message::Message},
         services::ai_client_provider::AiClientProviderError,
-        stream_ai_request::StreamAiRequest,
     },
     common::repository_error::RepositoryError,
 };
@@ -47,7 +47,7 @@ pub enum AiStreamerError {
 pub trait AiStreamer: Send + Sync {
     async fn stream(
         &self,
-        request: StreamAiRequest,
+        request: StreamAiRequestDto,
         on_event: OnEventCallback,
     ) -> Result<(), AiStreamerError>;
 }

@@ -5,6 +5,7 @@ use crate::{
     Guid,
     ai_integration::{
         ai_state::AiState,
+        dto::stream_ai_request_dto::StreamAiRequestDto,
         entities::{
             chat::Chat,
             message::{Message, MessageContent, ToolCallStatus},
@@ -15,7 +16,6 @@ use crate::{
             ai_tool_call_acceptor::AiToolCallAcceptor,
             document_uploader::DocumentUploader,
         },
-        stream_ai_request::StreamAiRequest,
     },
     common::api_error::ApiError,
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
@@ -27,7 +27,7 @@ use tauri::{State, ipc::Channel};
 pub async fn stream_ai_response(
     injector: State<'_, Arc<Injector>>,
     on_event: Channel<StreamLlmResponseEvent>,
-    request: StreamAiRequest,
+    request: StreamAiRequestDto,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
 

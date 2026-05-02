@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ReviewTreeFolder } from "../dto/reviewTreeFolder";
+import { ReviewTreeFolderDto } from "../dto/reviewTreeFolderDto";
 
 export function createFolder(name: string, parentId: string): Promise<string> {
 	return invoke("create_folder", { name, parentId });
@@ -39,6 +39,6 @@ export function createFile(name: string, parentId: string): Promise<string> {
 	return invoke("create_file", { name, parentId });
 }
 
-export function getReviewTreeFolderForRoot(): Promise<ReviewTreeFolder> {
+export function getReviewTreeFolderForRoot(): Promise<ReviewTreeFolderDto> {
 	return invoke("get_review_tree_folder_for_root");
 }

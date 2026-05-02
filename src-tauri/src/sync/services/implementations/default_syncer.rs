@@ -8,7 +8,7 @@ use prost::Message;
 
 use crate::{
     Guid,
-    backend::{clients::brainy_backend_client::BrainyBackendClient, models::SyncEntityDto},
+    backend::{backend_dto::SyncEntityDto, clients::brainy_backend_client::BrainyBackendClient},
     cells::{
         entities::{cell::Cell, repetition::Repetition, review::Review},
         repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
@@ -534,7 +534,8 @@ mod tests {
     use crate::{
         DEFAULT_FSRS_PROFILE_ID, ROOT_FOLDER_ID,
         backend::{
-            clients::brainy_backend_client::MockBrainyBackendClient, models::SyncedEntitiesPageDto,
+            backend_dto::SyncedEntitiesPageDto,
+            clients::brainy_backend_client::MockBrainyBackendClient,
         },
         cells::{
             entities::{cell::CellType, repetition::State, review::Rating},

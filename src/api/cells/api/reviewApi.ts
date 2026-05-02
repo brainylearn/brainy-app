@@ -1,10 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import HomeStatistics from "../models/homeStatistics";
+import HomeStatistics from "../valueObjects/homeStatistics";
 import { Rating } from "../entities/rating";
-import RepetitionUpdate from "../valueObjects/repetitionUpdate";
+import UpdateRepetitionRequestDto from "../dto/updateRepetitionRequestDto";
 
 export function registerReview(
-	repetitionUpdate: RepetitionUpdate,
+	repetitionUpdate: UpdateRepetitionRequestDto,
 	rating: Rating,
 	studyTime: number,
 ) {

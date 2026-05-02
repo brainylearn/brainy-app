@@ -5,13 +5,13 @@ use injector_derive::ScopeInjectable;
 
 use crate::{
     backend::{
+        backend_dto::UserInformationDto,
         clients::brainy_backend_client::BrainyBackendClient,
-        dto::sign_up_request::SignUpRequest,
-        models::UserInformationDto,
+        dto::sign_up_request_dto::SignUpRequestDto,
         services::authenticator::{Authenticator, AuthenticatorError},
     },
     settings::{
-        dto::update_settings_request::UpdateSettingsRequest,
+        dto::update_settings_request_dto::UpdateSettingsRequestDto,
         services::settings_updater::SettingsUpdater,
         value_objects::settings_profile::SettingsProfile,
     },
@@ -32,7 +32,7 @@ impl Authenticator for DefaultAuthenticator {
     ) -> Result<UserInformationDto, AuthenticatorError> {
         let user_information = self.backend_client.sign_in(username, password).await?;
         self.settings_updater
-            .update_settings(UpdateSettingsRequest {
+            .update_settings(UpdateSettingsRequestDto {
                 profile: Some(SettingsProfile::User(user_information.username.clone())),
                 ..Default::default()
             })
@@ -43,7 +43,7 @@ impl Authenticator for DefaultAuthenticator {
     async fn sign_out(&self) -> Result<(), AuthenticatorError> {
         self.backend_client.sign_out().await?;
         self.settings_updater
-            .update_settings(UpdateSettingsRequest {
+            .update_settings(UpdateSettingsRequestDto {
                 profile: Some(SettingsProfile::Default),
                 ..Default::default()
             })
@@ -53,7 +53,7 @@ impl Authenticator for DefaultAuthenticator {
 
     async fn sign_up(
         &self,
-        request: SignUpRequest,
+        request: SignUpRequestDto,
     ) -> Result<UserInformationDto, AuthenticatorError> {
         let user_information = self.backend_client.sign_up(request).await?;
         self.settings_updater

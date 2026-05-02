@@ -2,10 +2,10 @@ import { Channel, invoke } from "@tauri-apps/api/core";
 import { StreamLlmResponseEvent } from "../events/streamLlmResponseEvent";
 import Chat from "../entities/chat";
 import Message from "../entities/message";
-import StreamAiRequest from "../models/streamAiRequest";
+import StreamAiRequestDto from "../dto/streamAiRequestDto";
 
 export function streamAiResponse(
-	request: StreamAiRequest,
+	request: StreamAiRequestDto,
 	onEvent: Channel<StreamLlmResponseEvent>,
 ): Promise<void> {
 	return invoke("stream_ai_response", {

@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import AiChatWidget from "../../../../features/AiChatWidget/components/AiChatWidget";
-import SettingsDto from "../../../../api/settings/dto/settingsDto.ts";
+import UpdateSettingsRequestDto from "../../../../api/settings/dto/updateSettingsRequestDto.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 import {
 	acceptToolCall,
@@ -22,7 +22,7 @@ import { StreamLlmResponseEvent } from "../../../../api/aiIntegration/events/str
 import { MemoryRouterProps } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../../config/constants.ts";
 import { RootState } from "../../../../stores/store.ts";
-import { ReviewTreeFolder } from "../../../../api/fileSystem/dto/reviewTreeFolder.ts";
+import { ReviewTreeFolderDto } from "../../../../api/fileSystem/dto/reviewTreeFolderDto.ts";
 import { TOOL_CALL_ACCEPTED_EVENT } from "../../../../types/events/toolCallAcceptedEvent.ts";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
@@ -52,7 +52,7 @@ function renderComponent({
 			settings: {
 				settings: {
 					enableAi,
-				} as SettingsDto,
+				} as UpdateSettingsRequestDto,
 			},
 			...preloadedState,
 		},
@@ -581,7 +581,7 @@ describe("ToolCallDisplay", () => {
 								id: "file-1",
 							},
 						],
-					} as unknown as ReviewTreeFolder,
+					} as unknown as ReviewTreeFolderDto,
 				},
 			},
 		});
@@ -652,7 +652,7 @@ describe("ToolCallDisplay", () => {
 								id: "file-1",
 							},
 						],
-					} as unknown as ReviewTreeFolder,
+					} as unknown as ReviewTreeFolderDto,
 				},
 			},
 		});
@@ -707,7 +707,7 @@ describe("ToolCallDisplay", () => {
 								name: "file 1",
 							},
 						],
-					} as unknown as ReviewTreeFolder,
+					} as unknown as ReviewTreeFolderDto,
 				},
 			},
 		});
@@ -768,7 +768,7 @@ describe("ToolCallDisplay", () => {
 								name: "file 1",
 							},
 						],
-					} as unknown as ReviewTreeFolder,
+					} as unknown as ReviewTreeFolderDto,
 				},
 			},
 		});

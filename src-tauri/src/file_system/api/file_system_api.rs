@@ -17,12 +17,12 @@ use crate::{
 use injector::injector::Injector;
 use tauri::State;
 
-use crate::file_system::dto::review_tree_folder::ReviewTreeFolder;
+use crate::file_system::dto::review_tree_folder_dto::ReviewTreeFolderDto;
 
 #[tauri::command]
 pub async fn get_review_tree_folder_for_root(
     injector: State<'_, Arc<Injector>>,
-) -> Result<ReviewTreeFolder, ApiError> {
+) -> Result<ReviewTreeFolderDto, ApiError> {
     let scope = injector.start_scope();
 
     let folders = scope
@@ -42,7 +42,8 @@ pub async fn get_review_tree_folder_for_root(
         .get_study_repetitions_for_all_files()
         .await?;
 
-    let result = ReviewTreeFolder::parse_file_system_from_root(&folders, &files, repetition_counts);
+    let result =
+        ReviewTreeFolderDto::parse_file_system_from_root(&folders, &files, repetition_counts);
     Ok(result)
 }
 

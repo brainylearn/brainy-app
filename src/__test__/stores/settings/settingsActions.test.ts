@@ -6,7 +6,7 @@ import {
 	SETTINGS_CLOSE_REQUESTED_HANDLER_NAME,
 	updateAndApplySettings,
 } from "../../../stores/settings/settingsActions.ts";
-import SettingsDto from "../../../api/settings/dto/settingsDto.ts";
+import UpdateSettingsRequestDto from "../../../api/settings/dto/updateSettingsRequestDto.ts";
 import { setSettings } from "../../../stores/settings/settingsReducer.ts";
 import { defaultCloseRequestedEventManager } from "../../../managers/closeRequestedEventManager.ts";
 import * as syncActions from "../../../stores/sync/syncActions.ts";
@@ -20,7 +20,7 @@ vi.mock(import("../../../managers/closeRequestedEventManager.ts"));
 vi.mock(import("@tauri-apps/plugin-os"));
 
 const getAndSetDefaultSettings = () => {
-	const settings: SettingsDto = {
+	const settings: UpdateSettingsRequestDto = {
 		autoSync: true,
 		baseDatabaseDirectory: "",
 		theme: "Dark",

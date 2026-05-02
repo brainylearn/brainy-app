@@ -142,6 +142,7 @@ pub async fn get_parent_fsrs_profile_for_file(
     Ok(result)
 }
 
+// TODO: move to its own service
 async fn get_fsrs_profile_recursively_for_item(
     scope: &InjectorScope<'_>,
     mut fsrs_profile_choice: FsrsProfileChoice,

@@ -5,10 +5,10 @@ use chrono::Utc;
 use injector_derive::ScopeInjectable;
 
 use crate::cells::{
+    dto::update_repetition_request_dto::UpdateRepetitionRequestDto,
     entities::review::{Rating, Review},
     repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
     services::review_registrar::{ReviewRegistrar, ReviewRegistrarError},
-    value_objects::repetition_update::RepetitionUpdate,
 };
 
 #[derive(ScopeInjectable)]
@@ -21,7 +21,7 @@ pub struct DefaultReviewRegistrar {
 impl ReviewRegistrar for DefaultReviewRegistrar {
     async fn register_review(
         &self,
-        repetition_update: RepetitionUpdate,
+        repetition_update: UpdateRepetitionRequestDto,
         rating: Rating,
         study_time: u32,
     ) -> Result<(), ReviewRegistrarError> {
@@ -66,11 +66,11 @@ pub mod tests {
     use crate::{
         Guid, ROOT_FOLDER_ID,
         cells::{
+            dto::update_repetition_request_dto::UpdateRepetitionRequestDto,
             entities::cell::{Cell, CellType},
             repositories::cell_repository::CellRepository,
             repositories::review_repository::ReviewRepository,
             services::review_registrar::ReviewRegistrar,
-            value_objects::repetition_update::RepetitionUpdate,
         },
         file_system::{
             entities::file::File, repositories::file_repository::FileRepository,
@@ -127,7 +127,7 @@ pub mod tests {
         cell_repository.create(&cell).await.unwrap();
         scope.save_changes().await.unwrap();
 
-        let repetition_update = RepetitionUpdate {
+        let repetition_update = UpdateRepetitionRequestDto {
             id: cell.repetitions()[0].id,
             cell_id: cell.id(),
             file_id: cell.file_id(),

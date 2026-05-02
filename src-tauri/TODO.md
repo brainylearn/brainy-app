@@ -15,6 +15,7 @@
 Documentation:
 - the application and presentation layer for my app is the same, called API
 - It is okay not to use a dto and return an entity directly, dtos are just for special cases
+- To choose if something is a value object or a dto, think if it is part of the language or just a convenince for transfering data
 
 ## Medium Priority
 

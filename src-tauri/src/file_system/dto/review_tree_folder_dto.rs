@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     Guid, ROOT_FOLDER_ID,
-    cells::models::file_repetitions_count::FileRepetitionCounts,
+    cells::value_objects::file_repetitions_count::FileRepetitionCounts,
     file_system::{
+        dto::review_tree_file_dto::ReviewTreeFileDto,
         entities::{file::File, folder::Folder},
         value_objects::file_system_item_name::FileSystemItemName,
     },
@@ -13,23 +14,16 @@ use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReviewTreeFolder {
+pub struct ReviewTreeFolderDto {
     pub id: Guid,
     pub name: FileSystemItemName,
     pub repetition_counts: FileRepetitionCounts,
-    pub subfolders: Vec<ReviewTreeFolder>,
-    pub files: Vec<ReviewTreeFile>,
+    pub subfolders: Vec<ReviewTreeFolderDto>,
+    pub files: Vec<ReviewTreeFileDto>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReviewTreeFile {
-    pub id: Guid,
-    pub name: FileSystemItemName,
-    pub repetition_counts: FileRepetitionCounts,
-}
-
-impl ReviewTreeFolder {
+// TODO: move into own service
+impl ReviewTreeFolderDto {
     /// Parses the given folder and files into a file tree folder with the root
     /// as the first element. The two lists must contain every folder and file
     /// in the entire system including root.
@@ -37,7 +31,7 @@ impl ReviewTreeFolder {
         folders: &[Folder],
         files: &[File],
         mut study_repetitions: HashMap<Guid, FileRepetitionCounts>,
-    ) -> ReviewTreeFolder {
+    ) -> ReviewTreeFolderDto {
         let mut folder_subfolders_by_id = HashMap::new();
         for folder in folders.iter() {
             folder_subfolders_by_id
@@ -72,8 +66,8 @@ impl ReviewTreeFolder {
         study_repetitions: &mut HashMap<Guid, FileRepetitionCounts>,
         folder_subfolders_by_id: &HashMap<Option<Uuid>, Vec<&Folder>>,
         folder_files_by_id: &HashMap<Option<Uuid>, Vec<&File>>,
-    ) -> ReviewTreeFolder {
-        let mut result = ReviewTreeFolder {
+    ) -> ReviewTreeFolderDto {
+        let mut result = ReviewTreeFolderDto {
             id: folder.id(),
             name: folder.name(),
             repetition_counts: FileRepetitionCounts::default(),
@@ -99,7 +93,7 @@ impl ReviewTreeFolder {
             .get(&Some(folder.id()))
             .unwrap_or(&Vec::new())
         {
-            let parsed_file = ReviewTreeFile {
+            let parsed_file = ReviewTreeFileDto {
                 id: file.id(),
                 name: file.name(),
                 repetition_counts: study_repetitions.remove(&file.id()).unwrap_or_default(),
@@ -185,7 +179,7 @@ pub mod tests {
         // Act
 
         let mut actual =
-            ReviewTreeFolder::parse_file_system_from_root(&folders, &files, study_repetitions);
+            ReviewTreeFolderDto::parse_file_system_from_root(&folders, &files, study_repetitions);
 
         // Assert
 

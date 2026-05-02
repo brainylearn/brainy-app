@@ -22,7 +22,7 @@ import { SettingsState } from "../../../../stores/settings/settingsReducer.ts";
 import { Window } from "@tauri-apps/api/window";
 import { Webview } from "@tauri-apps/api/webview";
 import { isMobile } from "../../../../utils/tauriUtils.ts";
-import SettingsDto from "../../../../api/settings/dto/settingsDto.ts";
+import UpdateSettingsRequestDto from "../../../../api/settings/dto/updateSettingsRequestDto.ts";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 
@@ -33,7 +33,7 @@ vi.mock(
 	import("../../../../api/settings/api/settingsApi.ts"),
 	async importOriginal => {
 		const getSettings = vi.fn();
-		getSettings.mockResolvedValue({} as SettingsDto);
+		getSettings.mockResolvedValue({} as UpdateSettingsRequestDto);
 
 		return {
 			...(await importOriginal()),
@@ -73,7 +73,7 @@ const createInitialUserState = ({
 
 const createInitialSettingsState = () => {
 	return {
-		settings: {} as SettingsDto,
+		settings: {} as UpdateSettingsRequestDto,
 	} as SettingsState;
 };
 
@@ -272,7 +272,7 @@ describe("Appearance & Data tab", () => {
 
 		vi.mocked(getSettings).mockResolvedValue({
 			zoomPercentage: 120,
-		} as SettingsDto);
+		} as UpdateSettingsRequestDto);
 
 		// Act
 
@@ -292,7 +292,7 @@ describe("Appearance & Data tab", () => {
 			expect.objectContaining({
 				zoomPercentage: 120,
 				autoSync: true,
-			} as SettingsDto),
+			} as UpdateSettingsRequestDto),
 		);
 
 		expect(onCloseMock).toHaveBeenCalled();

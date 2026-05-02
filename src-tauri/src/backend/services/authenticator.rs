@@ -3,8 +3,8 @@ use thiserror::Error;
 
 use crate::{
     backend::{
-        clients::brainy_backend_client::BrainyBackendClientError,
-        dto::sign_up_request::SignUpRequest, models::UserInformationDto,
+        backend_dto::UserInformationDto, clients::brainy_backend_client::BrainyBackendClientError,
+        dto::sign_up_request_dto::SignUpRequestDto,
     },
     settings::services::settings_updater::SettingsUpdaterError,
 };
@@ -29,6 +29,6 @@ pub trait Authenticator: Send + Sync {
 
     async fn sign_up(
         &self,
-        request: SignUpRequest,
+        request: SignUpRequestDto,
     ) -> Result<UserInformationDto, AuthenticatorError>;
 }

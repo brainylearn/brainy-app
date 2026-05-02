@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import TitleBar from "./TitleBar";
 import styles from "./styles.module.css";
 import Cell from "../../../api/cells/entities/cell";
-import FileRepetitionCounts from "../../../api/cells/models/fileRepetitionCounts";
+import FileRepetitionCounts from "../../../api/cells/valueObjects/fileRepetitionCounts";
 import { getFileCellsOrderedByIndex } from "../../../api/cells/api/cellApi";
 import { getStudyRepetitionCounts } from "../../../api/cells/api/repetitionApi";
 import useGlobalKey from "../../../hooks/useGlobalKey";

@@ -23,7 +23,7 @@ import {
 } from "../../../stores/sync/managers/syncEventManager";
 import FsrsProfile from "../../../api/fsrs/entities/fsrsProfile";
 import { getAllFsrsProfiles } from "../../../api/fsrs/api/fsrsApi";
-import { CellWithFsrsProfileId } from "../../../api/cells/dto/cellWithFsrsProfileId";
+import { CellWithFsrsProfileIdDto } from "../../../api/cells/dto/cellWithFsrsProfileIdDto";
 import Repetition from "../../../api/cells/entities/repetition";
 import { CallApiFn } from "../../../hooks/useApi";
 
@@ -43,7 +43,7 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 	const [currentCellIndex, setCurrentCellIndex] = useState(0);
 	const [isSendingRequest, setIsSendingRequest] = useState(true);
 	const [cellsWithFsrsProfileIds, setCellsWithFsrsProfileIds] = useState<
-		CellWithFsrsProfileId[]
+		CellWithFsrsProfileIdDto[]
 	>([]);
 	const [allFsrsProfiles, setAllFsrsProfiles] = useState<FsrsProfile[]>([]);
 	const [startTime, setStartTime] = useState(new Date());

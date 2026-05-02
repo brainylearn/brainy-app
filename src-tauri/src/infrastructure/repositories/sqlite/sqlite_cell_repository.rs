@@ -12,11 +12,10 @@ use crate::{
             cell::Cell,
             repetition::{Repetition, State},
         },
-        models::{
-            cell_deletion_request::CellDeletionRequest,
+        repositories::cell_repository::{CellDeletionRequest, CellRepository, MoveDirection},
+        value_objects::{
             file_repetitions_count::FileRepetitionCounts, home_statistics::HomeStatistics,
         },
-        repositories::cell_repository::{CellRepository, MoveDirection},
     },
     common::repository_error::RepositoryError,
     infrastructure::{

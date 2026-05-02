@@ -1,4 +1,4 @@
-import { Theme } from "../dto/settingsDto";
+import { Theme } from "../dto/updateSettingsRequestDto";
 
 export default interface UpdateSettingsRequest {
 	baseDatabaseDirectory: string | null;

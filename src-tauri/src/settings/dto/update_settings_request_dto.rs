@@ -6,7 +6,7 @@ use crate::settings::value_objects::{settings_profile::SettingsProfile, theme::T
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateSettingsRequest {
+pub struct UpdateSettingsRequestDto {
     pub base_database_directory: Option<PathBuf>,
     pub profile: Option<SettingsProfile>,
 

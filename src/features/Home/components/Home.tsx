@@ -4,13 +4,10 @@ import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors
 import ReviewTree from "./ReviewTree";
 import styles from "./styles.module.css";
 import ReviewHeatmap from "./ReviewHeatmap";
-import HomeStatistics from "../../../api/cells/models/homeStatistics";
+import HomeStatistics from "../../../api/cells/valueObjects/homeStatistics";
 import secondsToLongString from "../utils/secondsToLongString";
 import { getHomeStatistics } from "../../../api/cells/api/reviewApi";
-import {
-	ReviewTreeFile,
-	ReviewTreeFolder,
-} from "../../../api/fileSystem/dto/reviewTreeFolder";
+import { ReviewTreeFolderDto } from "../../../api/fileSystem/dto/reviewTreeFolderDto";
 import {
 	defaultGlobalSyncEventManager,
 	ListenerType,
@@ -18,6 +15,7 @@ import {
 import useAppDispatch from "../../../hooks/useAppDispatch";
 import { getReviewTreeFolderForRoot } from "../../../stores/fileSystem/fileSystemActions";
 import { CallApiFn } from "../../../hooks/useApi";
+import { ReviewTreeFileDto } from "../../../api/fileSystem/dto/reviewTreeFileDto";
 
 interface Props {
 	onStudyClick: (fileIds: string[]) => void;
@@ -53,7 +51,7 @@ function Home({ onStudyClick, callApi }: Props) {
 
 	const handleStudyClick = (
 		fileIds: string[],
-		item: ReviewTreeFolder | ReviewTreeFile,
+		item: ReviewTreeFolderDto | ReviewTreeFileDto,
 	) => {
 		if (
 			item.repetitionCounts.new +
@@ -65,7 +63,7 @@ function Home({ onStudyClick, callApi }: Props) {
 		}
 	};
 
-	const handleFolderClick = (folder: ReviewTreeFolder) => {
+	const handleFolderClick = (folder: ReviewTreeFolderDto) => {
 		const fileIds = [];
 		const folderQueue = [folder];
 		while (folderQueue.length > 0) {

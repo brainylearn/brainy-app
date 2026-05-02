@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use crate::{
     backend::{
+        backend_dto::{UpdatePasswordDto, UserInformationDto},
         clients::brainy_backend_client::BrainyBackendClient,
-        dto::sign_up_request::SignUpRequest,
-        models::{UpdatePasswordDto, UserInformationDto},
+        dto::sign_up_request_dto::SignUpRequestDto,
         services::authenticator::Authenticator,
     },
     common::api_error::ApiError,
@@ -30,7 +30,7 @@ pub async fn sign_in(
 #[tauri::command]
 pub async fn sign_up(
     injector: State<'_, Arc<Injector>>,
-    request: SignUpRequest,
+    request: SignUpRequestDto,
 ) -> Result<UserInformationDto, ApiError> {
     let scope = injector.start_scope();
     let dto = scope

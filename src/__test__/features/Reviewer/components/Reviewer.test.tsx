@@ -2,7 +2,7 @@ import styles from "../../../../features/Reviewer/components/styles.module.css";
 import { screen } from "@testing-library/react";
 import { getCellsForFilesWithFsrsProfileIds } from "../../../../api/cells/api/cellApi.ts";
 import Reviewer from "../../../../features/Reviewer/components/Reviewer.tsx";
-import { CellWithFsrsProfileId } from "../../../../api/cells/dto/cellWithFsrsProfileId.ts";
+import { CellWithFsrsProfileIdDto } from "../../../../api/cells/dto/cellWithFsrsProfileIdDto.ts";
 import Cell from "../../../../api/cells/entities/cell.ts";
 import Repetition from "../../../../api/cells/entities/repetition.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders.tsx";
@@ -29,7 +29,7 @@ describe("Reviewer", () => {
 	it("Should show counts correctly and sorts correctly", async () => {
 		// Arrange
 
-		const cellsWithFsrsProfileIds: CellWithFsrsProfileId[] = [
+		const cellsWithFsrsProfileIds: CellWithFsrsProfileIdDto[] = [
 			{
 				cell: {
 					repetitions: [
@@ -120,7 +120,7 @@ describe("Reviewer", () => {
 			additionalContent: "",
 		};
 
-		const cellsWithFsrsProfileIds: CellWithFsrsProfileId[] = [
+		const cellsWithFsrsProfileIds: CellWithFsrsProfileIdDto[] = [
 			{
 				cell: {
 					id: "cell-1",

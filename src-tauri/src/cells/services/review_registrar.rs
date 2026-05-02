@@ -2,7 +2,9 @@ use async_trait::async_trait;
 use thiserror::Error;
 
 use crate::{
-    cells::{entities::review::Rating, value_objects::repetition_update::RepetitionUpdate},
+    cells::{
+        dto::update_repetition_request_dto::UpdateRepetitionRequestDto, entities::review::Rating,
+    },
     common::repository_error::RepositoryError,
 };
 
@@ -16,7 +18,7 @@ pub enum ReviewRegistrarError {
 pub trait ReviewRegistrar: Send + Sync {
     async fn register_review(
         &self,
-        repetition_update: RepetitionUpdate,
+        repetition_update: UpdateRepetitionRequestDto,
         rating: Rating,
         study_time: u32,
     ) -> Result<(), ReviewRegistrarError>;

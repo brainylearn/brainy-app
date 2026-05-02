@@ -6,7 +6,7 @@ use injector_derive::ScopeInjectable;
 use crate::{
     database::database_connection_manager::DatabaseConnectionManager,
     settings::{
-        dto::update_settings_request::UpdateSettingsRequest,
+        dto::update_settings_request_dto::UpdateSettingsRequestDto,
         repositories::settings_repository::SettingsRepository,
         services::settings_updater::{SettingsUpdater, SettingsUpdaterError},
         value_objects::settings_profile::SettingsProfile,
@@ -23,7 +23,7 @@ pub struct DefaultSettingsUpdater {
 impl SettingsUpdater for DefaultSettingsUpdater {
     async fn update_settings(
         &self,
-        new_settings: UpdateSettingsRequest,
+        new_settings: UpdateSettingsRequestDto,
     ) -> Result<(), SettingsUpdaterError> {
         let mut settings = self.settings_repository.get_settings().await;
         let mut change_database_location = false;
@@ -102,8 +102,8 @@ mod tests {
         database::database_connection_manager::MockDatabaseConnectionManager,
         infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository,
         settings::{
-            dto::update_settings_request::UpdateSettingsRequest, entities::settings::Settings,
-            services::settings_updater::SettingsUpdater,
+            dto::update_settings_request_dto::UpdateSettingsRequestDto,
+            entities::settings::Settings, services::settings_updater::SettingsUpdater,
             value_objects::database_location::DatabaseLocation,
         },
         test_utils::create_test_injector,
@@ -135,7 +135,7 @@ mod tests {
     pub async fn update_settings_updated_database_location_called_manager() {
         // Arrange
 
-        let request = UpdateSettingsRequest {
+        let request = UpdateSettingsRequestDto {
             base_database_directory: Some("new path".into()),
             ..Default::default()
         };
@@ -161,7 +161,7 @@ mod tests {
     pub async fn update_settings_did_not_update_database_location_did_not_call_manager() {
         // Arrange
 
-        let request = UpdateSettingsRequest {
+        let request = UpdateSettingsRequestDto {
             ..Default::default()
         };
 

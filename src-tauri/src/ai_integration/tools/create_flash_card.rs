@@ -15,8 +15,8 @@ use crate::{
         tools::{AcceptToolCall, AcceptToolCallError},
     },
     cells::{
-        entities::cell::CellType, models::flash_card::FlashCard,
-        repositories::cell_repository::CellRepository, services::cell_creator::CellCreator,
+        entities::cell::CellType, repositories::cell_repository::CellRepository,
+        services::cell_creator::CellCreator, value_objects::flash_card::FlashCard,
     },
     common::repository_error::RepositoryError,
 };
