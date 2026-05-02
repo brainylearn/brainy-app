@@ -10,6 +10,7 @@
 - [ ] Make CLAUDE.md file
 - [X] Let Claude take a round for the front-end
 - [ ] Better repository error
+- [ ] Fix eslint and clippy warnings
 - [X] Update dependencies
 
 ## Front-end Critical

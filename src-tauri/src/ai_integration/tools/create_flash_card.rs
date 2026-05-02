@@ -15,8 +15,9 @@ use crate::{
         tools::{AcceptToolCall, AcceptToolCallError},
     },
     cells::{
-        entities::cell::CellType, repositories::cell_repository::CellRepository,
-        services::cell_creator::CellCreator, value_objects::flash_card::FlashCard,
+        dto::create_cell_request_dto::CreateCellRequestDto, entities::cell::CellType,
+        repositories::cell_repository::CellRepository, services::cell_creator::CellCreator,
+        value_objects::flash_card::FlashCard,
     },
     common::repository_error::RepositoryError,
 };
@@ -167,7 +168,12 @@ impl AcceptToolCall for AcceptCreateFlashCard {
         );
 
         self.cell_creator
-            .create_cell(file_id, flash_card, CellType::FlashCard, cell_index)
+            .create_cell(CreateCellRequestDto {
+                file_id,
+                content: flash_card,
+                cell_type: CellType::FlashCard,
+                index: cell_index,
+            })
             .await?;
 
         Ok(())
@@ -303,11 +309,21 @@ pub mod accept_create_flash_card_test {
 
         let cell_creator = scope.resolve::<dyn CellCreator>().await;
         cell_creator
-            .create_cell(file_id, "".to_string(), CellType::Note, 0)
+            .create_cell(CreateCellRequestDto {
+                file_id,
+                content: "".to_string(),
+                cell_type: CellType::Note,
+                index: 0,
+            })
             .await
             .unwrap();
         cell_creator
-            .create_cell(file_id, "".to_string(), CellType::Note, 1)
+            .create_cell(CreateCellRequestDto {
+                file_id,
+                content: "".to_string(),
+                cell_type: CellType::Note,
+                index: 1,
+            })
             .await
             .unwrap();
 

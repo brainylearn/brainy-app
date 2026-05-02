@@ -82,6 +82,7 @@ pub mod tests {
     use crate::{
         Guid, ROOT_FOLDER_ID,
         cells::{
+            dto::create_cell_request_dto::CreateCellRequestDto,
             entities::cell::CellType,
             repositories::cell_repository::CellRepository,
             services::{
@@ -91,9 +92,9 @@ pub mod tests {
         },
         file_system::{
             entities::{file::File, folder::Folder},
-            models::exported_item::ExportedItemType,
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
             services::item_exporter::ItemExporter,
+            value_objects::exported_item::ExportedItemType,
             value_objects::{
                 file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
             },
@@ -167,11 +168,21 @@ pub mod tests {
 
         let cell_creator = scope.resolve::<dyn CellCreator>().await;
         cell_creator
-            .create_cell(file_id, "note 1".to_string(), CellType::Note, 0)
+            .create_cell(CreateCellRequestDto {
+                file_id,
+                content: "note 1".to_string(),
+                cell_type: CellType::Note,
+                index: 0,
+            })
             .await
             .unwrap();
         cell_creator
-            .create_cell(file_id, "note 2".to_string(), CellType::Note, 1)
+            .create_cell(CreateCellRequestDto {
+                file_id,
+                content: "note 2".to_string(),
+                cell_type: CellType::Note,
+                index: 1,
+            })
             .await
             .unwrap();
 

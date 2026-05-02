@@ -42,8 +42,13 @@ vi.mock(import("@dnd-kit/react"));
 /** Creates a cell for testing where the id is equal to the index.
  */
 function createTestCell(index: number): Cell {
-	const cell = createDefaultCell("Note", index + "", index);
-	cell.id = index + "";
+	const request = createDefaultCell("Note", index + "", index);
+	const cell: Cell = {
+		...request,
+		id: index + "",
+		searchableContent: "",
+		repetitions: [],
+	};
 	return cell;
 }
 

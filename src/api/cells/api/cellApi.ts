@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import Cell from "../entities/cell";
 import UpdateCellRequestDto from "../dto/updateCellRequestDto";
+import CreateCellRequestDto from "../dto/createCellRequestDto";
 import { CellWithFsrsProfileIdDto } from "../dto/cellWithFsrsProfileIdDto";
 
 export function getFileCellsOrderedByIndex(fileId: string): Promise<Cell[]> {
@@ -13,9 +14,8 @@ export function updateCellsContents(requests: UpdateCellRequestDto[]) {
 	return invoke("update_cells_contents", { requests });
 }
 
-// TODO: should get its own dto request
-export function createCell(cell: Cell): Promise<string> {
-	return invoke("create_cell", { ...cell });
+export function createCell(request: CreateCellRequestDto): Promise<string> {
+	return invoke("create_cell", { request });
 }
 
 export function deleteCell(id: string) {

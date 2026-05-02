@@ -6,7 +6,8 @@ use injector_derive::ScopeInjectable;
 use crate::{
     Guid,
     cells::{
-        entities::cell::{Cell, CellType},
+        dto::create_cell_request_dto::CreateCellRequestDto,
+        entities::cell::Cell,
         repositories::cell_repository::{CellRepository, MoveDirection},
         services::cell_creator::{CellCreator, CellCreatorError},
     },
@@ -19,21 +20,24 @@ pub struct DefaultCellCreator {
 
 #[async_trait]
 impl CellCreator for DefaultCellCreator {
-    async fn create_cell(
-        &self,
-        file_id: Guid,
-        content: String,
-        cell_type: CellType,
-        index: u32,
-    ) -> Result<Guid, CellCreatorError> {
+    async fn create_cell(&self, request: CreateCellRequestDto) -> Result<Guid, CellCreatorError> {
         log::info!(
-            "Creating cell on file with id {file_id}, and cell type {cell_type}, and index {index}"
+            "Creating cell on file with id {}, and cell type {}, and index {}",
+            request.file_id,
+            request.cell_type,
+            request.index
         );
 
-        let cell = Cell::new(None, file_id, content, cell_type, index);
+        let cell = Cell::new(
+            None,
+            request.file_id,
+            request.content,
+            request.cell_type,
+            request.index,
+        );
 
         self.cell_repository
-            .move_cells_indices_starting_from(file_id, index, MoveDirection::Down)
+            .move_cells_indices_starting_from(cell.file_id(), cell.index(), MoveDirection::Down)
             .await?;
         self.cell_repository.create(&cell).await?;
 
@@ -114,7 +118,12 @@ pub mod tests {
         // Act
 
         let actual = service
-            .create_cell(file.id(), "".to_string(), CellType::Cloze, 2)
+            .create_cell(CreateCellRequestDto {
+                file_id: file.id(),
+                content: "".to_string(),
+                cell_type: CellType::Cloze,
+                index: 2,
+            })
             .await
             .unwrap();
         scope.save_changes().await.unwrap();

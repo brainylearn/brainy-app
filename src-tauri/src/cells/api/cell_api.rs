@@ -5,9 +5,10 @@ use crate::{
     cells::{
         dto::{
             cell_with_fsrs_profile_id_dto::CellWithFsrsProfileIdDto,
+            create_cell_request_dto::CreateCellRequestDto,
             update_cell_request_dto::UpdateCellRequestDto,
         },
-        entities::cell::{Cell, CellType},
+        entities::cell::Cell,
         repositories::cell_repository::CellRepository,
         services::{
             cell_creator::CellCreator, cell_deleter::CellDeleter,
@@ -37,16 +38,13 @@ pub async fn get_file_cells_ordered_by_index(
 #[tauri::command]
 pub async fn create_cell(
     injector: State<'_, Arc<Injector>>,
-    file_id: Guid,
-    content: String,
-    cell_type: CellType,
-    index: u32,
+    request: CreateCellRequestDto,
 ) -> Result<Guid, ApiError> {
     let scope = injector.start_scope();
     let id = scope
         .resolve::<dyn CellCreator>()
         .await
-        .create_cell(file_id, content, cell_type, index)
+        .create_cell(request)
         .await?;
     scope.save_changes().await?;
     Ok(id)

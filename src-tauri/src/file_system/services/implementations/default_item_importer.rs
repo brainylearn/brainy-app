@@ -7,7 +7,9 @@ use injector_derive::ScopeInjectable;
 
 use crate::{
     Guid,
-    cells::services::cell_creator::CellCreator,
+    cells::{
+        dto::create_cell_request_dto::CreateCellRequestDto, services::cell_creator::CellCreator,
+    },
     file_system::{
         services::{
             item_creator::{FileCreator, FolderCreator},
@@ -48,7 +50,12 @@ impl ItemImporter for DefaultItemImporter {
                 {
                     let purified_html = purify_html(&cell.content);
                     self.cell_creator
-                        .create_cell(file_id, purified_html, cell.cell_type, i as u32)
+                        .create_cell(CreateCellRequestDto {
+                            file_id,
+                            content: purified_html,
+                            cell_type: cell.cell_type,
+                            index: i as u32,
+                        })
                         .await?;
                 }
             }
@@ -87,6 +94,7 @@ pub mod tests {
     use crate::{
         ROOT_FOLDER_ID,
         cells::{
+            dto::create_cell_request_dto::CreateCellRequestDto,
             entities::cell::CellType,
             repositories::cell_repository::CellRepository,
             services::{
@@ -184,17 +192,23 @@ pub mod tests {
             .unwrap();
 
         cell_creator
-            .create_cell(file_id, "note 1".to_string(), CellType::Note, 0)
+            .create_cell(CreateCellRequestDto {
+                file_id,
+                content: "note 1".to_string(),
+                cell_type: CellType::Note,
+                index: 0,
+            })
             .await
             .unwrap();
         cell_creator
-            .create_cell(
+            .create_cell(CreateCellRequestDto {
                 file_id,
-                "content<script>alert('hello')</script><button onLoad='alert'>button</button>"
-                    .to_string(),
-                CellType::Note,
-                1,
-            )
+                content:
+                    "content<script>alert('hello')</script><button onLoad='alert'>button</button>"
+                        .to_string(),
+                cell_type: CellType::Note,
+                index: 1,
+            })
             .await
             .unwrap();
 

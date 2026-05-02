@@ -1,27 +1,29 @@
-import Cell, { CellType } from "../../../api/cells/entities/cell";
+import { CellType } from "../../../api/cells/entities/cell";
+import CreateCellRequestDto from "../../../api/cells/dto/createCellRequestDto";
 import FlashCard from "../../../api/cells/valueObjects/flashCard";
 import TrueFalse from "../../../api/cells/valueObjects/trueFalse";
 
-function createDefaultCell(cellType: CellType, fileId: string, index: number) {
-	const cell: Cell = {
-		id: "",
+function createDefaultCell(
+	cellType: CellType,
+	fileId: string,
+	index: number,
+): CreateCellRequestDto {
+	const request: CreateCellRequestDto = {
 		fileId,
 		content: "",
-		searchableContent: "",
 		cellType,
 		index,
-		repetitions: [],
 	};
 
 	switch (cellType) {
 		case "FlashCard":
-			cell.content = JSON.stringify({
+			request.content = JSON.stringify({
 				question: "",
 				answer: "",
 			} as FlashCard);
 			break;
 		case "TrueFalse":
-			cell.content = JSON.stringify({
+			request.content = JSON.stringify({
 				question: "",
 				isTrue: true,
 			} as TrueFalse);
@@ -30,7 +32,7 @@ function createDefaultCell(cellType: CellType, fileId: string, index: number) {
 		case "Cloze":
 			break;
 	}
-	return cell;
+	return request;
 }
 
 export default createDefaultCell;
