@@ -29,7 +29,6 @@ Documentation:
 - [ ] **`unwrap()` on RFC3339 parse from config** — `src/sync/sync_service.rs:91`, `src/backup/backup_service.rs:69`: Corrupt `LAST_SYNC_DATE` / `LAST_BACKUP_DATE` config value panics the task; propagate as an error
 - [ ] **`serde_json::to_string().unwrap()` on export** — `src/file_system/api/export_import_api.rs:55`: NaN/Infinity floats cause panic; propagate with `?`
 - [ ] **Unbounded recursion in FSRS profile traversal** — `src/fsrs/fsrs_api.rs:153`, `src/cells/api/cell_api.rs:147`: A cycle in `parent_id` (no DB-level cycle prevention) would exhaust the stack; add a max-depth counter
-- [ ] **HTTP 201/204 treated as error** — `src/infrastructure/clients/brainy_backend_http_client.rs:363`: Only `200 OK` is accepted as success; `201 Created` and `204 No Content` are valid for POST/DELETE and should be accepted
 - [ ] **`FsrsProfile::new_unchecked` skips weight count validation** — `src/fsrs/entities/fsrs_profile.rs:38`: Sync and DB paths bypass the 21-weight check; FSRS silently operates on wrong-length vectors
 - [ ] **`move_cell` transient duplicate index during backward move** — `src/cells/cell_service.rs:72`: Two cells briefly share the same index mid-transaction; would violate a uniqueness constraint if one is added
 - [ ] **`convert_rows_to_cells(...).remove(0)` panics on empty result** — `src/infrastructure/repositories/sqlite/sqlite_cell_repository.rs:82`: Missing ID returns empty vec and `.remove(0)` panics; return `RepositoryError::NotFound`

@@ -379,8 +379,8 @@ async fn ensure_success_response(
     log::info!("{response:#?}");
 
     match response.status() {
+        status if status.is_success() => Ok(response),
         StatusCode::UNAUTHORIZED => Err(BrainyBackendClientError::Unauthorized),
-        StatusCode::OK => Ok(response),
         StatusCode::BAD_REQUEST => match response.json::<ProblemDetails>().await {
             Ok(problem_details) => {
                 Err(BrainyBackendClientError::BadRequest(problem_details.detail))
