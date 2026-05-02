@@ -58,7 +58,7 @@ pub async fn is_signed_in(injector: State<'_, Arc<Injector>>) -> Result<bool, Ap
     Ok(scope
         .resolve::<dyn BrainyBackendClient>()
         .await
-        .is_signed_in())
+        .is_signed_in()?)
 }
 
 #[tauri::command]

@@ -13,7 +13,7 @@ pub enum BrainyBackendClientError {
     InvalidCredentials,
     #[error("Unauthorized!")]
     Unauthorized,
-    #[error("The application received an unexpected respone!")]
+    #[error("The application received an unexpected response!")]
     UnexpectedResponse,
     #[error("An unknown error happend while sending the request!")]
     Unknown(String),
@@ -27,6 +27,8 @@ pub enum BrainyBackendClientError {
     Timeout,
     #[error("Cannot save authentication cookies")]
     CannotSaveAuthenticationCookies(String),
+    #[error("Cannot load stored cookies")]
+    CannotLoadStoredCookies,
 }
 
 #[cfg_attr(test, automock)]
@@ -54,7 +56,7 @@ pub trait BrainyBackendClient: Send + Sync {
 
     async fn get_user_information(&self) -> Result<UserInformationDto, BrainyBackendClientError>;
 
-    fn is_signed_in(&self) -> bool;
+    fn is_signed_in(&self) -> Result<bool, BrainyBackendClientError>;
 
     async fn update_user_information(
         &self,

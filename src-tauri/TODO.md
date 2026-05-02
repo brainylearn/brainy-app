@@ -32,9 +32,3 @@ Documentation:
 - [ ] **`FsrsProfile::new_unchecked` skips weight count validation** — `src/fsrs/entities/fsrs_profile.rs:38`: Sync and DB paths bypass the 21-weight check; FSRS silently operates on wrong-length vectors
 - [ ] **`move_cell` transient duplicate index during backward move** — `src/cells/cell_service.rs:72`: Two cells briefly share the same index mid-transaction; would violate a uniqueness constraint if one is added
 - [ ] **`convert_rows_to_cells(...).remove(0)` panics on empty result** — `src/infrastructure/repositories/sqlite/sqlite_cell_repository.rs:82`: Missing ID returns empty vec and `.remove(0)` panics; return `RepositoryError::NotFound`
-
-## Low Priority
-
-- [ ] **Regex compiled per call** — `src/cells/entities/cell.rs:159,203`: `Regex::new(...)` called on every `update_searchable_content`; use `OnceLock<Regex>` statics
-- [ ] **`std::sync::Mutex` unwrap in async context** — `src/infrastructure/clients/brainy_backend_http_client.rs:207,325`: Panics on mutex poison and causes latency jitter; handle the poison case
-- [ ] **Backup interval burst behavior** — `src/lib.rs:110-122`: Default `MissedTickBehavior::Burst` piles up ticks if backup runs long; use `MissedTickBehavior::Skip`

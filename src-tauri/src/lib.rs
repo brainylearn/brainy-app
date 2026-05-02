@@ -110,6 +110,7 @@ pub async fn run() -> Result<(), String> {
             tokio::spawn(async move {
                 let mut interval =
                     tokio::time::interval(Duration::from_mins(TIME_BETWEEN_BACKUPS_IN_MINUTES));
+                interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
                 loop {
                     interval.tick().await;

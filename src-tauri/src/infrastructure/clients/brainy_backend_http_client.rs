@@ -203,16 +203,22 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
         }
     }
 
-    fn is_signed_in(&self) -> bool {
-        let store = self.cookie_store.lock().unwrap();
+    fn is_signed_in(&self) -> Result<bool, BrainyBackendClientError> {
+        let store = match self.cookie_store.lock() {
+            Ok(store) => store,
+            Err(err) => {
+                log::error!("Cookie store mutex poisoned: {:?}", err);
+                return Err(BrainyBackendClientError::CannotLoadStoredCookies);
+            }
+        };
 
         for cookie in store.iter_unexpired() {
             if cookie.name() == ".AspNetCore.Cookies" {
-                return true;
+                return Ok(true);
             }
         }
 
-        false
+        Ok(false)
     }
 
     async fn update_user_information(
@@ -322,7 +328,13 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
 impl BrainyBackendHttpClient {
     fn persist_cookies(&self) -> Result<(), BrainyBackendClientError> {
         let mut writer = std::io::BufWriter::new(Vec::new());
-        let store = self.cookie_store.lock().unwrap();
+        let store = match self.cookie_store.lock() {
+            Ok(store) => store,
+            Err(err) => {
+                log::error!("Cookie store mutex poisoned: {:?}", err);
+                return Err(BrainyBackendClientError::CannotLoadStoredCookies);
+            }
+        };
         cookie_store::serde::json::save(&store, &mut writer).unwrap();
         let cookies_json = String::from_utf8(writer.into_inner().unwrap()).unwrap();
 
