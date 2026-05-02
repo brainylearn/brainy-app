@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::{
     Guid,
-    cells::repositories::cell_repository::CellRepository,
     common::api_error::ApiError,
     file_system::{
         repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
@@ -10,6 +9,7 @@ use crate::{
             item_creator::{FileCreator, FolderCreator},
             item_mover::{FileMover, FolderMover},
             item_renamer::{FileRenamer, FolderRenamer},
+            review_tree_builder::ReviewTreeBuilder,
         },
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
@@ -25,25 +25,11 @@ pub async fn get_review_tree_folder_for_root(
 ) -> Result<ReviewTreeFolderDto, ApiError> {
     let scope = injector.start_scope();
 
-    let folders = scope
-        .resolve::<dyn FolderRepository>()
+    let result = scope
+        .resolve::<dyn ReviewTreeBuilder>()
         .await
-        .get_all_folders()
+        .build()
         .await?;
-    let files = scope
-        .resolve::<dyn FileRepository>()
-        .await
-        .get_all_files()
-        .await?;
-
-    let repetition_counts = scope
-        .resolve::<dyn CellRepository>()
-        .await
-        .get_study_repetitions_for_all_files()
-        .await?;
-
-    let result =
-        ReviewTreeFolderDto::parse_file_system_from_root(&folders, &files, repetition_counts);
     Ok(result)
 }
 

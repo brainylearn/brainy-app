@@ -9,7 +9,6 @@ use crate::{
 };
 
 #[derive(Error, Debug, PartialEq, Eq)]
-#[allow(clippy::enum_variant_names)]
 pub enum SyncError {
     #[error(transparent)]
     Repository(#[from] RepositoryError),

@@ -75,12 +75,14 @@ use crate::{
             default_item_creator::DefaultItemCreator, default_item_exporter::DefaultItemExporter,
             default_item_importer::DefaultItemImporter, default_item_mover::DefaultItemMover,
             default_item_renamer::DefaultItemRenamer,
+            default_review_tree_builder::DefaultReviewTreeBuilder,
         },
         item_creator::{FileCreator, FolderCreator},
         item_exporter::ItemExporter,
         item_importer::ItemImporter,
         item_mover::{FileMover, FolderMover},
         item_renamer::{FileRenamer, FolderRenamer},
+        review_tree_builder::ReviewTreeBuilder,
     },
     fsrs::services::{
         fsrs_profile_deleter::FsrsProfileDeleter,
@@ -179,6 +181,8 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     register_scope!(injector, dyn FolderRenamer, DefaultItemRenamer);
     register_scope!(injector, dyn FileRenamer, DefaultItemRenamer);
+
+    register_scope!(injector, dyn ReviewTreeBuilder, DefaultReviewTreeBuilder);
 
     // FSRS services
 
