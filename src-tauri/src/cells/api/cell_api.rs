@@ -3,24 +3,21 @@ use std::sync::Arc;
 use crate::{
     Guid,
     cells::{
+        dto::{
+            cell_with_fsrs_profile_id_dto::CellWithFsrsProfileIdDto,
+            update_cell_request_dto::UpdateCellRequestDto,
+        },
         entities::cell::{Cell, CellType},
         repositories::cell_repository::CellRepository,
-        services::{cell_creator::CellCreator, cell_deleter::CellDeleter, cell_mover::CellMover},
-    },
-    file_system::{
-        repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
-        value_objects::fsrs_profile_choice::FsrsProfileChoice,
-    },
-    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
-};
-use crate::{
-    cells::dto::{
-        cell_with_fsrs_profile_id_dto::CellWithFsrsProfileIdDto,
-        update_cell_request_dto::UpdateCellRequestDto,
+        services::{
+            cell_creator::CellCreator, cell_deleter::CellDeleter,
+            cell_fsrs_provider::CellFsrsProvider, cell_mover::CellMover,
+        },
     },
     common::api_error::ApiError,
+    infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
-use injector::{injector::Injector, injector_scope::InjectorScope};
+use injector::injector::Injector;
 use tauri::State;
 
 #[tauri::command]
@@ -106,58 +103,10 @@ pub async fn get_cells_for_files_with_fsrs_profile_ids(
     file_ids: Vec<Guid>,
 ) -> Result<Vec<CellWithFsrsProfileIdDto>, ApiError> {
     let scope = injector.start_scope();
-    let file_repository = scope.resolve::<dyn FileRepository>().await;
-    let cell_repository = scope.resolve::<dyn CellRepository>().await;
-
-    let mut result = Vec::new();
-
-    for file_id in file_ids {
-        let file = file_repository.get_by_id(file_id).await?;
-
-        let fsrs_profile_id = get_fsrs_profile_id_for_item_recursively(
-            &scope,
-            file.fsrs_profile_choice(),
-            file.parent_id(),
-        )
+    let result = scope
+        .resolve::<dyn CellFsrsProvider>()
+        .await
+        .get_cells_with_fsrs_profile_ids(file_ids)
         .await?;
-
-        let mut cells = cell_repository
-            .get_file_cells_ordered_by_index(file_id)
-            .await?
-            .into_iter()
-            .map(|cell| CellWithFsrsProfileIdDto {
-                cell,
-                fsrs_profile_id,
-            })
-            .collect::<Vec<_>>();
-
-        result.append(&mut cells);
-    }
-
     Ok(result)
-}
-
-async fn get_fsrs_profile_id_for_item_recursively(
-    scope: &InjectorScope<'_>,
-    mut fsrs_profile_choice: FsrsProfileChoice,
-    mut parent_id: Option<Guid>,
-) -> Result<Guid, ApiError> {
-    let folder_repository = scope.resolve::<dyn FolderRepository>().await;
-
-    while FsrsProfileChoice::Inherit == fsrs_profile_choice {
-        if parent_id.is_none() {
-            return Err(ApiError::new(
-                "The root folder cannot have inherit FSRS profile!".into(),
-            ));
-        }
-        let parent = folder_repository.get_by_id(parent_id.unwrap()).await?;
-        fsrs_profile_choice = parent.fsrs_profile_choice();
-        parent_id = parent.parent_id();
-    }
-
-    if let FsrsProfileChoice::Id(id) = fsrs_profile_choice {
-        return Ok(id);
-    }
-
-    unreachable!()
 }

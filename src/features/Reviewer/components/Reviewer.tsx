@@ -1,4 +1,3 @@
-// TODO: fix unit tests
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./styles.module.css";
 import ReviewerCell from "../../ReviewerCell/components/ReviewerCell";
@@ -82,13 +81,10 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 		return sortReviewerRepetitions(
 			cellsWithFsrsProfileIds
 				.map(c => {
-					return c.cell.repetitions.map(
-						r =>
-							({
-								repetition: r,
-								fsrsProfileId: c.fsrsProfileId,
-							}) as RepetitionWithFsrsProfileId,
-					);
+					return c.cell.repetitions.map(r => ({
+						repetition: r,
+						fsrsProfileId: c.fsrsProfileId,
+					}));
 				})
 				.flat()
 				.filter(r => new Date(r.repetition.due) <= startTime),

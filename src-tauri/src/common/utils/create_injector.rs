@@ -63,9 +63,11 @@ use crate::{
         implementations::default_backup_service::DefaultBackupService,
     },
     cells::services::{
-        cell_creator::CellCreator, cell_invariants_enforcer::CellInvariantsEnforcer,
+        cell_creator::CellCreator, cell_fsrs_provider::CellFsrsProvider,
+        cell_invariants_enforcer::CellInvariantsEnforcer,
         implementations::default_cell_creator::DefaultCellCreator,
         implementations::default_cell_deleter::DefaultCellDeleter,
+        implementations::default_cell_fsrs_provider::DefaultCellFsrsProvider,
         implementations::default_cell_invariants_enforcer::DefaultCellInvariantsEnforcer,
         implementations::default_cell_mover::DefaultCellMover,
         implementations::default_review_registrar::DefaultReviewRegistrar,
@@ -164,6 +166,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     register_scope!(injector, dyn CellCreator, DefaultCellCreator);
     register_scope!(injector, dyn CellDeleter, DefaultCellDeleter);
+    register_scope!(injector, dyn CellFsrsProvider, DefaultCellFsrsProvider);
     register_scope!(
         injector,
         dyn CellInvariantsEnforcer,
