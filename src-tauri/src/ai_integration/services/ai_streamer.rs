@@ -5,6 +5,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 use crate::{
+    SourceError,
     ai_integration::{
         dto::stream_ai_request_dto::StreamAiRequestDto,
         entities::{chat::Chat, message::Message},
@@ -35,8 +36,8 @@ pub type OnEventCallback =
 pub enum AiStreamerError {
     #[error(transparent)]
     Repository(#[from] RepositoryError),
-    #[error("An error happened while creating the new chat: {0}")]
-    CreateChat(String),
+    #[error("An error happened while creating the new chat")]
+    CreateChat(#[source] SourceError),
     #[error(transparent)]
     AiClientProvider(#[from] AiClientProviderError),
     #[error(transparent)]

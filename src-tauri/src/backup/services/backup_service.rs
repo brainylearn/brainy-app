@@ -2,19 +2,27 @@ use async_trait::async_trait;
 use thiserror::Error;
 
 use crate::{
-    common::repository_error::RepositoryError,
+    SourceError, common::repository_error::RepositoryError,
     database::database_connection_manager::DatabaseConnectionManagerError,
 };
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug)]
 pub enum BackupServiceError {
     #[error(transparent)]
     Repository(#[from] RepositoryError),
     #[error(transparent)]
     DatabaseConnectionManager(#[from] DatabaseConnectionManagerError),
     #[error("The application is not able to list the entries in the settings folder!")]
-    CannotListEntriesInFolder(String),
+    CannotListEntriesInFolder(#[source] SourceError),
 }
+
+impl PartialEq for BackupServiceError {
+    fn eq(&self, other: &Self) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
+    }
+}
+
+impl Eq for BackupServiceError {}
 
 pub const TIME_BETWEEN_BACKUPS_IN_MINUTES: u64 = 120;
 

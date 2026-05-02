@@ -5,9 +5,10 @@ use chrono::{DateTime, Utc};
 use mockall::automock;
 use thiserror::Error;
 
+use crate::SourceError;
 use crate::backend::backend_dto::{SyncedEntitiesPageDto, UpdatePasswordDto, UserInformationDto};
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug)]
 pub enum BrainyBackendClientError {
     #[error("Invalid credentials!")]
     InvalidCredentials,
@@ -15,10 +16,10 @@ pub enum BrainyBackendClientError {
     Unauthorized,
     #[error("The application received an unexpected response!")]
     UnexpectedResponse,
-    #[error("An unknown error happend while sending the request!")]
-    Unknown(String),
+    #[error("An unknown error happened while sending the request")]
+    Unknown(#[source] SourceError),
     #[error("Error deserializing the response received.")]
-    Deserialization(String),
+    Deserialization(#[source] SourceError),
     #[error("{0}")]
     BadRequest(String),
     #[error("Error connecting to the server, please try again!")]
@@ -26,10 +27,21 @@ pub enum BrainyBackendClientError {
     #[error("The request has timed out, please try again!")]
     Timeout,
     #[error("Cannot save authentication cookies")]
-    CannotSaveAuthenticationCookies(String),
+    CannotSaveAuthenticationCookies(#[source] SourceError),
     #[error("Cannot load stored cookies")]
     CannotLoadStoredCookies,
 }
+
+impl PartialEq for BrainyBackendClientError {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::BadRequest(a), Self::BadRequest(b)) => a == b,
+            _ => std::mem::discriminant(self) == std::mem::discriminant(other),
+        }
+    }
+}
+
+impl Eq for BrainyBackendClientError {}
 
 #[cfg_attr(test, automock)]
 #[async_trait]

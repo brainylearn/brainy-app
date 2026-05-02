@@ -10,7 +10,7 @@ use rig::{
 use thiserror::Error;
 
 use crate::{
-    Guid, ai_integration::services::ai_client_provider::AiClientProviderError,
+    Guid, SourceError, ai_integration::services::ai_client_provider::AiClientProviderError,
     common::repository_error::RepositoryError,
 };
 
@@ -18,15 +18,15 @@ use crate::{
 pub enum DocumentUploaderError {
     #[error(transparent)]
     Repository(#[from] RepositoryError),
-    #[error("An unknown error has happened!")]
-    Unknown(String),
-    #[error("Error loading file: {0}")]
+    #[error("An unknown error has happened")]
+    Unknown(#[source] SourceError),
+    #[error("Error loading file")]
     FileLoader(#[from] FileLoaderError),
-    #[error("Error loading pdf file: {0}")]
+    #[error("Error loading pdf file")]
     PdfLoader(#[from] PdfLoaderError),
-    #[error("Embed error: {0}")]
+    #[error("Embed error")]
     Embed(#[from] EmbedError),
-    #[error("Embedding error: {0}")]
+    #[error("Embedding error")]
     Embedding(#[from] EmbeddingError),
     #[error(transparent)]
     VectorStore(#[from] VectorStoreError),
@@ -36,7 +36,15 @@ pub enum DocumentUploaderError {
 
 impl From<String> for DocumentUploaderError {
     fn from(value: String) -> Self {
-        DocumentUploaderError::Unknown(value)
+        #[derive(Debug)]
+        struct StringError(String);
+        impl std::fmt::Display for StringError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+        impl std::error::Error for StringError {}
+        DocumentUploaderError::Unknown(Box::new(StringError(value)))
     }
 }
 

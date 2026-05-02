@@ -106,7 +106,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
 
         match response.json::<UserInformationDto>().await {
             Ok(result) => Ok(result),
-            Err(err) => Err(BrainyBackendClientError::Deserialization(err.to_string())),
+            Err(err) => Err(BrainyBackendClientError::Deserialization(Box::new(err))),
         }
     }
 
@@ -135,7 +135,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
 
         match response.json::<UserInformationDto>().await {
             Ok(result) => Ok(result),
-            Err(err) => Err(BrainyBackendClientError::Deserialization(err.to_string())),
+            Err(err) => Err(BrainyBackendClientError::Deserialization(Box::new(err))),
         }
     }
 
@@ -199,7 +199,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
         let response = ensure_success_response(response).await?;
         match response.json::<UserInformationDto>().await {
             Ok(result) => Ok(result),
-            Err(err) => Err(BrainyBackendClientError::Deserialization(err.to_string())),
+            Err(err) => Err(BrainyBackendClientError::Deserialization(Box::new(err))),
         }
     }
 
@@ -261,7 +261,7 @@ impl BrainyBackendClient for BrainyBackendHttpClient {
         let response = ensure_success_response(response).await?;
         match response.json::<SyncedEntitiesPageDto>().await {
             Ok(result) => Ok(result),
-            Err(err) => Err(BrainyBackendClientError::Deserialization(err.to_string())),
+            Err(err) => Err(BrainyBackendClientError::Deserialization(Box::new(err))),
         }
     }
 
@@ -343,7 +343,7 @@ impl BrainyBackendHttpClient {
             log::info!("Saving the following cookies to keyring: {cookies_json}");
             if let Err(err) = keyring_entry.set_password(&cookies_json) {
                 return Err(BrainyBackendClientError::CannotSaveAuthenticationCookies(
-                    err.to_string(),
+                    Box::new(err),
                 ));
             }
         }
@@ -366,7 +366,7 @@ async fn ensure_success_response(
         } else if err.is_timeout() {
             return Err(BrainyBackendClientError::Timeout);
         } else {
-            return Err(BrainyBackendClientError::Unknown(err.to_string()));
+            return Err(BrainyBackendClientError::Unknown(Box::new(err)));
         }
     }
 
@@ -385,7 +385,7 @@ async fn ensure_success_response(
             Ok(problem_details) => {
                 Err(BrainyBackendClientError::BadRequest(problem_details.detail))
             }
-            Err(err) => Err(BrainyBackendClientError::Deserialization(err.to_string())),
+            Err(err) => Err(BrainyBackendClientError::Deserialization(Box::new(err))),
         },
         _ => Err(BrainyBackendClientError::UnexpectedResponse),
     }

@@ -100,9 +100,7 @@ impl DefaultBackupService {
         let mut entries = match fs::read_dir(&settings.database_directory()).await {
             Ok(entries) => entries,
             Err(err) => {
-                return Err(BackupServiceError::CannotListEntriesInFolder(
-                    err.to_string(),
-                ));
+                return Err(BackupServiceError::CannotListEntriesInFolder(Box::new(err)));
             }
         };
 

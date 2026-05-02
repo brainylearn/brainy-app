@@ -158,7 +158,7 @@ impl DefaultAiStreamer {
             .await
         {
             Ok(response) => response,
-            Err(err) => return Err(AiStreamerError::CreateChat(err.to_string())),
+            Err(err) => return Err(AiStreamerError::CreateChat(Box::new(err))),
         };
 
         log::info!("Generated title for chat is '{}'.", response.title);

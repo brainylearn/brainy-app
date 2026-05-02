@@ -122,7 +122,7 @@ impl AiClientProvider for DefaultAiClientProvider {
         let conn = match Connection::open(path).await {
             Err(err) => {
                 return Err(AiClientProviderError::ConnectingToEmbeddingsDatabase(
-                    err.to_string(),
+                    Box::new(err),
                 ));
             }
             Ok(conn) => conn,

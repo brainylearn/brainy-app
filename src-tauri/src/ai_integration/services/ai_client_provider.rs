@@ -3,6 +3,7 @@ use rig::vector_store::VectorStoreError;
 use rig_sqlite::SqliteVectorStore;
 use thiserror::Error;
 
+use crate::SourceError;
 use crate::ai_integration::clients::multi_client::MultiClient;
 use crate::ai_integration::clients::multi_client::multi_embedding_model::MultiEmbeddingModel;
 use crate::ai_integration::entities::document::Document;
@@ -18,7 +19,7 @@ pub enum AiClientProviderError {
     #[error("Ollama embeddings model name is not filled in settings!")]
     OllamaEmbeddingsModelNameIsNotFilled,
     #[error("Error connecting to embeddings database")]
-    ConnectingToEmbeddingsDatabase(String),
+    ConnectingToEmbeddingsDatabase(#[source] SourceError),
     #[error(transparent)]
     VectorStore(#[from] VectorStoreError),
     #[cfg(not(test))]
