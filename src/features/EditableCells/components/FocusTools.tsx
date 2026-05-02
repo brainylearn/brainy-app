@@ -8,12 +8,12 @@ import {
 } from "@mdi/js";
 import styles from "./styles.module.css";
 import { Icon } from "@mdi/react";
-import Repetition from "../../../types/backend/entity/repetition";
-import Cell from "../../../types/backend/entity/cell";
+import Repetition from "../../../api/cells/entities/repetition";
+import Cell from "../../../api/cells/entities/cell";
 import { useRef, useState } from "react";
 import useOutsideClick from "../../../hooks/useOutsideClick";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
-import { resetRepetitionsForCell } from "../../../api/repetitionApi";
+import { resetRepetitionsForCell } from "../../../api/cells/api/repetitionApi";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import RepetitionsInfo from "./RepetitionsInfo";
 import { CallApiFn } from "../../../hooks/useApi";

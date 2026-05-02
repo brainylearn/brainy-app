@@ -1,4 +1,4 @@
-import { RepetitionState } from "../entity/repetition";
+import { RepetitionState } from "../entities/repetition";
 
 export default interface RepetitionUpdate {
 	id: string;

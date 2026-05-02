@@ -3,7 +3,7 @@ import { FormRows, FormRowsProps } from "../../../../components/Form/Form";
 import CheckBox from "../../../../components/Checkbox/Checkbox";
 import { Icon } from "@mdi/react";
 import { mdiFolderOpenOutline } from "@mdi/js";
-import SettingsDto from "../../../../types/backend/dto/settingsDto";
+import SettingsDto from "../../../../api/settings/dto/settingsDto";
 import { TabProps } from "../../types/tabProps";
 import { isMobile } from "../../../../utils/tauriUtils";
 

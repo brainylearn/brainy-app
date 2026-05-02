@@ -3,7 +3,7 @@ import Row from "./Row";
 import {
 	ReviewTreeFile,
 	ReviewTreeFolder,
-} from "../../../types/backend/dto/reviewTreeFolder";
+} from "../../../api/fileSystem/dto/reviewTreeFolder";
 import useLocalStorage from "../../../hooks/useLocalStorage";
 
 interface Props {

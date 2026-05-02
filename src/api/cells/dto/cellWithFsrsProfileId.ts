@@ -1,4 +1,4 @@
-import Cell from "../entity/cell";
+import Cell from "../entities/cell";
 
 export interface CellWithFsrsProfileId {
 	cell: Cell;

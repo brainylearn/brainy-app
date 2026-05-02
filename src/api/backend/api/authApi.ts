@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { UserInformationDto } from "../types/backend/dto/userInformationDto";
-import SignUpRequest from "../types/backend/dto/signUpRequest";
+import { UserInformationDto } from "../dto/userInformationDto";
+import SignUpRequest from "../dto/signUpRequest";
 
 export function signIn(
 	username: string,

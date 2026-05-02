@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
-import Cell from "../../../types/backend/entity/cell";
+import Cell from "../../../api/cells/entities/cell";
 import useBeforeUnload from "../../../hooks/useBeforeUnload";
-import UpdateCellRequest from "../../../types/backend/dto/updateCellRequest";
-import { updateCellsContents } from "../../../api/cellApi";
+import UpdateCellRequest from "../../../api/cells/dto/updateCellRequest";
+import { updateCellsContents } from "../../../api/cells/api/cellApi";
 import { AUTO_SAVE_DELAY_IN_MILLISECONDS } from "../../../config/constants";
 import {
 	defaultGlobalSyncEventManager,

@@ -1,4 +1,4 @@
-import SettingsDto, { Theme } from "../../../../types/backend/dto/settingsDto";
+import SettingsDto, { Theme } from "../../../../api/settings/dto/settingsDto";
 import { FormRows, FormRowsProps } from "../../../../components/Form/Form";
 import { TabProps } from "../../types/tabProps";
 import Select from "../../../../components/Select/Select";

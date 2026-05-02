@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ReviewTreeFolder } from "../types/backend/dto/reviewTreeFolder";
+import { ReviewTreeFolder } from "../dto/reviewTreeFolder";
 
 export function createFolder(name: string, parentId: string): Promise<string> {
 	return invoke("create_folder", { name, parentId });

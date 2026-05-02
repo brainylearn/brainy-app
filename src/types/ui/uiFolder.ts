@@ -1,4 +1,4 @@
-import { ReviewTreeFolder } from "../backend/dto/reviewTreeFolder";
+import { ReviewTreeFolder } from "../../api/fileSystem/dto/reviewTreeFolder";
 import UiFile from "./uiFile";
 
 export default interface UiFolder extends ReviewTreeFolder {

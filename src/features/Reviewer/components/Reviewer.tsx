@@ -11,9 +11,9 @@ import createRepetitionFromCard from "../utils/createRepetitionFromCard";
 import Timer from "./Timer";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import FromRouteState from "../../../types/fromRouteState";
-import { getCellsForFilesWithFsrsProfileIds } from "../../../api/cellApi";
+import { getCellsForFilesWithFsrsProfileIds } from "../../../api/cells/api/cellApi";
 import gradeToRating from "../utils/gradeToRating";
-import { registerReview } from "../../../api/reviewApi";
+import { registerReview } from "../../../api/cells/api/reviewApi";
 import sortReviewerRepetitions from "../utils/sortReviewerRepetitions";
 import ButtonRow from "./ButtonRow";
 import accumulateRepetitionsCounts from "../utils/accumulateRepetitionsCounts";
@@ -21,10 +21,10 @@ import {
 	defaultGlobalSyncEventManager,
 	ListenerType,
 } from "../../../stores/sync/managers/syncEventManager";
-import FsrsProfile from "../../../types/backend/entity/fsrsProfile";
-import { getAllFsrsProfiles } from "../../../api/fsrsApi";
-import { CellWithFsrsProfileId } from "../../../types/backend/dto/cellWithFsrsProfileId";
-import Repetition from "../../../types/backend/entity/repetition";
+import FsrsProfile from "../../../api/fsrs/entities/fsrsProfile";
+import { getAllFsrsProfiles } from "../../../api/fsrs/api/fsrsApi";
+import { CellWithFsrsProfileId } from "../../../api/cells/dto/cellWithFsrsProfileId";
+import Repetition from "../../../api/cells/entities/repetition";
 import { CallApiFn } from "../../../hooks/useApi";
 
 interface Props {

@@ -1,4 +1,4 @@
-import { ReviewTreeFolder } from "../../../types/backend/dto/reviewTreeFolder";
+import { ReviewTreeFolder } from "../../../api/fileSystem/dto/reviewTreeFolder";
 import UiFile from "../../../types/ui/uiFile";
 import UiFolder from "../../../types/ui/uiFolder";
 

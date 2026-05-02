@@ -5,6 +5,7 @@
 - [X] Split the services into smaller where each one is responsible for one thing, all services are helper
 - [X] Make a hook in the front end for calling {value, isLoading, error} the backend, remove all (Remove Request)
 - [ ] Refactor front-end types, move the to `api` folder
+- [ ] There should nothing be as request and response without DTO suffix, it is either a value object or a DTO, look at models folders in front-end
 - [ ] Better errors, one per use case instead of one per service
 - [ ] Make CLAUDE.md file
 - [ ] Let Claude take a round for the front-end

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import TitleBar from "./TitleBar";
 import styles from "./styles.module.css";
-import Cell from "../../../types/backend/entity/cell";
-import FileRepetitionCounts from "../../../types/backend/model/fileRepetitionCounts";
-import { getFileCellsOrderedByIndex } from "../../../api/cellApi";
-import { getStudyRepetitionCounts } from "../../../api/repetitionApi";
+import Cell from "../../../api/cells/entities/cell";
+import FileRepetitionCounts from "../../../api/cells/models/fileRepetitionCounts";
+import { getFileCellsOrderedByIndex } from "../../../api/cells/api/cellApi";
+import { getStudyRepetitionCounts } from "../../../api/cells/api/repetitionApi";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import { useSearchParams } from "react-router";
 import { FILE_ID_QUERY_PARAMETER } from "../../../config/constants";

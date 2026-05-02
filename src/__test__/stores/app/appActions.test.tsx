@@ -1,7 +1,7 @@
 import { loadUserState } from "../../../stores/user/userActions.ts";
 import { loadAndApplySettings } from "../../../stores/settings/settingsActions.ts";
 import { sync } from "../../../stores/sync/syncActions.ts";
-import SettingsDto from "../../../types/backend/dto/settingsDto.ts";
+import SettingsDto from "../../../api/settings/dto/settingsDto.ts";
 import { getReviewTreeFolderForRoot } from "../../../stores/fileSystem/fileSystemActions.ts";
 import { Mock } from "vitest";
 import { Procedure } from "@vitest/spy";

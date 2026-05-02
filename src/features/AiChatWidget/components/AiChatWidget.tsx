@@ -3,7 +3,7 @@ import { mdiDeleteOutline, mdiRobotOutline } from "@mdi/js";
 import styles from "./styles.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Channel } from "@tauri-apps/api/core";
-import { StreamLlmResponseEvent } from "../../../types/backend/events/streamLlmResponseEvent";
+import { StreamLlmResponseEvent } from "../../../api/aiIntegration/events/streamLlmResponseEvent";
 import {
 	deleteAiChat,
 	getAllAiChatsSortedByDateDesc,
@@ -12,16 +12,16 @@ import {
 	stopAiGeneration as stopAiGenerationApi,
 	streamAiResponse,
 	uploadDocument,
-} from "../../../api/aiApi";
+} from "../../../api/aiIntegration/api/aiApi";
 import Message, {
 	MessageContentHumanAssistant,
-} from "../../../types/backend/entity/message";
+} from "../../../api/aiIntegration/entities/message";
 import {
 	TEMP_ASSISTANT_MESSAGE_ID,
 	TEMP_CHAT_ID,
 	TEMP_HUMAN_MESSAGE_ID,
 } from "../config/constants";
-import Chat from "../../../types/backend/entity/chat";
+import Chat from "../../../api/aiIntegration/entities/chat";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectSettings } from "../../../stores/settings/settingsSelector";

@@ -12,12 +12,12 @@ import Form, {
 import Spinner from "../../../components/Spinner/Spinner";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectUserInformation } from "../../../stores/user/userSelectors";
-import { getUserInformation } from "../../../api/userApi";
+import { getUserInformation } from "../../../api/backend/api/userApi";
 import { setUserInformation } from "../../../stores/user/userReducer";
 import {
 	resendEmailVerificationCode,
 	verifyUserEmail,
-} from "../../../api/authApi";
+} from "../../../api/backend/api/authApi";
 import Dialog from "../../../components/Dialog/Dialog";
 import useApi from "../../../hooks/useApi";
 

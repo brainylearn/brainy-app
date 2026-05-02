@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Cell, { CellType } from "../../../types/backend/entity/cell";
+import Cell, { CellType } from "../../../api/cells/entities/cell";
 import RenderIfVisible from "../../../components/RenderIfVisible/RenderIfVisible";
 import AddCellContainer from "./AddCellContainer";
 import styles from "./styles.module.css";
 import CellBlock from "./CellBlock";
 import createDefaultCell from "../utils/createDefaultCell";
-import { createCell, deleteCell, moveCell } from "../../../api/cellApi";
+import {
+	createCell,
+	deleteCell,
+	moveCell,
+} from "../../../api/cells/api/cellApi";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import scrollUntilVisible from "../utils/scrollUntilVisible";
 import useAutoSave from "../hooks/useAutoSave";

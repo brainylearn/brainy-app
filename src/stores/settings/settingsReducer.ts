@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import SettingsDto from "../../types/backend/dto/settingsDto";
+import SettingsDto from "../../api/settings/dto/settingsDto";
 
 export interface SettingsState {
 	settings: SettingsDto | null;

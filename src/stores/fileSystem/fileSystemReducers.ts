@@ -1,6 +1,6 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 import { ROOT_FOLDER_ID } from "../../config/constants";
-import { ReviewTreeFolder } from "../../types/backend/dto/reviewTreeFolder";
+import { ReviewTreeFolder } from "../../api/fileSystem/dto/reviewTreeFolder";
 
 interface FileSystemState {
 	errorMessage: string | null;

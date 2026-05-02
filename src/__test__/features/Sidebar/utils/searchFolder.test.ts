@@ -1,6 +1,6 @@
 import UiFolder from "../../../../types/ui/uiFolder";
 import searchFolder from "../../../../features/SideBar/utils/searchFolder";
-import { ReviewTreeFolder } from "../../../../types/backend/dto/reviewTreeFolder";
+import { ReviewTreeFolder } from "../../../../api/fileSystem/dto/reviewTreeFolder";
 
 describe("searchFolder", () => {
 	it("Searches folder correctly", () => {

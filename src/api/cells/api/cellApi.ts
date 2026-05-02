@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import Cell from "../types/backend/entity/cell";
-import UpdateCellRequest from "../types/backend/dto/updateCellRequest";
-import { CellWithFsrsProfileId } from "../types/backend/dto/cellWithFsrsProfileId";
+import Cell from "../entities/cell";
+import UpdateCellRequest from "../dto/updateCellRequest";
+import { CellWithFsrsProfileId } from "../dto/cellWithFsrsProfileId";
 
 export function getFileCellsOrderedByIndex(fileId: string): Promise<Cell[]> {
 	return invoke("get_file_cells_ordered_by_index", {

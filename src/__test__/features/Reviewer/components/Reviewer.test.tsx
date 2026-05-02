@@ -1,24 +1,24 @@
 import styles from "../../../../features/Reviewer/components/styles.module.css";
 import { screen } from "@testing-library/react";
-import { getCellsForFilesWithFsrsProfileIds } from "../../../../api/cellApi.ts";
+import { getCellsForFilesWithFsrsProfileIds } from "../../../../api/cells/api/cellApi.ts";
 import Reviewer from "../../../../features/Reviewer/components/Reviewer.tsx";
-import { CellWithFsrsProfileId } from "../../../../types/backend/dto/cellWithFsrsProfileId.ts";
-import Cell from "../../../../types/backend/entity/cell";
-import Repetition from "../../../../types/backend/entity/repetition.ts";
+import { CellWithFsrsProfileId } from "../../../../api/cells/dto/cellWithFsrsProfileId.ts";
+import Cell from "../../../../api/cells/entities/cell.ts";
+import Repetition from "../../../../api/cells/entities/repetition.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders.tsx";
-import { getAllFsrsProfiles } from "../../../../api/fsrsApi";
-import FsrsProfile from "../../../../types/backend/entity/fsrsProfile.ts";
+import { getAllFsrsProfiles } from "../../../../api/fsrs/api/fsrsApi.ts";
+import FsrsProfile from "../../../../api/fsrs/entities/fsrsProfile.ts";
 import userEvent from "@testing-library/user-event";
-import { registerReview } from "../../../../api/reviewApi.ts";
+import { registerReview } from "../../../../api/cells/api/reviewApi.ts";
 import { FSRS, generatorParameters } from "ts-fsrs";
 import createCardFromRepetition from "../../../../features/Reviewer/utils/createCardFromRepetition.ts";
 import createRepetitionFromCard from "../../../../features/Reviewer/utils/createRepetitionFromCard.ts";
 import { getCurrentLocation } from "../../../test-utils/locationUtils.ts";
 import callApiMock from "../../../test-utils/callApiMock.ts";
 
-vi.mock(import("../../../../api/fsrsApi.ts"));
-vi.mock(import("../../../../api/cellApi.ts"));
-vi.mock(import("../../../../api/reviewApi.ts"));
+vi.mock(import("../../../../api/fsrs/api/fsrsApi.ts"));
+vi.mock(import("../../../../api/cells/api/cellApi.ts"));
+vi.mock(import("../../../../api/cells/api/reviewApi.ts"));
 
 function addMinutes(date: Date, minutes: number) {
 	date.setMinutes(date.getMinutes() + minutes);

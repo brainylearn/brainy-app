@@ -4,15 +4,15 @@ import editorStyles from "../../../../features/Editor/components/styles.module.c
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 import { screen, waitFor } from "@testing-library/react";
 import EditableCells from "../../../../features/EditableCells/components/EditableCells";
-import { getStudyRepetitionCounts } from "../../../../api/repetitionApi";
-import { getFileCellsOrderedByIndex } from "../../../../api/cellApi";
-import Cell from "../../../../types/backend/entity/cell";
+import { getStudyRepetitionCounts } from "../../../../api/cells/api/repetitionApi";
+import { getFileCellsOrderedByIndex } from "../../../../api/cells/api/cellApi";
+import Cell from "../../../../api/cells/entities/cell";
 import createDefaultCell from "../../../../features/EditableCells/utils/createDefaultCell";
 import callApiMock from "../../../test-utils/callApiMock";
 
 vi.mock(import("../../../../features/EditableCells/components/EditableCells"));
-vi.mock(import("../../../../api/repetitionApi"));
-vi.mock(import("../../../../api/cellApi"));
+vi.mock(import("../../../../api/cells/api/repetitionApi"));
+vi.mock(import("../../../../api/cells/api/cellApi"));
 
 describe("TitleBar", () => {
 	beforeAll(() => {

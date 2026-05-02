@@ -25,9 +25,9 @@ import Alert from "../../../components/Alert/Alert";
 import {
 	getUserInformation,
 	updateUserInformation,
-} from "../../../api/userApi";
+} from "../../../api/backend/api/userApi.ts";
 import { setUserInformation } from "../../../stores/user/userReducer";
-import { updatePassword } from "../../../api/authApi";
+import { updatePassword } from "../../../api/backend/api/authApi.ts";
 import Spinner from "../../../components/Spinner/Spinner";
 import { SettingsState } from "../types/settingsState";
 import useIsSmallScreen from "../../../hooks/useIsSmallScreen";

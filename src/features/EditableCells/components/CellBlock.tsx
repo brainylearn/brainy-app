@@ -3,12 +3,12 @@ import { ForwardedRef, forwardRef, useEffect, useRef, useState } from "react";
 import Cell, {
 	CellType,
 	cellTypesDisplayNames,
-} from "../../../types/backend/entity/cell";
+} from "../../../api/cells/entities/cell";
 import EditableCell from "../../EditableCell/components/EditableCell";
 import getCellIcon from "../../../utils/getCellIcon";
 import { Icon } from "@mdi/react";
 import FocusTools from "./FocusTools";
-import Repetition from "../../../types/backend/entity/repetition";
+import Repetition from "../../../api/cells/entities/repetition";
 import NewCellTypeSelector from "./NewCellTypeSelector";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import useAppSelector from "../../../hooks/useAppSelector";

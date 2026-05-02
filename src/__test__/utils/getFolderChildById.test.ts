@@ -1,7 +1,7 @@
 import {
 	ReviewTreeFile,
 	ReviewTreeFolder,
-} from "../../types/backend/dto/reviewTreeFolder";
+} from "../../api/fileSystem/dto/reviewTreeFolder";
 import getFolderChildById from "../../utils/getFolderChildById";
 
 describe("getFolderChildById", () => {

@@ -9,7 +9,7 @@ import { mdiDeleteOutline, mdiPlusBoxOutline, mdiTuneVariant } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import { useCallback, useEffect, useState } from "react";
 import Alert from "../../../components/Alert/Alert";
-import FsrsProfile from "../../../types/backend/entity/fsrsProfile";
+import FsrsProfile from "../../../api/fsrs/entities/fsrsProfile";
 import {
 	createProfile,
 	deleteFsrsProfile,
@@ -23,12 +23,12 @@ import {
 	setFsrsProfileChoiceForFile,
 	setFsrsProfileChoiceForFolder,
 	updateProfile,
-} from "../../../api/fsrsApi";
+} from "../../../api/fsrs/api/fsrsApi";
 import { ROOT_FOLDER_ID } from "../../../config/constants";
 import {
 	FsrsProfileChoice,
 	FsrsProfileChoiceId,
-} from "../../../types/backend/valueObjects/fsrsProfileChoice";
+} from "../../../api/fileSystem/valueObjects/fsrsProfileChoice";
 import ConfirmationDialog from "../../../components/ConfirmationDialog/ConfirmationDialog";
 import Select, { Option } from "../../../components/Select/Select";
 import useApiWithCustomError from "../../../hooks/useApiWithCustomError";

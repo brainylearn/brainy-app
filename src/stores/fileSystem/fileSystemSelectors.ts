@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import getFolderChildById from "../../utils/getFolderChildById";
-import { ReviewTreeFile } from "../../types/backend/dto/reviewTreeFolder";
+import { ReviewTreeFile } from "../../api/fileSystem/dto/reviewTreeFolder";
 
 export const selectErrorMessage = (state: RootState) =>
 	state.fileSystem.errorMessage;

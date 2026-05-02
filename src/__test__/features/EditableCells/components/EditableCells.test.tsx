@@ -1,11 +1,15 @@
 import { screen, waitFor } from "@testing-library/react";
 import EditableCells from "../../../../features/EditableCells/components/EditableCells";
 import createDefaultCell from "../../../../features/EditableCells/utils/createDefaultCell";
-import Cell from "../../../../types/backend/entity/cell";
+import Cell from "../../../../api/cells/entities/cell.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 import { useState } from "react";
 import userEvent from "@testing-library/user-event";
-import { createCell, deleteCell, moveCell } from "../../../../api/cellApi";
+import {
+	createCell,
+	deleteCell,
+	moveCell,
+} from "../../../../api/cells/api/cellApi.ts";
 import useAutoSave from "../../../../features/EditableCells/hooks/useAutoSave";
 import { Mock } from "vitest";
 import { Procedure } from "@vitest/spy";
@@ -30,7 +34,7 @@ import { Feedback } from "@dnd-kit/dom";
 import callApiMock from "../../../test-utils/callApiMock.ts";
 
 vi.mock(import("../../../../managers/closeRequestedEventManager"));
-vi.mock(import("../../../../api/cellApi"));
+vi.mock(import("../../../../api/cells/api/cellApi.ts"));
 vi.mock(import("../../../../features/EditableCells/hooks/useAutoSave"));
 vi.mock(import("../../../../utils/tauriUtils.ts"));
 vi.mock(import("@dnd-kit/react"));

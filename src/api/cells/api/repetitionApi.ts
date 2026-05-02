@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import FileRepetitionCounts from "../types/backend/model/fileRepetitionCounts";
+import FileRepetitionCounts from "../models/fileRepetitionCounts";
 
 export function getStudyRepetitionCounts(
 	fileId: string,

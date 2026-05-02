@@ -1,7 +1,7 @@
 import {
 	ReviewTreeFile,
 	ReviewTreeFolder,
-} from "../types/backend/dto/reviewTreeFolder";
+} from "../api/fileSystem/dto/reviewTreeFolder";
 
 function getFolderChildById(
 	folder: ReviewTreeFolder,

@@ -1,6 +1,6 @@
 import { FormRows } from "../../../../components/Form/Form";
 import CheckBox from "../../../../components/Checkbox/Checkbox";
-import SettingsDto from "../../../../types/backend/dto/settingsDto";
+import SettingsDto from "../../../../api/settings/dto/settingsDto";
 import { TabProps } from "../../types/tabProps";
 
 export default function AiTab({ state, setState }: TabProps) {

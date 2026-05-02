@@ -4,13 +4,13 @@ import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors
 import ReviewTree from "./ReviewTree";
 import styles from "./styles.module.css";
 import ReviewHeatmap from "./ReviewHeatmap";
-import HomeStatistics from "../../../types/backend/dto/homeStatistics";
+import HomeStatistics from "../../../api/cells/models/homeStatistics";
 import secondsToLongString from "../utils/secondsToLongString";
-import { getHomeStatistics } from "../../../api/reviewApi";
+import { getHomeStatistics } from "../../../api/cells/api/reviewApi";
 import {
 	ReviewTreeFile,
 	ReviewTreeFolder,
-} from "../../../types/backend/dto/reviewTreeFolder";
+} from "../../../api/fileSystem/dto/reviewTreeFolder";
 import {
 	defaultGlobalSyncEventManager,
 	ListenerType,

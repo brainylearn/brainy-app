@@ -1,4 +1,4 @@
-import FileRepetitionCounts from "../model/fileRepetitionCounts";
+import FileRepetitionCounts from "../../cells/models/fileRepetitionCounts";
 
 export interface ReviewTreeFolder {
 	id: string;

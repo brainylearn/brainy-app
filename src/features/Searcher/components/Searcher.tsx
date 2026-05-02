@@ -4,9 +4,9 @@ import styles from "./styles.module.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import EditableCells from "../../EditableCells/components/EditableCells";
-import { searchCells } from "../../../api/searchApi";
+import { searchCells } from "../../../api/cells/api/searchApi";
 import { useSearchParams } from "react-router";
-import Cell from "../../../types/backend/entity/cell";
+import Cell from "../../../api/cells/entities/cell";
 import { CallApiFn } from "../../../hooks/useApi";
 
 interface Props {
