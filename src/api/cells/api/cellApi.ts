@@ -13,6 +13,7 @@ export function updateCellsContents(requests: UpdateCellRequest[]) {
 	return invoke("update_cells_contents", { requests });
 }
 
+// TODO: should get its own dto request
 export function createCell(cell: Cell): Promise<string> {
 	return invoke("create_cell", { ...cell });
 }

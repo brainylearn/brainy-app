@@ -56,6 +56,7 @@ export function setFsrsProfileChoiceForFolder(
 	});
 }
 
+// TODO: should get its own dto
 export function createProfile(profile: {
 	name: string;
 	requestRetention: number;
