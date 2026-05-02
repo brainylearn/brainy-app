@@ -66,7 +66,7 @@ function Editor({ initialSelectedCellId, callApi, onStudyStart }: Props) {
 		};
 
 		window.addEventListener(TOOL_CALL_ACCEPTED_EVENT, cb);
-		return () => window.removeEventListener("toolCallAccepted", cb);
+		return () => window.removeEventListener(TOOL_CALL_ACCEPTED_EVENT, cb);
 	}, [retrieveRepetitionCounts, retrieveSelectedFileCells, selectedFileId]);
 
 	useEffect(() => {

@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import EditableCells from "../../../../features/EditableCells/components/EditableCells";
-import createDefaultCell from "../../../../features/EditableCells/utils/createDefaultCell";
+import createDefaultCellDto from "../../../../features/EditableCells/utils/createCreateCellRequestDto.ts";
 import Cell from "../../../../api/cells/entities/cell.ts";
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 import { useState } from "react";
@@ -42,7 +42,7 @@ vi.mock(import("@dnd-kit/react"));
 /** Creates a cell for testing where the id is equal to the index.
  */
 function createTestCell(index: number): Cell {
-	const request = createDefaultCell("Note", index + "", index);
+	const request = createDefaultCellDto("Note", index + "", index);
 	const cell: Cell = {
 		...request,
 		id: index + "",

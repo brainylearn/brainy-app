@@ -1,4 +1,4 @@
-import createDefaultCell from "../../../../features/EditableCells/utils/createDefaultCell";
+import createDefaultCellDto from "../../../../features/EditableCells/utils/createCreateCellRequestDto";
 import CreateCellRequestDto from "../../../../api/cells/dto/createCellRequestDto";
 
 describe("createDefaultCell", () => {
@@ -16,7 +16,7 @@ describe("createDefaultCell", () => {
 
 		// Act
 
-		const actual = createDefaultCell("Note", fileId, index);
+		const actual = createDefaultCellDto("Note", fileId, index);
 
 		// Assert
 

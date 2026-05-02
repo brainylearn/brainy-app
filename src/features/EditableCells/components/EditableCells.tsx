@@ -4,7 +4,7 @@ import RenderIfVisible from "../../../components/RenderIfVisible/RenderIfVisible
 import AddCellContainer from "./AddCellContainer";
 import styles from "./styles.module.css";
 import CellBlock from "./CellBlock";
-import createDefaultCell from "../utils/createDefaultCell";
+import createCreateCellRequest from "../utils/createCreateCellRequestDto";
 import {
 	createCell,
 	deleteCell,
@@ -231,8 +231,8 @@ function EditableCells({
 	}, "keydown");
 
 	const insertNewCell = async (cellType: CellType, index: number) => {
-		const cell = createDefaultCell(cellType, fileId!, index);
-		const cellId = await callApi(async () => await createCell(cell));
+		const request = createCreateCellRequest(cellType, fileId!, index);
+		const cellId = await callApi(async () => await createCell(request));
 		if (!cellId) return;
 		scrollToSelectedCellOnNextRender.current = true;
 		setSelectedCellId(cellId);

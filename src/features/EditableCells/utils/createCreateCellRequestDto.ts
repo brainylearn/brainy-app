@@ -3,7 +3,7 @@ import CreateCellRequestDto from "../../../api/cells/dto/createCellRequestDto";
 import FlashCard from "../../../api/cells/valueObjects/flashCard";
 import TrueFalse from "../../../api/cells/valueObjects/trueFalse";
 
-function createDefaultCell(
+function createDefaultCellDto(
 	cellType: CellType,
 	fileId: string,
 	index: number,
@@ -35,4 +35,4 @@ function createDefaultCell(
 	return request;
 }
 
-export default createDefaultCell;
+export default createDefaultCellDto;

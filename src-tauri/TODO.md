@@ -10,16 +10,7 @@
 - [ ] Make CLAUDE.md file
 - [X] Let Claude take a round for the front-end
 - [ ] Better repository error
-- [ ] Fix eslint and clippy warnings
 - [X] Update dependencies
-
-## Front-end Critical
-
-- [ ] **Event listener uses hardcoded string instead of constant on removal** — `src/features/Editor/components/Editor.tsx:69`: `removeEventListener("toolCallAccepted")` should use `TOOL_CALL_ACCEPTED_EVENT` constant; if the constant changes the listener is never removed, causing a memory leak
-- [ ] **Non-null assertion on nullable query parameter** — `src/features/Editor/components/Editor.tsx:36`: `searchParams.get(FILE_ID_QUERY_PARAMETER)!` crashes if user navigates to `/editor` without `?fileId=`; add a guard redirect
-- [ ] **Unsafe non-null assertion on `find()` result** — `src/features/EditableCells/hooks/useAutoSave.ts:74`: `newCells.find(c => c.id === id)!.content = content` crashes if the cell is not found; validate before mutating
-- [ ] **`alert()` used for error display** — `src/stores/sync/syncActions.ts:28`: Browser `alert()` blocks the UI thread and is inaccessible; replace with Redux error state consumed by a toast/banner component
-- [ ] **`createCell` spreads entire `Cell` entity to backend** — `src/api/cells/api/cellApi.ts:17-19`: `invoke("create_cell", { ...cell })` sends all internal fields; define an explicit DTO with only the required fields
 
 ## Front-end Medium
 

@@ -7,8 +7,8 @@ import EditableCells from "../../../../features/EditableCells/components/Editabl
 import { getStudyRepetitionCounts } from "../../../../api/cells/api/repetitionApi";
 import { getFileCellsOrderedByIndex } from "../../../../api/cells/api/cellApi";
 import Cell from "../../../../api/cells/entities/cell";
-import createDefaultCell from "../../../../features/EditableCells/utils/createDefaultCell";
 import callApiMock from "../../../test-utils/callApiMock";
+import createCreateCellRequestDto from "../../../../features/EditableCells/utils/createCreateCellRequestDto";
 
 vi.mock(import("../../../../features/EditableCells/components/EditableCells"));
 vi.mock(import("../../../../api/cells/api/repetitionApi"));
@@ -169,7 +169,9 @@ describe("Editor", () => {
 			relearning: 0,
 			review: 0,
 		});
-		const cells: Cell[] = [createDefaultCell("Note", "123", 1)];
+		const cells: Cell[] = [
+			createCreateCellRequestDto("Note", "123", 1) as Cell,
+		];
 		vi.mocked(getFileCellsOrderedByIndex).mockResolvedValue(cells);
 
 		// Act
