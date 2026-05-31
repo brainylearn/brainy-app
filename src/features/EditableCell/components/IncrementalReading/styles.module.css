@@ -51,3 +51,8 @@
 .read-dialog-body {
 	padding: var(--sections-padding);
 }
+
+:global(.highlight-node) {
+	background-color: #fff176;
+	color: #000;
+}

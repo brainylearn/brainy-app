@@ -39,12 +39,12 @@
 	padding: var(--spacing-1);
 	border-radius: var(--default-border-radius);
 	border: var(--default-border-width) solid var(--text-color);
-	margin: 1px 2px;
+	margin: var(--spacing-0);
 
 	&:before {
 		content: attr(index);
-		padding-right: 2px;
-		margin-right: 2px;
+		padding-right: var(--spacing-0);
+		margin-right: var(--spacing-0);
 		border-right: var(--default-border-width) solid var(--text-color);
 		font-weight: normal;
 		font-style: normal;
