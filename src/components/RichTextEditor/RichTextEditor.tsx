@@ -34,6 +34,8 @@ import EquationPlugin from "./Plugins/EquationPlugin/EquationPlugin";
 import { EquationNode } from "./Plugins/EquationPlugin/EquationNode";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { LinkNode, AutoLinkNode } from "@lexical/link";
+import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
+import { TableNode, TableCellNode, TableRowNode } from "@lexical/table";
 
 interface Props {
 	content: string;
@@ -112,6 +114,9 @@ function Editor({
 			EquationNode,
 			LinkNode,
 			AutoLinkNode,
+			TableNode,
+			TableCellNode,
+			TableRowNode,
 			...(extraNodes ?? []),
 		],
 		theme: {
@@ -180,6 +185,7 @@ function Editor({
 			<ImagePlugin />
 			<EquationPlugin />
 			<LinkPlugin />
+			<TablePlugin />
 			<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
 			<DefaultShortcutPlugin />
 			{plugins}

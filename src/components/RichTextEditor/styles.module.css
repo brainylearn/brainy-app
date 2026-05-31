@@ -33,6 +33,21 @@
 	a {
 		cursor: pointer;
 	}
+
+	table {
+		border-collapse: collapse;
+	}
+
+	td,
+	th {
+		border: var(--default-border-width) solid var(--border-color);
+	}
+
+	code {
+		background-color: var(--surface-background-color);
+		padding: var(--spacing-1);
+		border-radius: var(--default-border-radius);
+	}
 }
 
 .floating-menu {
