@@ -41,6 +41,7 @@
 	td,
 	th {
 		border: var(--default-border-width) solid var(--border-color);
+		padding: var(--spacing-1);
 	}
 
 	code {
