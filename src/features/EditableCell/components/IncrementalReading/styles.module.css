@@ -1,0 +1,53 @@
+.vertical-form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-3);
+
+	& * {
+		font-size: 1.4rem;
+	}
+
+	& .error-message {
+		color: var(--red-color);
+	}
+}
+
+.row-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--spacing-1);
+}
+
+.read-dialog {
+	height: 90vh;
+	padding: 0;
+	width: 1000px;
+	max-width: 90vw;
+	--sections-padding: var(--spacing-4) var(--spacing-5);
+}
+
+.header {
+	padding: var(--sections-padding);
+	border-bottom: var(--default-border-width) solid var(--border-color);
+
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--spacing-2);
+
+	position: sticky;
+	background-color: var(--default-background-color);
+	top: 0;
+	z-index: 1;
+
+	& h2 {
+		font-size: 1.8rem;
+		font-weight: 400;
+		word-break: break-all;
+	}
+}
+
+.read-dialog-body {
+	padding: var(--sections-padding);
+}

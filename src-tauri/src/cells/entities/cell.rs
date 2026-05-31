@@ -18,6 +18,7 @@ pub enum CellType {
     Note,
     Cloze,
     TrueFalse,
+    IncrementalReading,
 }
 
 impl Display for CellType {
@@ -187,6 +188,8 @@ impl Cell {
                     .replace_all(&true_false.question, "")
                     .to_string()
             }
+            // The content of incremental reading is not searchable!
+            CellType::IncrementalReading => "".to_string(),
         };
 
         self.searchable_content = searchable_content.to_string();
@@ -194,7 +197,7 @@ impl Cell {
 
     fn update_repetitions(&mut self) {
         match self.cell_type {
-            CellType::Note => {
+            CellType::Note | CellType::IncrementalReading => {
                 self.repetitions = Vec::new();
             }
             CellType::FlashCard | CellType::TrueFalse => {

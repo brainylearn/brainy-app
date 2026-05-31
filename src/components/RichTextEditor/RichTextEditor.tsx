@@ -32,6 +32,8 @@ import { ImagePlugin } from "./Plugins/ImagePlugin/ImagePlugin";
 import ImageNode from "./Plugins/ImagePlugin/ImageNode";
 import EquationPlugin from "./Plugins/EquationPlugin/EquationPlugin";
 import { EquationNode } from "./Plugins/EquationPlugin/EquationNode";
+import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
+import { LinkNode, AutoLinkNode } from "@lexical/link";
 
 interface Props {
 	content: string;
@@ -108,6 +110,8 @@ function Editor({
 			ListItemNode,
 			ImageNode,
 			EquationNode,
+			LinkNode,
+			AutoLinkNode,
 			...(extraNodes ?? []),
 		],
 		theme: {
@@ -175,6 +179,7 @@ function Editor({
 			<ListCommandsPluginHandler />
 			<ImagePlugin />
 			<EquationPlugin />
+			<LinkPlugin />
 			<FocusBlurPlugin onFocus={onFocus} onBlur={onBlur} />
 			<DefaultShortcutPlugin />
 			{plugins}

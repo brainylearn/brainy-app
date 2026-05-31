@@ -2,6 +2,7 @@ import Cell from "../../../api/cells/entities/cell";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import ClozeCell from "./ClozeCell";
 import FlashCardCell from "./FlashCardCell";
+import IncrementalReading from "./IncrementalReading/IncrementalReading";
 import TrueFalseCell from "./TrueFalseCell";
 import { LexicalEditor } from "lexical";
 
@@ -61,6 +62,9 @@ function EditableCell({
 					onFocus={onFocus}
 				/>
 			);
+		case "IncrementalReading":
+			// TODO: see which other relevant attributes to send
+			return <IncrementalReading cell={cell} onChange={onChange} />;
 	}
 }
 

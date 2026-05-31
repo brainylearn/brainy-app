@@ -2,6 +2,7 @@ import { CellType } from "../../../api/cells/entities/cell";
 import CreateCellRequestDto from "../../../api/cells/dto/createCellRequestDto";
 import FlashCard from "../../../api/cells/valueObjects/flashCard";
 import TrueFalse from "../../../api/cells/valueObjects/trueFalse";
+import IncrementalReading from "../../../api/cells/valueObjects/incrementalReading";
 
 function createDefaultCellDto(
 	cellType: CellType,
@@ -15,6 +16,7 @@ function createDefaultCellDto(
 		index,
 	};
 
+	// TODO: keep updated and unit testing
 	switch (cellType) {
 		case "FlashCard":
 			request.content = JSON.stringify({
@@ -27,6 +29,11 @@ function createDefaultCellDto(
 				question: "",
 				isTrue: true,
 			} as TrueFalse);
+			break;
+		case "IncrementalReading":
+			request.content = JSON.stringify({
+				content: null,
+			} as IncrementalReading);
 			break;
 		case "Note":
 		case "Cloze":
