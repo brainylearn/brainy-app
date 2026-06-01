@@ -1,6 +1,9 @@
 import { DOMExportOutput, LexicalNode, NodeKey, RangeSelection } from "lexical";
 import { MarkNode } from "@lexical/mark";
-import { $isSelectionInsideNode } from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
+import {
+	$getNodeFromSelection,
+	$isSelectionInsideNode,
+} from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
 
 const HIGHLIGHT_CSS_CLASS_NAME = "highlight-node";
 const HIGHLIGHT_CELL_IDS_ATTRIBUTE_NAME = "cell-ids";
@@ -97,4 +100,8 @@ export function $isSelectionInsideHighlight(
 	selection: RangeSelection,
 ): boolean {
 	return $isSelectionInsideNode(selection, $isHighlightNode);
+}
+
+export function $getHighlightFromSelection(selection: RangeSelection) {
+	return $getNodeFromSelection(selection, $isHighlightNode);
 }

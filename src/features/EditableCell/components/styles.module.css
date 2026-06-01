@@ -36,15 +36,22 @@
  */
 :global(.cloze-node) {
 	display: inline-block;
-	padding: var(--spacing-1);
+	padding: var(--spacing-1) calc(1.6ch + var(--spacing-1));
+	padding-right: var(--spacing-1);
 	border-radius: var(--default-border-radius);
 	border: var(--default-border-width) solid var(--text-color);
 	margin: var(--spacing-0);
+	position: relative;
 
 	&:before {
 		content: attr(index);
+		position: absolute;
+		left: var(--spacing-1);
+		top: 0;
+		bottom: 0;
+		display: flex;
+		align-items: center;
 		padding-right: var(--spacing-0);
-		margin-right: var(--spacing-0);
 		border-right: var(--default-border-width) solid var(--text-color);
 		font-weight: normal;
 		font-style: normal;

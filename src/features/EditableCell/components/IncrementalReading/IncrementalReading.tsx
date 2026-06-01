@@ -53,6 +53,7 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 			{showReadDialog && (
 				<ReadDialog
 					incrementalReading={incrementalReading}
+					cell={cell}
 					onClose={() => setShowReadDialog(false)}
 					onChange={content => {
 						handleChange({ ...incrementalReading, content });

@@ -12,7 +12,6 @@ import {
 	$createHighlightNode,
 	$isHighlightNode,
 	$isSelectionInsideHighlight,
-	HIGHLIGHT_TAG_NAME,
 	HighlightNode,
 } from "./highlightNode";
 import {
@@ -66,7 +65,7 @@ function $wrapSelectionInHighlight(selection: RangeSelection): HighlightNode {
 		selection,
 		$isHighlightNode,
 		existing => $createHighlightNode(existing?.cellIds ?? []),
-		HIGHLIGHT_TAG_NAME,
+		nodes => $createHighlightNode(nodes.flatMap(n => n.cellIds)),
 	);
 }
 

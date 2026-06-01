@@ -1,11 +1,14 @@
 import {
+	$isDecoratorNode,
+	$isElementNode,
+	$isParagraphNode,
 	$isTextNode,
 	LexicalNode,
 	PointType,
 	RangeSelection,
 	TextNode,
 } from "lexical";
-import { $wrapSelectionInMarkNode, MarkNode } from "@lexical/mark";
+import { $isMarkNode, MarkNode } from "@lexical/mark";
 
 /**
  * Wraps the selection in a new node. If the selection already contains one or
@@ -17,11 +20,11 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 	selection: RangeSelection,
 	isNode: (node: LexicalNode) => node is T,
 	createNode: (existingNode: T | undefined) => T,
-	tag: string,
+	mergeNodes: (nodes: T[]) => T,
 ): T {
 	skipWhitespace(selection);
 	const allNodes: LexicalNode[] = [];
-	let existingNode: T | undefined;
+	const existingNodesOfSameType = [];
 
 	for (const node of selection.extract()) {
 		let current = node.getParent();
@@ -30,7 +33,7 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 		while (current !== null) {
 			if (isNode(current)) {
 				addedNode = true;
-				existingNode ??= current;
+				existingNodesOfSameType.push(current);
 				allNodes.push(current);
 				break;
 			}
@@ -40,59 +43,119 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 		if (!addedNode) allNodes.push(node);
 	}
 
-	if (existingNode !== undefined) {
-		const newNode = createNode(existingNode);
-		allNodes[0].insertBefore(newNode);
+	let newNode: T | null =
+		existingNodesOfSameType.length > 0
+			? mergeNodes(existingNodesOfSameType)
+			: createNode(undefined);
+	allNodes[0].insertBefore(newNode);
 
-		for (const node of allNodes) {
-			if (isNode(node)) {
-				for (const child of node.getChildren()) {
-					newNode.append(child);
-				}
-				node.remove();
-			} else {
-				newNode.append(node);
-			}
+	let lastNode: T = newNode;
+
+	for (const node of allNodes) {
+		if (
+			!$isMarkNode(node) &&
+			!$isTextNode(node) &&
+			($isElementNode(node) || $isDecoratorNode(node)) &&
+			!node.isInline()
+		) {
+			// If the element type cannot be wrapped, stopping the last element
+			// before the current element, and recreating new node of the type
+			// we want later.
+			if (newNode !== null) lastNode = newNode;
+			newNode = null;
+
+			continue;
 		}
 
-		return newNode;
-	} else {
-		const newNode = createNode(undefined);
-		$wrapSelectionInMarkNode(
-			selection,
-			selection.isBackward(),
-			tag,
-			() => newNode,
-		);
-		return newNode;
+		if (newNode === null) {
+			newNode = createNode(lastNode);
+			node.insertBefore(newNode);
+		}
+
+		if (isNode(node)) {
+			for (const child of node.getChildren()) {
+				newNode.append(child);
+			}
+			node.remove();
+		} else {
+			newNode.append(node);
+		}
 	}
+
+	return lastNode;
 }
 
 /**
- * Removes the selected content from its wrapping node of type T. Content
- * before the selection stays in the original node; content after is moved into
- * a new node created by `createNode`.
+ * Removes the selected content from its wrapping node(s) of type T. Handles
+ * partial selections at boundaries (splitting the wrapper) and fully-contained
+ * wrappers (unwrapping them entirely).
  */
 export function $removeSelectionFromNode<T extends MarkNode>(
 	selection: RangeSelection,
 	isNode: (node: LexicalNode) => node is T,
 	createNode: (existingNode: T) => T,
 ): void {
-	const wrapperNode = getWrappingNode(selection, isNode);
-	if (!wrapperNode) return;
+	const [startPoint, endPoint] = getStartAndEndPointForSelection(selection);
 
-	const [startPoint, endPoint] =
-		getStartEndAndEndPointForSelection(selection);
+	const wrappers: T[] = [];
+	for (const node of selection.getNodes()) {
+		let current: LexicalNode | null = node.getParent();
+		while (current !== null) {
+			if (isNode(current)) {
+				wrappers.push(current);
+				break;
+			}
+			current = current.getParent();
+		}
+	}
+
+	if (wrappers.length === 0) return;
+
+	let didPassSelectionStart = false;
+	let didPassSelectionEnd = false;
+
+	for (const wrapper of wrappers) {
+		const children = wrapper.getChildren();
+		const didPassSelectionStartNewValue: boolean =
+			didPassSelectionStart ||
+			startPoint.getNode().is(wrapper) ||
+			children.some(c => c.is(startPoint.getNode()));
+		const didPassSelectionEndNewValue: boolean =
+			didPassSelectionEnd ||
+			endPoint.getNode().is(wrapper) ||
+			children.some(c => c.is(endPoint.getNode()));
+
+		_removeSingleWrapper(
+			wrapper,
+			startPoint,
+			endPoint,
+			createNode,
+			didPassSelectionStart,
+			didPassSelectionEnd,
+		);
+
+		didPassSelectionStart = didPassSelectionStartNewValue;
+		didPassSelectionEnd = didPassSelectionEndNewValue;
+	}
+}
+
+function _removeSingleWrapper<T extends MarkNode>(
+	wrapper: T,
+	startPoint: PointType,
+	endPoint: PointType,
+	createNode: (existingNode: T) => T,
+	didPassSelectionStart: boolean,
+	didPassSelectionEnd: boolean,
+): void {
+	const beforeSelectionNode = createNode(wrapper);
 	const selectionNodes: LexicalNode[] = [];
-	const afterNode = createNode(wrapperNode);
+	const afterSelectionNode = createNode(wrapper);
 
-	let passedSelectionStart = startPoint.getNode().is(wrapperNode);
-	let passedSelectionEnd = false;
+	let passedSelectionStart = didPassSelectionStart;
+	let passedSelectionEnd = didPassSelectionEnd;
 
-	for (const child of wrapperNode.getChildren()) {
-		if (passedSelectionEnd) {
-			afterNode.append(child);
-		} else if (
+	for (const child of wrapper.getChildren()) {
+		if (
 			!passedSelectionStart &&
 			child.is(startPoint.getNode()) &&
 			!passedSelectionEnd &&
@@ -101,91 +164,147 @@ export function $removeSelectionFromNode<T extends MarkNode>(
 			passedSelectionStart = true;
 			passedSelectionEnd = true;
 
-			if ($isTextNode(child)) {
-				const textNodes = child.splitText(
-					startPoint.offset,
-					endPoint.offset,
-				);
-				// Selected all text.
-				if (textNodes.length === 1) selectionNodes.push(textNodes[0]);
-				// Text after selection start.
-				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
-				// Text after selection end.
-				if (textNodes.length > 2) afterNode.append(textNodes[2]);
-			}
-		} else if (!passedSelectionStart && child.is(startPoint.getNode())) {
-			passedSelectionStart = true;
+			if (!$isTextNode(child)) continue;
 
-			if ($isTextNode(child)) {
+			// Calculating this value before splitting since splitting updates offsets.
+			const startsAtBoundary = startPoint.offset === 0;
+
+			const textParts = child.splitText(
+				startPoint.offset,
+				endPoint.offset,
+			);
+
+			// Selected the whole thing.
+			if (textParts.length === 1) selectionNodes.push(textParts[0]);
+
+			// Selection start or end at boundary but not both.
+			if (textParts.length === 2) {
+				if (startsAtBoundary) {
+					// Selection start at the first boundary
+					selectionNodes.push(textParts[0]);
+					afterSelectionNode.append(textParts[1]);
+				} else {
+					// Selection ends at the end boundary.
+					beforeSelectionNode.append(textParts[0]);
+					selectionNodes.push(textParts[1]);
+				}
+			}
+
+			// Selection is inside the text
+			if (textParts.length > 2) {
+				beforeSelectionNode.append(textParts[0]);
+				selectionNodes.push(textParts[1]);
+				afterSelectionNode.append(textParts[2]);
+			}
+		} else if (!passedSelectionStart) {
+			if (child.is(startPoint.getNode())) {
+				passedSelectionStart = true;
+				if (!$isTextNode(child)) continue;
+
 				const textNodes = child.splitText(startPoint.offset);
-				// Text after selection start.
-				if (textNodes.length > 1) selectionNodes.push(textNodes[1]);
-				// Selected everything.
-				else if (
-					textNodes.length === 1 &&
-					startPoint.offset !== child.getTextContentSize()
-				)
-					selectionNodes.push(textNodes[0]);
-			}
-		} else if (!passedSelectionEnd && child.is(endPoint.getNode())) {
-			passedSelectionEnd = true;
 
-			if ($isTextNode(child)) {
-				const textNodes = child.splitText(endPoint.offset);
-				// Text before selection ends.
-				if (textNodes.length > 0) selectionNodes.push(textNodes[0]);
-				// Text after selection ends.
-				if (textNodes.length > 1) afterNode.append(textNodes[1]);
+				// Selection starts in the middle of element.
+				if (textNodes.length > 1) {
+					beforeSelectionNode.append(textNodes[0]);
+					selectionNodes.push(textNodes[1]);
+				}
+				// The selection contains the whole element.
+				else if (textNodes.length === 1) {
+					selectionNodes.push(textNodes[0]);
+				}
+			} else {
+				beforeSelectionNode.append(child);
 			}
+		} else if (!passedSelectionEnd) {
+			if (child.is(endPoint.getNode())) {
+				passedSelectionEnd = true;
+				if (!$isTextNode(child)) continue;
+
+				const textNodes = child.splitText(endPoint.offset);
+
+				// Selection ends in the middle of element.
+				if (textNodes.length > 1) {
+					selectionNodes.push(textNodes[0]);
+					afterSelectionNode.append(textNodes[1]);
+				}
+				// The selection contains the whole element.
+				else if (textNodes.length === 1) {
+					selectionNodes.push(textNodes[0]);
+				}
+			} else {
+				selectionNodes.push(child);
+			}
+		} else if (passedSelectionEnd) {
+			afterSelectionNode.append(child);
 		} else if (passedSelectionStart) {
 			selectionNodes.push(child);
 		}
+
+		// TODO: when selection start from [16] to "use" word the [16] still has higlight
+		// Maybe need else if (passedSelectionStart) and then add to selectionNode
 	}
 
-	if (!afterNode.isEmpty()) wrapperNode.insertAfter(afterNode);
-	selectionNodes.reverse().forEach(node => wrapperNode.insertAfter(node));
-	if (wrapperNode.isEmpty()) wrapperNode.remove();
+	if (!beforeSelectionNode.isEmpty())
+		wrapper.insertBefore(beforeSelectionNode);
+	if (!afterSelectionNode.isEmpty()) wrapper.insertAfter(afterSelectionNode);
+	selectionNodes.forEach(node => wrapper.insertBefore(node));
+
+	if (wrapper.isEmpty()) wrapper.remove();
 }
 
 export function $isSelectionInsideNode<T extends LexicalNode>(
 	selection: RangeSelection,
 	isNode: (node: LexicalNode) => node is T,
 ): boolean {
-	let allInside = true;
+	const [startPoint, endPoint] = getStartAndEndPointForSelection(selection);
+	const startNode = startPoint.getNode();
+	const endNode = endPoint.getNode();
+
+	let passedStart = false;
+
 	for (const node of selection.getNodes()) {
-		let anyMatch = false;
+		if (!passedStart) {
+			if (node.is(startNode)) {
+				passedStart = true;
+			} else continue;
+		}
+
+		// No need to stop at paragraphs, their content is still iterated over!
+		if ($isParagraphNode(node)) continue;
+
+		let anyMatch = isNode(node);
 		let current = node.getParent();
 		while (current !== null) {
 			anyMatch = anyMatch || isNode(current);
 			current = current.getParent();
 		}
-		allInside = allInside && anyMatch;
+
+		if (!anyMatch) {
+			return false;
+		}
+
+		if (node.is(endNode)) break;
 	}
-	return allInside;
+
+	return true;
 }
 
-export function getWrappingNode<T extends LexicalNode>(
+export function $getNodeFromSelection<T extends LexicalNode>(
 	selection: RangeSelection,
 	isNode: (node: LexicalNode) => node is T,
 ): T | null {
-	let found: T | null = null;
 	for (const node of selection.getNodes()) {
 		let current = node.getParent();
 		while (current !== null) {
-			if (isNode(current)) {
-				found = current;
-				break;
-			}
-			if (found) break;
+			if (isNode(current)) return current;
 			current = current.getParent();
 		}
 	}
-	return found;
+	return null;
 }
 
-export function skipWhitespace(selection: RangeSelection) {
-	const [startPoint, endPoint] =
-		getStartEndAndEndPointForSelection(selection);
+function skipWhitespace(selection: RangeSelection) {
+	const [startPoint, endPoint] = getStartAndEndPointForSelection(selection);
 
 	let currentStartNode = $isTextNode(startPoint.getNode())
 		? startPoint.getNode()
@@ -263,7 +382,7 @@ export function skipWhitespace(selection: RangeSelection) {
 	}
 }
 
-export function getStartEndAndEndPointForSelection(
+function getStartAndEndPointForSelection(
 	selection: RangeSelection,
 ): [PointType, PointType] {
 	return selection.isBackward()

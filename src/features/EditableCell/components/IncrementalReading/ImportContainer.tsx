@@ -38,9 +38,10 @@ export default function ImportContainer({ onImport }: Props) {
 			doc.head.prepend(base);
 
 			const article = new Readability(doc).parse();
+
 			onImport({
-				content: article?.content ?? null,
 				title: article?.title ?? null,
+				content: article?.content ?? null,
 			});
 		});
 	};

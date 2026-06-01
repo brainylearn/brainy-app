@@ -15,7 +15,6 @@ import {
 	$isSelectionInsideCloze,
 	$isClozeNode,
 	ClozeNode,
-	CLOZE_TAG_NAME,
 } from "./clozeNode";
 import { isModKey } from "../../../utils/keyboardUtils";
 import {
@@ -134,7 +133,7 @@ function $wrapSelectionInCloze(selection: RangeSelection): ClozeNode {
 		selection,
 		$isClozeNode,
 		existing => $createClozeNode(existing?.index ?? 1),
-		CLOZE_TAG_NAME,
+		nodes => $createClozeNode(nodes[0].index),
 	);
 }
 
