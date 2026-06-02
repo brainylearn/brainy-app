@@ -20,7 +20,6 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 	selection: RangeSelection,
 	isNode: (node: LexicalNode) => node is T,
 	createNode: (existingNode: T | undefined) => T,
-	mergeNodes: (nodes: T[]) => T,
 ): T {
 	skipWhitespace(selection);
 	const allNodes: LexicalNode[] = [];
@@ -45,7 +44,7 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 
 	let newNode: T | null =
 		existingNodesOfSameType.length > 0
-			? mergeNodes(existingNodesOfSameType)
+			? createNode(existingNodesOfSameType[0])
 			: createNode(undefined);
 	allNodes[0].insertBefore(newNode);
 
@@ -96,20 +95,7 @@ export function $removeSelectionFromNode<T extends MarkNode>(
 	createNode: (existingNode: T) => T,
 ): void {
 	const [startPoint, endPoint] = getStartAndEndPointForSelection(selection);
-
-	const wrappers: T[] = [];
-	for (const node of selection.getNodes()) {
-		let current: LexicalNode | null = node.getParent();
-		while (current !== null) {
-			if (isNode(current)) {
-				wrappers.push(current);
-				break;
-			}
-			current = current.getParent();
-		}
-	}
-
-	if (wrappers.length === 0) return;
+	const wrappers = $getNodesOfTypeFromSelection(selection, isNode);
 
 	let didPassSelectionStart = false;
 	let didPassSelectionEnd = false;
@@ -287,18 +273,23 @@ export function $isSelectionInsideNode<T extends LexicalNode>(
 	return true;
 }
 
-export function $getNodeFromSelection<T extends LexicalNode>(
+export function $getNodesOfTypeFromSelection<T extends LexicalNode>(
 	selection: RangeSelection,
 	isNode: (node: LexicalNode) => node is T,
-): T | null {
+): T[] {
+	const nodes: T[] = [];
+
 	for (const node of selection.getNodes()) {
-		let current = node.getParent();
+		let current: LexicalNode | null = node.getParent();
 		while (current !== null) {
-			if (isNode(current)) return current;
+			if (isNode(current)) {
+				nodes.push(current);
+				break;
+			}
 			current = current.getParent();
 		}
 	}
-	return null;
+	return nodes;
 }
 
 function skipWhitespace(selection: RangeSelection) {

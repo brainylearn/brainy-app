@@ -46,14 +46,13 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 					className={`primary ${styles.rowButton}`}
 					onClick={() => setShowReadDialog(true)}>
 					<Icon path={mdiBookOpenVariantOutline} size={1} />
-					<span>Read</span>
+					<span>Read now</span>
 				</button>
 			</div>
 
 			{showReadDialog && (
 				<ReadDialog
 					incrementalReading={incrementalReading}
-					cell={cell}
 					onClose={() => setShowReadDialog(false)}
 					onChange={content => {
 						handleChange({ ...incrementalReading, content });

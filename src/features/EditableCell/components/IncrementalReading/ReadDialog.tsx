@@ -3,9 +3,8 @@ import Dialog from "../../../../components/Dialog/Dialog";
 import RichTextEditor from "../../../../components/RichTextEditor/RichTextEditor";
 import { Icon } from "@mdi/react";
 import styles from "./styles.module.css";
-import { mdiDotsHorizontal, mdiExitToApp, mdiMarker } from "@mdi/js";
+import { mdiCheck, mdiExitToApp, mdiMarker } from "@mdi/js";
 import {
-	$getHighlightFromSelection,
 	$isSelectionInsideHighlight,
 	HighlightNode,
 } from "./RichTextEditorPlugins/highlight/highlightNode";
@@ -13,50 +12,25 @@ import {
 	HighlightPlugin,
 	TOGGLE_HIGHLIGHT_NODE,
 } from "./RichTextEditorPlugins/highlight/highlightPlugin";
-import { $getSelection, $isRangeSelection, LexicalEditor } from "lexical";
-import createDefaultCellDto from "../../../EditableCells/utils/createCreateCellRequestDto";
-import Cell from "../../../../api/cells/entities/cell";
-import useApi from "../../../../hooks/useApi";
-import { createCell } from "../../../../api/cells/api/cellApi";
 
 interface Props {
 	incrementalReading: IncrementalReading;
-	cell: Cell;
 	onChange: (content: string) => void;
 	onClose: () => void;
 }
 
 export default function ReadDialog({
 	incrementalReading,
-	cell,
 	onChange,
 	onClose,
 }: Props) {
-	// TODO: error
-	const { errorMessage, callApi } = useApi();
-
-	const handleClozeClick = (editor: LexicalEditor) => {
-		editor.read(() => {
-			const selection = $getSelection();
-			if (!$isRangeSelection(selection)) return;
-			const highlightNode = $getHighlightFromSelection(selection);
-			if (!highlightNode) return;
-
-			// TODO: create new cloze if none are found, and show editable cells dialog
-
-			const element = editor.getElementByKey(highlightNode.getKey());
-			const newCell = createDefaultCellDto(
-				"Cloze",
-				cell.fileId,
-				1 /* TODO: cell index */,
-			);
-			newCell.content = element?.innerHTML ?? "";
-			void callApi(async () => {
-				// TODO: change content of the highlighted onde
-				await createCell(newCell);
-			});
-		});
-	};
+	// TODO:
+	// 1. Each highlights has a unique id
+	// 2. Each change to highlights create new id
+	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
+	// 4. Add a new button to go through extracts (converting an extract to cloze removes it)
+	// 5. Fix scheduling later (see claude)
+	// 6. Add a button to convert the extract directly from editor
 
 	return (
 		<Dialog focusTrap className={styles.readDialog} onHide={onClose}>
@@ -80,23 +54,22 @@ export default function ReadDialog({
 								),
 							isActive: $isSelectionInsideHighlight,
 						},
-						{
-							name: "Change cloze cell",
-							title: "Change cloze cell",
-							icon: mdiDotsHorizontal,
-							onClick: handleClozeClick,
-							isActive: () => false,
-							isVisible: $isSelectionInsideHighlight,
-						},
 					]}
 				/>
 			</div>
 			<div className={styles.footer}>
+				{/*TODO: change this to be a checkbox, and add priority dropwdown at start*/}
+				<button
+					className={`secondary ${styles.rowButton}`}
+					onClick={onClose}>
+					<Icon path={mdiCheck} size={1} />
+					<span>Mark as completed</span>
+				</button>
 				<button
 					className={`primary ${styles.rowButton}`}
 					onClick={onClose}>
 					<Icon path={mdiExitToApp} size={1} />
-					<span>Close</span>
+					<span>Stop for now</span>
 				</button>
 			</div>
 		</Dialog>

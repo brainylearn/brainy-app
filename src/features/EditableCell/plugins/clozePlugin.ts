@@ -129,11 +129,8 @@ export function ClozePlugin() {
 }
 
 function $wrapSelectionInCloze(selection: RangeSelection): ClozeNode {
-	return $wrapSelectionInNode(
-		selection,
-		$isClozeNode,
-		existing => $createClozeNode(existing?.index ?? 1),
-		nodes => $createClozeNode(nodes[0].index),
+	return $wrapSelectionInNode(selection, $isClozeNode, existing =>
+		$createClozeNode(existing?.index ?? 1),
 	);
 }
 

@@ -61,16 +61,13 @@ export function HighlightPlugin() {
 }
 
 function $wrapSelectionInHighlight(selection: RangeSelection): HighlightNode {
-	return $wrapSelectionInNode(
-		selection,
-		$isHighlightNode,
-		existing => $createHighlightNode(existing?.cellIds ?? []),
-		nodes => $createHighlightNode(nodes.flatMap(n => n.cellIds)),
+	return $wrapSelectionInNode(selection, $isHighlightNode, existing =>
+		$createHighlightNode(existing?.extractId),
 	);
 }
 
 function $removeSelectionFromHighlight(selection: RangeSelection) {
 	$removeSelectionFromNode(selection, $isHighlightNode, existing =>
-		$createHighlightNode(existing.cellIds),
+		$createHighlightNode(existing.extractId),
 	);
 }

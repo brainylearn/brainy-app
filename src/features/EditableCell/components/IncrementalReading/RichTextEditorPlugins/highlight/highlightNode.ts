@@ -1,20 +1,20 @@
 import { DOMExportOutput, LexicalNode, NodeKey, RangeSelection } from "lexical";
 import { MarkNode } from "@lexical/mark";
 import {
-	$getNodeFromSelection,
+	$getNodesOfTypeFromSelection,
 	$isSelectionInsideNode,
 } from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
 
 const HIGHLIGHT_CSS_CLASS_NAME = "highlight-node";
-const HIGHLIGHT_CELL_IDS_ATTRIBUTE_NAME = "cell-ids";
+const HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME = "extract-ids";
 export const HIGHLIGHT_TAG_NAME = "highlight";
 
 export class HighlightNode extends MarkNode {
-	cellIds: string[];
+	extractId: string;
 
 	constructor(key: NodeKey | undefined = undefined) {
 		super(undefined, key);
-		this.cellIds = [];
+		this.extractId = "";
 	}
 
 	canInsertTextBefore() {
@@ -26,7 +26,7 @@ export class HighlightNode extends MarkNode {
 	}
 
 	static clone(node: HighlightNode): MarkNode {
-		const clone = $createHighlightNode(node.cellIds);
+		const clone = $createHighlightNode(node.extractId);
 		clone.__key = node.__key;
 		return clone;
 	}
@@ -35,8 +35,8 @@ export class HighlightNode extends MarkNode {
 		const element = document.createElement(HIGHLIGHT_TAG_NAME);
 		element.classList.add(HIGHLIGHT_CSS_CLASS_NAME);
 		element.setAttribute(
-			HIGHLIGHT_CELL_IDS_ATTRIBUTE_NAME,
-			JSON.stringify(this.cellIds),
+			HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME,
+			JSON.stringify(this.extractId),
 		);
 		return element;
 	}
@@ -53,8 +53,8 @@ export class HighlightNode extends MarkNode {
 		const element = document.createElement(HIGHLIGHT_TAG_NAME);
 		element.classList.add(HIGHLIGHT_CSS_CLASS_NAME);
 		element.setAttribute(
-			HIGHLIGHT_CELL_IDS_ATTRIBUTE_NAME,
-			JSON.stringify(this.cellIds),
+			HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME,
+			JSON.stringify(this.extractId),
 		);
 		return { element };
 	}
@@ -65,12 +65,12 @@ export class HighlightNode extends MarkNode {
 				return {
 					conversion: (element: HTMLElement) => {
 						const raw = element.getAttribute(
-							HIGHLIGHT_CELL_IDS_ATTRIBUTE_NAME,
+							HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME,
 						);
-						const cellIds: string[] = raw
-							? (JSON.parse(raw) as string[])
-							: [];
-						return { node: $createHighlightNode(cellIds) };
+						const extractId: string = raw
+							? (JSON.parse(raw) as string)
+							: "";
+						return { node: $createHighlightNode(extractId) };
 					},
 					priority: 0,
 				};
@@ -84,9 +84,10 @@ export class HighlightNode extends MarkNode {
 	}
 }
 
-export function $createHighlightNode(cellIds: string[] = []): HighlightNode {
+// TODO: default value
+export function $createHighlightNode(extractId = ""): HighlightNode {
 	const node = new HighlightNode();
-	node.cellIds = cellIds;
+	node.extractId = extractId;
 	return node;
 }
 
@@ -103,5 +104,5 @@ export function $isSelectionInsideHighlight(
 }
 
 export function $getHighlightFromSelection(selection: RangeSelection) {
-	return $getNodeFromSelection(selection, $isHighlightNode);
+	return $getNodesOfTypeFromSelection(selection, $isHighlightNode);
 }
