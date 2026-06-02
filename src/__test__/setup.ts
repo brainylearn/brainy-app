@@ -11,3 +11,12 @@ vi.stubGlobal(
 );
 
 vi.stubGlobal("alert", vi.fn());
+
+// KaTeX checks for a doctype and warns if missing (quirks mode).
+// Happy DOM doesn't set one by default, so add it here.
+if (!document.doctype) {
+	document.insertBefore(
+		document.implementation.createDocumentType("html", "", ""),
+		document.firstChild,
+	);
+}

@@ -151,7 +151,8 @@ function _removeSingleWrapper<T extends MarkNode>(
 	const selectionNodes: LexicalNode[] = [];
 	const afterSelectionNode = createNode(wrapper);
 
-	let passedSelectionStart = didPassSelectionStart;
+	let passedSelectionStart =
+		didPassSelectionStart || startPoint.getNode().is(wrapper);
 	let passedSelectionEnd = didPassSelectionEnd;
 
 	for (const child of wrapper.getChildren()) {
@@ -239,9 +240,6 @@ function _removeSingleWrapper<T extends MarkNode>(
 		} else if (passedSelectionStart) {
 			selectionNodes.push(child);
 		}
-
-		// TODO: when selection start from [16] to "use" word the [16] still has higlight
-		// Maybe need else if (passedSelectionStart) and then add to selectionNode
 	}
 
 	if (!beforeSelectionNode.isEmpty())
