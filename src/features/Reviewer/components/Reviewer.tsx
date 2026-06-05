@@ -8,7 +8,7 @@ import createCardFromCellRepetition from "../utils/createCardFromRepetition";
 import useGlobalKey from "../../../hooks/useGlobalKey";
 import createRepetitionFromCard from "../utils/createRepetitionFromCard";
 import Timer from "./Timer";
-import { Navigate } from "react-router";
+import { useNavigate } from "react-router";
 import { getCellsForFilesWithFsrsProfileIds } from "../../../api/cells/api/cellApi";
 import gradeToRating from "../utils/gradeToRating";
 import { registerReview } from "../../../api/cells/api/reviewApi";
@@ -39,6 +39,7 @@ export interface RepetitionWithFsrsProfileId {
 }
 
 function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
+	const navigate = useNavigate();
 	const [showAnswer, setShowAnswer] = useState(false);
 	const [currentCellIndex, setCurrentCellIndex] = useState(0);
 	const [isSendingRequest, setIsSendingRequest] = useState(true);
@@ -109,41 +110,34 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 		};
 	}, [dispatch, dueToday, currentCellIndex]);
 
-	const getRecordLog = useCallback(
-		(now: Date) => {
-			if (dueToday.length === 0) return null;
-			const currentCard = createCardFromCellRepetition(
-				dueToday[currentCellIndex].repetition,
-			);
+	const fsrs = useMemo(() => {
+		if (dueToday.length === 0) return null;
 
-			const profile = allFsrsProfiles.find(
-				p => p.id === dueToday[currentCellIndex].fsrsProfileId,
-			)!;
+		const profile = allFsrsProfiles.find(
+			p => p.id === dueToday[currentCellIndex].fsrsProfileId,
+		)!;
 
-			const params = generatorParameters({
-				w: profile.weights,
-				maximum_interval: profile.maximumInterval,
-				request_retention: profile.requestRetention,
-			});
-			const fsrs = new FSRS(params);
-
-			return fsrs.repeat(currentCard, now);
-		},
-		[dueToday, currentCellIndex, allFsrsProfiles],
-	);
+		const params = generatorParameters({
+			w: profile.weights,
+			maximum_interval: profile.maximumInterval,
+			request_retention: profile.requestRetention,
+		});
+		return new FSRS(params);
+	}, [dueToday, currentCellIndex, allFsrsProfiles]);
+	const fsrsCard = fsrs
+		? createCardFromCellRepetition(dueToday[currentCellIndex].repetition)
+		: null;
 
 	const handleGradeSubmit = async (grade: Grade) => {
-		const recordLog = getRecordLog(new Date());
-
-		if (isSendingRequest || !recordLog) {
+		if (isSendingRequest || !fsrs || !fsrsCard) {
 			return;
 		}
 		setIsSendingRequest(true);
 		await callApi(
 			async () => {
-				const card = recordLog[grade]?.card;
+				const nextCard = fsrs.next(fsrsCard, new Date(), grade).card;
 				const newRepetition = createRepetitionFromCard(
-					card,
+					nextCard,
 					dueToday[currentCellIndex].repetition.id,
 					dueToday[currentCellIndex].repetition.fileId,
 					dueToday[currentCellIndex].repetition.cellId,
@@ -223,14 +217,13 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 		[],
 	);
 
-	const buttonRowRecordLog = getRecordLog(currentReviewStartTime);
+	const buttonRowRecordLog =
+		fsrs && fsrsCard ? fsrs.repeat(fsrsCard, currentReviewStartTime) : null;
+
+	if (!dueToday[currentCellIndex] && !isSendingRequest) void navigate(-1);
 
 	return (
 		<div className={`${styles.reviewer}`}>
-			{!dueToday[currentCellIndex] && !isSendingRequest && (
-				<Navigate replace to="/home" />
-			)}
-
 			<div className={styles.countRow}>
 				<div
 					className={`${styles.countBox} ${isCurrentCellNew ? styles.active : ""}`}>
@@ -262,6 +255,18 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 			</div>
 
 			<div className={styles.studyBox}>
+				<button
+					className={`row transparent ${styles.editButton}`}
+					onClick={() =>
+						onEditButtonClick(
+							dueToday[currentCellIndex].repetition.fileId,
+							dueToday[currentCellIndex].repetition.cellId,
+						)
+					}
+					title="Edit cell (e)">
+					<Icon path={mdiPencilOutline} size={1.2} />
+				</button>
+
 				<div className={styles.studyContent}>
 					{dueToday[currentCellIndex] && (
 						<ReviewerCell
@@ -286,21 +291,6 @@ function Reviewer({ fileIds, onEditButtonClick, callApi }: Props) {
 							key={dueToday[currentCellIndex]?.repetition.id ?? 0}
 							onTimeUpdate={handleTimeUpdate}
 						/>
-
-						<button
-							className={`row transparent ${styles.transparent}`}
-							onClick={() =>
-								onEditButtonClick(
-									dueToday[currentCellIndex].repetition
-										.fileId,
-									dueToday[currentCellIndex].repetition
-										.cellId,
-								)
-							}
-							title="(e)">
-							<Icon path={mdiPencilOutline} size={1} />
-							<span>Edit</span>
-						</button>
 					</div>
 
 					<div className={styles.footerRight}>

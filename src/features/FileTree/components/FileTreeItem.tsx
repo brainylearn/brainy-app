@@ -13,7 +13,7 @@ import {
 	mdiTuneVariant,
 } from "@mdi/js";
 import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
-import { Action } from "../types/action.ts";
+import { Action } from "../../../components/ActionsMenu/ActionsMenu";
 import useAppDispatch from "../../../hooks/useAppDispatch.ts";
 import {
 	deleteFile,
@@ -102,7 +102,8 @@ function FileTreeItem({ folder, fullPath, id, ref, depth, onDelete }: Props) {
 			// And when the dragged item is not a cell
 			(folder !== null || source?.type !== DRAGGED_CELL_TYPE),
 		collisionDetector: pointerIntersection,
-		collisionPriority: depth,
+		// +1 to outrank the default cell droppables.
+		collisionPriority: depth + 1,
 		data: { itemId: id, isFolder: !!folder } as FileItemDropContainerData,
 	});
 

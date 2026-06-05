@@ -32,7 +32,7 @@ body {
 
 	--default-outline-width: 2px;
 	--default-outline: var(--default-outline-width) solid transparent;
-	--default-outline-offset: 2px;
+	--default-outline-offset: 1px;
 
 	--primary-color: #2563eb;
 	--primary-color-shade-10: #1554e0;
@@ -48,8 +48,8 @@ body {
 	--border-color: var(--surface-background-color-shade-10);
 	--hover-border-color: var(--surface-background-color-shade-20);
 
-	--surface-background-color-tint-10: rgb(248, 248, 248);
-	--surface-background-color: #e6e9ec;
+	--surface-background-color-tint-10: rgb(250, 250, 250);
+	--surface-background-color: rgb(235, 235, 235);
 	--surface-background-color-shade-10: #c9d0d6;
 	--surface-background-color-shade-20: #acb6c0;
 	--surface-background-color-shade-30: #8f9caa;
@@ -64,6 +64,9 @@ body {
 	--learning-color: var(--red-color);
 	--review-color: var(--green-color);
 	--hard-color: #f97316;
+
+	--folder-icon-color: var(--hard-color);
+	--file-icon-color: var(--primary-color-shade-20);
 
 	--default-border-radius: 8px;
 
@@ -98,7 +101,7 @@ body.dark {
 	--text-color-secondary: #bcc6d1;
 
 	--primary-color-shade-10: #306bec;
-	--primary-color-shade-20: #3b73ed;
+	--primary-color-shade-20: #5182ef;
 
 	--secondary-color-shade-10: #9b69f1;
 	--secondary-color-tint-10: #6d28d9;
@@ -376,6 +379,14 @@ h1 {
 
 .review-color {
 	color: var(--review-color);
+}
+
+.folder-icon {
+	color: var(--folder-icon-color);
+}
+
+.file-icon {
+	color: var(--file-icon-color);
 }
 
 /* Global classes for the Lexical editor */

@@ -47,7 +47,7 @@ function makeRepetition(overrides: Partial<Repetition> = {}): Repetition {
 		scheduledDays: 0,
 		stability: 1,
 		difficulty: 5,
-		elapsedDays: 0,
+		learningSteps: 0,
 		lapses: 0,
 		additionalContent: "",
 		...overrides,
@@ -144,7 +144,7 @@ describe("Reviewer", () => {
 			cellId: "cell-1",
 			fileId: "file-1",
 			difficulty: 4,
-			elapsedDays: 8,
+			learningSteps: 8,
 			lapses: 8,
 			additionalContent: "",
 		};
@@ -220,7 +220,7 @@ describe("Reviewer", () => {
 		);
 	});
 
-	it("Should navigate to home when reload returns no remaining cards", async () => {
+	it("Should navigate back when reload returns no remaining cards", async () => {
 		// Arrange
 
 		const repetition = makeRepetition({ id: "rep-1", cellId: "cell-1" });
@@ -244,6 +244,11 @@ describe("Reviewer", () => {
 				onEditButtonClick={vi.fn()}
 				callApi={callApiMock}
 			/>,
+			{
+				memoryRouterProps: {
+					initialEntries: ["/first", "/reviewer"],
+				},
+			},
 		);
 
 		// Act
@@ -253,7 +258,7 @@ describe("Reviewer", () => {
 
 		// Assert
 
-		expect(await getCurrentLocation()).toBe("/home");
+		expect(await getCurrentLocation()).toBe("/first");
 	});
 
 	it("Should advance to next card when not last repetition and under 1 minute", async () => {
