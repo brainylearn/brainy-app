@@ -24,7 +24,7 @@
 	height: 95vh;
 	width: 800px;
 	max-width: 95vw;
-	--sections-padding: var(--spacing-4) var(--spacing-5);
+	--sections-padding: var(--spacing-4);
 
 	.title {
 		padding: var(--sections-padding);
