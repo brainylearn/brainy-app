@@ -6,15 +6,15 @@ import {
 } from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
 
 const HIGHLIGHT_CSS_CLASS_NAME = "highlight-node";
-const HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME = "extract-ids";
+const HIGHLIGHT_ID_ATTRIBUTE_NAME = "highlight-id";
 export const HIGHLIGHT_TAG_NAME = "highlight";
 
 export class HighlightNode extends MarkNode {
-	extractId: string;
+	id: string;
 
 	constructor(key: NodeKey | undefined = undefined) {
 		super(undefined, key);
-		this.extractId = "";
+		this.id = crypto.randomUUID();
 	}
 
 	canInsertTextBefore() {
@@ -26,7 +26,7 @@ export class HighlightNode extends MarkNode {
 	}
 
 	static clone(node: HighlightNode): MarkNode {
-		const clone = $createHighlightNode(node.extractId);
+		const clone = $createHighlightNode(node.id);
 		clone.__key = node.__key;
 		return clone;
 	}
@@ -34,10 +34,7 @@ export class HighlightNode extends MarkNode {
 	createDOM(): HTMLElement {
 		const element = document.createElement(HIGHLIGHT_TAG_NAME);
 		element.classList.add(HIGHLIGHT_CSS_CLASS_NAME);
-		element.setAttribute(
-			HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME,
-			JSON.stringify(this.extractId),
-		);
+		element.setAttribute(HIGHLIGHT_ID_ATTRIBUTE_NAME, this.id);
 		return element;
 	}
 
@@ -52,10 +49,7 @@ export class HighlightNode extends MarkNode {
 	exportDOM(): DOMExportOutput {
 		const element = document.createElement(HIGHLIGHT_TAG_NAME);
 		element.classList.add(HIGHLIGHT_CSS_CLASS_NAME);
-		element.setAttribute(
-			HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME,
-			JSON.stringify(this.extractId),
-		);
+		element.setAttribute(HIGHLIGHT_ID_ATTRIBUTE_NAME, this.id);
 		return { element };
 	}
 
@@ -64,13 +58,10 @@ export class HighlightNode extends MarkNode {
 			highlight: () => {
 				return {
 					conversion: (element: HTMLElement) => {
-						const raw = element.getAttribute(
-							HIGHLIGHT_EXTRACT_ID_ATTRIBUTE_NAME,
+						const id = element.getAttribute(
+							HIGHLIGHT_ID_ATTRIBUTE_NAME,
 						);
-						const extractId: string = raw
-							? (JSON.parse(raw) as string)
-							: "";
-						return { node: $createHighlightNode(extractId) };
+						return { node: $createHighlightNode(id ?? undefined) };
 					},
 					priority: 0,
 				};
@@ -84,10 +75,11 @@ export class HighlightNode extends MarkNode {
 	}
 }
 
-// TODO: default value
-export function $createHighlightNode(extractId = ""): HighlightNode {
+export function $createHighlightNode(id?: string): HighlightNode {
 	const node = new HighlightNode();
-	node.extractId = extractId;
+	if (id !== undefined) {
+		node.id = id;
+	}
 	return node;
 }
 

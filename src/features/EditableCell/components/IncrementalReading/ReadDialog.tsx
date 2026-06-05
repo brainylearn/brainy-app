@@ -25,9 +25,7 @@ export default function ReadDialog({
 	onClose,
 }: Props) {
 	// TODO:
-	// 1. Each highlights has a unique id
-	// 2. Each change to highlights create new id
-	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
+	// 1. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
 	// 4. Add a new button to go through extracts (converting an extract to cloze removes it)
 	// 5. Fix scheduling later (see claude)
 	// 6. Add a button to convert the extract directly from editor
