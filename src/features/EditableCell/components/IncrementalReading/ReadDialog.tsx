@@ -33,7 +33,11 @@ export default function ReadDialog({
 	// 6. Add a button to convert the extract directly from editor
 
 	return (
-		<Dialog focusTrap className={styles.readDialog} onHide={onClose}>
+		<Dialog
+			focusTrap
+			className={styles.readDialog}
+			onHide={onClose}
+			fullScreenOnSmallDevices>
 			<h2 className={styles.title}>{incrementalReading.title}</h2>
 			<div className={styles.readDialogBody}>
 				<RichTextEditor
