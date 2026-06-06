@@ -327,6 +327,20 @@ button.transparent:not(:disabled):active {
 	filter: none;
 }
 
+button.transparent-with-border {
+	border: var(--default-border-width) solid var(--border-color);
+}
+
+button.transparent-with-border:not(:disabled):hover {
+	border-color: var(--hover-border-color);
+	filter: none;
+}
+
+button.transparent-with-border:not(:disabled):active {
+	background-color: var(--surface-background-color);
+	filter: none;
+}
+
 button.grey-button {
 	background-color: var(--surface-background-color);
 }

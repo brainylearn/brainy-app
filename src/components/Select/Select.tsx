@@ -16,12 +16,14 @@ interface Props extends React.DetailedHTMLProps<
 > {
 	options: Option[];
 	currentValue: string;
+	containerClassName?: string;
 	onChangeValue: (value: string) => void;
 }
 
 export default function Select({
 	options,
 	currentValue,
+	containerClassName,
 	onChangeValue,
 	...props
 }: Props) {
@@ -74,7 +76,9 @@ export default function Select({
 	};
 
 	return (
-		<div className={`${styles.container}`} ref={containerRef}>
+		<div
+			className={`${styles.container} ${containerClassName}`}
+			ref={containerRef}>
 			<button
 				{...props}
 				onClick={() => setIsOpen(!isOpen)}

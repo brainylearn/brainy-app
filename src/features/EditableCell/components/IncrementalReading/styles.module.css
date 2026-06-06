@@ -26,18 +26,31 @@
 	max-width: 95vw;
 	--sections-padding: var(--spacing-4);
 
-	.title {
+	.title-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--spacing-2);
 		padding: var(--sections-padding);
 		border-bottom: var(--default-border-width) solid var(--border-color);
 
 		position: sticky;
-		background-color: var(--default-background-color);
+		background-color: var(--surface-background-color);
 		top: 0;
 		z-index: 1;
+	}
 
+	.title {
 		font-size: 1.8rem;
 		font-weight: 400;
 		word-break: break-all;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.select {
+		width: 12rem;
+		max-width: 40%;
 	}
 
 	.read-dialog-body {

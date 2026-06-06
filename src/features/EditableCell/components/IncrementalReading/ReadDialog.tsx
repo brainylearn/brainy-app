@@ -1,9 +1,16 @@
-import IncrementalReading from "../../../../api/cells/valueObjects/incrementalReading";
+import IncrementalReading, {
+	IncrementalReadingPriority,
+} from "../../../../api/cells/valueObjects/incrementalReading";
 import Dialog from "../../../../components/Dialog/Dialog";
 import RichTextEditor from "../../../../components/RichTextEditor/RichTextEditor";
+import Select, { Option } from "../../../../components/Select/Select";
 import { Icon } from "@mdi/react";
 import styles from "./styles.module.css";
-import { mdiCheck, mdiExitToApp, mdiMarker } from "@mdi/js";
+import {
+	mdiCheckCircleOutline,
+	mdiMarker,
+	mdiTimerPauseOutline,
+} from "@mdi/js";
 import {
 	$isSelectionInsideHighlight,
 	HighlightNode,
@@ -13,19 +20,33 @@ import {
 	TOGGLE_HIGHLIGHT_NODE,
 } from "./RichTextEditorPlugins/highlight/highlightPlugin";
 
+const priorityOptions: Option[] = [
+	{ label: "High", value: "high" },
+	{ label: "Normal", value: "normal" },
+	{ label: "Low", value: "low" },
+];
+
 interface Props {
 	incrementalReading: IncrementalReading;
 	onChange: (content: string) => void;
+	onChangePriority: (priority: IncrementalReadingPriority) => void;
 	onClose: () => void;
 }
 
 export default function ReadDialog({
 	incrementalReading,
 	onChange,
+	onChangePriority,
 	onClose,
 }: Props) {
+	const handlePriorityChange = (value: string) => {
+		const priority = value as IncrementalReadingPriority;
+		onChangePriority(priority);
+	};
 	// TODO:
-	// 1. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
+	// 1. Save incremental readings into their own table and remember to remove them when the cell is removed
+	// 2. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
+	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
 	// 4. Add a new button to go through extracts (converting an extract to cloze removes it)
 	// 5. Fix scheduling later (see claude)
 	// 6. Add a button to convert the extract directly from editor
@@ -36,7 +57,15 @@ export default function ReadDialog({
 			className={styles.readDialog}
 			onHide={onClose}
 			fullScreenOnSmallDevices>
-			<h2 className={styles.title}>{incrementalReading.title}</h2>
+			<div className={styles.titleBar}>
+				<h2 className={styles.title}>{incrementalReading.title}</h2>
+				<Select
+					containerClassName={styles.select}
+					options={priorityOptions}
+					currentValue={incrementalReading.priority}
+					onChangeValue={handlePriorityChange}
+				/>
+			</div>
 			<div className={styles.readDialogBody}>
 				<RichTextEditor
 					content={incrementalReading.content!}
@@ -60,18 +89,17 @@ export default function ReadDialog({
 				/>
 			</div>
 			<div className={styles.footer}>
-				{/*TODO: change this to be a checkbox, and add priority dropwdown at start*/}
 				<button
-					className={`secondary ${styles.rowButton}`}
+					className={`transparent-with-border ${styles.rowButton}`}
 					onClick={onClose}>
-					<Icon path={mdiCheck} size={1} />
-					<span>Mark as completed</span>
+					<Icon path={mdiCheckCircleOutline} size={1} />
+					<span>Done</span>
 				</button>
 				<button
-					className={`primary ${styles.rowButton}`}
+					className={`transparent-with-border ${styles.rowButton}`}
 					onClick={onClose}>
-					<Icon path={mdiExitToApp} size={1} />
-					<span>Stop for now</span>
+					<Icon path={mdiTimerPauseOutline} size={1} />
+					<span>Later</span>
 				</button>
 			</div>
 		</Dialog>

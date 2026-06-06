@@ -57,6 +57,9 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 					onChange={content => {
 						handleChange({ ...incrementalReading, content });
 					}}
+					onChangePriority={priority => {
+						handleChange({ ...incrementalReading, priority });
+					}}
 				/>
 			)}
 		</>

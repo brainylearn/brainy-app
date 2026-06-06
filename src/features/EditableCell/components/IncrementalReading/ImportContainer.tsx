@@ -42,6 +42,7 @@ export default function ImportContainer({ onImport }: Props) {
 			onImport({
 				title: article?.title ?? null,
 				content: article?.content ?? null,
+				priority: "normal",
 			});
 		});
 	};
