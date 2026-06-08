@@ -377,7 +377,7 @@ h1 {
 }
 
 .dimmed {
-	color: dimgray;
+	color: var(--text-muted);
 }
 
 .center {
