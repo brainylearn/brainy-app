@@ -44,6 +44,7 @@ export default function ReadDialog({
 		onChangePriority(priority);
 	};
 	// TODO:
+	// 0. Add left and right arrow buttons to go to next article, etc...
 	// 1. Save incremental readings into their own table and remember to remove them when the cell is removed
 	// 2. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
 	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
