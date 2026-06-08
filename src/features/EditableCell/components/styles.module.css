@@ -15,17 +15,11 @@
 		gap: 4px;
 
 		& button {
-			border: var(--default-border-width) solid var(--border-color);
-			transition: all var(--default-transition-time);
+			border: var(--border-width) solid var(--border-default);
+			transition: all var(--transition-time);
 
 			&:focus {
-				box-shadow: var(--default-box-shadow);
-			}
-
-			&.checked {
-				border-color: var(--primary-color);
-				background-color: var(--primary-color);
-				color: #fff;
+				box-shadow: var(--shadow-sm);
 			}
 		}
 	}
@@ -35,24 +29,21 @@
  * and the class name might change if we do not have it as global
  */
 :global(.cloze-node) {
-	display: inline-block;
-	padding: var(--spacing-1) calc(1.6ch + var(--spacing-1));
-	padding-right: var(--spacing-1);
-	border-radius: var(--default-border-radius);
-	border: var(--default-border-width) solid var(--text-color);
-	margin: var(--spacing-0);
-	position: relative;
+	padding: var(--spacing-1);
+	border-radius: var(--border-radius);
+	border: var(--border-width) solid var(--text-primary);
+
+	display: inline;
+	margin: 0 2px;
+	line-height: 2;
+	box-decoration-break: clone;
+	-webkit-box-decoration-break: clone;
 
 	&:before {
 		content: attr(index);
-		position: absolute;
-		left: var(--spacing-1);
-		top: 0;
-		bottom: 0;
-		display: flex;
-		align-items: center;
-		padding-right: var(--spacing-0);
-		border-right: var(--default-border-width) solid var(--text-color);
+		padding-right: 2px;
+		margin-right: 2px;
+		border-right: var(--border-width) solid var(--text-primary);
 		font-weight: normal;
 		font-style: normal;
 	}

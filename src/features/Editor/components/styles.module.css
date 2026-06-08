@@ -6,20 +6,17 @@
 }
 
 .editor {
-	padding: var(--spacing-4);
+	padding: var(--spacing-4) var(--spacing-5);
 }
 
 .title-bar {
 	padding: var(--spacing-3) var(--spacing-5);
-	background-color: var(--default-background-color);
-	position: sticky;
-	top: 0;
 	z-index: 4;
 	display: flex;
 	gap: var(--spacing-5);
 	justify-content: space-between;
 	align-items: center;
-	border-bottom: var(--default-border-width) solid var(--border-color);
+	border-bottom: var(--border-width) solid var(--border-default);
 
 	.title-and-search-button {
 		min-width: 0;
@@ -41,7 +38,7 @@
 	& .info {
 		display: flex;
 		align-content: center;
-		gap: 4px;
+		gap: var(--spacing-2);
 		font-size: 1.4rem;
 
 		& > * {
@@ -59,15 +56,10 @@
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			border: var(--default-border-width) solid var(--border-color);
-			margin-right: 4px;
+			border: var(--border-width) solid var(--border-muted);
 
 			& .label {
 				font-size: 1.2rem;
-			}
-
-			&:not(:disabled):hover {
-				border-color: var(--hover-border-color);
 			}
 		}
 	}

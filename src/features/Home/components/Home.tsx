@@ -49,6 +49,13 @@ function Home({ onStudyClick, callApi }: Props) {
 			);
 	}, [fetchHomeStatistics, dispatch]);
 
+	useEffect(() => {
+		// Reloading the state.
+		const id = setInterval(() => void fetchHomeStatistics(), 60 * 1000);
+
+		return () => clearInterval(id);
+	}, [fetchHomeStatistics, dispatch]);
+
 	const handleStudyClick = (
 		fileIds: string[],
 		item: ReviewTreeFolderDto | ReviewTreeFileDto,
@@ -84,27 +91,32 @@ function Home({ onStudyClick, callApi }: Props) {
 	return (
 		<div className={styles.home}>
 			<div className={styles.box}>
-				<div className={styles.row + " " + styles.header}>
-					<div className={styles.buttons}>
-						<p>#</p>
-						<p>Files</p>
-					</div>
+				<div className={styles.header}>
+					<p>Review tree</p>
 				</div>
-				{rootFolder &&
-					rootFolder.files.length + rootFolder.subfolders.length ===
-						0 && (
-						<div className={styles.row}>
-							<p>Create a file to see it in the review tree.</p>
-						</div>
-					)}
 
-				{rootFolder && (
-					<ReviewTree
-						folder={rootFolder}
-						onFileClick={file => handleStudyClick([file.id], file)}
-						onFolderClick={handleFolderClick}
-					/>
-				)}
+				<div className={styles.mainContent}>
+					{rootFolder &&
+						rootFolder.files.length +
+							rootFolder.subfolders.length ===
+							0 && (
+							<div className={styles.row}>
+								<p>
+									Create a file to see it in the review tree.
+								</p>
+							</div>
+						)}
+
+					{rootFolder && (
+						<ReviewTree
+							folder={rootFolder}
+							onFileClick={file =>
+								handleStudyClick([file.id], file)
+							}
+							onFolderClick={handleFolderClick}
+						/>
+					)}
+				</div>
 			</div>
 
 			{homeStatistics && (

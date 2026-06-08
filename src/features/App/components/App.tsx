@@ -18,10 +18,10 @@ import {
 	useSearchParams,
 } from "react-router";
 import {
+	EDITOR_CELL_ID,
 	FILE_ID_QUERY_PARAMETER,
 	SMALL_SCREEN_MAX_WIDTH_IN_PX,
 } from "../../../config/constants";
-import FromRouteState from "../../../types/fromRouteState";
 import Searcher from "../../Searcher/components/Searcher";
 import Updater from "../../Updater/components/Updater";
 import {
@@ -43,9 +43,6 @@ function App() {
 	const { callApi, errorMessage, clearErrorMessage } = useApi();
 	const [searchParams] = useSearchParams();
 	const [studyFileIds, setStudyFileIds] = useState<string[]>([]);
-	const [editorInitialSelectedCellId, setInitialSelectedCellId] = useState<
-		string | null
-	>(null);
 	const [isSideBarExpanded, setIsSideBarExpanded] = useState(true);
 	const location = useLocation();
 	const [previousLocation, setPreviousLocation] = useState(location);
@@ -63,12 +60,7 @@ function App() {
 
 	const handleEditorStudyClick = () => {
 		setStudyFileIds([selectedFileId!]);
-		void navigate("/reviewer", {
-			state: {
-				from: location.pathname,
-				fromSearch: location.search,
-			} as FromRouteState,
-		});
+		void navigate("/reviewer");
 	};
 
 	const handleHomeStudyClick = (fileIds: string[]) => {
@@ -105,6 +97,15 @@ function App() {
 	}, [dispatch]);
 
 	useEffect(() => {
+		// Reloading the state.
+		const id = setInterval(() => {
+			void dispatch(getReviewTreeFolderForRoot());
+		}, 60 * 1000);
+
+		return () => clearInterval(id);
+	}, [dispatch]);
+
+	useEffect(() => {
 		const cb = () => {
 			void dispatch(getReviewTreeFolderForRoot());
 		};
@@ -130,8 +131,8 @@ function App() {
 	}, "keydown");
 
 	const handleEditButtonClick = (fileId: string, cellId: string) => {
-		setInitialSelectedCellId(cellId);
 		searchParams.set(FILE_ID_QUERY_PARAMETER, fileId);
+		searchParams.set(EDITOR_CELL_ID, cellId);
 		void navigate({
 			pathname: "editor",
 			search: searchParams.toString(),
@@ -181,9 +182,9 @@ function App() {
 						path="/editor"
 						element={
 							<Editor
-								initialSelectedCellId={
-									editorInitialSelectedCellId
-								}
+								initialSelectedCellId={searchParams.get(
+									EDITOR_CELL_ID,
+								)}
 								callApi={callApi}
 								onStudyStart={() => handleEditorStudyClick()}
 								key={selectedFileId}
