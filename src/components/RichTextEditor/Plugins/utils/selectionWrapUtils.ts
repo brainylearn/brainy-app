@@ -10,6 +10,7 @@ import {
 } from "lexical";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
 
+// TODO: double clicking highlighted paragraph then trying to remove the highlight does not work
 /**
  * Wraps the selection in a new node. If the selection already contains one or
  * more nodes of type T, they are merged into a single new node. The first

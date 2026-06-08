@@ -123,7 +123,7 @@ function FocusTools({
 		});
 	}
 
-	if (cell.cellType !== "Note") {
+	if (cell.cellType !== "Note" && cell.cellType !== "IncrementalReading") {
 		actions.push({
 			iconName: mdiRestore,
 			text: "Reset repetitions",

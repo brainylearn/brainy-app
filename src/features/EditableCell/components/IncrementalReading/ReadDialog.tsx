@@ -48,7 +48,7 @@ export default function ReadDialog({
 	// 2. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
 	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
 	// 4. Add a new button to go through extracts (converting an extract to cloze removes it)
-	// 5. Fix scheduling later (see claude)
+	// 5. Fix scheduling later (see claude), extracts have their own scheduling, and reading its own
 	// 6. Add a button to convert the extract directly from editor
 
 	return (
@@ -57,8 +57,13 @@ export default function ReadDialog({
 			className={styles.readDialog}
 			onHide={onClose}
 			fullScreenOnSmallDevices>
-			<div className={styles.titleBar}>
-				<h2 className={styles.title}>{incrementalReading.title}</h2>
+			<div className={styles.header}>
+				<div className={styles.titleSection}>
+					<h2>{incrementalReading.title}</h2>
+					<p className={`dimmed ${styles.source}`}>
+						{incrementalReading.source.url}
+					</p>
+				</div>
 				<Select
 					containerClassName={styles.select}
 					options={priorityOptions}
@@ -69,6 +74,7 @@ export default function ReadDialog({
 			<div className={styles.readDialogBody}>
 				<RichTextEditor
 					content={incrementalReading.content!}
+					containerClassName={styles.richTextEditor}
 					eagerLoadRichTextEditor
 					onChange={onChange}
 					extraNodes={[HighlightNode]}
@@ -93,13 +99,13 @@ export default function ReadDialog({
 					className={`transparent ${styles.rowButton}`}
 					onClick={onClose}>
 					<Icon path={mdiCheckCircleOutline} size={1} />
-					<span>Done</span>
+					<span>Mark complete</span>
 				</button>
 				<button
-					className={`transparent ${styles.rowButton}`}
+					className={`primary ${styles.rowButton}`}
 					onClick={onClose}>
 					<Icon path={mdiTimerPauseOutline} size={1} />
-					<span>Later</span>
+					<span>Done for now</span>
 				</button>
 			</div>
 		</Dialog>

@@ -36,19 +36,18 @@
 
 	table {
 		border-collapse: collapse;
+		width: 100%;
 	}
 
 	td,
 	th {
-		border: var(--default-border-width) solid var(--border-color);
+		border: var(--border-width) solid var(--border-default);
 		padding: var(--spacing-1);
+		background-color: var(--surface-pane) !important;
 	}
 
 	code {
-		/* TODO: */
-		background-color: var(--surface-background-color);
-		padding: var(--spacing-1);
-		border-radius: var(--default-border-radius);
+		background-color: var(--surface-control);
 	}
 
 	h1,

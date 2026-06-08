@@ -17,7 +17,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: var(--spacing-1);
-	border: var(--border-width) solid var(--border-default);
+	border: var(--border-width) solid var(--border-strong);
 }
 
 .read-dialog {
@@ -25,48 +25,68 @@
 	height: 95vh;
 	width: 800px;
 	max-width: 95vw;
-	--sections-padding: var(--spacing-4);
+	display: flex;
+	flex-direction: column;
+	--sections-padding: var(--spacing-3) var(--spacing-5);
 
-	.title-bar {
+	.header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--spacing-2);
 		padding: var(--sections-padding);
 		border-bottom: var(--border-width) solid var(--border-default);
-
-		position: sticky;
 		background-color: var(--surface-pane);
-		top: 0;
 		z-index: 1;
-	}
 
-	.title {
-		font-size: 1.8rem;
-		font-weight: 400;
-		word-break: break-all;
-		flex: 1;
-		min-width: 0;
+		& .title-section {
+			min-width: 0;
+
+			& > * {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+
+			h2 {
+				font-size: 1.6rem;
+				font-weight: 500;
+				word-break: break-all;
+				flex: 1;
+				min-width: 0;
+			}
+
+			.source {
+				font-size: 1.2rem;
+			}
+		}
 	}
 
 	.select {
+		flex-shrink: 0;
 		width: 12rem;
 		max-width: 40%;
+
+		& > button {
+			border-color: var(--border-strong);
+		}
 	}
 
 	.read-dialog-body {
-		padding: var(--sections-padding);
-		background-color: var(--surface-page);
+		background-color: var(--surface-card);
+		overflow-y: auto;
+		flex: 1;
+
+		.rich-text-editor {
+			border: none;
+			line-height: 1.8;
+		}
 	}
 
 	.footer {
 		padding: var(--sections-padding);
 		border-top: var(--border-width) solid var(--border-default);
-
-		position: sticky;
 		background-color: var(--surface-pane);
-		bottom: 0;
-		z-index: 1;
 
 		display: flex;
 		justify-content: flex-end;
@@ -78,8 +98,8 @@
 :global(.highlight-node) {
 	&,
 	& * {
-		/* TODO: better color */
-		background-color: var(--primary-color) !important;
-		color: #fff;
+		/* TODO: selection background color */
+		background-color: var(--highlight-bg) !important;
+		color: var(--highlight-text);
 	}
 }

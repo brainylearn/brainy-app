@@ -83,6 +83,10 @@ body {
 	--review-color: #0a8a5f;
 	--easy-color: #1d65d8;
 
+	/* Highlights */
+	--highlight-bg: #fff099;
+	--highlight-text: #5c4400;
+
 	/* Box shadows */
 	--shadow-color: 43, 30, 22;
 
@@ -134,6 +138,10 @@ body.dark {
 	--hard-color: #d4883a;
 	--review-color: #28b870;
 	--easy-color: #4090e0;
+
+	/* Highlights */
+	--highlight-bg: #4a3a00;
+	--highlight-text: #ffd84d;
 
 	/* Shadows */
 	--shadow-color: 20, 14, 10;

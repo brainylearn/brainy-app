@@ -49,12 +49,16 @@ interface Props {
 	 * the editor is focused or this property is true.
 	 */
 	eagerLoadRichTextEditor: boolean;
+	containerClassName?: string;
 	onChange: (html: string) => void;
 	onFocus?: (editor: LexicalEditor) => void;
 	onBlur?: () => void;
 }
 
-export default function RichTextEditor({ ...props }: Props) {
+export default function RichTextEditor({
+	containerClassName,
+	...props
+}: Props) {
 	const [showEditor, setShowEditor] = useState(props.eagerLoadRichTextEditor);
 	const [
 		previousEagerLoadRichTextEditor,
@@ -72,7 +76,7 @@ export default function RichTextEditor({ ...props }: Props) {
 	return (
 		<>
 			{props.title && <p className={styles.title}>{props.title}</p>}
-			<div className={styles.container}>
+			<div className={`${styles.container} ${containerClassName}`}>
 				{showEditor && <Editor {...props} />}
 				{!showEditor && (
 					<div className={`${styles.editor}`}>

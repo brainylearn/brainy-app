@@ -43,6 +43,10 @@ export default function ImportContainer({ onImport }: Props) {
 				title: article?.title ?? null,
 				content: article?.content ?? null,
 				priority: "normal",
+				source: {
+					type: "url",
+					url,
+				},
 			});
 		});
 	};
