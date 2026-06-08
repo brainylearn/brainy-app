@@ -90,13 +90,13 @@ export default function ReadDialog({
 			</div>
 			<div className={styles.footer}>
 				<button
-					className={`transparent-with-border ${styles.rowButton}`}
+					className={`transparent ${styles.rowButton}`}
 					onClick={onClose}>
 					<Icon path={mdiCheckCircleOutline} size={1} />
 					<span>Done</span>
 				</button>
 				<button
-					className={`transparent-with-border ${styles.rowButton}`}
+					className={`transparent ${styles.rowButton}`}
 					onClick={onClose}>
 					<Icon path={mdiTimerPauseOutline} size={1} />
 					<span>Later</span>

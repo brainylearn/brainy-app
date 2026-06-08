@@ -45,6 +45,7 @@
 	}
 
 	code {
+		/* TODO: */
 		background-color: var(--surface-background-color);
 		padding: var(--spacing-1);
 		border-radius: var(--default-border-radius);
