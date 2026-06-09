@@ -8,6 +8,8 @@ import { Icon } from "@mdi/react";
 import styles from "./styles.module.css";
 import {
 	mdiCheckCircleOutline,
+	mdiChevronLeft,
+	mdiChevronRight,
 	mdiMarker,
 	mdiTimerPauseOutline,
 } from "@mdi/js";
@@ -44,13 +46,13 @@ export default function ReadDialog({
 		onChangePriority(priority);
 	};
 	// TODO:
-	// 0. Add left and right arrow buttons to go to next article, etc...
 	// 1. Save incremental readings into their own table and remember to remove them when the cell is removed
 	// 2. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
 	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
 	// 4. Add a new button to go through extracts (converting an extract to cloze removes it)
 	// 5. Fix scheduling later (see claude), extracts have their own scheduling, and reading its own
 	// 6. Add a button to convert the extract directly from editor
+	// 7. Show the current article number under navigation buttons
 
 	return (
 		<Dialog
@@ -60,8 +62,12 @@ export default function ReadDialog({
 			fullScreenOnSmallDevices>
 			<div className={styles.header}>
 				<div className={styles.titleSection}>
-					<h2>{incrementalReading.title}</h2>
-					<p className={`dimmed ${styles.source}`}>
+					<h2 title={incrementalReading.title ?? ""}>
+						{incrementalReading.title}
+					</h2>
+					<p
+						className={`dimmed ${styles.source}`}
+						title={incrementalReading.source.url}>
 						{incrementalReading.source.url}
 					</p>
 				</div>
@@ -96,17 +102,31 @@ export default function ReadDialog({
 				/>
 			</div>
 			<div className={styles.footer}>
+				<div className={styles.navButtons}>
+					<button
+						className={`transparent ${styles.navButton}`}
+						title="Previous reading">
+						<Icon path={mdiChevronLeft} size={1} />
+					</button>
+					<button
+						className={`transparent ${styles.navButton}`}
+						title="Next reading">
+						<Icon path={mdiChevronRight} size={1} />
+					</button>
+				</div>
 				<button
-					className={`transparent ${styles.rowButton}`}
-					onClick={onClose}>
+					className={`transparent ${styles.rowButton} ${styles.withBorder}`}
+					onClick={onClose}
+					title="Mark as completed">
 					<Icon path={mdiCheckCircleOutline} size={1} />
-					<span>Mark complete</span>
+					<span>Done</span>
 				</button>
 				<button
 					className={`primary ${styles.rowButton}`}
-					onClick={onClose}>
+					onClick={onClose}
+					title="Continue reading later">
 					<Icon path={mdiTimerPauseOutline} size={1} />
-					<span>Done for now</span>
+					<span>Later</span>
 				</button>
 			</div>
 		</Dialog>
