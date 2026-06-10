@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import styles from "./styles.module.css";
 import { FocusTrap } from "focus-trap-react";
+import useBackButtonPress from "../../hooks/useBackButtonPress";
+import useFocusRestore from "../../hooks/useFocusRestore";
 
 interface Props {
 	/** Should be true only when a dialog has a tabbable component.*/
@@ -12,8 +14,8 @@ interface Props {
 }
 
 /** Shows a dialog with an overlay that handles the hide logic such as hiding
- * on overlay click, pressing Escape. Additionally it moves the focus to the
- * element that had the focus before the dialog was shown.
+ * on overlay click, pressing Escape, or Android back button. Additionally it
+ * moves the focus to the element that had the focus before the dialog was shown.
  */
 export default function Dialog({
 	className,
@@ -22,11 +24,7 @@ export default function Dialog({
 	fullScreenOnSmallDevices,
 	onHide,
 }: Props) {
-	const focusedElementBeforeView = useRef<HTMLElement | null>(
-		document.activeElement instanceof HTMLElement
-			? document.activeElement
-			: null,
-	);
+	useFocusRestore();
 
 	const handleKeyUp = (e: React.KeyboardEvent<HTMLDivElement>) => {
 		e.stopPropagation();
@@ -35,14 +33,12 @@ export default function Dialog({
 		}
 	};
 
-	useEffect(() => {
-		const focusedElement = focusedElementBeforeView;
-
-		return () => {
-			if (document.activeElement === document.body)
-				focusedElement.current?.focus();
-		};
-	}, []);
+	useBackButtonPress(
+		onHide ??
+			(() => {
+				/* Empty */
+			}),
+	);
 
 	return (
 		<FocusTrap
@@ -55,15 +51,11 @@ export default function Dialog({
 			}}>
 			<div
 				className={styles.overlay}
-				onClick={e => {
-					e.stopPropagation();
-				}}
 				onKeyDown={e => e.stopPropagation()}
 				onKeyUp={handleKeyUp}
 				tabIndex={-1}>
 				<div
-					className={`${styles.box} ${fullScreenOnSmallDevices && styles.fullScreenOnSmallDevices} ${className}`}
-					onClick={e => e.stopPropagation()}>
+					className={`${styles.box} ${fullScreenOnSmallDevices && styles.fullScreenOnSmallDevices} ${className}`}>
 					{children}
 				</div>
 			</div>

@@ -75,7 +75,7 @@ export function FloatingMenuPlugin({ additionalFloatingMenuButtons }: Props) {
 				: domRangeRect.top - editorRootElementRect.top - 10,
 		};
 		setCoordinates(newCoordinates);
-	}, [editor, isPointerDown, coordinates, mobile]);
+	}, [editor, isPointerDown, mobile, coordinates]);
 
 	const $handleSelectionChange = useCallback(() => {
 		if (
