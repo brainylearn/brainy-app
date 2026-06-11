@@ -10,7 +10,6 @@ import {
 } from "lexical";
 import { $isMarkNode, MarkNode } from "@lexical/mark";
 
-// TODO: double clicking highlighted paragraph then trying to remove the highlight does not work
 /**
  * Wraps the selection in a new node. If the selection already contains one or
  * more nodes of type T, they are merged into a single new node. The first
@@ -101,16 +100,17 @@ export function $removeSelectionFromNode<T extends MarkNode>(
 	let didPassSelectionStart = false;
 	let didPassSelectionEnd = false;
 
+	const startPointNode = startPoint.getNode();
+	const endPointNode = endPoint.getNode();
+
 	for (const wrapper of wrappers) {
 		const children = wrapper.getChildren();
-		const didPassSelectionStartNewValue: boolean =
+		didPassSelectionStart =
 			didPassSelectionStart ||
-			startPoint.getNode().is(wrapper) ||
-			children.some(c => c.is(startPoint.getNode()));
-		const didPassSelectionEndNewValue: boolean =
-			didPassSelectionEnd ||
-			endPoint.getNode().is(wrapper) ||
-			children.some(c => c.is(endPoint.getNode()));
+			startPointNode.is(wrapper) ||
+			// TODO: unit test this line
+			startPointNode.is(wrapper.getParent());
+		didPassSelectionEnd = didPassSelectionEnd || endPointNode.is(wrapper);
 
 		_removeSingleWrapper(
 			wrapper,
@@ -121,8 +121,8 @@ export function $removeSelectionFromNode<T extends MarkNode>(
 			didPassSelectionEnd,
 		);
 
-		didPassSelectionStart = didPassSelectionStartNewValue;
-		didPassSelectionEnd = didPassSelectionEndNewValue;
+		didPassSelectionStart = children.some(c => c.is(startPointNode));
+		didPassSelectionEnd = children.some(c => c.is(endPointNode));
 	}
 }
 
@@ -138,8 +138,7 @@ function _removeSingleWrapper<T extends MarkNode>(
 	const selectionNodes: LexicalNode[] = [];
 	const afterSelectionNode = createNode(wrapper);
 
-	let passedSelectionStart =
-		didPassSelectionStart || startPoint.getNode().is(wrapper);
+	let passedSelectionStart = didPassSelectionStart;
 	let passedSelectionEnd = didPassSelectionEnd;
 
 	for (const child of wrapper.getChildren()) {
