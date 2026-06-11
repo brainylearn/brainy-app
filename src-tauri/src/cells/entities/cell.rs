@@ -8,7 +8,9 @@ use crate::{
     Guid,
     cells::{
         entities::repetition::Repetition,
-        value_objects::{flash_card::FlashCard, true_false::TrueFalse},
+        value_objects::{
+            flash_card::FlashCard, incremental_reading::IncrementalReading, true_false::TrueFalse,
+        },
     },
 };
 
@@ -141,10 +143,15 @@ impl Cell {
         self.update_repetitions();
     }
 
-    pub fn set_content(&mut self, content: String) {
+    pub(in crate::cells) fn set_content(&mut self, content: String) {
         self.content = content;
         self.update_searchable_content();
         self.update_repetitions();
+    }
+
+    #[cfg(test)]
+    pub fn set_content_for_tests(&mut self, content: String) {
+        self.set_content(content);
     }
 
     pub(in crate::cells) fn set_file_id(&mut self, file_id: Guid) {
@@ -188,8 +195,11 @@ impl Cell {
                     .replace_all(&true_false.question, "")
                     .to_string()
             }
-            // The content of incremental reading is not searchable!
-            CellType::IncrementalReading => "".to_string(),
+            CellType::IncrementalReading => {
+                let ir: IncrementalReading = serde_json::from_str(&self.content)
+                    .expect("Cannot parse incremental reading JSON!");
+                ir.title.unwrap_or_default()
+            }
         };
 
         self.searchable_content = searchable_content.to_string();

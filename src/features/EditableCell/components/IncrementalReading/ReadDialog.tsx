@@ -46,13 +46,11 @@ export default function ReadDialog({
 		onChangePriority(priority);
 	};
 	// TODO:
-	// 1. Save incremental readings into their own table and remember to remove them when the cell is removed
-	// 2. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
-	// 3. When saving each cell extracts its highlights and save them into a table and delete no longer existing ones
-	// 4. Add a new button to go through extracts (converting an extract to cloze removes it)
-	// 5. Fix scheduling later (see claude), extracts have their own scheduling, and reading its own
-	// 6. Add a button to convert the extract directly from editor
-	// 7. Show the current article number under navigation buttons
+	// 1. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
+	// 2. Add a new button to go through extracts (converting an extract to cloze removes it)
+	// 3. Add a button to convert the extract directly from editor
+	// 4. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
+	// 5. Add sync support
 
 	return (
 		<Dialog

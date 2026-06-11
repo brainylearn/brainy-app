@@ -11,8 +11,8 @@ use crate::{
         entities::cell::Cell,
         repositories::cell_repository::CellRepository,
         services::{
-            cell_creator::CellCreator, cell_deleter::CellDeleter,
-            cell_fsrs_provider::CellFsrsProvider, cell_mover::CellMover,
+            cell_content_updater::CellContentUpdater, cell_creator::CellCreator,
+            cell_deleter::CellDeleter, cell_fsrs_provider::CellFsrsProvider, cell_mover::CellMover,
         },
     },
     common::api_error::ApiError,
@@ -100,12 +100,12 @@ pub async fn update_cells_contents(
     requests: Vec<UpdateCellRequestDto>,
 ) -> Result<(), ApiError> {
     let scope = injector.start_scope();
-    let cell_repository = scope.resolve::<dyn CellRepository>().await;
+    let updater = scope.resolve::<dyn CellContentUpdater>().await;
 
     for request in requests {
-        let mut cell = cell_repository.get_by_id(request.id).await?;
-        cell.set_content(request.content);
-        cell_repository.update(&cell).await?;
+        updater
+            .update_cell_content(request.id, request.content)
+            .await?;
     }
     scope.save_changes().await?;
     Ok(())

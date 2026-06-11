@@ -5,6 +5,7 @@ mod backup;
 mod cells;
 mod common;
 mod database;
+mod extracts;
 mod file_system;
 mod fsrs;
 mod infrastructure;

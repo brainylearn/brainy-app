@@ -13,6 +13,7 @@ use crate::backend::services::{
 use crate::cells::entities::{cell::Cell, repetition::Repetition, review::Review};
 use crate::cells::repositories::cell_repository::CellRepository;
 use crate::cells::repositories::review_repository::ReviewRepository;
+use crate::cells::services::cell_content_updater::CellContentUpdater;
 use crate::cells::services::cell_deleter::CellDeleter;
 use crate::cells::services::cell_mover::CellMover;
 use crate::cells::services::review_registrar::ReviewRegistrar;
@@ -21,6 +22,7 @@ use crate::common::utils::create_sqlite_pool::create_sqlite_pool;
 #[cfg(not(test))]
 use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
 use crate::database::database_connection_manager::DatabaseConnectionManager;
+use crate::extracts::repositories::extract_repository::ExtractRepository;
 use crate::file_system::entities::{file::File, folder::Folder};
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
@@ -33,6 +35,7 @@ use crate::infrastructure::repositories::disk::disk_secrets_repository::DiskSecr
 use crate::infrastructure::repositories::disk::disk_settings_repository::DiskSettingsRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_ai_repository::SqliteAiRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_cell_repository::SqliteCellRepository;
+use crate::infrastructure::repositories::sqlite::sqlite_extract_repository::SqliteExtractRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_file_repository::SqliteFileRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_folder_repository::SqliteFolderRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_fsrs_repository::SqliteFsrsRepository;
@@ -71,6 +74,7 @@ use crate::{
     cells::services::{
         cell_creator::CellCreator, cell_fsrs_provider::CellFsrsProvider,
         cell_invariants_enforcer::CellInvariantsEnforcer,
+        implementations::default_cell_content_updater::DefaultCellContentUpdater,
         implementations::default_cell_creator::DefaultCellCreator,
         implementations::default_cell_deleter::DefaultCellDeleter,
         implementations::default_cell_fsrs_provider::DefaultCellFsrsProvider,
@@ -191,6 +195,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     // Cell
 
+    register_scope!(injector, dyn CellContentUpdater, DefaultCellContentUpdater);
     register_scope!(injector, dyn CellCreator, DefaultCellCreator);
     register_scope!(injector, dyn CellDeleter, DefaultCellDeleter);
     register_scope!(injector, dyn CellFsrsProvider, DefaultCellFsrsProvider);
@@ -203,6 +208,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     register_scope!(injector, dyn ReviewRegistrar, DefaultReviewRegistrar);
 
     register_scope!(injector, dyn CellRepository, SqliteCellRepository);
+    register_scope!(injector, dyn ExtractRepository, SqliteExtractRepository);
     register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
 
     // File system

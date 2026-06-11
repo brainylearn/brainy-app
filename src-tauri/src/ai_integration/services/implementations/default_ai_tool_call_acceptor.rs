@@ -19,12 +19,14 @@ use crate::ai_integration::tools::edit_cell_content::{
     EditClozeContent, EditFlashCardContent, EditTrueFalseContent,
 };
 use crate::cells::repositories::cell_repository::CellRepository;
+use crate::cells::services::cell_content_updater::CellContentUpdater;
 use crate::cells::services::cell_creator::CellCreator;
 
 #[derive(ScopeInjectable)]
 pub struct DefaultAiToolCallAcceptor {
     ai_repository: Arc<dyn AiRepository>,
     cell_repository: Arc<dyn CellRepository>,
+    cell_content_updater: Arc<dyn CellContentUpdater>,
     cell_creator: Arc<dyn CellCreator>,
 }
 
@@ -47,14 +49,16 @@ impl AiToolCallAcceptor for DefaultAiToolCallAcceptor {
             ));
         } else if tool_call.name == EditFlashCardContent::NAME {
             tool = Box::new(AcceptEditFlashCardContent::new(
-                self.cell_repository.clone(),
+                self.cell_content_updater.clone(),
             ));
         } else if tool_call.name == EditTrueFalseContent::NAME {
             tool = Box::new(AcceptEditTrueFalseContent::new(
-                self.cell_repository.clone(),
+                self.cell_content_updater.clone(),
             ));
         } else if tool_call.name == EditClozeContent::NAME {
-            tool = Box::new(AcceptEditClozeContent::new(self.cell_repository.clone()));
+            tool = Box::new(AcceptEditClozeContent::new(
+                self.cell_content_updater.clone(),
+            ));
         } else {
             return Err(AiToolCallAcceptorError::UnknownToolName);
         }
@@ -87,10 +91,15 @@ pub mod tests {
         cells::{
             repositories::{cell_repository::CellRepository, review_repository::ReviewRepository},
             services::{
+                cell_content_updater::CellContentUpdater,
                 cell_creator::CellCreator,
-                implementations::default_cell_creator::DefaultCellCreator,
+                implementations::{
+                    default_cell_content_updater::DefaultCellContentUpdater,
+                    default_cell_creator::DefaultCellCreator,
+                },
             },
         },
+        extracts::repositories::extract_repository::ExtractRepository,
         file_system::{
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
             services::{
@@ -101,6 +110,7 @@ pub mod tests {
         },
         infrastructure::repositories::sqlite::{
             sqlite_ai_repository::SqliteAiRepository, sqlite_cell_repository::SqliteCellRepository,
+            sqlite_extract_repository::SqliteExtractRepository,
             sqlite_file_repository::SqliteFileRepository,
             sqlite_folder_repository::SqliteFolderRepository,
             sqlite_review_repository::SqliteReviewRepository,
@@ -118,7 +128,9 @@ pub mod tests {
         register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
+        register_scope!(injector, dyn ExtractRepository, SqliteExtractRepository);
         register_scope!(injector, dyn CellCreator, DefaultCellCreator);
+        register_scope!(injector, dyn CellContentUpdater, DefaultCellContentUpdater);
         register_scope!(injector, dyn FolderCreator, DefaultItemCreator);
         register_scope!(injector, dyn FileCreator, DefaultItemCreator);
         register_scope!(injector, DefaultAiToolCallAcceptor);

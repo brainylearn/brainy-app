@@ -1,5 +1,6 @@
 pub mod cell_row;
 pub mod chat_row;
+pub mod extract_row;
 pub mod file_row;
 pub mod folder_row;
 pub mod fsrs_profile_row;
