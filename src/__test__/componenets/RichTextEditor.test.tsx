@@ -17,6 +17,12 @@ import {
 	ClozePlugin,
 	TOGGLE_CLOZE_NODE,
 } from "../../features/EditableCell/plugins/clozePlugin";
+import { $generateHtmlFromNodes } from "@lexical/html";
+
+vi.mock(import("../../utils/tauriUtils.ts"), () => ({
+	isAndroid: vi.fn(() => true),
+	isMobile: () => true,
+}));
 
 // Happy DOM fires selectionchange when Lexical calls setBaseAndExtent, which
 // then hits a frozen property in Happy DOM's Range object. DOM selection state
@@ -619,6 +625,75 @@ describe("Cloze toggle", () => {
 		editor.read(() => {
 			const rootChildren = $getRoot().getChildren();
 			expect(rootChildren).toHaveLength(2);
+
+			const firstPara = rootChildren[0] as ElementNode;
+			const firstParaChildren = firstPara.getChildren();
+			expect(firstParaChildren).toHaveLength(1);
+			expect($isClozeNode(firstParaChildren[0])).toBe(false);
+			expect(firstParaChildren[0].getTextContent()).toBe("[16]");
+
+			const secondPara = rootChildren[1] as ElementNode;
+			const secondParaChildren = secondPara.getChildren();
+			expect(secondParaChildren).toHaveLength(2);
+
+			expect($isClozeNode(secondParaChildren[0])).toBe(false);
+			expect(secondParaChildren[0].getTextContent()).toBe("test");
+
+			expect($isClozeNode(secondParaChildren[1])).toBe(true);
+			expect(secondParaChildren[1].getTextContent()).toBe(" 123");
+		});
+	});
+
+	/// This test is similar to last test, only different is that the selection
+	// starts from the paragraph and not inner node which might not work
+	// if not implemented correctly.
+	it("Should be able to handle selection starting at the paragraph", () => {
+		// Arrange
+
+		const content = `
+        <p>
+            <cloze class="cloze-node" index="1">
+                <sup>[16]</sup>
+            </cloze>
+        </p>
+
+        <p>
+            <cloze class="cloze-node" index="1">test 123</cloze>
+        </p>
+        `;
+		const editor = createEditor(content);
+
+		// Act
+
+		act(() => {
+			editor.update(
+				() => {
+					let firstChild = $getRoot() as ElementNode;
+					firstChild = firstChild.getChildren()[0] as ElementNode;
+
+					let lastChild = $getRoot() as ElementNode;
+					lastChild = lastChild.getChildren()[1] as ElementNode;
+					lastChild = lastChild.getChildren()[0] as ElementNode;
+					lastChild = lastChild.getChildren()[0] as ElementNode;
+
+					const selection = $createRangeSelection();
+					selection.anchor.set(firstChild.getKey(), 0, "element");
+					selection.focus.set(lastChild.getKey(), 4, "text");
+
+					$setSelection(selection);
+
+					editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined);
+				},
+				{ discrete: true },
+			);
+		});
+
+		// Assert
+
+		editor.read(() => {
+			const rootChildren = $getRoot().getChildren();
+			expect(rootChildren).toHaveLength(2);
+			console.log($generateHtmlFromNodes(editor));
 
 			const firstPara = rootChildren[0] as ElementNode;
 			const firstParaChildren = firstPara.getChildren();

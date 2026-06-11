@@ -108,7 +108,6 @@ export function $removeSelectionFromNode<T extends MarkNode>(
 		didPassSelectionStart =
 			didPassSelectionStart ||
 			startPointNode.is(wrapper) ||
-			// TODO: unit test this line
 			startPointNode.is(wrapper.getParent());
 		didPassSelectionEnd = didPassSelectionEnd || endPointNode.is(wrapper);
 
@@ -121,8 +120,10 @@ export function $removeSelectionFromNode<T extends MarkNode>(
 			didPassSelectionEnd,
 		);
 
-		didPassSelectionStart = children.some(c => c.is(startPointNode));
-		didPassSelectionEnd = children.some(c => c.is(endPointNode));
+		didPassSelectionStart =
+			didPassSelectionStart || children.some(c => c.is(startPointNode));
+		didPassSelectionEnd =
+			didPassSelectionEnd || children.some(c => c.is(endPointNode));
 	}
 }
 
