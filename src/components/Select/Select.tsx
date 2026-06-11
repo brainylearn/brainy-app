@@ -94,6 +94,7 @@ export default function Select({
 			{isOpen && (
 				<Popover
 					className={styles.options}
+					onHide={() => setIsOpen(false)}
 					onKeyDown={handleContainerKeyDown}>
 					{options.map((option, i) => (
 						<button
