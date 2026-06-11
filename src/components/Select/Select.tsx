@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./styles.module.css";
-import useOutsideClick from "../../hooks/useOutsideClick";
-import useGlobalKey from "../../hooks/useGlobalKey";
 import { mdiChevronDown, mdiChevronUp } from "@mdi/js";
 import { Icon } from "@mdi/react";
+import Popover from "../Popover/Popover";
+import useOutsideClick from "../../hooks/useOutsideClick";
 
 export interface Option {
 	label: string;
@@ -40,10 +40,6 @@ export default function Select({
 
 	useOutsideClick(containerRef as React.RefObject<HTMLElement>, () => {
 		setIsOpen(false);
-	});
-
-	useGlobalKey(e => {
-		if (e.key === "Escape") setIsOpen(false);
 	});
 
 	useEffect(() => {
@@ -96,7 +92,7 @@ export default function Select({
 			</button>
 
 			{isOpen && (
-				<div
+				<Popover
 					className={styles.options}
 					onKeyDown={handleContainerKeyDown}>
 					{options.map((option, i) => (
@@ -116,7 +112,7 @@ export default function Select({
 							{option.label}
 						</button>
 					))}
-				</div>
+				</Popover>
 			)}
 		</div>
 	);
