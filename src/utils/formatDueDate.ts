@@ -1,5 +1,6 @@
 const ONE_DAY_IN_MILLISECONDS = 86400000;
 
+// TODO: make it check the day date and not if it is less than 24 hours
 export default function formatDueDate(isoDate: string): string {
 	const date = new Date(isoDate);
 	const now = new Date();
