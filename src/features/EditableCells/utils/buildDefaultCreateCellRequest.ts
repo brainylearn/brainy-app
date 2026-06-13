@@ -4,8 +4,7 @@ import FlashCard from "../../../api/cells/valueObjects/flashCard";
 import TrueFalse from "../../../api/cells/valueObjects/trueFalse";
 import IncrementalReading from "../../../api/cells/valueObjects/incrementalReading";
 
-// TODO: fix name
-function createDefaultCellDto(
+function buildDefaultCreateCellRequest(
 	cellType: CellType,
 	fileId: string,
 	index: number,
@@ -49,4 +48,4 @@ function createDefaultCellDto(
 	return request;
 }
 
-export default createDefaultCellDto;
+export default buildDefaultCreateCellRequest;
