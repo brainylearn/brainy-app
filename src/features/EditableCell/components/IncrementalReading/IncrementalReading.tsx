@@ -12,10 +12,15 @@ import formatDueDate from "../../../../utils/formatDueDate";
 
 interface Props {
 	cell: Cell;
+	autofocus: boolean;
 	onChange: (content: string) => void;
 }
 
-export default function IncrementalReading({ cell, onChange }: Props) {
+export default function IncrementalReading({
+	cell,
+	autofocus,
+	onChange,
+}: Props) {
 	const [incrementalReading, setIncrementalReading] = useState(() => {
 		return JSON.parse(cell.content) as IncrementalReadingType;
 	});
@@ -28,7 +33,7 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 	useEffect(() => {
 		// TODO: not updating after import/finishing reading
 		void getIncrementalReadingSchedule(cell.id).then(setSchedule);
-	}, [cell.id]);
+	}, [cell.id, incrementalReading.source]);
 
 	const handleChange = (
 		updater: (
@@ -43,10 +48,15 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 	};
 
 	if (incrementalReading.content === null) {
-		return <ImportContainer onImport={ir => handleChange(() => ir)} />;
+		return (
+			<ImportContainer
+				autofocus={autofocus}
+				onImport={ir => handleChange(() => ir)}
+			/>
+		);
 	}
 
-	// TODO: add icon
+	// TODO: clicking does not put focus on the input (fix for import container too), see why and try to make a general solution
 	return (
 		<>
 			<div className={styles.verticalForm}>
@@ -57,19 +67,22 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 					onChange={e =>
 						handleChange(() => ({ title: e.target.value }))
 					}
+					autoFocus={autofocus}
 				/>
-				{schedule && (
-					<p className={`${styles.scheduleStatus}`}>
-						{schedule.completed
-							? "Completed reading"
-							: `Due ${formatDueDate(schedule.nextReadingDate)}`}
-					</p>
-				)}
 				<button
-					className={`primary ${styles.rowButton}`}
+					className={`primary ${styles.rowButton} ${styles.readButton}`}
 					onClick={() => setShowReadDialog(true)}>
 					<Icon path={mdiBookOpenVariantOutline} size={1} />
-					<span>Read now</span>
+					<span className={styles.buttonContent}>
+						<span>Read now</span>
+						{schedule && (
+							<span className={styles.buttonStatus}>
+								{schedule.completed
+									? "Already completed"
+									: `Next read due is ${formatDueDate(schedule.nextReadingDate)}`}
+							</span>
+						)}
+					</span>
 				</button>
 			</div>
 

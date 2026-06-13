@@ -63,7 +63,13 @@ function EditableCell({
 				/>
 			);
 		case "IncrementalReading":
-			return <IncrementalReading cell={cell} onChange={onChange} />;
+			return (
+				<IncrementalReading
+					cell={cell}
+					autofocus={autofocus}
+					onChange={onChange}
+				/>
+			);
 	}
 }
 

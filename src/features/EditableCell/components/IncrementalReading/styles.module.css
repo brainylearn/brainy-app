@@ -12,16 +12,27 @@
 	}
 }
 
-.schedule-status {
-	font-size: 1.2rem;
-	margin: 0;
-}
-
 .row-button {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: var(--spacing-1);
+	gap: var(--spacing-2);
+}
+
+.read-button {
+	align-items: flex-start;
+
+	.button-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		line-height: 1;
+		gap: 3px;
+	}
+
+	.button-status {
+		font-size: 1rem;
+	}
 }
 
 .read-dialog {

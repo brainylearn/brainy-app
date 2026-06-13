@@ -157,7 +157,7 @@ export default function ReadDialog({
 						onClick={() => setShowScheduleLater(true)}
 						title="Continue reading later">
 						<Icon path={mdiTimerPauseOutline} size={1} />
-						<span>Continue later</span>
+						<span>Later</span>
 					</button>
 				</div>
 			</Dialog>

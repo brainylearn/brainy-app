@@ -10,9 +10,10 @@ import IncrementalReading from "../../../../api/cells/valueObjects/incrementalRe
 
 interface Props {
 	onImport: (newValue: IncrementalReading) => void;
+	autofocus: boolean;
 }
 
-export default function ImportContainer({ onImport }: Props) {
+export default function ImportContainer({ autofocus, onImport }: Props) {
 	const [url, setUrl] = useState("");
 	const { callApi, errorMessage, clearErrorMessage, isSendingRequest } =
 		useApi();
@@ -59,6 +60,7 @@ export default function ImportContainer({ onImport }: Props) {
 				placeholder="Enter URL to import"
 				value={url}
 				onChange={e => setUrl(e.target.value)}
+				autoFocus={autofocus}
 				required
 			/>
 
