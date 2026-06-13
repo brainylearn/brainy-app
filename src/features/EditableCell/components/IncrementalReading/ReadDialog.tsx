@@ -10,7 +10,7 @@ import {
 	mdiCheckCircleOutline,
 	mdiChevronLeft,
 	mdiChevronRight,
-	mdiClose,
+	mdiExitToApp,
 	mdiMarker,
 	mdiTimerPauseOutline,
 } from "@mdi/js";
@@ -83,24 +83,15 @@ export default function ReadDialog({
 				onHide={onClose}
 				fullScreenOnSmallDevices>
 				<div className={styles.header}>
-					<div className={styles.leftSection}>
-						<button
-							className={`transparent ${styles.closeButton}`}
-							onClick={onClose}
-							title="Close without rescheduling">
-							<Icon path={mdiClose} size={1} />
-						</button>
-
-						<div className={styles.titleSection}>
-							<h2 title={incrementalReading.title ?? ""}>
-								{incrementalReading.title}
-							</h2>
-							<p
-								className={`dimmed ${styles.source}`}
-								title={incrementalReading.source.url}>
-								{incrementalReading.source.url}
-							</p>
-						</div>
+					<div className={styles.titleSection}>
+						<h2 title={incrementalReading.title ?? ""}>
+							{incrementalReading.title}
+						</h2>
+						<p
+							className={`dimmed ${styles.source}`}
+							title={incrementalReading.source.url}>
+							{incrementalReading.source.url}
+						</p>
 					</div>
 					<Select
 						containerClassName={styles.select}
@@ -145,6 +136,13 @@ export default function ReadDialog({
 							<Icon path={mdiChevronRight} size={1} />
 						</button>
 					</div>
+					<button
+						className={`transparent ${styles.rowButton} ${styles.withBorder}`}
+						onClick={onClose}
+						title="Close without rescheduling">
+						<Icon path={mdiExitToApp} size={1} />
+						<span>Exit</span>
+					</button>
 					<button
 						className={`transparent ${styles.rowButton} ${styles.withBorder}`}
 						onClick={handleDone}

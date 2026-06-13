@@ -53,41 +53,25 @@
 		border-bottom: var(--border-width) solid var(--border-default);
 		background-color: var(--surface-pane);
 
-		& .left-section {
-			display: flex;
-			gap: var(--spacing-3);
-			align-items: stretch;
-			justify-content: center;
+		.title-section {
 			min-width: 0;
 
-			.close-button {
-				flex-shrink: 0;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				border: var(--border-width) solid var(--border-default);
+			& > * {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
 			}
 
-			.title-section {
+			h2 {
+				font-size: 1.6rem;
+				font-weight: 500;
+				word-break: break-all;
+				flex: 1;
 				min-width: 0;
+			}
 
-				& > * {
-					overflow: hidden;
-					text-overflow: ellipsis;
-					white-space: nowrap;
-				}
-
-				h2 {
-					font-size: 1.6rem;
-					font-weight: 500;
-					word-break: break-all;
-					flex: 1;
-					min-width: 0;
-				}
-
-				.source {
-					font-size: 1.2rem;
-				}
+			.source {
+				font-size: 1.2rem;
 			}
 		}
 	}
