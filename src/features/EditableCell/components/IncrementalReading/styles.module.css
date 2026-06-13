@@ -145,7 +145,6 @@
 :global(.highlight-node) {
 	&,
 	& * {
-		/* TODO: selection background color */
 		background-color: var(--highlight-bg) !important;
 		color: var(--highlight-text);
 	}
