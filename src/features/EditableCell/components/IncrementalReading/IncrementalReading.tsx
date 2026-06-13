@@ -19,13 +19,20 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 
 	const [showReadDialog, setShowReadDialog] = useState(false);
 
-	const handleChange = (newIncrementalReading: IncrementalReadingType) => {
-		setIncrementalReading(newIncrementalReading);
-		onChange(JSON.stringify(newIncrementalReading));
+	const handleChange = (
+		updater: (
+			current: IncrementalReadingType,
+		) => Partial<IncrementalReadingType>,
+	) => {
+		setIncrementalReading(current => {
+			const updated = { ...current, ...updater(current) };
+			onChange(JSON.stringify(updated));
+			return updated;
+		});
 	};
 
 	if (incrementalReading.content === null) {
-		return <ImportContainer onImport={handleChange} />;
+		return <ImportContainer onImport={ir => handleChange(() => ir)} />;
 	}
 
 	return (
@@ -36,10 +43,7 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 					placeholder="Title"
 					value={incrementalReading.title!}
 					onChange={e =>
-						handleChange({
-							...incrementalReading,
-							title: e.target.value,
-						})
+						handleChange(() => ({ title: e.target.value }))
 					}
 				/>
 				<button
@@ -55,12 +59,7 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 					cellId={cell.id}
 					incrementalReading={incrementalReading}
 					onClose={() => setShowReadDialog(false)}
-					onChange={content => {
-						handleChange({ ...incrementalReading, content });
-					}}
-					onChangePriority={priority => {
-						handleChange({ ...incrementalReading, priority });
-					}}
+					onChange={handleChange}
 				/>
 			)}
 		</>

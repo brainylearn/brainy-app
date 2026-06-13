@@ -35,8 +35,9 @@ const priorityOptions: Option[] = [
 interface Props {
 	cellId: string;
 	incrementalReading: IncrementalReading;
-	onChange: (content: string) => void;
-	onChangePriority: (priority: IncrementalReadingPriority) => void;
+	onChange: (
+		updater: (current: IncrementalReading) => Partial<IncrementalReading>,
+	) => void;
 	onClose: () => void;
 }
 
@@ -44,20 +45,24 @@ export default function ReadDialog({
 	cellId,
 	incrementalReading,
 	onChange,
-	onChangePriority,
 	onClose,
 }: Props) {
 	const [showScheduleLater, setShowScheduleLater] = useState(false);
 
 	const handlePriorityChange = (value: string) => {
 		const priority = value as IncrementalReadingPriority;
-		onChangePriority(priority);
+		onChange(() => ({ priority }));
+	};
+
+	const handleDone = () => {
+		onChange(() => ({ completed: true }));
+		onClose();
 	};
 
 	const handleScheduleLater = async (date: Date) => {
 		await scheduleIncrementalReadingLater(cellId, date);
 		setShowScheduleLater(false);
-		// TODO: mark as not completed
+		onChange(() => ({ completed: false }));
 		onClose();
 	};
 
@@ -108,7 +113,7 @@ export default function ReadDialog({
 						content={incrementalReading.content!}
 						containerClassName={styles.richTextEditor}
 						eagerLoadRichTextEditor
-						onChange={onChange}
+						onChange={content => onChange(() => ({ content }))}
 						extraNodes={[HighlightNode]}
 						plugins={[<HighlightPlugin key={1} />]}
 						additionalFloatingMenuButtons={[
@@ -141,7 +146,7 @@ export default function ReadDialog({
 					</div>
 					<button
 						className={`transparent ${styles.rowButton} ${styles.withBorder}`}
-						onClick={onClose}
+						onClick={handleDone}
 						title="Mark as completed">
 						<Icon path={mdiCheckCircleOutline} size={1} />
 						<span>Done</span>

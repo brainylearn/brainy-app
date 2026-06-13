@@ -112,12 +112,14 @@ impl DefaultCellContentUpdater {
                     priority,
                     title,
                     extract_counts > 0,
+                    ir.completed,
                 );
                 self.schedule_repository.create(&schedule).await?;
             }
             Some(mut existing) => {
                 existing.set_priority(priority);
                 existing.set_title(title);
+                existing.set_completed(ir.completed);
                 existing.set_has_extracts(extract_counts > 0);
                 self.schedule_repository.update(&existing).await?;
             }
@@ -186,6 +188,7 @@ mod tests {
                 url: "https://example.com".to_string(),
             },
             priority: IncrementalReadingPriority::Normal,
+            completed: false,
         })
         .unwrap()
     }

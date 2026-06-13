@@ -41,6 +41,7 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                 title,
                 is_finished as "is_finished: _",
                 next_reading_date as "next_reading_date: _",
+                completed as "completed: _",
                 has_extracts as "has_extracts: _"
             FROM incremental_reading_schedules
             WHERE cell_id = $1"#,
@@ -66,8 +67,9 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                 title,
                 is_finished,
                 next_reading_date,
+                completed,
                 has_extracts)
-            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7, datetime($8), $9)"#,
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7, datetime($8), $9, $10)"#,
             schedule.id(),
             schedule.created_date(),
             schedule.modified_date(),
@@ -76,6 +78,7 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
             schedule.title(),
             schedule.is_finished(),
             schedule.next_reading_date(),
+            schedule.completed(),
             schedule.has_extracts(),
         )
         .execute(&mut *tx)
@@ -94,12 +97,14 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                 title = $2,
                 is_finished = $3,
                 next_reading_date = datetime($4),
-                has_extracts = $5
-            WHERE id = $6"#,
+                completed = $5,
+                has_extracts = $6
+            WHERE id = $7"#,
             schedule.priority(),
             schedule.title(),
             schedule.is_finished(),
             schedule.next_reading_date(),
+            schedule.completed(),
             schedule.has_extracts(),
             schedule.id(),
         )

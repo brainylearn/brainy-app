@@ -10,4 +10,5 @@ export default interface IncrementalReading {
 	title: string | null;
 	source: IncrementalReadingSource;
 	priority: IncrementalReadingPriority;
+	completed: boolean;
 }

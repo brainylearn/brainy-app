@@ -15,6 +15,7 @@ pub struct IncrementalReadingScheduleRow {
     pub title: String,
     pub is_finished: bool,
     pub next_reading_date: DateTime<Utc>,
+    pub completed: bool,
     pub has_extracts: bool,
 }
 
@@ -29,6 +30,7 @@ impl From<IncrementalReadingScheduleRow> for IncrementalReadingSchedule {
             value.title,
             value.is_finished,
             value.next_reading_date,
+            value.completed,
             value.has_extracts,
         )
     }

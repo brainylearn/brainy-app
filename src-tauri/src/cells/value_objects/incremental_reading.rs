@@ -23,4 +23,5 @@ pub struct IncrementalReading {
     pub title: Option<String>,
     pub source: IncrementalReadingSource,
     pub priority: IncrementalReadingPriority,
+    pub completed: bool,
 }

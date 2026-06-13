@@ -40,7 +40,7 @@
 
 		& .left-section {
 			display: flex;
-			gap: var(--spacing-2);
+			gap: var(--spacing-3);
 			align-items: stretch;
 			justify-content: center;
 			min-width: 0;
