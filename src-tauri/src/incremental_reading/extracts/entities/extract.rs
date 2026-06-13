@@ -13,12 +13,12 @@ pub enum ExtractStatus {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Extract {
-    pub(in crate::extracts) id: Guid,
-    pub(in crate::extracts) created_date: DateTime<Utc>,
-    pub(in crate::extracts) modified_date: DateTime<Utc>,
-    pub(in crate::extracts) cell_id: Guid,
-    pub(in crate::extracts) inner_html: String,
-    pub(in crate::extracts) status: ExtractStatus,
+    pub(in crate::incremental_reading::extracts) id: Guid,
+    pub(in crate::incremental_reading::extracts) created_date: DateTime<Utc>,
+    pub(in crate::incremental_reading::extracts) modified_date: DateTime<Utc>,
+    pub(in crate::incremental_reading::extracts) cell_id: Guid,
+    pub(in crate::incremental_reading::extracts) inner_html: String,
+    pub(in crate::incremental_reading::extracts) status: ExtractStatus,
 }
 
 impl Extract {

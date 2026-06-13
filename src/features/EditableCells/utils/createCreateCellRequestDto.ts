@@ -34,6 +34,12 @@ function createDefaultCellDto(
 		case "IncrementalReading":
 			request.content = JSON.stringify({
 				content: null,
+				priority: "normal",
+				source: {
+					type: "url",
+					url: "",
+				},
+				title: null,
 			} as IncrementalReading);
 			break;
 		case "Note":

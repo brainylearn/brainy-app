@@ -46,11 +46,14 @@ export default function ReadDialog({
 		onChangePriority(priority);
 	};
 	// TODO:
-	// 1. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
-	// 2. Add a new button to go through extracts (converting an extract to cloze removes it)
-	// 3. Add a button to convert the extract directly from editor
-	// 4. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
-	// 5. Add sync support
+	// 0. Three buttons (schedule for later, close, without rescheduling and close)
+	// 1. Add a button under read now to go thorugh extracts
+	// 2. Update extracts to not contain the inner HTML but retrieve dynamically
+	// 3. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
+	// 4. Add a button to convert the extract directly from editor
+	// 5. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
+	// 6. Add sync support
+	// 7. Add scheduling to the home screen
 
 	return (
 		<Dialog

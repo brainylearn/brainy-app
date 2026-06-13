@@ -3,7 +3,7 @@ use sqlx::Sqlite;
 
 use crate::{
     Guid,
-    extracts::entities::extract::{Extract, ExtractStatus},
+    incremental_reading::extracts::entities::extract::{Extract, ExtractStatus},
 };
 
 pub struct ExtractRow {

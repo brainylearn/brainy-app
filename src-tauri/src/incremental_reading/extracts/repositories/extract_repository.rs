@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
 use crate::{
-    Guid, common::repository_error::RepositoryError, extracts::entities::extract::Extract,
+    Guid, common::repository_error::RepositoryError,
+    incremental_reading::extracts::entities::extract::Extract,
 };
 
 #[async_trait]

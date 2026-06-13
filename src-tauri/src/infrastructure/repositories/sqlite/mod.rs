@@ -4,6 +4,7 @@ pub mod sqlite_extract_repository;
 pub mod sqlite_file_repository;
 pub mod sqlite_folder_repository;
 pub mod sqlite_fsrs_repository;
+pub mod sqlite_incremental_reading_schedule_repository;
 pub mod sqlite_local_configuration_repository;
 pub mod sqlite_review_repository;
 pub mod sqlite_rows;

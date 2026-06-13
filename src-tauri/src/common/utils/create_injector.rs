@@ -22,13 +22,16 @@ use crate::common::utils::create_sqlite_pool::create_sqlite_pool;
 #[cfg(not(test))]
 use crate::common::utils::create_sqlite_pool::create_sqlite_pool_from_location;
 use crate::database::database_connection_manager::DatabaseConnectionManager;
-use crate::extracts::repositories::extract_repository::ExtractRepository;
 use crate::file_system::entities::{file::File, folder::Folder};
 use crate::file_system::repositories::file_repository::FileRepository;
 use crate::file_system::repositories::folder_repository::FolderRepository;
 use crate::fsrs::entities::fsrs_profile::FsrsProfile;
 use crate::fsrs::repositories::fsrs_repository::FsrsRepository;
 use crate::generated_code;
+use crate::incremental_reading::{
+    extracts::repositories::extract_repository::ExtractRepository,
+    scheduling::repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+};
 use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
 use crate::infrastructure::managers::sqlite::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
 use crate::infrastructure::repositories::disk::disk_secrets_repository::DiskSecretsRepository;
@@ -39,6 +42,7 @@ use crate::infrastructure::repositories::sqlite::sqlite_extract_repository::Sqli
 use crate::infrastructure::repositories::sqlite::sqlite_file_repository::SqliteFileRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_folder_repository::SqliteFolderRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_fsrs_repository::SqliteFsrsRepository;
+use crate::infrastructure::repositories::sqlite::sqlite_incremental_reading_schedule_repository::SqliteIncrementalReadingScheduleRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_local_configuration_repository::SqliteLocalConfigurationRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_review_repository::SqliteReviewRepository;
 use crate::infrastructure::repositories::sqlite::sqlite_sync_repository::SqliteSyncRepository;
@@ -209,6 +213,11 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
 
     register_scope!(injector, dyn CellRepository, SqliteCellRepository);
     register_scope!(injector, dyn ExtractRepository, SqliteExtractRepository);
+    register_scope!(
+        injector,
+        dyn IncrementalReadingScheduleRepository,
+        SqliteIncrementalReadingScheduleRepository
+    );
     register_scope!(injector, dyn ReviewRepository, SqliteReviewRepository);
 
     // File system

@@ -157,7 +157,6 @@ mod tests {
                 },
             },
         },
-        extracts::repositories::extract_repository::ExtractRepository,
         file_system::{
             entities::file::File,
             repositories::{file_repository::FileRepository, folder_repository::FolderRepository},
@@ -169,11 +168,16 @@ mod tests {
                 file_system_item_name::FileSystemItemName, fsrs_profile_choice::FsrsProfileChoice,
             },
         },
+        incremental_reading::{
+            extracts::repositories::extract_repository::ExtractRepository,
+            scheduling::repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+        },
         infrastructure::repositories::sqlite::{
             sqlite_cell_repository::SqliteCellRepository,
             sqlite_extract_repository::SqliteExtractRepository,
             sqlite_file_repository::SqliteFileRepository,
             sqlite_folder_repository::SqliteFolderRepository,
+            sqlite_incremental_reading_schedule_repository::SqliteIncrementalReadingScheduleRepository,
             sqlite_review_repository::SqliteReviewRepository,
         },
         test_utils::create_test_injector,
@@ -188,6 +192,11 @@ mod tests {
         register_scope!(injector, dyn FileRepository, SqliteFileRepository);
         register_scope!(injector, dyn FolderRepository, SqliteFolderRepository);
         register_scope!(injector, dyn ExtractRepository, SqliteExtractRepository);
+        register_scope!(
+            injector,
+            dyn IncrementalReadingScheduleRepository,
+            SqliteIncrementalReadingScheduleRepository
+        );
         register_scope!(injector, dyn CellCreator, DefaultCellCreator);
         register_scope!(injector, dyn CellContentUpdater, DefaultCellContentUpdater);
         register_scope!(injector, dyn FolderCreator, DefaultItemCreator);

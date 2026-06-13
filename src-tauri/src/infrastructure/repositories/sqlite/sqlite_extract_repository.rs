@@ -6,7 +6,9 @@ use injector_derive::ScopeInjectable;
 use crate::{
     Guid,
     common::repository_error::RepositoryError,
-    extracts::{entities::extract::Extract, repositories::extract_repository::ExtractRepository},
+    incremental_reading::extracts::{
+        entities::extract::Extract, repositories::extract_repository::ExtractRepository,
+    },
     infrastructure::{
         repositories::sqlite::sqlite_rows::extract_row::ExtractRow,
         value_objects::db_transaction::DbTransaction,
