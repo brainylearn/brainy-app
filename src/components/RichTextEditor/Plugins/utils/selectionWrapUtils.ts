@@ -251,7 +251,9 @@ export function $isSelectionInsideNode<T extends LexicalNode>(
 		if (!passedStart) {
 			if (node.is(startNode)) {
 				passedStart = true;
-			} else continue;
+			} else {
+				continue;
+			}
 		}
 
 		// TODO: this is not correct, one line paragraphs are marked as containg highlight even if not

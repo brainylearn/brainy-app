@@ -63,7 +63,6 @@ function EditableCell({
 				/>
 			);
 		case "IncrementalReading":
-			// TODO: see which other relevant attributes to send
 			return <IncrementalReading cell={cell} onChange={onChange} />;
 	}
 }

@@ -982,7 +982,7 @@ describe("EditableCells logic", () => {
 		});
 	});
 
-	it("Should not change selection when a different cell is moved to another file", async () => {
+	it("Should not change selection when a different cell is moved to another file", () => {
 		// Arrange
 
 		renderEditableCells({
