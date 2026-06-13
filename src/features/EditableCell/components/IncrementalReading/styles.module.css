@@ -124,6 +124,19 @@
 	}
 }
 
+.schedule-later-dialog {
+	padding: var(--spacing-4);
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-3);
+	width: 52rem;
+	max-width: 95vw;
+
+	.form {
+		height: 100%;
+	}
+}
+
 :global(.highlight-node) {
 	&,
 	& * {

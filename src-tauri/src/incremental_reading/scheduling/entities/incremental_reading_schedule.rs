@@ -108,6 +108,10 @@ impl IncrementalReadingSchedule {
         self.title = title;
     }
 
+    pub fn set_next_reading_date(&mut self, next_reading_date: DateTime<Utc>) {
+        self.next_reading_date = next_reading_date;
+    }
+
     pub fn set_has_extracts(&mut self, has_extracts: bool) {
         self.has_extracts = has_extracts;
     }

@@ -31,6 +31,7 @@ use cells::api::review_api::*;
 use cells::api::search_api::*;
 use file_system::api::file_system_api::*;
 use fsrs::fsrs_api::*;
+use incremental_reading::api::incremental_reading_api::*;
 use settings::settings_api::*;
 
 pub use sync::sync_api::sync;
@@ -201,6 +202,8 @@ pub async fn run() -> Result<(), String> {
             set_fsrs_profile_choice_for_file,
             set_fsrs_profile_choice_for_folder,
             update_profile,
+            // Incremental Reading
+            schedule_incremental_reading_later,
             // App Info
             is_store_installed,
             // AI
