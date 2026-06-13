@@ -8,37 +8,11 @@ import { mdiBookOpenVariantOutline } from "@mdi/js";
 import ReadDialog from "./ReadDialog";
 import { getIncrementalReadingSchedule } from "../../../../api/incrementalReading/schedulingApi";
 import IncrementalReadingSchedule from "../../../../api/incrementalReading/incrementalReadingSchedule";
+import formatDueDate from "../../../../utils/formatDueDate";
 
 interface Props {
 	cell: Cell;
 	onChange: (content: string) => void;
-}
-
-// TODO: move and make a common method
-function formatDueDate(isoDate: string): string {
-	const date = new Date(isoDate);
-	const now = new Date();
-	const startOfToday = new Date(
-		now.getFullYear(),
-		now.getMonth(),
-		now.getDate(),
-	);
-	const startOfDate = new Date(
-		date.getFullYear(),
-		date.getMonth(),
-		date.getDate(),
-	);
-	const diffDays = Math.round(
-		(startOfDate.getTime() - startOfToday.getTime()) / 86400000,
-	);
-
-	if (diffDays < 0) return "today";
-	if (diffDays === 0) return "today";
-	if (diffDays === 1) return "tomorrow";
-	return date.toLocaleDateString(undefined, {
-		month: "short",
-		day: "numeric",
-	});
 }
 
 export default function IncrementalReading({ cell, onChange }: Props) {
@@ -52,7 +26,7 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 	);
 
 	useEffect(() => {
-		// TODO: not updating after import
+		// TODO: not updating after import/finishing reading
 		void getIncrementalReadingSchedule(cell.id).then(setSchedule);
 	}, [cell.id]);
 
