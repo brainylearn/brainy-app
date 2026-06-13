@@ -10,6 +10,7 @@ import {
 	mdiCheckCircleOutline,
 	mdiChevronLeft,
 	mdiChevronRight,
+	mdiClose,
 	mdiMarker,
 	mdiTimerPauseOutline,
 } from "@mdi/js";
@@ -46,14 +47,12 @@ export default function ReadDialog({
 		onChangePriority(priority);
 	};
 	// TODO:
-	// 0. Three buttons (schedule for later, close, without rescheduling and close)
-	// 1. Add a button under read now to go thorugh extracts
-	// 2. Update extracts to not contain the inner HTML but retrieve dynamically
-	// 3. Implement the scheduling for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
-	// 4. Add a button to convert the extract directly from editor
-	// 5. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
-	// 6. Add sync support
-	// 7. Add scheduling to the home screen
+	// 1. Implement the prioritizations for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
+	// 2. Add a button to convert the extract directly from editor
+	// 3. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
+	// 4. Add sync support
+	// 5. Add scheduling to the home screen
+	// 6. Auto remember scroll position by paragraph index
 
 	return (
 		<Dialog
@@ -62,15 +61,24 @@ export default function ReadDialog({
 			onHide={onClose}
 			fullScreenOnSmallDevices>
 			<div className={styles.header}>
-				<div className={styles.titleSection}>
-					<h2 title={incrementalReading.title ?? ""}>
-						{incrementalReading.title}
-					</h2>
-					<p
-						className={`dimmed ${styles.source}`}
-						title={incrementalReading.source.url}>
-						{incrementalReading.source.url}
-					</p>
+				<div className={styles.leftSection}>
+					<button
+						className={`transparent ${styles.closeButton}`}
+						onClick={onClose}
+						title="Close without rescheduling">
+						<Icon path={mdiClose} size={1} />
+					</button>
+
+					<div className={styles.titleSection}>
+						<h2 title={incrementalReading.title ?? ""}>
+							{incrementalReading.title}
+						</h2>
+						<p
+							className={`dimmed ${styles.source}`}
+							title={incrementalReading.source.url}>
+							{incrementalReading.source.url}
+						</p>
+					</div>
 				</div>
 				<Select
 					containerClassName={styles.select}

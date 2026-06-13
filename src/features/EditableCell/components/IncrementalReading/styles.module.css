@@ -38,25 +38,41 @@
 		background-color: var(--surface-pane);
 		z-index: 1;
 
-		& .title-section {
+		& .left-section {
+			display: flex;
+			gap: var(--spacing-2);
+			align-items: stretch;
+			justify-content: center;
 			min-width: 0;
 
-			& > * {
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
+			.close-button {
+				flex-shrink: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border: var(--border-width) solid var(--border-default);
 			}
 
-			h2 {
-				font-size: 1.6rem;
-				font-weight: 500;
-				word-break: break-all;
-				flex: 1;
+			.title-section {
 				min-width: 0;
-			}
 
-			.source {
-				font-size: 1.2rem;
+				& > * {
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+
+				h2 {
+					font-size: 1.6rem;
+					font-weight: 500;
+					word-break: break-all;
+					flex: 1;
+					min-width: 0;
+				}
+
+				.source {
+					font-size: 1.2rem;
+				}
 			}
 		}
 	}
@@ -65,10 +81,6 @@
 		flex-shrink: 0;
 		width: 12rem;
 		max-width: 40%;
-
-		& > button {
-			border-color: var(--border-strong);
-		}
 	}
 
 	.read-dialog-body {
