@@ -126,6 +126,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--spacing-2);
+		min-width: 0;
 
 		& * {
 			font-weight: 400;
@@ -133,6 +134,14 @@
 
 		& .icon {
 			color: var(--primary-color);
+			flex-shrink: 0;
+		}
+
+		.cell-type {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			min-width: 0;
 		}
 	}
 

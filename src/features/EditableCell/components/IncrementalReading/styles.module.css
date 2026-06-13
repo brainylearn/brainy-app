@@ -36,7 +36,6 @@
 		padding: var(--sections-padding);
 		border-bottom: var(--border-width) solid var(--border-default);
 		background-color: var(--surface-pane);
-		z-index: 1;
 
 		& .left-section {
 			display: flex;
@@ -81,6 +80,7 @@
 		flex-shrink: 0;
 		width: 12rem;
 		max-width: 40%;
+		z-index: 1;
 	}
 
 	.read-dialog-body {

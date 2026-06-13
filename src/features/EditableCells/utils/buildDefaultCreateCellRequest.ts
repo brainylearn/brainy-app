@@ -39,6 +39,7 @@ function buildDefaultCreateCellRequest(
 					url: "",
 				},
 				title: null,
+				completed: false,
 			} as IncrementalReading);
 			break;
 		case "Note":

@@ -35,6 +35,7 @@ export default function IncrementalReading({ cell, onChange }: Props) {
 		return <ImportContainer onImport={ir => handleChange(() => ir)} />;
 	}
 
+	// TODO: add the next due date or if it is completed
 	return (
 		<>
 			<div className={styles.verticalForm}>

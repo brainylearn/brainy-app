@@ -74,6 +74,8 @@ export default function ReadDialog({
 	// 5. Add scheduling to the home screen
 	// 6. Auto remember scroll position by paragraph index
 
+	// TODO: remove source from header and add it as first paragrah to the text
+	// TODO: the floating menu is not shown on the first line
 	return (
 		<>
 			<Dialog

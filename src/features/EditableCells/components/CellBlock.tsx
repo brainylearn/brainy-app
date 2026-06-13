@@ -146,7 +146,9 @@ function CellBlock(
 						path={getCellIcon(cell.cellType)}
 						size={1}
 					/>
-					<span>{cellTypesDisplayNames[cell.cellType]}</span>
+					<span className={styles.cellType}>
+						{cellTypesDisplayNames[cell.cellType]}
+					</span>
 				</div>
 
 				{isSelected && (
