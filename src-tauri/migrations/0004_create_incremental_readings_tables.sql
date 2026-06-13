@@ -36,8 +36,6 @@ CREATE TABLE IF NOT EXISTS extracts (
     created_date                TEXT        NOT NULL        DEFAULT(datetime('now')),
     modified_date               TEXT        NOT NULL        DEFAULT(datetime('now')),
     cell_id                     TEXT        NOT NULL        REFERENCES cells(id) ON DELETE CASCADE,
-    -- TODO: delete this field
-    inner_html                  TEXT        NOT NULL,
     status                      TEXT        NOT NULL        DEFAULT '"Pending"'
 );
 

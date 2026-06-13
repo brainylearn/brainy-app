@@ -11,7 +11,6 @@ pub struct ExtractRow {
     pub created_date: DateTime<Utc>,
     pub modified_date: DateTime<Utc>,
     pub cell_id: Guid,
-    pub inner_html: String,
     pub status: ExtractStatus,
 }
 
@@ -22,7 +21,6 @@ impl From<ExtractRow> for Extract {
             value.created_date,
             value.modified_date,
             value.cell_id,
-            value.inner_html,
             value.status,
         )
     }

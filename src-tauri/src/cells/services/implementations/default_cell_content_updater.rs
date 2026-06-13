@@ -58,17 +58,13 @@ impl DefaultCellContentUpdater {
         cell: &Cell,
         ir: &IncrementalReading,
     ) -> Result<usize, CellContentUpdaterError> {
-        let found: Vec<(String, String)> = {
+        let found: Vec<String> = {
             let html_content = ir.content.clone().unwrap_or_default();
             let selector = Selector::parse("highlight").expect("Invalid selector");
             let document = Html::parse_fragment(&html_content);
             document
                 .select(&selector)
-                .filter_map(|el| {
-                    let id = el.attr("highlight-id")?.to_string();
-                    let inner_html = el.inner_html();
-                    Some((id, inner_html))
-                })
+                .filter_map(|el| el.attr("highlight-id").map(|id| id.to_string()))
                 .collect()
         };
 
@@ -76,31 +72,20 @@ impl DefaultCellContentUpdater {
 
         let existing = self.extract_repository.get_by_cell_id(cell.id()).await?;
 
-        for (highlight_id, inner_html) in &found {
+        for highlight_id in &found {
             let highlight_guid: Guid = highlight_id.parse().unwrap_or_else(|_| Guid::new_v4());
-
-            match existing
-                .iter()
-                .find(|e| e.id().to_string() == *highlight_id)
-            {
-                None => {
-                    let extract = Extract::new(highlight_guid, cell.id(), inner_html.clone());
-                    self.extract_repository.create(&extract).await?;
-                }
-                Some(existing_extract) if existing_extract.inner_html() != inner_html => {
-                    self.extract_repository
-                        .update_inner_html(highlight_guid, inner_html.clone())
-                        .await?;
-                }
-                _ => {}
+            let already_exists = existing.iter().any(|e| e.id().to_string() == *highlight_id);
+            if !already_exists {
+                let extract = Extract::new(highlight_guid, cell.id());
+                self.extract_repository.create(&extract).await?;
             }
         }
 
         for existing_extract in &existing {
-            let still_present = found
+            if !found
                 .iter()
-                .any(|(id, _)| *id == existing_extract.id().to_string());
-            if !still_present {
+                .any(|id| *id == existing_extract.id().to_string())
+            {
                 self.extract_repository
                     .delete_by_id(existing_extract.id())
                     .await?;
@@ -258,7 +243,6 @@ mod tests {
         let extracts = extract_repository.get_by_cell_id(cell.id()).await.unwrap();
         assert_eq!(1, extracts.len());
         assert_eq!(highlight_id, extracts[0].id().to_string());
-        assert_eq!("some text", extracts[0].inner_html());
     }
 
     #[tokio::test]
@@ -305,60 +289,6 @@ mod tests {
 
         let extracts = extract_repository.get_by_cell_id(cell.id()).await.unwrap();
         assert_eq!(0, extracts.len());
-    }
-
-    #[tokio::test]
-    pub async fn update_cell_content_updates_inner_html_when_highlight_text_changes() {
-        // Arrange
-
-        let injector = initialize_test_injector().await;
-        let scope = injector.start_scope();
-        let file_repository = scope.resolve::<dyn FileRepository>().await;
-        let cell_repository = scope.resolve::<dyn CellRepository>().await;
-        let extract_repository = scope.resolve::<dyn ExtractRepository>().await;
-        let service = scope.resolve::<DefaultCellContentUpdater>().await;
-
-        let file = create_test_file(&file_repository).await;
-        let highlight_id = "550e8400-e29b-41d4-a716-446655440000";
-        let cell = Cell::new(
-            None,
-            file.id(),
-            ir_content(""),
-            CellType::IncrementalReading,
-            0,
-        );
-        cell_repository.create(&cell).await.unwrap();
-        scope.save_changes().await.unwrap();
-
-        service
-            .update_cell_content(
-                cell.id(),
-                ir_content(&format!(
-                    r#"<highlight highlight-id="{highlight_id}">old text</highlight>"#
-                )),
-            )
-            .await
-            .unwrap();
-        scope.save_changes().await.unwrap();
-
-        // Act
-
-        service
-            .update_cell_content(
-                cell.id(),
-                ir_content(&format!(
-                    r#"<highlight highlight-id="{highlight_id}">new text</highlight>"#
-                )),
-            )
-            .await
-            .unwrap();
-        scope.save_changes().await.unwrap();
-
-        // Assert
-
-        let extracts = extract_repository.get_by_cell_id(cell.id()).await.unwrap();
-        assert_eq!(1, extracts.len());
-        assert_eq!("new text", extracts[0].inner_html());
     }
 
     #[tokio::test]

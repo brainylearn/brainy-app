@@ -33,7 +33,6 @@ impl ExtractRepository for SqliteExtractRepository {
                 created_date as "created_date: _",
                 modified_date as "modified_date: _",
                 cell_id as "cell_id: _",
-                inner_html,
                 status as "status: _"
             FROM extracts
             WHERE cell_id = $1"#,
@@ -55,14 +54,12 @@ impl ExtractRepository for SqliteExtractRepository {
                 created_date,
                 modified_date,
                 cell_id,
-                inner_html,
                 status)
-            VALUES ($1, datetime($2), datetime($3), $4, $5, $6)"#,
+            VALUES ($1, datetime($2), datetime($3), $4, $5)"#,
             extract.id(),
             extract.created_date(),
             extract.modified_date(),
             extract.cell_id(),
-            extract.inner_html(),
             extract.status(),
         )
         .execute(&mut *tx)
@@ -78,21 +75,6 @@ impl ExtractRepository for SqliteExtractRepository {
         sqlx::query!("DELETE FROM extracts WHERE id = $1", id)
             .execute(&mut *tx)
             .await?;
-
-        Ok(())
-    }
-
-    async fn update_inner_html(&self, id: Guid, inner_html: String) -> Result<(), RepositoryError> {
-        let mut tx = self.tx.lock().await;
-        let tx = tx.as_mut();
-
-        sqlx::query!(
-            "UPDATE extracts SET inner_html = $1 WHERE id = $2",
-            inner_html,
-            id
-        )
-        .execute(&mut *tx)
-        .await?;
 
         Ok(())
     }
