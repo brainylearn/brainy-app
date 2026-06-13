@@ -203,6 +203,7 @@ pub async fn run() -> Result<(), String> {
             set_fsrs_profile_choice_for_folder,
             update_profile,
             // Incremental Reading
+            get_incremental_reading_schedule,
             schedule_incremental_reading_later,
             // App Info
             is_store_installed,

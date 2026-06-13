@@ -1,4 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
+import IncrementalReadingSchedule from "./incrementalReadingSchedule";
+
+export function getIncrementalReadingSchedule(
+	cellId: string,
+): Promise<IncrementalReadingSchedule | null> {
+	return invoke("get_incremental_reading_schedule", { cellId });
+}
 
 export function scheduleIncrementalReadingLater(
 	cellId: string,

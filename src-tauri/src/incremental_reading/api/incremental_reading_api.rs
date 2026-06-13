@@ -5,10 +5,28 @@ use injector::injector::Injector;
 use tauri::State;
 
 use crate::{
-    Guid, common::api_error::ApiError,
-    incremental_reading::scheduling::repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+    Guid,
+    common::api_error::ApiError,
+    incremental_reading::scheduling::{
+        entities::incremental_reading_schedule::IncrementalReadingSchedule,
+        repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+    },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
+
+#[tauri::command]
+pub async fn get_incremental_reading_schedule(
+    injector: State<'_, Arc<Injector>>,
+    cell_id: Guid,
+) -> Result<Option<IncrementalReadingSchedule>, ApiError> {
+    let scope = injector.start_scope();
+    let result = scope
+        .resolve::<dyn IncrementalReadingScheduleRepository>()
+        .await
+        .get_by_cell_id(cell_id)
+        .await?;
+    Ok(result)
+}
 
 #[tauri::command]
 pub async fn schedule_incremental_reading_later(
