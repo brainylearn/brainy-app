@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS incremental_reading_schedules (
     priority                    TEXT        NOT NULL        DEFAULT '"Normal"',
     title                       TEXT        NOT NULL        DEFAULT '',
     is_finished                 INTEGER     NOT NULL        DEFAULT 0,
-    next_reading_date           TEXT,
+    next_reading_date           TEXT        NOT NULL        DEFAULT(datetime('now')),
     has_extracts                INTEGER     NOT NULL        DEFAULT 0
 );
 

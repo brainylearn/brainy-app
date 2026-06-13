@@ -14,7 +14,7 @@ pub struct IncrementalReadingScheduleRow {
     pub priority: IncrementalReadingPriority,
     pub title: String,
     pub is_finished: bool,
-    pub next_reading_date: Option<DateTime<Utc>>,
+    pub next_reading_date: DateTime<Utc>,
     pub has_extracts: bool,
 }
 
