@@ -102,7 +102,8 @@ export default function IncrementalReading({
 
 	return (
 		<>
-			<div className={styles.verticalForm}>
+			<div
+				className={`${styles.verticalForm} ${styles.incrementalReadingCellBlock}`}>
 				<TagRow>
 					{schedule !== null && (
 						<Tag
@@ -137,9 +138,9 @@ export default function IncrementalReading({
 					<p className={styles.errorMessage}>{errorMessage}</p>
 				)}
 
-				<div className={styles.buttonRow}>
+				<div className={styles.buttons}>
 					<button
-						className={`primary ${styles.rowButton} ${styles.readButton}`}
+						className={`primary ${styles.rowButton}`}
 						onClick={() => setShowReadDialog(true)}>
 						<Icon path={mdiBookOpenVariantOutline} size={1} />
 						<span>Read now</span>
