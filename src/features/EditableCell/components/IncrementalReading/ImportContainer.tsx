@@ -7,6 +7,7 @@ import Spinner from "../../../../components/Spinner/Spinner";
 import styles from "./styles.module.css";
 import { fetch } from "@tauri-apps/plugin-http";
 import IncrementalReading from "../../../../api/cells/valueObjects/incrementalReading";
+import EditableCellInput from "../EditableCellInput";
 
 interface Props {
 	onImport: (newValue: IncrementalReading) => void;
@@ -55,7 +56,7 @@ export default function ImportContainer({ autofocus, onImport }: Props) {
 
 	return (
 		<form className={styles.verticalForm} onSubmit={handleSubmit}>
-			<input
+			<EditableCellInput
 				type="text"
 				placeholder="Enter URL to import"
 				value={url}

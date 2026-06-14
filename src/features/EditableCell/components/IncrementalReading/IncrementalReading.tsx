@@ -10,6 +10,7 @@ import { getIncrementalReadingSchedule } from "../../../../api/incrementalReadin
 import IncrementalReadingSchedule from "../../../../api/incrementalReading/incrementalReadingSchedule";
 import formatDueDate from "../../../../utils/formatDueDate";
 import useApi from "../../../../hooks/useApi";
+import EditableCellInput from "../EditableCellInput";
 
 interface Props {
 	cell: Cell;
@@ -64,6 +65,8 @@ export default function IncrementalReading({
 				onImport={ir => {
 					handleChange(() => ir);
 					setIsImported(true);
+					// TODO: not updating
+					void retrieveIncrementalReadingScehdule();
 				}}
 			/>
 		);
@@ -74,11 +77,10 @@ export default function IncrementalReading({
 		setShowReadDialog(false);
 	};
 
-	// TODO: clicking does not put focus on the input (fix for import container too), see why and try to make a general solution
 	return (
 		<>
 			<div className={styles.verticalForm}>
-				<input
+				<EditableCellInput
 					type="text"
 					placeholder="Title"
 					value={incrementalReading.title!}
