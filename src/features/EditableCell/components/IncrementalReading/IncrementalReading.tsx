@@ -79,7 +79,7 @@ export default function IncrementalReading({
 							<span className={styles.buttonStatus}>
 								{schedule.completed
 									? "Already completed"
-									: `Next read due is ${formatDueDate(schedule.nextReadingDate)}`}
+									: `Due ${formatDueDate(schedule.nextReadingDate)}`}
 							</span>
 						)}
 					</span>

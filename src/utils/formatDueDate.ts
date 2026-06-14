@@ -7,21 +7,18 @@ export default function formatDueDate(isoDate: string): string {
 		now.getMonth(),
 		now.getDate(),
 	);
-	const date = new Date(isoDate);
-	const startOfDate = new Date(
-		date.getFullYear(),
-		date.getMonth(),
-		date.getDate(),
-	);
+	// Parse date components directly to avoid UTC-vs-local offset issues
+	const [year, month, day] = isoDate.split("T")[0].split("-").map(Number);
+	const startOfDate = new Date(year, month - 1, day);
+
 	const diffDays = Math.round(
 		(startOfDate.getTime() - startOfToday.getTime()) /
 			ONE_DAY_IN_MILLISECONDS,
 	);
 
-	if (diffDays < 0) return "today";
 	if (diffDays === 0) return "today";
 	if (diffDays === 1) return "tomorrow";
-	return date.toLocaleDateString(undefined, {
+	return startOfDate.toLocaleDateString(undefined, {
 		month: "short",
 		day: "numeric",
 	});
