@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import IncrementalReadingSchedule from "./incrementalReadingSchedule";
+import IncrementalReadingSchedule from "../entities/incrementalReadingSchedule";
 
 export function getIncrementalReadingSchedule(
 	cellId: string,

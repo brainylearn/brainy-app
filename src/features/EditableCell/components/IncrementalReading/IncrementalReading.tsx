@@ -11,11 +11,12 @@ import {
 	mdiWeb,
 } from "@mdi/js";
 import ReadDialog from "./ReadDialog";
+import ExtractsReviewDialog from "../../../ExtractsReview/components/ExtractsReviewDialog";
 import {
 	getIncrementalReadingSchedule,
 	getPendingExtractsCount,
-} from "../../../../api/incrementalReading/schedulingApi";
-import IncrementalReadingSchedule from "../../../../api/incrementalReading/incrementalReadingSchedule";
+} from "../../../../api/incrementalReading/api/incrementalReadingApi";
+import IncrementalReadingSchedule from "../../../../api/incrementalReading/entities/incrementalReadingSchedule";
 import formatDueDate from "../../../../utils/formatDueDate";
 import useApi from "../../../../hooks/useApi";
 import EditableCellInput from "../EditableCellInput";
@@ -43,6 +44,7 @@ export default function IncrementalReading({
 		incrementalReading.content !== null,
 	);
 	const [showReadDialog, setShowReadDialog] = useState(false);
+	const [showExtractsDialog, setShowExtractsDialog] = useState(false);
 	const [schedule, setSchedule] = useState<IncrementalReadingSchedule | null>(
 		null,
 	);
@@ -51,7 +53,7 @@ export default function IncrementalReading({
 	>(null);
 	const { callApi, errorMessage } = useApi();
 
-	const retrieveIncrementalReadingScehdule = useCallback(async () => {
+	const retrieveIncrementalReadingSchedule = useCallback(async () => {
 		await callApi(async () => {
 			const [newSchedule, count] = await Promise.all([
 				getIncrementalReadingSchedule(cell.id),
@@ -63,8 +65,8 @@ export default function IncrementalReading({
 	}, [cell.id, callApi]);
 
 	useEffect(() => {
-		void retrieveIncrementalReadingScehdule();
-	}, [retrieveIncrementalReadingScehdule, isImported]);
+		void retrieveIncrementalReadingSchedule();
+	}, [retrieveIncrementalReadingSchedule, isImported]);
 
 	const handleChange = (
 		updater: (
@@ -78,6 +80,11 @@ export default function IncrementalReading({
 		});
 	};
 
+	const handleCloseExtractDialog = useCallback(() => {
+		setShowExtractsDialog(false);
+		void retrieveIncrementalReadingSchedule();
+	}, [retrieveIncrementalReadingSchedule]);
+
 	if (!isImported) {
 		return (
 			<ImportContainer
@@ -86,7 +93,7 @@ export default function IncrementalReading({
 					void (async () => {
 						handleChange(() => ir);
 						await saveChanges();
-						await retrieveIncrementalReadingScehdule();
+						await retrieveIncrementalReadingSchedule();
 						setIsImported(true);
 					})();
 				}}
@@ -96,7 +103,7 @@ export default function IncrementalReading({
 
 	const handleCloseReadDialog = async () => {
 		await saveChanges();
-		await retrieveIncrementalReadingScehdule();
+		await retrieveIncrementalReadingSchedule();
 		setShowReadDialog(false);
 	};
 
@@ -145,15 +152,15 @@ export default function IncrementalReading({
 						<Icon path={mdiBookOpenVariantOutline} size={1} />
 						<span>Read now</span>
 					</button>
-					{pendingExtractsCount !== null && (
-						<button
-							className={`transparent ${styles.rowButton}`}
-							disabled={pendingExtractsCount === 0}
-							title="Go through pending extracts">
-							<Icon path={mdiCardsOutline} size={1} />
-							<span>Extracts ({pendingExtractsCount})</span>
-						</button>
-					)}
+					{pendingExtractsCount !== null &&
+						pendingExtractsCount > 0 && (
+							<button
+								className={`transparent ${styles.rowButton}`}
+								onClick={() => setShowExtractsDialog(true)}>
+								<Icon path={mdiCardsOutline} size={1} />
+								<span>Extracts ({pendingExtractsCount})</span>
+							</button>
+						)}
 				</div>
 			</div>
 
@@ -163,6 +170,15 @@ export default function IncrementalReading({
 					incrementalReading={incrementalReading}
 					onClose={() => void handleCloseReadDialog()}
 					onChange={handleChange}
+				/>
+			)}
+
+			{showExtractsDialog && (
+				<ExtractsReviewDialog
+					cells={[
+						{ id: cell.id, title: incrementalReading.title ?? "" },
+					]}
+					onClose={handleCloseExtractDialog}
 				/>
 			)}
 		</>

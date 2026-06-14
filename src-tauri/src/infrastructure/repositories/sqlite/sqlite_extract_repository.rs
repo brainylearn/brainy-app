@@ -23,6 +23,28 @@ pub struct SqliteExtractRepository {
 
 #[async_trait]
 impl ExtractRepository for SqliteExtractRepository {
+    async fn get_by_id(&self, id: Guid) -> Result<Option<Extract>, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let row = sqlx::query_as!(
+            ExtractRow,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                modified_date as "modified_date: _",
+                cell_id as "cell_id: _",
+                status as "status: _"
+            FROM extracts
+            WHERE id = $1"#,
+            id
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        Ok(row.map(Extract::from))
+    }
+
     async fn get_by_cell_id(&self, cell_id: Guid) -> Result<Vec<Extract>, RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
@@ -65,6 +87,21 @@ impl ExtractRepository for SqliteExtractRepository {
         .await?;
 
         Ok(row.count as u32)
+    }
+
+    async fn update(&self, extract: &Extract) -> Result<(), RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        sqlx::query!(
+            r#"UPDATE extracts SET status = $1 WHERE id = $2"#,
+            extract.status(),
+            extract.id()
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        Ok(())
     }
 
     async fn create(&self, extract: &Extract) -> Result<(), RepositoryError> {

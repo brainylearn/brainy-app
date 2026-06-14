@@ -66,4 +66,8 @@ impl Extract {
     pub fn status(&self) -> &ExtractStatus {
         &self.status
     }
+
+    pub fn set_status(&mut self, status: ExtractStatus) {
+        self.status = status;
+    }
 }

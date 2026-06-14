@@ -8,6 +8,7 @@ use crate::{
 
 #[async_trait]
 pub trait ExtractRepository: Send + Sync {
+    async fn get_by_id(&self, id: Guid) -> Result<Option<Extract>, RepositoryError>;
     async fn get_by_cell_id(&self, cell_id: Guid) -> Result<Vec<Extract>, RepositoryError>;
     async fn count_by_cell_id_and_status(
         &self,
@@ -15,5 +16,6 @@ pub trait ExtractRepository: Send + Sync {
         status: &ExtractStatus,
     ) -> Result<u32, RepositoryError>;
     async fn create(&self, extract: &Extract) -> Result<(), RepositoryError>;
+    async fn update(&self, extract: &Extract) -> Result<(), RepositoryError>;
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;
 }

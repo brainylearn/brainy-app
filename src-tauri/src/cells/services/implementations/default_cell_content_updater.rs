@@ -1,9 +1,5 @@
 use std::sync::Arc;
 
-use async_trait::async_trait;
-use injector_derive::ScopeInjectable;
-use scraper::{Html, Selector};
-
 use crate::{
     Guid,
     cells::{
@@ -14,7 +10,8 @@ use crate::{
     },
     incremental_reading::{
         extracts::{
-            entities::extract::Extract, repositories::extract_repository::ExtractRepository,
+            entities::extract::Extract, highlight_parser::parse_highlights,
+            repositories::extract_repository::ExtractRepository,
         },
         scheduling::{
             entities::incremental_reading_schedule::IncrementalReadingSchedule,
@@ -22,6 +19,8 @@ use crate::{
         },
     },
 };
+use async_trait::async_trait;
+use injector_derive::ScopeInjectable;
 
 #[derive(ScopeInjectable)]
 pub struct DefaultCellContentUpdater {
@@ -58,15 +57,10 @@ impl DefaultCellContentUpdater {
         cell: &Cell,
         ir: &IncrementalReading,
     ) -> Result<usize, CellContentUpdaterError> {
-        let found: Vec<String> = {
-            let html_content = ir.content.clone().unwrap_or_default();
-            let selector = Selector::parse("highlight").expect("Invalid selector");
-            let document = Html::parse_fragment(&html_content);
-            document
-                .select(&selector)
-                .filter_map(|el| el.attr("highlight-id").map(|id| id.to_string()))
-                .collect()
-        };
+        let found: Vec<String> = parse_highlights(&ir.content.clone().unwrap_or_default())
+            .into_iter()
+            .map(|h| h.id)
+            .collect();
 
         log::info!("Found {} extracts.", found.len());
 

@@ -205,6 +205,8 @@ pub async fn run() -> Result<(), String> {
             // Incremental Reading
             get_incremental_reading_schedule,
             get_pending_extracts_count,
+            get_pending_extracts_with_content,
+            update_extract_status,
             schedule_incremental_reading_later,
             // App Info
             is_store_installed,

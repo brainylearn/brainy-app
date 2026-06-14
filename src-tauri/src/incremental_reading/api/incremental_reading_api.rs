@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use chrono::{DateTime, Utc};
 use injector::injector::Injector;
@@ -6,10 +6,16 @@ use tauri::State;
 
 use crate::{
     Guid,
+    cells::{
+        repositories::cell_repository::CellRepository,
+        value_objects::incremental_reading::IncrementalReading,
+    },
     common::api_error::ApiError,
     incremental_reading::{
+        dto::pending_extract_dto::PendingExtractDto,
         extracts::{
-            entities::extract::ExtractStatus, repositories::extract_repository::ExtractRepository,
+            entities::extract::ExtractStatus, highlight_parser::parse_highlights,
+            repositories::extract_repository::ExtractRepository,
         },
         scheduling::{
             entities::incremental_reading_schedule::IncrementalReadingSchedule,
@@ -45,6 +51,69 @@ pub async fn get_pending_extracts_count(
         .count_by_cell_id_and_status(cell_id, &ExtractStatus::Pending)
         .await?;
     Ok(count as usize)
+}
+
+#[tauri::command]
+pub async fn get_pending_extracts_with_content(
+    injector: State<'_, Arc<Injector>>,
+    cell_id: Guid,
+) -> Result<Vec<PendingExtractDto>, ApiError> {
+    let scope = injector.start_scope();
+
+    let cell = scope
+        .resolve::<dyn CellRepository>()
+        .await
+        .get_by_id(cell_id)
+        .await?;
+
+    let extracts = scope
+        .resolve::<dyn ExtractRepository>()
+        .await
+        .get_by_cell_id(cell_id)
+        .await?;
+
+    let ir: IncrementalReading =
+        serde_json::from_str(cell.content()).map_err(|e| ApiError::new(e.to_string()))?;
+
+    let highlights: HashMap<String, String> = parse_highlights(&ir.content.unwrap_or_default())
+        .into_iter()
+        .map(|h| (h.id, h.inner_html))
+        .collect();
+
+    let result = extracts
+        .into_iter()
+        .filter(|e| e.status() == &ExtractStatus::Pending)
+        .filter_map(|extract| {
+            let inner_html = highlights.get(&extract.id().to_string())?.clone();
+            Some(PendingExtractDto {
+                id: extract.id().to_string(),
+                inner_html,
+            })
+        })
+        .collect();
+
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn update_extract_status(
+    injector: State<'_, Arc<Injector>>,
+    extract_id: Guid,
+    status: ExtractStatus,
+) -> Result<(), ApiError> {
+    let scope = injector.start_scope();
+    let repo = scope.resolve::<dyn ExtractRepository>().await;
+
+    let mut extract = repo
+        .get_by_id(extract_id)
+        .await?
+        .ok_or_else(|| ApiError::new("Extract not found".to_string()))?;
+
+    extract.set_status(status);
+    repo.update(&extract).await?;
+    scope.save_changes().await?;
+
+    Ok(())
 }
 
 #[tauri::command]

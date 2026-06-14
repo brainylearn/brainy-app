@@ -24,7 +24,7 @@ import {
 } from "./RichTextEditorPlugins/highlight/highlightPlugin";
 import { useState } from "react";
 import ScheduleLaterDialog from "./ScheduleLaterDialog";
-import { scheduleIncrementalReadingLater } from "../../../../api/incrementalReading/schedulingApi";
+import { scheduleIncrementalReadingLater } from "../../../../api/incrementalReading/api/incrementalReadingApi";
 
 const priorityOptions: Option[] = [
 	{ label: "High", value: "high" },
