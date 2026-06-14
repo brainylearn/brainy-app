@@ -41,7 +41,6 @@ interface Props {
 	onClose: () => void;
 }
 
-// TODO: uni test this and other components
 export default function ReadDialog({
 	cellId,
 	incrementalReading,

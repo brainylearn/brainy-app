@@ -6,8 +6,13 @@ import { Icon } from "@mdi/react";
 import Spinner from "../../../../components/Spinner/Spinner";
 import styles from "./styles.module.css";
 import { fetch } from "@tauri-apps/plugin-http";
-import IncrementalReading from "../../../../api/cells/valueObjects/incrementalReading";
+import IncrementalReading, {
+	IncrementalReadingSource,
+} from "../../../../api/cells/valueObjects/incrementalReading";
 import EditableCellInput from "../EditableCellInput";
+import Select from "../../../../components/Select/Select";
+
+const SOURCE_TYPE_OPTIONS = [{ label: "Website", value: "url" }];
 
 interface Props {
 	onImport: (newValue: IncrementalReading) => void;
@@ -15,6 +20,8 @@ interface Props {
 }
 
 export default function ImportContainer({ autofocus, onImport }: Props) {
+	const [sourceType, setSourceType] =
+		useState<IncrementalReadingSource["type"]>("url");
 	const [url, setUrl] = useState("");
 	const { callApi, errorMessage, clearErrorMessage, isSendingRequest } =
 		useApi();
@@ -56,14 +63,32 @@ export default function ImportContainer({ autofocus, onImport }: Props) {
 
 	return (
 		<form className={styles.verticalForm} onSubmit={handleSubmit}>
-			<EditableCellInput
-				type="text"
-				placeholder="Enter URL to import"
-				value={url}
-				onChange={e => setUrl(e.target.value)}
-				autoFocus={autofocus}
-				required
-			/>
+			<div className={styles.field}>
+				<label htmlFor="source-type">Source type</label>
+				<Select
+					id="source-type"
+					options={SOURCE_TYPE_OPTIONS}
+					currentValue={sourceType}
+					onChangeValue={v =>
+						setSourceType(v as IncrementalReadingSource["type"])
+					}
+				/>
+			</div>
+
+			{sourceType === "url" && (
+				<div className={styles.field}>
+					<label htmlFor="source-url">Website address</label>
+					<EditableCellInput
+						id="source-url"
+						type="text"
+						placeholder="Enter URL to import"
+						value={url}
+						onChange={e => setUrl(e.target.value)}
+						autoFocus={autofocus}
+						required
+					/>
+				</div>
+			)}
 
 			{errorMessage && (
 				<p className={styles.errorMessage}>{errorMessage}</p>
