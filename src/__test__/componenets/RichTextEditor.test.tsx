@@ -368,7 +368,11 @@ describe("Cloze toggle", () => {
 	it("Should wrap into a cloze when selection starts inside a cloze and ends at the middle of a normal text node", () => {
 		// Arrange
 
-		const content = `<p><cloze class="cloze-node" index="1">hello</cloze>world</p>`;
+		const content = `
+			<p>
+				<cloze class="cloze-node" index="1">hello</cloze>
+				world
+			</p>`;
 		const editor = createEditor(content);
 
 		// Act

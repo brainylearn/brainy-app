@@ -256,9 +256,11 @@ export function $isSelectionInsideNode<T extends LexicalNode>(
 			}
 		}
 
-		// TODO: this is not correct, one line paragraphs are marked as containg highlight even if not
 		// No need to stop at paragraphs, their content is still iterated over!
-		if ($isParagraphNode(node)) continue;
+		if ($isParagraphNode(node)) {
+			if (node.is(endNode)) break;
+			continue;
+		}
 
 		let anyMatch = isNode(node);
 		let current = node.getParent();
