@@ -10,12 +10,7 @@ import {
 } from "../../../api/incrementalReading/api/extractsApi";
 import useApi from "../../../hooks/useApi";
 import { Icon } from "@mdi/react";
-import {
-	mdiCardsOutline,
-	mdiExitToApp,
-	mdiPlusBoxOutline,
-	mdiSkipNextOutline,
-} from "@mdi/js";
+import { mdiCardsOutline, mdiExitToApp, mdiSkipNextOutline } from "@mdi/js";
 import TagRow from "../../../components/Tag/TagRow";
 import Spinner from "../../../components/Spinner/Spinner";
 import { PendingExtractDto } from "../../../api/incrementalReading/dto/pendingExtractDto";
@@ -130,13 +125,15 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 				</TagRow>
 
 				<FormRows
-					className={styles.formRows}
+					className={styles.rows}
 					rows={[
 						{
+							className: styles.row,
 							children: isLoading ? (
 								<Spinner text="Loading..." />
 							) : (
 								<RichTextEditor
+									title="Turn highlights into cloze cells"
 									eagerLoadRichTextEditor
 									content={currentExtract.innerHtml}
 									onChange={content => {
@@ -147,6 +144,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 										ClozeFloatingMenuButtons
 									}
 									plugins={[<ClozePlugin key={1} />]}
+									containerClassName={styles.editor}
 								/>
 							),
 						},
@@ -157,7 +155,8 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 					<button
 						className="transparent"
 						type="button"
-						onClick={onClose}>
+						onClick={onClose}
+						title="Close without doing any modification">
 						<Icon path={mdiExitToApp} size={1} />
 						Exit
 					</button>
@@ -165,7 +164,8 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 						className="transparent"
 						type="button"
 						onClick={() => void handleDismiss()}
-						disabled={isLoading || !currentExtract}>
+						disabled={isLoading || !currentExtract}
+						title="Skip highlight">
 						<Icon path={mdiSkipNextOutline} size={1} />
 						Dismiss
 					</button>
@@ -173,8 +173,8 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 						className="primary"
 						type="submit"
 						disabled={isLoading || !currentExtract}>
-						<Icon path={mdiPlusBoxOutline} size={1} />
-						Add
+						<Icon path={mdiCardsOutline} size={1} />
+						Save as cloze
 					</button>
 				</div>
 			</Form>

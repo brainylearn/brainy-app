@@ -82,8 +82,11 @@ export default function IncrementalReading({
 
 	const handleCloseExtractDialog = useCallback(() => {
 		setShowExtractsDialog(false);
-		void retrieveIncrementalReadingSchedule();
-	}, [retrieveIncrementalReadingSchedule]);
+		void (async () => {
+			await retrieveIncrementalReadingSchedule();
+			await saveChanges();
+		})();
+	}, [retrieveIncrementalReadingSchedule, saveChanges]);
 
 	if (!isImported) {
 		return (
