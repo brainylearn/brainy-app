@@ -4,7 +4,12 @@ import { default as IncrementalReadingType } from "../../../../api/cells/valueOb
 import { useCallback, useEffect, useState } from "react";
 import ImportContainer from "./ImportContainer";
 import { Icon } from "@mdi/react";
-import { mdiBookOpenVariantOutline, mdiCardsOutline, mdiWeb } from "@mdi/js";
+import {
+	mdiBookOpenVariantOutline,
+	mdiCardsOutline,
+	mdiClockOutline,
+	mdiWeb,
+} from "@mdi/js";
 import ReadDialog from "./ReadDialog";
 import {
 	getIncrementalReadingSchedule,
@@ -14,6 +19,8 @@ import IncrementalReadingSchedule from "../../../../api/incrementalReading/incre
 import formatDueDate from "../../../../utils/formatDueDate";
 import useApi from "../../../../hooks/useApi";
 import EditableCellInput from "../EditableCellInput";
+import Tag from "../../../../components/Tag/Tag";
+import TagRow from "../../../../components/Tag/TagRow";
 
 interface Props {
 	cell: Cell;
@@ -96,6 +103,19 @@ export default function IncrementalReading({
 	return (
 		<>
 			<div className={styles.verticalForm}>
+				<TagRow>
+					{schedule !== null && (
+						<Tag
+							icon={mdiClockOutline}
+							text={
+								schedule.completed
+									? "Already completed"
+									: `Due ${formatDueDate(schedule.nextReadingDate)}`
+							}
+							type={schedule.completed ? "green" : "primary"}
+						/>
+					)}
+				</TagRow>
 				<EditableCellInput
 					type="text"
 					placeholder="Title"
@@ -106,8 +126,10 @@ export default function IncrementalReading({
 					autoFocus={autofocus}
 				/>
 
-				<div className={styles.sourceLink}>
-					<Icon path={mdiWeb} size={1} className={styles.icon} />
+				<div
+					className={styles.sourceLink}
+					title={incrementalReading.source.url}>
+					<Icon path={mdiWeb} size={0.78} className={styles.icon} />
 					<span>{incrementalReading.source.url}</span>
 				</div>
 
@@ -120,16 +142,7 @@ export default function IncrementalReading({
 						className={`primary ${styles.rowButton} ${styles.readButton}`}
 						onClick={() => setShowReadDialog(true)}>
 						<Icon path={mdiBookOpenVariantOutline} size={1} />
-						<span className={styles.buttonContent}>
-							<span>Read now</span>
-							{schedule && (
-								<span className={styles.buttonStatus}>
-									{schedule.completed
-										? "Already completed"
-										: `Due ${formatDueDate(schedule.nextReadingDate)}`}
-								</span>
-							)}
-						</span>
+						<span>Read now</span>
 					</button>
 					{pendingExtractsCount !== null && (
 						<button

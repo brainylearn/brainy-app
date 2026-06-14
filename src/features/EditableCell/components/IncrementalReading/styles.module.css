@@ -15,12 +15,11 @@
 .source-link {
 	display: flex;
 	align-items: center;
-	gap: var(--spacing-1);
+	gap: var(--spacing-0);
 	background: none;
 	border: none;
 	padding: 0;
-	color: var(--text-secondary);
-	font-size: 1.2rem;
+	color: var(--text-muted);
 
 	.icon {
 		flex-shrink: 0;
@@ -30,6 +29,7 @@
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+		font-size: 1.1rem;
 	}
 }
 
@@ -51,18 +51,6 @@
 
 .read-button {
 	align-items: center;
-
-	.button-content {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		line-height: 1;
-		gap: 3px;
-	}
-
-	.button-status {
-		font-size: 1rem;
-	}
 }
 
 .read-dialog {
