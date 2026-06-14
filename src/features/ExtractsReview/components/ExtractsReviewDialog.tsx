@@ -113,7 +113,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 				<TagRow>
 					{extracts.length > 0 && (
 						<Tag
-							text={`${extractIndex + 1} / ${extracts.length}`}
+							text={`Highlight ${extractIndex + 1} / ${extracts.length}`}
 							type="primary"
 						/>
 					)}

@@ -7,11 +7,12 @@ interface Props {
 	text: string;
 	icon?: string;
 	type?: TagType;
+	title?: string;
 }
 
-export default function Tag({ text, icon, type = "primary" }: Props) {
+export default function Tag({ text, icon, title, type = "primary" }: Props) {
 	return (
-		<span className={styles.tag} data-type={type}>
+		<span className={styles.tag} data-type={type} title={title}>
 			{icon && <Icon path={icon} size={1} />}
 			{text}
 		</span>
