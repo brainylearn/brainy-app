@@ -52,9 +52,11 @@
 			flex: 1;
 		}
 	}
+}
 
-	@media (max-width: 36rem) {
-		.button-row {
+@media (max-width: 36rem) {
+	.incremental-reading-cell-block {
+		.buttons {
 			flex-direction: column;
 		}
 	}
