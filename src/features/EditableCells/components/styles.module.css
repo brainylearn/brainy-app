@@ -18,7 +18,7 @@
 		display: flex;
 		justify-content: center;
 		border: var(--border-width) solid transparent;
-		padding-top: var(--spacing-4);
+		padding-top: var(--spacing-1);
 
 		& .add-button {
 			display: flex;
