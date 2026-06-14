@@ -7,7 +7,8 @@ use tauri::State;
 use crate::{
     Guid,
     cells::{
-        repositories::cell_repository::CellRepository,
+        dto::create_cell_request_dto::CreateCellRequestDto, entities::cell::CellType,
+        repositories::cell_repository::CellRepository, services::cell_creator::CellCreator,
         value_objects::incremental_reading::IncrementalReading,
     },
     common::api_error::ApiError,
@@ -111,6 +112,44 @@ pub async fn update_extract_status(
 
     extract.set_status(status);
     repo.update(&extract).await?;
+    scope.save_changes().await?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn create_cloze_from_extract(
+    injector: State<'_, Arc<Injector>>,
+    extract_id: Guid,
+    cell_id: Guid,
+    content: String,
+) -> Result<(), ApiError> {
+    let scope = injector.start_scope();
+
+    let cell_repo = scope.resolve::<dyn CellRepository>().await;
+    let file_id = cell_repo.get_by_id(cell_id).await?.file_id();
+    let cell_index = cell_repo.get_number_of_cells_in_file(file_id).await?;
+
+    scope
+        .resolve::<dyn CellCreator>()
+        .await
+        .create_cell(CreateCellRequestDto {
+            file_id,
+            content,
+            cell_type: CellType::Cloze,
+            index: cell_index,
+        })
+        .await
+        .map_err(|e| ApiError::new(e.to_string()))?;
+
+    let extract_repo = scope.resolve::<dyn ExtractRepository>().await;
+    let mut extract = extract_repo
+        .get_by_id(extract_id)
+        .await?
+        .ok_or_else(|| ApiError::new("Extract not found".to_string()))?;
+
+    extract.set_status(ExtractStatus::Added);
+    extract_repo.update(&extract).await?;
     scope.save_changes().await?;
 
     Ok(())

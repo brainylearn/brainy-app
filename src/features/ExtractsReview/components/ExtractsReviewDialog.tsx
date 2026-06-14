@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Dialog from "../../../components/Dialog/Dialog";
 import Form, { FormHeader, FormRows } from "../../../components/Form/Form";
 import Tag from "../../../components/Tag/Tag";
 import styles from "./styles.module.css";
 import {
+	createClozeFromExtract,
 	getPendingExtractsWithContent,
 	updateExtractStatus,
 } from "../../../api/incrementalReading/api/extractsApi";
@@ -38,6 +39,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 	const [extracts, setExtracts] = useState<PendingExtractDto[]>([]);
 	const [extractIndex, setExtractIndex] = useState(0);
 	const { callApi, isSendingRequest: isLoading } = useApi();
+	const editorContentRef = useRef<string>("");
 
 	const loadExtracts = useCallback(
 		async (idx: number) => {
@@ -52,6 +54,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 				if (pending.length === 0) {
 					setCellIndex(idx + 1);
 				} else {
+					editorContentRef.current = pending[0].innerHtml;
 					setExtracts(pending);
 					setExtractIndex(0);
 				}
@@ -66,6 +69,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 
 	const advance = () => {
 		if (extractIndex + 1 < extracts.length) {
+			editorContentRef.current = extracts[extractIndex + 1].innerHtml;
 			setExtractIndex(i => i + 1);
 		} else if (cellIndex + 1 < cells.length) {
 			setCellIndex(i => i + 1);
@@ -83,7 +87,11 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 
 	const handleAdd = async () => {
 		await callApi(() =>
-			updateExtractStatus(extracts[extractIndex].id, "Added"),
+			createClozeFromExtract(
+				extracts[extractIndex].id,
+				cells[cellIndex].id,
+				editorContentRef.current,
+			),
 		);
 		advance();
 	};
@@ -131,8 +139,8 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 								<RichTextEditor
 									eagerLoadRichTextEditor
 									content={currentExtract.innerHtml}
-									onChange={() => {
-										/* TODO: */
+									onChange={content => {
+										editorContentRef.current = content;
 									}}
 									extraNodes={[ClozeNode]}
 									additionalFloatingMenuButtons={

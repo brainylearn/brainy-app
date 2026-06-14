@@ -207,6 +207,7 @@ pub async fn run() -> Result<(), String> {
             get_pending_extracts_count,
             get_pending_extracts_with_content,
             update_extract_status,
+            create_cloze_from_extract,
             schedule_incremental_reading_later,
             // App Info
             is_store_installed,

@@ -14,3 +14,11 @@ export function updateExtractStatus(
 ): Promise<void> {
 	return invoke("update_extract_status", { extractId, status });
 }
+
+export function createClozeFromExtract(
+	extractId: string,
+	cellId: string,
+	content: string,
+): Promise<void> {
+	return invoke("create_cloze_from_extract", { extractId, cellId, content });
+}
