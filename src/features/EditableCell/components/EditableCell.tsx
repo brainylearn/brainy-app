@@ -12,12 +12,14 @@ interface Props {
 	eagerLoadRichTextEditor: boolean;
 	onChange: (content: string) => void;
 	onFocus: (editor: LexicalEditor) => void;
+	saveChanges: () => Promise<void>;
 }
 
 function EditableCell({
 	cell,
 	autofocus,
 	eagerLoadRichTextEditor,
+	saveChanges,
 	onChange,
 	onFocus,
 }: Props) {
@@ -68,6 +70,7 @@ function EditableCell({
 					cell={cell}
 					autofocus={autofocus}
 					onChange={onChange}
+					saveChanges={saveChanges}
 				/>
 			);
 	}

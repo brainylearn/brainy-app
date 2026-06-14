@@ -400,6 +400,7 @@ const EditableCells = forwardRef<EditableCellsHandle, Props>(
 							enableFileSpecificFunctionality={
 								enableFileSpecificFunctionality
 							}
+							saveChanges={saveChanges}
 							onFocus={() => setSelectedCellId(cell.id)}
 							onClick={() => setSelectedCellId(cell.id)}
 							callApi={callApi}

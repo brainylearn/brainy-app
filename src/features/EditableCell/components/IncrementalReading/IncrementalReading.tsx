@@ -15,6 +15,8 @@ import EditableCellInput from "../EditableCellInput";
 interface Props {
 	cell: Cell;
 	autofocus: boolean;
+	// Used to force changes to be saved now!
+	saveChanges: () => Promise<void>;
 	onChange: (content: string) => void;
 }
 
@@ -22,6 +24,7 @@ export default function IncrementalReading({
 	cell,
 	autofocus,
 	onChange,
+	saveChanges,
 }: Props) {
 	const [incrementalReading, setIncrementalReading] = useState(() => {
 		return JSON.parse(cell.content) as IncrementalReadingType;
@@ -63,16 +66,19 @@ export default function IncrementalReading({
 			<ImportContainer
 				autofocus={autofocus}
 				onImport={ir => {
-					handleChange(() => ir);
-					setIsImported(true);
-					// TODO: not updating
-					void retrieveIncrementalReadingScehdule();
+					void (async () => {
+						handleChange(() => ir);
+						await saveChanges();
+						await retrieveIncrementalReadingScehdule();
+						setIsImported(true);
+					})();
 				}}
 			/>
 		);
 	}
 
 	const handleCloseReadDialog = async () => {
+		await saveChanges();
 		await retrieveIncrementalReadingScehdule();
 		setShowReadDialog(false);
 	};

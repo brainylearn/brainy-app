@@ -33,6 +33,7 @@ interface Props {
 	fileMode: "single" | "global search";
 	eagerLoadRichTextEditor: boolean;
 	callApi: CallApiFn;
+	saveChanges: () => Promise<void>;
 	onFocus: (e: React.FocusEvent<HTMLDivElement>) => void;
 	onClick: (id: string) => void;
 	onChange: (content: string) => void;
@@ -51,6 +52,7 @@ function CellBlock(
 		enableFileSpecificFunctionality,
 		fileMode,
 		eagerLoadRichTextEditor,
+		saveChanges,
 		callApi,
 		onFocus,
 		onClick,
@@ -175,6 +177,7 @@ function CellBlock(
 					onChange={onChange}
 					onFocus={editor => (editorRef.current = editor)}
 					eagerLoadRichTextEditor={eagerLoadRichTextEditor}
+					saveChanges={saveChanges}
 				/>
 			</div>
 		</div>
