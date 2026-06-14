@@ -41,6 +41,7 @@ interface Props {
 	onClose: () => void;
 }
 
+// TODO: uni test this and other components
 export default function ReadDialog({
 	cellId,
 	incrementalReading,
@@ -74,7 +75,6 @@ export default function ReadDialog({
 	// 5. Add scheduling to the home screen
 	// 6. Auto remember scroll position by paragraph index
 
-	// TODO: the floating menu is not shown on the first line
 	return (
 		<>
 			<Dialog

@@ -42,9 +42,12 @@
 	max-width: 95vw;
 	display: flex;
 	flex-direction: column;
-	--sections-padding: var(--spacing-3) var(--spacing-5);
+	--sections-padding: var(--spacing-3) var(--spacing-4);
 
 	.header {
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -85,7 +88,6 @@
 
 	.read-dialog-body {
 		background-color: var(--surface-card);
-		overflow-y: auto;
 		flex: 1;
 
 		.rich-text-editor {
@@ -95,6 +97,9 @@
 	}
 
 	.footer {
+		position: sticky;
+		bottom: 0;
+		z-index: 1;
 		padding: var(--sections-padding);
 		border-top: var(--border-width) solid var(--border-default);
 		background-color: var(--surface-pane);
