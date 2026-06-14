@@ -69,11 +69,12 @@ export default function ReadDialog({
 
 	// TODO:
 	// 1. Implement the prioritizations for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
-	// 2. Add a button to convert the extract directly from editor
-	// 3. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
-	// 4. Add sync support
-	// 5. Add scheduling to the home screen
-	// 6. Auto remember scroll position by paragraph index
+	// 2. Add a button to convert the extract directly from editor (with a shortcut)
+	// 3. Add shortcut to highlight
+	// 4. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
+	// 5. Add sync support
+	// 6. Add scheduling to the home screen
+	// 7. Auto remember scroll position by paragraph index
 
 	return (
 		<>
@@ -83,16 +84,11 @@ export default function ReadDialog({
 				onHide={onClose}
 				fullScreenOnSmallDevices>
 				<div className={styles.header}>
-					<div className={styles.titleSection}>
-						<h2 title={incrementalReading.title ?? ""}>
-							{incrementalReading.title}
-						</h2>
-						<p
-							className={`dimmed ${styles.source}`}
-							title={incrementalReading.source.url}>
-							{incrementalReading.source.url}
-						</p>
-					</div>
+					<h2
+						title={incrementalReading.title ?? ""}
+						className={styles.title}>
+						{incrementalReading.title}
+					</h2>
 					<Select
 						containerClassName={styles.select}
 						options={priorityOptions}

@@ -7,9 +7,14 @@ use tauri::State;
 use crate::{
     Guid,
     common::api_error::ApiError,
-    incremental_reading::scheduling::{
-        entities::incremental_reading_schedule::IncrementalReadingSchedule,
-        repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+    incremental_reading::{
+        extracts::{
+            entities::extract::ExtractStatus, repositories::extract_repository::ExtractRepository,
+        },
+        scheduling::{
+            entities::incremental_reading_schedule::IncrementalReadingSchedule,
+            repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+        },
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
@@ -26,6 +31,20 @@ pub async fn get_incremental_reading_schedule(
         .get_by_cell_id(cell_id)
         .await?;
     Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_pending_extracts_count(
+    injector: State<'_, Arc<Injector>>,
+    cell_id: Guid,
+) -> Result<usize, ApiError> {
+    let scope = injector.start_scope();
+    let count = scope
+        .resolve::<dyn ExtractRepository>()
+        .await
+        .count_by_cell_id_and_status(cell_id, &ExtractStatus::Pending)
+        .await?;
+    Ok(count as usize)
 }
 
 #[tauri::command]

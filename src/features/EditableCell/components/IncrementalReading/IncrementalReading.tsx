@@ -4,9 +4,12 @@ import { default as IncrementalReadingType } from "../../../../api/cells/valueOb
 import { useCallback, useEffect, useState } from "react";
 import ImportContainer from "./ImportContainer";
 import { Icon } from "@mdi/react";
-import { mdiBookOpenVariantOutline } from "@mdi/js";
+import { mdiBookOpenVariantOutline, mdiCardsOutline } from "@mdi/js";
 import ReadDialog from "./ReadDialog";
-import { getIncrementalReadingSchedule } from "../../../../api/incrementalReading/schedulingApi";
+import {
+	getIncrementalReadingSchedule,
+	getPendingExtractsCount,
+} from "../../../../api/incrementalReading/schedulingApi";
 import IncrementalReadingSchedule from "../../../../api/incrementalReading/incrementalReadingSchedule";
 import formatDueDate from "../../../../utils/formatDueDate";
 import useApi from "../../../../hooks/useApi";
@@ -36,12 +39,19 @@ export default function IncrementalReading({
 	const [schedule, setSchedule] = useState<IncrementalReadingSchedule | null>(
 		null,
 	);
+	const [pendingExtractsCount, setPendingExtractsCount] = useState<
+		number | null
+	>(null);
 	const { callApi, errorMessage } = useApi();
 
 	const retrieveIncrementalReadingScehdule = useCallback(async () => {
 		await callApi(async () => {
-			const newSchedule = await getIncrementalReadingSchedule(cell.id);
+			const [newSchedule, count] = await Promise.all([
+				getIncrementalReadingSchedule(cell.id),
+				getPendingExtractsCount(cell.id),
+			]);
 			setSchedule(newSchedule);
+			setPendingExtractsCount(count);
 		});
 	}, [cell.id, callApi]);
 
@@ -115,6 +125,14 @@ export default function IncrementalReading({
 						)}
 					</span>
 				</button>
+				{pendingExtractsCount !== null && (
+					<button
+						className={`transparent ${styles.rowButton}`}
+						disabled={pendingExtractsCount === 0}>
+						<Icon path={mdiCardsOutline} size={1} />
+						<span>Pending extracts ({pendingExtractsCount})</span>
+					</button>
+				)}
 			</div>
 
 			{showReadDialog && (

@@ -7,6 +7,10 @@ export function getIncrementalReadingSchedule(
 	return invoke("get_incremental_reading_schedule", { cellId });
 }
 
+export function getPendingExtractsCount(cellId: string): Promise<number> {
+	return invoke("get_pending_extracts_count", { cellId });
+}
+
 export function scheduleIncrementalReadingLater(
 	cellId: string,
 	nextReadingDate: Date,

@@ -56,26 +56,14 @@
 		border-bottom: var(--border-width) solid var(--border-default);
 		background-color: var(--surface-pane);
 
-		.title-section {
+		.title {
 			min-width: 0;
-
-			& > * {
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-			}
-
-			h2 {
-				font-size: 1.6rem;
-				font-weight: 500;
-				word-break: break-all;
-				flex: 1;
-				min-width: 0;
-			}
-
-			.source {
-				font-size: 1.2rem;
-			}
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 1.6rem;
+			font-weight: 500;
+			word-break: break-all;
 		}
 	}
 

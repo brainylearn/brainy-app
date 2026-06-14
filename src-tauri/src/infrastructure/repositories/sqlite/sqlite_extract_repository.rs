@@ -7,7 +7,8 @@ use crate::{
     Guid,
     common::repository_error::RepositoryError,
     incremental_reading::extracts::{
-        entities::extract::Extract, repositories::extract_repository::ExtractRepository,
+        entities::extract::{Extract, ExtractStatus},
+        repositories::extract_repository::ExtractRepository,
     },
     infrastructure::{
         repositories::sqlite::sqlite_rows::extract_row::ExtractRow,
@@ -42,6 +43,28 @@ impl ExtractRepository for SqliteExtractRepository {
         .await?;
 
         Ok(rows.into_iter().map(Extract::from).collect())
+    }
+
+    async fn count_by_cell_id_and_status(
+        &self,
+        cell_id: Guid,
+        status: &ExtractStatus,
+    ) -> Result<u32, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let status_str =
+            serde_json::to_string(status).map_err(|e| RepositoryError::QueryFailed(Box::new(e)))?;
+
+        let row = sqlx::query!(
+            r#"SELECT COUNT(*) as count FROM extracts WHERE cell_id = $1 AND status = $2"#,
+            cell_id,
+            status_str
+        )
+        .fetch_one(&mut *tx)
+        .await?;
+
+        Ok(row.count as u32)
     }
 
     async fn create(&self, extract: &Extract) -> Result<(), RepositoryError> {
