@@ -138,10 +138,10 @@ body.dark {
 
 	/* Semantic */
 	--semantic-color-fg: #f5f0eb;
-	--red-color: #e05060;
-	--hard-color: #d4883a;
-	--review-color: #28b870;
-	--easy-color: #5898e0;
+	--red-color: #d03848;
+	--hard-color: #c07028;
+	--review-color: #1ea060;
+	--easy-color: #4080d0;
 
 	/* Selection */
 	--selection-background: var(--easy-color);

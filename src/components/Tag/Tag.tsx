@@ -12,7 +12,7 @@ interface Props {
 export default function Tag({ text, icon, type = "primary" }: Props) {
 	return (
 		<span className={styles.tag} data-type={type}>
-			{icon && <Icon path={icon} size={0.7} />}
+			{icon && <Icon path={icon} size={1} />}
 			{text}
 		</span>
 	);
