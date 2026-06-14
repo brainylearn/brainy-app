@@ -18,6 +18,10 @@ import {
 import TagRow from "../../../components/Tag/TagRow";
 import Spinner from "../../../components/Spinner/Spinner";
 import { PendingExtractDto } from "../../../api/incrementalReading/dto/pendingExtractDto";
+import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
+import { ClozeFloatingMenuButtons } from "../../EditableCell/plugins/clozeFloatingMenuButtons";
+import { ClozeNode } from "../../EditableCell/plugins/clozeNode";
+import { ClozePlugin } from "../../EditableCell/plugins/clozePlugin";
 
 export interface CellToReview {
 	id: string;
@@ -90,7 +94,11 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 	const currentExtract = extracts[extractIndex];
 
 	return (
-		<Dialog focusTrap onHide={onClose} className={styles.dialog}>
+		<Dialog
+			focusTrap
+			onHide={onClose}
+			className={styles.dialog}
+			fullScreenOnSmallDevices>
 			<Form
 				onSubmit={e => {
 					e.preventDefault();
@@ -114,16 +122,23 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 				</TagRow>
 
 				<FormRows
+					className={styles.formRows}
 					rows={[
 						{
-							// TODO: rich text editor for cloze
 							children: isLoading ? (
 								<Spinner text="Loading..." />
 							) : (
-								<div
-									dangerouslySetInnerHTML={{
-										__html: currentExtract.innerHtml,
+								<RichTextEditor
+									eagerLoadRichTextEditor
+									content={currentExtract.innerHtml}
+									onChange={() => {
+										/* TODO: */
 									}}
+									extraNodes={[ClozeNode]}
+									additionalFloatingMenuButtons={
+										ClozeFloatingMenuButtons
+									}
+									plugins={[<ClozePlugin key={1} />]}
 								/>
 							),
 						},

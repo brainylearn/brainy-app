@@ -27,12 +27,13 @@ export default function FloatingMenuButton({
 	return (
 		visibleState[floatingButtonProps.name] && (
 			<button
-				onClick={() =>
+				onClick={e => {
+					e.preventDefault();
 					floatingButtonProps.onClick(
 						editor,
 						activeState[floatingButtonProps.name],
-					)
-				}
+					);
+				}}
 				className={`transparent ${activeState[floatingButtonProps.name] && styles.activeButton}`}
 				title={floatingButtonProps.title}
 				aria-label={floatingButtonProps.title}>
