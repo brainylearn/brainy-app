@@ -4,7 +4,7 @@ import { default as IncrementalReadingType } from "../../../../api/cells/valueOb
 import { useCallback, useEffect, useState } from "react";
 import ImportContainer from "./ImportContainer";
 import { Icon } from "@mdi/react";
-import { mdiBookOpenVariantOutline, mdiCardsOutline } from "@mdi/js";
+import { mdiBookOpenVariantOutline, mdiCardsOutline, mdiWeb } from "@mdi/js";
 import ReadDialog from "./ReadDialog";
 import {
 	getIncrementalReadingSchedule,
@@ -106,33 +106,41 @@ export default function IncrementalReading({
 					autoFocus={autofocus}
 				/>
 
+				<div className={styles.sourceLink}>
+					<Icon path={mdiWeb} size={1} className={styles.icon} />
+					<span>{incrementalReading.source.url}</span>
+				</div>
+
 				{errorMessage && (
 					<p className={styles.errorMessage}>{errorMessage}</p>
 				)}
 
-				<button
-					className={`primary ${styles.rowButton} ${styles.readButton}`}
-					onClick={() => setShowReadDialog(true)}>
-					<Icon path={mdiBookOpenVariantOutline} size={1} />
-					<span className={styles.buttonContent}>
-						<span>Read now</span>
-						{schedule && (
-							<span className={styles.buttonStatus}>
-								{schedule.completed
-									? "Already completed"
-									: `Due ${formatDueDate(schedule.nextReadingDate)}`}
-							</span>
-						)}
-					</span>
-				</button>
-				{pendingExtractsCount !== null && (
+				<div className={styles.buttonRow}>
 					<button
-						className={`transparent ${styles.rowButton}`}
-						disabled={pendingExtractsCount === 0}>
-						<Icon path={mdiCardsOutline} size={1} />
-						<span>Pending extracts ({pendingExtractsCount})</span>
+						className={`primary ${styles.rowButton} ${styles.readButton}`}
+						onClick={() => setShowReadDialog(true)}>
+						<Icon path={mdiBookOpenVariantOutline} size={1} />
+						<span className={styles.buttonContent}>
+							<span>Read now</span>
+							{schedule && (
+								<span className={styles.buttonStatus}>
+									{schedule.completed
+										? "Already completed"
+										: `Due ${formatDueDate(schedule.nextReadingDate)}`}
+								</span>
+							)}
+						</span>
 					</button>
-				)}
+					{pendingExtractsCount !== null && (
+						<button
+							className={`transparent ${styles.rowButton}`}
+							disabled={pendingExtractsCount === 0}
+							title="Go through pending extracts">
+							<Icon path={mdiCardsOutline} size={1} />
+							<span>Extracts ({pendingExtractsCount})</span>
+						</button>
+					)}
+				</div>
 			</div>
 
 			{showReadDialog && (
