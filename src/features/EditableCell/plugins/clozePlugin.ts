@@ -1,6 +1,7 @@
 import {
 	$getSelection,
 	$isRangeSelection,
+	$nodesOfType,
 	COMMAND_PRIORITY_EDITOR,
 	COMMAND_PRIORITY_NORMAL,
 	createCommand,
@@ -128,9 +129,14 @@ export function ClozePlugin() {
 	return null;
 }
 
+function $getHighestClozeIndex(): number {
+	const nodes = $nodesOfType(ClozeNode);
+	return nodes.reduce((max, n) => Math.max(max, n.index), 1);
+}
+
 function $wrapSelectionInCloze(selection: RangeSelection): ClozeNode {
 	return $wrapSelectionInNode(selection, $isClozeNode, existing =>
-		$createClozeNode(existing?.index ?? 1),
+		$createClozeNode(existing?.index ?? $getHighestClozeIndex()),
 	);
 }
 

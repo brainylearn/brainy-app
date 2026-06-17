@@ -648,6 +648,117 @@ describe("Cloze toggle", () => {
 		});
 	});
 
+	it("Should default to index 1 when no cloze nodes exist in the editor", () => {
+		// Arrange
+
+		const content = `<p>hello world</p>`;
+		const editor = createEditor(content);
+
+		// Act
+
+		act(() => {
+			editor.update(
+				() => {
+					$setSelectionHelper({
+						firstTextPosition: [0, 0],
+						firstTextOffset: 0,
+						lastTextPosition: [0, 0],
+						lastTextOffset: 5,
+					});
+					editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined);
+				},
+				{ discrete: true },
+			);
+		});
+
+		// Assert
+
+		editor.read(() => {
+			const para = $getRoot().getFirstChildOrThrow() as ElementNode;
+			const children = para.getChildren();
+
+			expect($isClozeNode(children[0])).toBe(true);
+			expect((children[0] as ClozeNode).index).toBe(1);
+		});
+	});
+
+	it("Should default to the highest existing cloze index when wrapping plain text", () => {
+		// Arrange
+
+		const content = `
+		<p>
+			<cloze class="cloze-node" index="3">foo</cloze>
+			<cloze class="cloze-node" index="1">bar</cloze>
+			plain
+		</p>`;
+		const editor = createEditor(content);
+
+		// Act
+
+		act(() => {
+			editor.update(
+				() => {
+					$setSelectionHelper({
+						firstTextPosition: [0, 2],
+						firstTextOffset: 0,
+						lastTextPosition: [0, 2],
+						lastTextOffset: 5,
+					});
+					editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined);
+				},
+				{ discrete: true },
+			);
+		});
+
+		// Assert
+
+		editor.read(() => {
+			const para = $getRoot().getFirstChildOrThrow() as ElementNode;
+			const children = para.getChildren();
+
+			const newCloze = children.find(
+				(c, i) => $isClozeNode(c) && i === 2,
+			) as ClozeNode;
+			expect($isClozeNode(newCloze)).toBe(true);
+			expect(newCloze.index).toBe(3);
+		});
+	});
+
+	it("Should use the single existing cloze index as default when wrapping new text", () => {
+		// Arrange
+
+		const content = `<p><cloze class="cloze-node" index="2">foo</cloze>bar</p>`;
+		const editor = createEditor(content);
+
+		// Act
+
+		act(() => {
+			editor.update(
+				() => {
+					$setSelectionHelper({
+						firstTextPosition: [0, 1],
+						firstTextOffset: 0,
+						lastTextPosition: [0, 1],
+						lastTextOffset: 3,
+					});
+					editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined);
+				},
+				{ discrete: true },
+			);
+		});
+
+		// Assert
+
+		editor.read(() => {
+			const para = $getRoot().getFirstChildOrThrow() as ElementNode;
+			const children = para.getChildren();
+
+			expect(children).toHaveLength(2);
+			expect($isClozeNode(children[1])).toBe(true);
+			expect((children[1] as ClozeNode).index).toBe(2);
+		});
+	});
+
 	/// This test is similar to last test, only different is that the selection
 	// starts from the paragraph and not inner node which might not work
 	// if not implemented correctly.
