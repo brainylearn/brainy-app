@@ -70,10 +70,9 @@ export default function ReadDialog({
 
 	// TODO:
 	// 1. Add a button to convert the extract directly from editor (with a shortcut)
-	// 2. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
-	// 3. Add sync support
-	// 4. Add scheduling to the home screen (https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553)
-	// 5. Auto remember scroll position by paragraph index
+	// 2. Add sync support
+	// 3. Add scheduling to the home screen (https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553)
+	// 4. Auto remember scroll position by paragraph index
 
 	return (
 		<>
@@ -119,18 +118,6 @@ export default function ReadDialog({
 					/>
 				</div>
 				<div className={styles.footer}>
-					<div className={styles.navButtons}>
-						<button
-							className={`transparent ${styles.navButton}`}
-							title="Previous reading">
-							<Icon path={mdiChevronLeft} size={1} />
-						</button>
-						<button
-							className={`transparent ${styles.navButton}`}
-							title="Next reading">
-							<Icon path={mdiChevronRight} size={1} />
-						</button>
-					</div>
 					<button
 						className={`transparent ${styles.rowButton} ${styles.withBorder}`}
 						onClick={onClose}
