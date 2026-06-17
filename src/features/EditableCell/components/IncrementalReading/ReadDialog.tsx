@@ -69,12 +69,11 @@ export default function ReadDialog({
 	};
 
 	// TODO:
-	// 1. Implement the prioritizations for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
-	// 2. Add a button to convert the extract directly from editor (with a shortcut)
-	// 4. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
-	// 5. Add sync support
-	// 6. Add scheduling to the home screen
-	// 7. Auto remember scroll position by paragraph index
+	// 1. Add a button to convert the extract directly from editor (with a shortcut)
+	// 2. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
+	// 3. Add sync support
+	// 4. Add scheduling to the home screen (https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553)
+	// 5. Auto remember scroll position by paragraph index
 
 	return (
 		<>
