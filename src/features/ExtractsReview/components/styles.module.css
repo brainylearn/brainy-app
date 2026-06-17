@@ -11,6 +11,7 @@
 
 	.rows {
 		overflow: visible;
+		padding-top: 0;
 
 		.row {
 			height: 100%;

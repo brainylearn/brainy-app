@@ -14,7 +14,6 @@ import {
 	mdiCardsOutline,
 	mdiExitToApp,
 	mdiSkipNextCircleOutline,
-	mdiSkipNextOutline,
 } from "@mdi/js";
 import TagRow from "../../../components/Tag/TagRow";
 import Spinner from "../../../components/Spinner/Spinner";

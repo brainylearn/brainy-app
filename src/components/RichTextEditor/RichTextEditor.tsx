@@ -134,6 +134,39 @@ function Editor({
 		editorState: editor => {
 			const parser = new DOMParser();
 			const dom = parser.parseFromString(content, "text/html");
+
+			// If the content has no block-level elements, wrap everything in a
+			// single <p> so Lexical doesn't create a separate paragraph per
+			// inline node (spans, links, etc.).
+			const blockTags = new Set([
+				"P",
+				"DIV",
+				"H1",
+				"H2",
+				"H3",
+				"H4",
+				"H5",
+				"H6",
+				"UL",
+				"OL",
+				"LI",
+				"BLOCKQUOTE",
+				"TABLE",
+				"TR",
+				"TD",
+				"TH",
+				"PRE",
+				"FIGURE",
+			]);
+			const hasBlock = Array.from(dom.body.children).some(el =>
+				blockTags.has(el.tagName),
+			);
+			if (!hasBlock && dom.body.childNodes.length > 0) {
+				const p = dom.createElement("p");
+				while (dom.body.firstChild) p.appendChild(dom.body.firstChild);
+				dom.body.appendChild(p);
+			}
+
 			const nodes = $generateNodesFromDOM(editor, dom);
 
 			const root = $getRoot();
