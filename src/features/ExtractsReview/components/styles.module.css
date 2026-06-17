@@ -30,7 +30,7 @@
 .body {
 	display: flex;
 	flex-direction: column;
-	gap: var(--spacing-5);
+	gap: var(--spacing-4);
 	height: 100%;
 
 	.progress-section {
