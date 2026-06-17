@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Dialog from "../../../components/Dialog/Dialog";
-import Form, { FormHeader, FormRows } from "../../../components/Form/Form";
-import Tag from "../../../components/Tag/Tag";
 import styles from "./styles.module.css";
 import {
 	createClozeFromExtract,
@@ -10,18 +8,15 @@ import {
 } from "../../../api/incrementalReading/api/extractsApi";
 import useApi from "../../../hooks/useApi";
 import { Icon } from "@mdi/react";
-import {
-	mdiCardsOutline,
-	mdiExitToApp,
-	mdiSkipNextCircleOutline,
-} from "@mdi/js";
-import TagRow from "../../../components/Tag/TagRow";
+import { mdiArrowRight, mdiClose } from "@mdi/js";
 import Spinner from "../../../components/Spinner/Spinner";
 import { PendingExtractDto } from "../../../api/incrementalReading/dto/pendingExtractDto";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
+import ProgressBar from "../../../components/ProgressBar/ProgressBar";
 import { ClozeFloatingMenuButtons } from "../../EditableCell/plugins/clozeFloatingMenuButtons";
 import { ClozeNode } from "../../EditableCell/plugins/clozeNode";
 import { ClozePlugin } from "../../EditableCell/plugins/clozePlugin";
+import getCellIcon from "../../../utils/getCellIcon";
 
 export interface CellToReview {
 	id: string;
@@ -99,6 +94,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 
 	const currentCell = cells[cellIndex];
 	const currentExtract = extracts[extractIndex];
+	const progressPct = ((extractIndex + 1) / extracts.length) * 100;
 
 	return (
 		<Dialog
@@ -106,82 +102,84 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 			onHide={onClose}
 			className={styles.dialog}
 			fullScreenOnSmallDevices>
-			<Form
+			<form
 				onSubmit={e => {
 					e.preventDefault();
 					void handleAdd();
 				}}
 				className={styles.form}>
-				<FormHeader icon={mdiCardsOutline} title={currentCell.title} />
-
-				<TagRow>
-					{extracts.length > 0 && (
-						<Tag
-							text={`Highlight ${extractIndex + 1} / ${extracts.length}`}
-							type="primary"
-						/>
-					)}
-					{cells.length > 1 && (
-						<Tag
-							text={`Article ${cellIndex + 1} / ${cells.length}`}
-						/>
-					)}
-				</TagRow>
-
-				<FormRows
-					className={styles.rows}
-					rows={[
-						{
-							className: styles.row,
-							children: isLoading ? (
-								<Spinner text="Loading..." />
-							) : (
-								<RichTextEditor
-									title="Turn highlights into cloze cells"
-									eagerLoadRichTextEditor
-									content={currentExtract.innerHtml}
-									onChange={content => {
-										editorContentRef.current = content;
-									}}
-									extraNodes={[ClozeNode]}
-									additionalFloatingMenuButtons={
-										ClozeFloatingMenuButtons
-									}
-									plugins={[<ClozePlugin key={1} />]}
-									containerClassName={styles.editor}
-								/>
-							),
-						},
-					]}
-				/>
-
-				<div className={styles.buttons}>
+				<div className={styles.header}>
+					<h2 className={styles.title}>Make cloze cards</h2>
 					<button
-						className="transparent"
+						className={`transparent ${styles["close-button"]}`}
 						type="button"
 						onClick={onClose}
-						title="Close without doing any modification">
-						<Icon path={mdiExitToApp} size={1} />
-						Exit
+						aria-label="Close"
+						title="Close">
+						<Icon path={mdiClose} size={1.2} />
 					</button>
+				</div>
+
+				<div className={styles.body}>
+					<div className={styles.progressSection}>
+						<div className={styles.progressInfo}>
+							<span className={styles.progressLabel}>
+								<Icon path={getCellIcon("Cloze")} size={1} />
+								Cloze
+							</span>
+							<span className={styles.progressCount}>
+								Highlight {extractIndex + 1} of{" "}
+								{extracts.length}
+							</span>
+						</div>
+						<ProgressBar value={progressPct} />
+					</div>
+
+					<div className={styles.card}>
+						<div className={styles.cardMeta}>
+							<Icon
+								path={getCellIcon("IncrementalReading")}
+								size={1}
+							/>
+							<span>{currentCell.title}</span>
+						</div>
+						{isLoading ? (
+							<Spinner text="Loading..." />
+						) : (
+							<RichTextEditor
+								eagerLoadRichTextEditor
+								content={currentExtract.innerHtml}
+								onChange={content => {
+									editorContentRef.current = content;
+								}}
+								extraNodes={[ClozeNode]}
+								additionalFloatingMenuButtons={
+									ClozeFloatingMenuButtons
+								}
+								plugins={[<ClozePlugin key={1} />]}
+								containerClassName={styles.editor}
+							/>
+						)}
+					</div>
+				</div>
+
+				<div className={styles.footer}>
 					<button
 						className="transparent"
 						type="button"
 						onClick={() => void handleDismiss()}
-						disabled={isLoading || !currentExtract}
-						title="Skip highlight">
-						<Icon path={mdiSkipNextCircleOutline} size={1} />
+						disabled={isLoading || !currentExtract}>
 						Dismiss
 					</button>
 					<button
 						className="primary"
 						type="submit"
 						disabled={isLoading || !currentExtract}>
-						<Icon path={mdiCardsOutline} size={1} />
-						Save as cloze
+						Save &amp; next
+						<Icon path={mdiArrowRight} size={1} />
 					</button>
 				</div>
-			</Form>
+			</form>
 		</Dialog>
 	);
 }

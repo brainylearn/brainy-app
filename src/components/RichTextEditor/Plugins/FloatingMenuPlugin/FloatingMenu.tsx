@@ -23,6 +23,7 @@ interface Props {
 	onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
+// TODO: use primary button for active buttons?
 function FloatingMenu(
 	{
 		editor,
