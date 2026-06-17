@@ -1,5 +1,4 @@
 import { LexicalEditor, RangeSelection } from "lexical";
-import styles from "../../styles.module.css";
 import { Icon } from "@mdi/react";
 
 export interface FloatingMenuButtonProps {
@@ -34,7 +33,7 @@ export default function FloatingMenuButton({
 						activeState[floatingButtonProps.name],
 					);
 				}}
-				className={`transparent ${activeState[floatingButtonProps.name] && styles.activeButton}`}
+				className={`${activeState[floatingButtonProps.name] ? "primary" : "transparent"}`}
 				title={floatingButtonProps.title}
 				aria-label={floatingButtonProps.title}>
 				<Icon path={floatingButtonProps.icon} size={1} />

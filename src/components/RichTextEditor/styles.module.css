@@ -75,15 +75,9 @@
 	z-index: 3;
 
 	& > button {
-		color: var(--text-primary);
 		display: flex;
 		align-items: center;
 		justify-items: center;
-		background-color: inherit;
-
-		&.active-button {
-			background-color: var(--surface-control);
-		}
 	}
 }
 
