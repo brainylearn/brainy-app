@@ -159,7 +159,7 @@ export default function IncrementalReading({
 						<button
 							className={`transparent ${styles.rowButton}`}
 							onClick={() => setShowExtractsDialog(true)}
-							title="Go through pending extract and convert them into cells"
+							title="Go through pending extracts and convert them into cells"
 							disabled={pendingExtractsCount === 0}>
 							<Icon path={mdiCardsOutline} size={1} />
 							<span>Extracts ({pendingExtractsCount})</span>
