@@ -2,7 +2,9 @@ import {
 	$getSelection,
 	$isRangeSelection,
 	COMMAND_PRIORITY_EDITOR,
+	COMMAND_PRIORITY_NORMAL,
 	createCommand,
+	KEY_DOWN_COMMAND,
 	LexicalCommand,
 	RangeSelection,
 } from "lexical";
@@ -18,6 +20,9 @@ import {
 	$removeSelectionFromNode,
 	$wrapSelectionInNode,
 } from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
+import { isModKey } from "../../../../../../utils/keyboardUtils";
+
+export const HIGHLIGHT_SHORTCUT_KEY = "h";
 
 export const TOGGLE_HIGHLIGHT_NODE: LexicalCommand<void> = createCommand();
 
@@ -52,8 +57,26 @@ export function HighlightPlugin() {
 			COMMAND_PRIORITY_EDITOR,
 		);
 
+		const unregisterKeyDown = editor.registerCommand(
+			KEY_DOWN_COMMAND,
+			event => {
+				if (
+					isModKey(event) &&
+					event.shiftKey &&
+					event.key.toLowerCase() === HIGHLIGHT_SHORTCUT_KEY
+				) {
+					event.preventDefault();
+					editor.dispatchCommand(TOGGLE_HIGHLIGHT_NODE, undefined);
+					return true;
+				}
+				return false;
+			},
+			COMMAND_PRIORITY_NORMAL,
+		);
+
 		return () => {
 			unregisterToggleHighlight();
+			unregisterKeyDown();
 		};
 	}, [editor]);
 

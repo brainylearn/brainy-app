@@ -19,9 +19,11 @@ import {
 	HighlightNode,
 } from "./RichTextEditorPlugins/highlight/highlightNode";
 import {
+	HIGHLIGHT_SHORTCUT_KEY,
 	HighlightPlugin,
 	TOGGLE_HIGHLIGHT_NODE,
 } from "./RichTextEditorPlugins/highlight/highlightPlugin";
+import { getModKeyLabel } from "../../../../utils/keyboardUtils";
 import { useState } from "react";
 import ScheduleLaterDialog from "./ScheduleLaterDialog";
 import { scheduleIncrementalReadingLater } from "../../../../api/incrementalReading/api/incrementalReadingApi";
@@ -69,7 +71,6 @@ export default function ReadDialog({
 	// TODO:
 	// 1. Implement the prioritizations for them as described in https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553
 	// 2. Add a button to convert the extract directly from editor (with a shortcut)
-	// 3. Add shortcut to highlight
 	// 4. Show the current article number under navigation buttons (the buttons should only be visible when going through the queue)
 	// 5. Add sync support
 	// 6. Add scheduling to the home screen
@@ -106,7 +107,7 @@ export default function ReadDialog({
 						additionalFloatingMenuButtons={[
 							{
 								name: "Toggle highlight",
-								title: "Toggle highlight",
+								title: `Toggle highlight (${getModKeyLabel()}+Shift+${HIGHLIGHT_SHORTCUT_KEY.toUpperCase()})`,
 								icon: mdiMarker,
 								onClick: editor =>
 									editor.dispatchCommand(
