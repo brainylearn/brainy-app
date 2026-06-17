@@ -10,7 +10,12 @@ import {
 } from "../../../api/incrementalReading/api/extractsApi";
 import useApi from "../../../hooks/useApi";
 import { Icon } from "@mdi/react";
-import { mdiCardsOutline, mdiExitToApp, mdiSkipNextOutline } from "@mdi/js";
+import {
+	mdiCardsOutline,
+	mdiExitToApp,
+	mdiSkipNextCircleOutline,
+	mdiSkipNextOutline,
+} from "@mdi/js";
 import TagRow from "../../../components/Tag/TagRow";
 import Spinner from "../../../components/Spinner/Spinner";
 import { PendingExtractDto } from "../../../api/incrementalReading/dto/pendingExtractDto";
@@ -166,7 +171,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 						onClick={() => void handleDismiss()}
 						disabled={isLoading || !currentExtract}
 						title="Skip highlight">
-						<Icon path={mdiSkipNextOutline} size={1} />
+						<Icon path={mdiSkipNextCircleOutline} size={1} />
 						Dismiss
 					</button>
 					<button
