@@ -249,7 +249,7 @@ export function $isSelectionInsideNode<T extends LexicalNode>(
 
 	for (const node of selection.getNodes()) {
 		if (!passedStart) {
-			if (node.is(startNode)) {
+			if (node.is(startNode) || node.getParent()?.is(startNode)) {
 				passedStart = true;
 			} else {
 				continue;
@@ -257,7 +257,6 @@ export function $isSelectionInsideNode<T extends LexicalNode>(
 		}
 
 		// No need to stop at paragraphs, their content is still iterated over!
-		// TODO: double clicking paragraphs shows that they are highlighted even when they are not
 		if ($isParagraphNode(node)) {
 			if (node.is(endNode)) break;
 			continue;
