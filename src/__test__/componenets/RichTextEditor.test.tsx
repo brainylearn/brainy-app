@@ -17,7 +17,6 @@ import {
 	ClozePlugin,
 	TOGGLE_CLOZE_NODE,
 } from "../../features/EditableCell/plugins/clozePlugin";
-import { $generateHtmlFromNodes } from "@lexical/html";
 
 vi.mock(import("../../utils/tauriUtils.ts"), () => ({
 	isAndroid: vi.fn(() => true),
@@ -808,7 +807,6 @@ describe("Cloze toggle", () => {
 		editor.read(() => {
 			const rootChildren = $getRoot().getChildren();
 			expect(rootChildren).toHaveLength(2);
-			console.log($generateHtmlFromNodes(editor));
 
 			const firstPara = rootChildren[0] as ElementNode;
 			const firstParaChildren = firstPara.getChildren();
