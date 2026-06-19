@@ -34,7 +34,7 @@ body {
 	--outline-offset: 1px;
 	--default-outline: var(--outline-width) solid transparent;
 
-	--border-radius: 10px;
+	--border-radius: 7px;
 	--border-width: 1px;
 
 	--transition-time: 0.2s;
