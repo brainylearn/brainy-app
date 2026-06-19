@@ -52,7 +52,7 @@
 
 .buttons {
 	margin-top: auto;
-	padding-top: var(--spacing-5);
+	padding-top: var(--spacing-4);
 	display: flex;
 	gap: var(--spacing-4);
 	justify-content: flex-end;
