@@ -72,6 +72,7 @@
 	border: var(--border-width) solid var(--border-default);
 	overflow: hidden;
 	background-color: var(--surface-card);
+	overflow-y: auto;
 
 	.card-type-label {
 		display: flex;
@@ -90,7 +91,6 @@
 		--content-pad: var(--content-vertical-pad) var(--content-horizontal-pad);
 
 		flex: 1;
-		overflow: auto;
 		padding: 0;
 		word-wrap: break-word;
 		word-break: break-word;

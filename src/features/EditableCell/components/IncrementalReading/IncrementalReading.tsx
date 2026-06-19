@@ -75,6 +75,7 @@ export default function IncrementalReading({
 	) => {
 		setIncrementalReading(current => {
 			const updated = { ...current, ...updater(current) };
+			// TODO: maybe just call on close?
 			onChange(JSON.stringify(updated));
 			return updated;
 		});

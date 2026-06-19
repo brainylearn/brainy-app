@@ -1,7 +1,7 @@
 .vertical-form {
 	display: flex;
 	flex-direction: column;
-	gap: var(--spacing-3);
+	gap: var(--spacing-2);
 
 	& * {
 		font-size: 1.4rem;

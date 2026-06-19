@@ -11,4 +11,5 @@ export default interface IncrementalReading {
 	source: IncrementalReadingSource;
 	priority: IncrementalReadingPriority;
 	completed: boolean;
+	scrollPosition?: number | null;
 }

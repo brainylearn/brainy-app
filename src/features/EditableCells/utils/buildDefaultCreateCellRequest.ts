@@ -40,6 +40,7 @@ function buildDefaultCreateCellRequest(
 				},
 				title: null,
 				completed: false,
+				scrollPosition: null,
 			} as IncrementalReading);
 			break;
 		case "Note":

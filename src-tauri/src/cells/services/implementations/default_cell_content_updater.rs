@@ -183,6 +183,7 @@ mod tests {
             },
             priority: IncrementalReadingPriority::Normal,
             completed: false,
+            scroll_position: None,
         })
         .unwrap()
     }

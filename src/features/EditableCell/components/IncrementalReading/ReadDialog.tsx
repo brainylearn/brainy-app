@@ -8,8 +8,6 @@ import { Icon } from "@mdi/react";
 import styles from "./styles.module.css";
 import {
 	mdiCheckCircleOutline,
-	mdiChevronLeft,
-	mdiChevronRight,
 	mdiExitToApp,
 	mdiMarker,
 	mdiTimerPauseOutline,
@@ -27,6 +25,7 @@ import { getModKeyLabel } from "../../../../utils/keyboardUtils";
 import { useState } from "react";
 import ScheduleLaterDialog from "./ScheduleLaterDialog";
 import { scheduleIncrementalReadingLater } from "../../../../api/incrementalReading/api/incrementalReadingApi";
+import ReadingPositionPlugin from "../../../../components/RichTextEditor/Plugins/ReadingPositionPlugin";
 
 const priorityOptions: Option[] = [
 	{ label: "High", value: "high" },
@@ -72,7 +71,7 @@ export default function ReadDialog({
 	// 1. Add scheduling to the home screen (https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553) for design (https://claude.ai/design/p/f510ca70-cb53-4229-9123-1809b9c5241a?file=Home+queue.html)
 	// 2. Add a button to convert the extract directly from editor (with a shortcut)
 	// 3. Add sync support
-	// 4. Auto remember scroll position by paragraph index
+	// 4. Add convert extracts with AI
 
 	return (
 		<>
@@ -101,7 +100,20 @@ export default function ReadDialog({
 						eagerLoadRichTextEditor
 						onChange={content => onChange(() => ({ content }))}
 						extraNodes={[HighlightNode]}
-						plugins={[<HighlightPlugin key={1} />]}
+						plugins={[
+							<HighlightPlugin key={1} />,
+							<ReadingPositionPlugin
+								key={2}
+								initialBlockIndex={
+									incrementalReading.scrollPosition ?? 0
+								}
+								onPositionChange={index =>
+									onChange(() => ({
+										scrollPosition: index,
+									}))
+								}
+							/>,
+						]}
 						additionalFloatingMenuButtons={[
 							{
 								name: "Toggle highlight",

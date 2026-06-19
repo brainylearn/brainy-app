@@ -16,7 +16,7 @@
 }
 
 .title {
-	padding-left: var(--spacing-4);
+	padding-left: var(--spacing-2);
 }
 
 .editor {
@@ -60,7 +60,7 @@
 	flex-wrap: wrap;
 	align-items: center;
 	justify-items: center;
-	gap: 2px;
+	gap: var(--spacing-0);
 	width: fit-content;
 	max-width: 100%;
 	z-index: 3;
