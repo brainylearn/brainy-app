@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Icon } from "@mdi/react";
-import { mdiCardsOutline } from "@mdi/js";
+import { mdiCardsOutline, mdiPlayCircleOutline } from "@mdi/js";
 import styles from "./styles.module.css";
 import { CallApiFn } from "../../../hooks/useApi";
 import CellWithPendingExtractsDto from "../../../api/incrementalReading/dto/cellWithPendingExtractsDto";
@@ -9,6 +8,7 @@ import ExtractsReviewDialog, {
 	CellToReview,
 } from "../../ExtractsReview/components/ExtractsReviewDialog";
 import ExtractsQueueRow from "./ExtractsQueueRow";
+import BoxHeader from "./BoxHeader";
 
 interface Props {
 	callApi: CallApiFn;
@@ -42,25 +42,26 @@ export default function ExtractsQueue({
 	return (
 		<>
 			<div className={styles.box}>
-				<div className={styles.headerWithAction}>
-					<p>Pending extracts</p>
-					{cells.length > 0 && (
-						<button
-							className={`transparent ${styles.headerButton}`}
-							onClick={() =>
-								setReviewCells(
-									cells.map(cell => ({
-										id: cell.cellId,
-										title: cell.title,
-									})),
-								)
-							}
-							title="Go through all pending extracts in all files">
-							<Icon path={mdiCardsOutline} size={1} />
-							<span>All extracts</span>
-						</button>
-					)}
-				</div>
+				<BoxHeader
+					icon={mdiCardsOutline}
+					title="Extracts"
+					action={
+						cells.length > 0
+							? {
+									icon: mdiPlayCircleOutline,
+									label: "Convert",
+									title: "Convert all pending extracts in all files into cards",
+									onClick: () =>
+										setReviewCells(
+											cells.map(cell => ({
+												id: cell.cellId,
+												title: cell.title,
+											})),
+										),
+								}
+							: undefined
+					}
+				/>
 
 				<div className={styles.mainContent}>
 					{cells.length === 0 && (

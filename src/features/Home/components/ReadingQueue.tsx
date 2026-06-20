@@ -10,6 +10,8 @@ import {
 import ReadDialog from "../../IncrementalReading/components/ReadDialog";
 import IncrementalReading from "../../../api/cells/valueObjects/incrementalReading";
 import ReadingQueueRow from "./ReadingQueueRow";
+import BoxHeader from "./BoxHeader";
+import getCellIcon from "../../../utils/getCellIcon";
 
 interface Props {
 	callApi: CallApiFn;
@@ -96,9 +98,10 @@ export default function ReadingQueue({
 	return (
 		<>
 			<div className={styles.box}>
-				<div className={styles.header}>
-					<p>Reading queue</p>
-				</div>
+				<BoxHeader
+					icon={getCellIcon("IncrementalReading")}
+					title="Reading queue"
+				/>
 
 				<div className={styles.mainContent}>
 					{readings.length === 0 && (

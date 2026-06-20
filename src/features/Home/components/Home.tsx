@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { mdiFileTreeOutline, mdiFire } from "@mdi/js";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
 import ReviewTree from "./ReviewTree";
 import ReadingQueue from "./ReadingQueue";
 import ExtractsQueue from "./ExtractsQueue";
+import BoxHeader from "./BoxHeader";
 import styles from "./styles.module.css";
 import ReviewHeatmap from "./ReviewHeatmap";
 import HomeStatistics from "../../../api/cells/valueObjects/homeStatistics";
@@ -98,13 +100,10 @@ function Home({ onStudyClick, callApi }: Props) {
 			? homeStatistics.totalTime / homeStatistics.numberOfReviews
 			: 0;
 
-	// TODO: refactor all three headers into one component, add icon for them, and maybe use white color
 	return (
 		<div className={styles.home}>
 			<div className={styles.box}>
-				<div className={styles.header}>
-					<p>Review tree</p>
-				</div>
+				<BoxHeader icon={mdiFileTreeOutline} title="Review tree" />
 
 				<div className={styles.mainContent}>
 					{rootFolder &&
@@ -143,16 +142,22 @@ function Home({ onStudyClick, callApi }: Props) {
 			/>
 
 			{homeStatistics && (
-				<>
-					<p className={styles.reviewsOverview}>
-						Studied {homeStatistics.numberOfReviews} cards in
-						{" " +
-							secondsToLongString(homeStatistics.totalTime)}{" "}
-						today ({secondsPerCard.toFixed(1) + " "}
-						s/card)
-					</p>
-					<ReviewHeatmap homeStatistics={homeStatistics} />
-				</>
+				<div className={styles.box}>
+					<BoxHeader icon={mdiFire} title="Study activity" />
+
+					<div className={styles.mainContent}>
+						<p className={styles.reviewsOverview}>
+							Studied {homeStatistics.numberOfReviews} cards in
+							{" " +
+								secondsToLongString(
+									homeStatistics.totalTime,
+								)}{" "}
+							today ({secondsPerCard.toFixed(1) + " "}
+							s/card)
+						</p>
+						<ReviewHeatmap homeStatistics={homeStatistics} />
+					</div>
+				</div>
 			)}
 		</div>
 	);
