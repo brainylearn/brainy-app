@@ -66,7 +66,7 @@ export default function ExtractsQueue({
 				<div className={styles.mainContent}>
 					{cells.length === 0 && (
 						<div className={styles.row}>
-							<p>No extracts to review right now.</p>
+							<p>No extracts to go through right now.</p>
 						</div>
 					)}
 
