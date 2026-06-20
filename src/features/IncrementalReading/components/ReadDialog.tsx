@@ -67,6 +67,13 @@ export default function ReadDialog({
 		onClose();
 	};
 
+	// TODO:
+	// 1. Add extracting to home screen
+	// 2. Add a button to convert the extract directly from editor (with a shortcut)
+	// 3. Add sync support
+	// 4. Add convert extracts with AI
+	// 5. Selecting multiple elements on a list creates multiple extracts instead of just one!
+
 	return (
 		<>
 			<Dialog

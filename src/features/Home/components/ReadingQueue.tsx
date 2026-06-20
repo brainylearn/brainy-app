@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "./styles.module.css";
 import { CallApiFn } from "../../../hooks/useApi";
 import DueIncrementalReadingDto from "../../../api/incrementalReading/dto/dueIncrementalReadingDto";
@@ -26,6 +26,16 @@ export default function ReadingQueue({ callApi }: Props) {
 		null,
 	);
 
+	// Mirror the active reading in a ref so onChange's updates are visible to
+	// onClose synchronously. Usefull for anything that changes the state then
+	// closes the dialog synchronously.
+	const activeReadingRef = useRef<ActiveReading | null>(null);
+
+	const updateActiveReading = (next: ActiveReading | null) => {
+		activeReadingRef.current = next;
+		setActiveReading(next);
+	};
+
 	const fetchReadings = useCallback(async () => {
 		await callApi(async () =>
 			setReadings((await getDueIncrementalReadings()) ?? []),
@@ -42,31 +52,30 @@ export default function ReadingQueue({ callApi }: Props) {
 			const incrementalReading = JSON.parse(
 				cell.content,
 			) as IncrementalReading;
-			setActiveReading({ cellId, incrementalReading });
+			updateActiveReading({ cellId, incrementalReading });
 		});
 	};
 
 	const handleChange = (
 		updater: (current: IncrementalReading) => Partial<IncrementalReading>,
 	) => {
-		setActiveReading(current => {
-			if (current === null) return current;
-			return {
-				...current,
-				incrementalReading: {
-					...current.incrementalReading,
-					...updater(current.incrementalReading),
-				},
-			};
+		const current = activeReadingRef.current;
+		if (current === null) return;
+
+		updateActiveReading({
+			...current,
+			incrementalReading: {
+				...current.incrementalReading,
+				...updater(current.incrementalReading),
+			},
 		});
 	};
 
 	const handleClose = () => {
-		const current = activeReading;
-		setActiveReading(null);
+		const current = activeReadingRef.current;
+		updateActiveReading(null);
 		if (current === null) return;
 
-		// TODO: not working when clicking done
 		void callApi(async () => {
 			await updateCellsContents([
 				{
