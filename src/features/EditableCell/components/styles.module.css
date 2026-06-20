@@ -53,11 +53,11 @@
 		display: inline-flex;
 		justify-content: center;
 		align-items: center;
-		margin: 0 var(--spacing-1);
+		margin: 0 var(--spacing-2);
 	}
 
 	&:after {
 		content: "";
-		margin: 0 var(--spacing-1);
+		margin: 0 var(--spacing-2);
 	}
 }
