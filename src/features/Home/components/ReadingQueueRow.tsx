@@ -1,3 +1,5 @@
+import { Icon } from "@mdi/react";
+import { mdiFileDocumentOutline } from "@mdi/js";
 import styles from "./styles.module.css";
 import { IncrementalReadingPriority } from "../../../api/cells/valueObjects/incrementalReading";
 import DueIncrementalReadingDto from "../../../api/incrementalReading/dto/dueIncrementalReadingDto";
@@ -33,7 +35,16 @@ export default function ReadingQueueRow({
 			title={reading.title}>
 			<div className={styles.readingInfo}>
 				<p className={styles.readingTitle}>{reading.title}</p>
-				{file && <p className={styles.readingFile}>{file.name}</p>}
+				{file && (
+					<p className={styles.readingFile}>
+						<Icon
+							className={styles.icon}
+							path={mdiFileDocumentOutline}
+							size={1}
+						/>
+						<span>{file.name}</span>
+					</p>
+				)}
 			</div>
 			<Tag text={priority.label} type={priority.type} />
 		</button>

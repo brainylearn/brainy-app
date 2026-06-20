@@ -118,7 +118,7 @@
 	.reading-info {
 		display: flex;
 		flex-direction: column;
-		gap: var(--spacing-1);
+		gap: var(--spacing-3);
 		min-width: 0;
 	}
 
@@ -129,11 +129,21 @@
 	}
 
 	.reading-file {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		display: flex;
+		align-items: center;
+		gap: var(--spacing-1);
 		font-size: 1.2rem;
 		color: var(--text-muted);
+
+		.icon {
+			flex-shrink: 0;
+		}
+
+		& span {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 	}
 }
 
