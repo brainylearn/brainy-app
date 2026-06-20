@@ -35,7 +35,7 @@ export default function ExtractsQueueRow({
 					</p>
 				)}
 			</div>
-			<Tag text={`${cell.pendingCount} pending`} type="primary" />
+			<Tag text={`${cell.pendingCount} pending`} type="blue" />
 		</button>
 	);
 }

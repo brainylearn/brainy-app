@@ -197,6 +197,22 @@
 			background-color: var(--surface-pane);
 			position: relative;
 
+			&.due {
+				background-color: color-mix(
+					in srgb,
+					var(--text-secondary) calc(var(--ratio) * 100%),
+					var(--surface-control)
+				);
+			}
+
+			&.review {
+				background-color: color-mix(
+					in srgb,
+					var(--primary-color) calc(var(--ratio) * 100%),
+					var(--primary-color-fg)
+				);
+			}
+
 			&:hover {
 				border-color: var(--text-primary);
 			}
