@@ -13,6 +13,7 @@ use crate::{
     },
     common::api_error::ApiError,
     incremental_reading::{
+        dto::due_incremental_reading_dto::DueIncrementalReadingDto,
         dto::pending_extract_dto::PendingExtractDto,
         extracts::{
             entities::extract::ExtractStatus, highlight_parser::parse_highlights,
@@ -153,6 +154,19 @@ pub async fn create_cloze_from_extract(
     scope.save_changes().await?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_due_incremental_readings(
+    injector: State<'_, Arc<Injector>>,
+) -> Result<Vec<DueIncrementalReadingDto>, ApiError> {
+    let scope = injector.start_scope();
+    let result = scope
+        .resolve::<dyn IncrementalReadingScheduleRepository>()
+        .await
+        .get_due_ordered_by_priority(Utc::now())
+        .await?;
+    Ok(result)
 }
 
 #[tauri::command]

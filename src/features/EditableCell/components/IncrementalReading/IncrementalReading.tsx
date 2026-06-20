@@ -10,7 +10,7 @@ import {
 	mdiClockOutline,
 	mdiWeb,
 } from "@mdi/js";
-import ReadDialog from "./ReadDialog";
+import ReadDialog from "../../../IncrementalReading/components/ReadDialog";
 import ExtractsReviewDialog from "../../../ExtractsReview/components/ExtractsReviewDialog";
 import {
 	getIncrementalReadingSchedule,

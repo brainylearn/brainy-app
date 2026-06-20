@@ -36,6 +36,20 @@ pub async fn get_file_cells_ordered_by_index(
 }
 
 #[tauri::command]
+pub async fn get_cell_by_id(
+    injector: State<'_, Arc<Injector>>,
+    id: Guid,
+) -> Result<Cell, ApiError> {
+    let scope = injector.start_scope();
+    let result = scope
+        .resolve::<dyn CellRepository>()
+        .await
+        .get_by_id(id)
+        .await?;
+    Ok(result)
+}
+
+#[tauri::command]
 pub async fn create_cell(
     injector: State<'_, Arc<Injector>>,
     request: CreateCellRequestDto,

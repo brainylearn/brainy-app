@@ -3,7 +3,7 @@ import { MarkNode } from "@lexical/mark";
 import {
 	$getNodesOfTypeFromSelection,
 	$isSelectionInsideNode,
-} from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
+} from "../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
 
 const HIGHLIGHT_CSS_CLASS_NAME = "highlight-node";
 const HIGHLIGHT_ID_ATTRIBUTE_NAME = "highlight-id";

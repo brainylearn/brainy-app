@@ -13,6 +13,7 @@ pub struct IncrementalReadingScheduleRow {
     pub cell_id: Guid,
     pub priority: IncrementalReadingPriority,
     pub title: String,
+    // TODO: not needed
     pub is_finished: bool,
     pub next_reading_date: DateTime<Utc>,
     pub completed: bool,

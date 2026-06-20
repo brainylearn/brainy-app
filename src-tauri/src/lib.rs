@@ -145,6 +145,7 @@ pub async fn run() -> Result<(), String> {
             // Cells
             create_cell,
             delete_cell,
+            get_cell_by_id,
             get_cells_for_files_with_fsrs_profile_ids,
             get_file_cells_ordered_by_index,
             move_cell,
@@ -203,6 +204,7 @@ pub async fn run() -> Result<(), String> {
             set_fsrs_profile_choice_for_folder,
             update_profile,
             // Incremental Reading
+            get_due_incremental_readings,
             get_incremental_reading_schedule,
             get_pending_extracts_count,
             get_pending_extracts_with_content,

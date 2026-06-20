@@ -19,8 +19,8 @@ import {
 import {
 	$removeSelectionFromNode,
 	$wrapSelectionInNode,
-} from "../../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
-import { isModKey } from "../../../../../../utils/keyboardUtils";
+} from "../../../../../components/RichTextEditor/Plugins/utils/selectionWrapUtils";
+import { isModKey } from "../../../../../utils/keyboardUtils";
 
 export const HIGHLIGHT_SHORTCUT_KEY = "h";
 

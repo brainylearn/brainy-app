@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
 use crate::{
     Guid,
     common::repository_error::RepositoryError,
+    incremental_reading::dto::due_incremental_reading_dto::DueIncrementalReadingDto,
     incremental_reading::scheduling::{
         entities::incremental_reading_schedule::IncrementalReadingSchedule,
         repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
@@ -87,6 +89,41 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
         Ok(())
     }
 
+    async fn get_due_ordered_by_priority(
+        &self,
+        before: DateTime<Utc>,
+    ) -> Result<Vec<DueIncrementalReadingDto>, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let rows = sqlx::query_as!(
+            DueIncrementalReadingDto,
+            r#"SELECT
+                s.cell_id as "cell_id: _",
+                c.file_id as "file_id: _",
+                s.title,
+                s.priority as "priority: _"
+            FROM incremental_reading_schedules s
+            JOIN cells c ON c.id = s.cell_id
+            WHERE s.next_reading_date < datetime($1)
+                AND s.completed = 0
+                AND s.is_finished = 0
+            ORDER BY
+                CASE s.priority
+                    WHEN '"high"' THEN 0
+                    WHEN '"normal"' THEN 1
+                    WHEN '"low"' THEN 2
+                    ELSE 3
+                END,
+                s.next_reading_date"#,
+            before
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        Ok(rows)
+    }
+
     async fn update(&self, schedule: &IncrementalReadingSchedule) -> Result<(), RepositoryError> {
         let mut tx = self.tx.lock().await;
         let tx = tx.as_mut();
@@ -112,5 +149,193 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
         .await?;
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use chrono::Duration;
+    use injector::{injector::Injector, register_scope};
+
+    use crate::{
+        ROOT_FOLDER_ID,
+        cells::{
+            entities::cell::CellType, repositories::cell_repository::CellRepository,
+            test_utils::create_cell,
+            value_objects::incremental_reading::IncrementalReadingPriority,
+        },
+        file_system::{
+            entities::file::File, repositories::file_repository::FileRepository,
+            value_objects::fsrs_profile_choice::FsrsProfileChoice,
+        },
+        infrastructure::{
+            extensions::unit_of_work::UnitOfWorkExt,
+            repositories::sqlite::{
+                sqlite_cell_repository::SqliteCellRepository,
+                sqlite_file_repository::SqliteFileRepository,
+            },
+        },
+        test_utils::create_test_injector,
+    };
+
+    use super::*;
+
+    async fn initialize_test_injector() -> Injector {
+        let mut injector = create_test_injector().await;
+        register_scope!(
+            injector,
+            dyn IncrementalReadingScheduleRepository,
+            SqliteIncrementalReadingScheduleRepository
+        );
+        register_scope!(injector, dyn CellRepository, SqliteCellRepository);
+        register_scope!(injector, dyn FileRepository, SqliteFileRepository);
+        injector
+    }
+
+    fn schedule(
+        cell_id: Guid,
+        priority: IncrementalReadingPriority,
+        title: &str,
+        next_reading_date: DateTime<Utc>,
+        completed: bool,
+        is_finished: bool,
+    ) -> IncrementalReadingSchedule {
+        IncrementalReadingSchedule::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            cell_id,
+            priority,
+            title.into(),
+            is_finished,
+            next_reading_date,
+            completed,
+            false,
+        )
+    }
+
+    #[tokio::test]
+    pub async fn get_due_ordered_by_priority_mixed_schedules_returns_due_ordered_by_priority() {
+        // Arrange
+
+        let injector = initialize_test_injector().await;
+        let scope = injector.start_scope();
+        let file_repository = scope.resolve::<dyn FileRepository>().await;
+        let cell_repository = scope.resolve::<dyn CellRepository>().await;
+        let schedule_repository = scope
+            .resolve::<dyn IncrementalReadingScheduleRepository>()
+            .await;
+
+        let file = File::new_unchecked(
+            Guid::new_v4(),
+            Utc::now(),
+            Utc::now(),
+            Some(ROOT_FOLDER_ID),
+            "test".try_into().unwrap(),
+            FsrsProfileChoice::Inherit,
+        );
+        file_repository.create(&file).await.unwrap();
+
+        let now = Utc::now();
+        let past = now - Duration::days(1);
+        let future = now + Duration::days(1);
+
+        let ir_content = r#"{"content":null,"title":null,"source":{"type":"url","url":"http://x"},"priority":"normal","completed":false}"#;
+        let ir_cell = |index: u32| {
+            create_cell(
+                None,
+                file.id(),
+                ir_content.into(),
+                CellType::IncrementalReading,
+                index,
+            )
+        };
+
+        // Three due readings with different priorities (created out of order).
+        let due_normal = ir_cell(0);
+        let due_high = ir_cell(1);
+        let due_low = ir_cell(2);
+        // Excluded: scheduled in the future, completed, finished.
+        let future_cell = ir_cell(3);
+        let completed_cell = ir_cell(4);
+        let finished_cell = ir_cell(5);
+
+        for cell in [
+            &due_normal,
+            &due_high,
+            &due_low,
+            &future_cell,
+            &completed_cell,
+            &finished_cell,
+        ] {
+            cell_repository.create(cell).await.unwrap();
+        }
+
+        for s in [
+            schedule(
+                due_normal.id(),
+                IncrementalReadingPriority::Normal,
+                "normal",
+                past,
+                false,
+                false,
+            ),
+            schedule(
+                due_high.id(),
+                IncrementalReadingPriority::High,
+                "high",
+                past,
+                false,
+                false,
+            ),
+            schedule(
+                due_low.id(),
+                IncrementalReadingPriority::Low,
+                "low",
+                past,
+                false,
+                false,
+            ),
+            schedule(
+                future_cell.id(),
+                IncrementalReadingPriority::High,
+                "future",
+                future,
+                false,
+                false,
+            ),
+            schedule(
+                completed_cell.id(),
+                IncrementalReadingPriority::High,
+                "completed",
+                past,
+                true,
+                false,
+            ),
+            schedule(
+                finished_cell.id(),
+                IncrementalReadingPriority::High,
+                "finished",
+                past,
+                false,
+                true,
+            ),
+        ] {
+            schedule_repository.create(&s).await.unwrap();
+        }
+
+        scope.save_changes().await.unwrap();
+
+        // Act
+
+        let actual = schedule_repository
+            .get_due_ordered_by_priority(now)
+            .await
+            .unwrap();
+
+        // Assert
+
+        let titles: Vec<&str> = actual.iter().map(|r| r.title.as_str()).collect();
+        assert_eq!(vec!["high", "normal", "low"], titles);
     }
 }

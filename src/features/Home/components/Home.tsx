@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
 import ReviewTree from "./ReviewTree";
+import ReadingQueue from "./ReadingQueue";
 import styles from "./styles.module.css";
 import ReviewHeatmap from "./ReviewHeatmap";
 import HomeStatistics from "../../../api/cells/valueObjects/homeStatistics";
@@ -118,6 +119,8 @@ function Home({ onStudyClick, callApi }: Props) {
 					)}
 				</div>
 			</div>
+
+			<ReadingQueue callApi={callApi} />
 
 			{homeStatistics && (
 				<>

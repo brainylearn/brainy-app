@@ -1,9 +1,9 @@
 import IncrementalReading, {
 	IncrementalReadingPriority,
-} from "../../../../api/cells/valueObjects/incrementalReading";
-import Dialog from "../../../../components/Dialog/Dialog";
-import RichTextEditor from "../../../../components/RichTextEditor/RichTextEditor";
-import Select, { Option } from "../../../../components/Select/Select";
+} from "../../../api/cells/valueObjects/incrementalReading";
+import Dialog from "../../../components/Dialog/Dialog";
+import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
+import Select, { Option } from "../../../components/Select/Select";
 import { Icon } from "@mdi/react";
 import styles from "./styles.module.css";
 import {
@@ -21,11 +21,11 @@ import {
 	HighlightPlugin,
 	TOGGLE_HIGHLIGHT_NODE,
 } from "./RichTextEditorPlugins/highlight/highlightPlugin";
-import { getModKeyLabel } from "../../../../utils/keyboardUtils";
+import { getModKeyLabel } from "../../../utils/keyboardUtils";
 import { useState } from "react";
 import ScheduleLaterDialog from "./ScheduleLaterDialog";
-import { scheduleIncrementalReadingLater } from "../../../../api/incrementalReading/api/incrementalReadingApi";
-import ReadingPositionPlugin from "../../../../components/RichTextEditor/Plugins/ReadingPositionPlugin";
+import { scheduleIncrementalReadingLater } from "../../../api/incrementalReading/api/incrementalReadingApi";
+import ReadingPositionPlugin from "../../../components/RichTextEditor/Plugins/ReadingPositionPlugin";
 
 const priorityOptions: Option[] = [
 	{ label: "High", value: "high" },
@@ -66,13 +66,6 @@ export default function ReadDialog({
 		onChange(() => ({ completed: false }));
 		onClose();
 	};
-
-	// TODO:
-	// 1. Add scheduling to the home screen (https://claude.ai/chat/81318681-44c1-403b-bf70-10d648415553) for design (https://claude.ai/design/p/f510ca70-cb53-4229-9123-1809b9c5241a?file=Home+queue.html)
-	// 2. Add a button to convert the extract directly from editor (with a shortcut)
-	// 3. Add sync support
-	// 4. Add convert extracts with AI
-	// 5. Selecting multiple elements on a list creates multiple extracts instead of just one!
 
 	return (
 		<>

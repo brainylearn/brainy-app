@@ -1,14 +1,14 @@
 import { useState } from "react";
-import Dialog from "../../../../components/Dialog/Dialog";
+import Dialog from "../../../components/Dialog/Dialog";
 import RadioSelect, {
 	RadioOption,
-} from "../../../../components/RadioSelect/RadioSelect";
+} from "../../../components/RadioSelect/RadioSelect";
 import styles from "./styles.module.css";
 import Form, {
 	FormButtons,
 	FormHeader,
 	FormRows,
-} from "../../../../components/Form/Form";
+} from "../../../components/Form/Form";
 import { mdiTimerPauseOutline } from "@mdi/js";
 
 type Preset = "30min" | "tomorrow" | "3days" | "1week";
