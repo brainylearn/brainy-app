@@ -12,7 +12,6 @@ pub struct IncrementalReadingSchedule {
     pub(in crate::incremental_reading::scheduling) cell_id: Guid,
     pub(in crate::incremental_reading::scheduling) priority: IncrementalReadingPriority,
     pub(in crate::incremental_reading::scheduling) title: String,
-    pub(in crate::incremental_reading::scheduling) is_finished: bool,
     pub(in crate::incremental_reading::scheduling) next_reading_date: DateTime<Utc>,
     pub(in crate::incremental_reading::scheduling) completed: bool,
     /// Whether the cell currently has any highlights (extracts).
@@ -35,7 +34,6 @@ impl IncrementalReadingSchedule {
             cell_id,
             priority,
             title,
-            is_finished: false,
             next_reading_date: Utc::now(),
             completed,
             has_extracts,
@@ -50,7 +48,6 @@ impl IncrementalReadingSchedule {
         cell_id: Guid,
         priority: IncrementalReadingPriority,
         title: String,
-        is_finished: bool,
         next_reading_date: DateTime<Utc>,
         completed: bool,
         has_extracts: bool,
@@ -62,7 +59,6 @@ impl IncrementalReadingSchedule {
             cell_id,
             priority,
             title,
-            is_finished,
             next_reading_date,
             completed,
             has_extracts,
@@ -91,10 +87,6 @@ impl IncrementalReadingSchedule {
 
     pub fn title(&self) -> &str {
         &self.title
-    }
-
-    pub fn is_finished(&self) -> bool {
-        self.is_finished
     }
 
     pub fn completed(&self) -> bool {

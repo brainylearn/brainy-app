@@ -41,7 +41,6 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                 cell_id as "cell_id: _",
                 priority as "priority: _",
                 title,
-                is_finished as "is_finished: _",
                 next_reading_date as "next_reading_date: _",
                 completed as "completed: _",
                 has_extracts as "has_extracts: _"
@@ -67,18 +66,16 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                 cell_id,
                 priority,
                 title,
-                is_finished,
                 next_reading_date,
                 completed,
                 has_extracts)
-            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, $7, datetime($8), $9, $10)"#,
+            VALUES ($1, datetime($2), datetime($3), $4, $5, $6, datetime($7), $8, $9)"#,
             schedule.id(),
             schedule.created_date(),
             schedule.modified_date(),
             schedule.cell_id(),
             schedule.priority(),
             schedule.title(),
-            schedule.is_finished(),
             schedule.next_reading_date(),
             schedule.completed(),
             schedule.has_extracts(),
@@ -107,7 +104,6 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
             JOIN cells c ON c.id = s.cell_id
             WHERE s.next_reading_date < datetime($1)
                 AND s.completed = 0
-                AND s.is_finished = 0
             ORDER BY
                 CASE s.priority
                     WHEN '"high"' THEN 0
@@ -132,14 +128,12 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
             r#"UPDATE incremental_reading_schedules
             SET priority = $1,
                 title = $2,
-                is_finished = $3,
-                next_reading_date = datetime($4),
-                completed = $5,
-                has_extracts = $6
-            WHERE id = $7"#,
+                next_reading_date = datetime($3),
+                completed = $4,
+                has_extracts = $5
+            WHERE id = $6"#,
             schedule.priority(),
             schedule.title(),
-            schedule.is_finished(),
             schedule.next_reading_date(),
             schedule.completed(),
             schedule.has_extracts(),
@@ -198,7 +192,6 @@ pub mod tests {
         title: &str,
         next_reading_date: DateTime<Utc>,
         completed: bool,
-        is_finished: bool,
     ) -> IncrementalReadingSchedule {
         IncrementalReadingSchedule::new_unchecked(
             Guid::new_v4(),
@@ -207,7 +200,6 @@ pub mod tests {
             cell_id,
             priority,
             title.into(),
-            is_finished,
             next_reading_date,
             completed,
             false,
@@ -278,14 +270,12 @@ pub mod tests {
                 "normal",
                 past,
                 false,
-                false,
             ),
             schedule(
                 due_high.id(),
                 IncrementalReadingPriority::High,
                 "high",
                 past,
-                false,
                 false,
             ),
             schedule(
@@ -294,7 +284,6 @@ pub mod tests {
                 "low",
                 past,
                 false,
-                false,
             ),
             schedule(
                 future_cell.id(),
@@ -302,14 +291,12 @@ pub mod tests {
                 "future",
                 future,
                 false,
-                false,
             ),
             schedule(
                 completed_cell.id(),
                 IncrementalReadingPriority::High,
                 "completed",
                 past,
-                true,
                 false,
             ),
             schedule(
@@ -317,7 +304,6 @@ pub mod tests {
                 IncrementalReadingPriority::High,
                 "finished",
                 past,
-                false,
                 true,
             ),
         ] {
