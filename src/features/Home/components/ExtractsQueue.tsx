@@ -12,9 +12,15 @@ import ExtractsQueueRow from "./ExtractsQueueRow";
 
 interface Props {
 	callApi: CallApiFn;
+	reloadToken: number;
+	onReload: () => void;
 }
 
-export default function ExtractsQueue({ callApi }: Props) {
+export default function ExtractsQueue({
+	callApi,
+	reloadToken,
+	onReload,
+}: Props) {
 	const [cells, setCells] = useState<CellWithPendingExtractsDto[]>([]);
 	const [reviewCells, setReviewCells] = useState<CellToReview[] | null>(null);
 
@@ -26,11 +32,11 @@ export default function ExtractsQueue({ callApi }: Props) {
 
 	useEffect(() => {
 		void fetchCells();
-	}, [fetchCells]);
+	}, [fetchCells, reloadToken]);
 
 	const handleClose = () => {
 		setReviewCells(null);
-		void fetchCells();
+		onReload();
 	};
 
 	return (

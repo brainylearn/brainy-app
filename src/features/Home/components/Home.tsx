@@ -28,12 +28,20 @@ function Home({ onStudyClick, callApi }: Props) {
 	const [homeStatistics, setHomeStatistics] = useState<HomeStatistics | null>(
 		null,
 	);
+	// Used as a way to let components refresh each other's status on updates.
+	const [queuesReloadToken, setQueuesReloadToken] = useState(0);
 	const rootFolder = useAppSelector(selectRootFolder);
 	const dispatch = useAppDispatch();
 
 	const fetchHomeStatistics = useCallback(async () => {
 		await callApi(async () => setHomeStatistics(await getHomeStatistics()));
 	}, [callApi]);
+
+	const reloadHome = useCallback(() => {
+		setQueuesReloadToken(token => token + 1);
+		void fetchHomeStatistics();
+		void dispatch(getReviewTreeFolderForRoot());
+	}, [fetchHomeStatistics, dispatch]);
 
 	useEffect(() => {
 		void (async () => await fetchHomeStatistics())();
@@ -90,7 +98,7 @@ function Home({ onStudyClick, callApi }: Props) {
 			? homeStatistics.totalTime / homeStatistics.numberOfReviews
 			: 0;
 
-	// TODO: the queues not updating with each other
+	// TODO: refactor all three headers into one component, add icon for them, and maybe use white color
 	return (
 		<div className={styles.home}>
 			<div className={styles.box}>
@@ -122,9 +130,17 @@ function Home({ onStudyClick, callApi }: Props) {
 				</div>
 			</div>
 
-			<ReadingQueue callApi={callApi} />
+			<ReadingQueue
+				callApi={callApi}
+				reloadToken={queuesReloadToken}
+				onReload={reloadHome}
+			/>
 
-			<ExtractsQueue callApi={callApi} />
+			<ExtractsQueue
+				callApi={callApi}
+				reloadToken={queuesReloadToken}
+				onReload={reloadHome}
+			/>
 
 			{homeStatistics && (
 				<>

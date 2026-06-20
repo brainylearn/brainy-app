@@ -13,6 +13,8 @@ import ReadingQueueRow from "./ReadingQueueRow";
 
 interface Props {
 	callApi: CallApiFn;
+	reloadToken: number;
+	onReload: () => void;
 }
 
 interface ActiveReading {
@@ -20,7 +22,11 @@ interface ActiveReading {
 	incrementalReading: IncrementalReading;
 }
 
-export default function ReadingQueue({ callApi }: Props) {
+export default function ReadingQueue({
+	callApi,
+	reloadToken,
+	onReload,
+}: Props) {
 	const [readings, setReadings] = useState<DueIncrementalReadingDto[]>([]);
 	const [activeReading, setActiveReading] = useState<ActiveReading | null>(
 		null,
@@ -44,7 +50,7 @@ export default function ReadingQueue({ callApi }: Props) {
 
 	useEffect(() => {
 		void fetchReadings();
-	}, [fetchReadings]);
+	}, [fetchReadings, reloadToken]);
 
 	const handleOpen = (cellId: string) => {
 		void callApi(async () => {
@@ -83,7 +89,7 @@ export default function ReadingQueue({ callApi }: Props) {
 					content: JSON.stringify(current.incrementalReading),
 				},
 			]);
-			await fetchReadings();
+			onReload();
 		});
 	};
 
