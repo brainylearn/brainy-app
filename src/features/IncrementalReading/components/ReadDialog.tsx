@@ -68,10 +68,9 @@ export default function ReadDialog({
 	};
 
 	// TODO:
-	// 1. Add a button to convert the extract directly from editor (with a shortcut)
-	// 2. Add sync support
-	// 3. Add convert extracts with AI
-	// 4. Selecting multiple elements on a list creates multiple extracts instead of just one!
+	// 1. Add sync support
+	// 2. Add convert extracts with AI
+	// 3. Selecting multiple elements on a list creates multiple extracts instead of just one!
 
 	return (
 		<>
