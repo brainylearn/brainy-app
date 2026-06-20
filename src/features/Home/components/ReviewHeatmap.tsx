@@ -1,9 +1,11 @@
 import { useMemo } from "react";
+import { Tooltip } from "react-tooltip";
 import ReviewHeatmapColumn from "./ReviewHeatmapColumn";
 import styles from "./styles.module.css";
 import HomeStatistics from "../../../api/cells/valueObjects/homeStatistics";
 import useAppSelector from "../../../hooks/useAppSelector";
 import { selectSettings } from "../../../stores/settings/settingsSelector";
+import { heatmapTooltipId } from "../config/constants";
 
 interface Props {
 	homeStatistics: HomeStatistics;
@@ -40,6 +42,7 @@ function ReviewHeatmap({ homeStatistics }: Props) {
 						isDarkTheme={settings.theme === "Dark"}
 					/>
 				))}
+			<Tooltip id={heatmapTooltipId} className={styles.tooltip} />
 		</div>
 	);
 }

@@ -1,9 +1,8 @@
 import styles from "./styles.module.css";
-import { Tooltip } from "react-tooltip";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import HomeStatistics from "../../../api/cells/valueObjects/homeStatistics";
 import { colors } from "../config/colors";
-import { reviewsDivisor } from "../config/constants";
+import { heatmapTooltipId, reviewsDivisor } from "../config/constants";
 import { formatDateHeatmapTooltip } from "../utils/formatDateHeatmapTooltip";
 import { getColorAtRatio } from "../utils/getColorAtRatio";
 
@@ -78,20 +77,15 @@ function ReviewHeatmapColumn({
 	return (
 		<div className={styles.reviewHeatmapColumn}>
 			{dates.map((obj, i) => (
-				<React.Fragment key={i}>
-					<span
-						style={{
-							backgroundColor: obj.color ?? undefined,
-						}}
-						className={`${styles.heatmapBox}
+				<span
+					key={i}
+					style={{
+						backgroundColor: obj.color ?? undefined,
+					}}
+					className={`${styles.heatmapBox}
                 ${obj.date.getFullYear() !== currentYear || obj.date.getFullYear() > currentYear ? styles.hidden : ""}`}
-						data-tooltip-id={obj.formattedDate}
-						data-tooltip-content={obj.text}></span>
-					<Tooltip
-						id={obj.formattedDate}
-						className={styles.tooltip}
-					/>
-				</React.Fragment>
+					data-tooltip-id={heatmapTooltipId}
+					data-tooltip-content={obj.text}></span>
 			))}
 		</div>
 	);

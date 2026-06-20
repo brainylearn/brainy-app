@@ -158,17 +158,17 @@
 	gap: 2px;
 	margin: 0 auto;
 
+	& .tooltip {
+		z-index: 2;
+		font-size: 1.4rem;
+	}
+
 	& .review-heatmap-column {
 		display: flex;
 		flex-direction: column;
 		width: fit-content;
 		gap: 2px;
 		margin: 4px 0;
-
-		& .tooltip {
-			z-index: 2;
-			font-size: 1.4rem;
-		}
 
 		.heatmap-box {
 			padding: 4px;
