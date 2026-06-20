@@ -3,7 +3,10 @@ use async_trait::async_trait;
 use crate::{
     Guid,
     common::repository_error::RepositoryError,
-    incremental_reading::extracts::entities::extract::{Extract, ExtractStatus},
+    incremental_reading::{
+        dto::cell_with_pending_extracts_dto::CellWithPendingExtractsDto,
+        extracts::entities::extract::{Extract, ExtractStatus},
+    },
 };
 
 #[async_trait]
@@ -15,6 +18,11 @@ pub trait ExtractRepository: Send + Sync {
         cell_id: Guid,
         status: &ExtractStatus,
     ) -> Result<u32, RepositoryError>;
+    /// Returns the incremental reading cells that have at least one pending extract,
+    /// along with their file id, title and pending extract count.
+    async fn get_cells_with_pending_extracts(
+        &self,
+    ) -> Result<Vec<CellWithPendingExtractsDto>, RepositoryError>;
     async fn create(&self, extract: &Extract) -> Result<(), RepositoryError>;
     async fn update(&self, extract: &Extract) -> Result<(), RepositoryError>;
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;

@@ -28,6 +28,27 @@
 	padding: var(--spacing-4) var(--spacing-5);
 }
 
+.header-with-action {
+	border-bottom: var(--border-width) solid var(--border-default);
+	font-weight: 400;
+	min-width: fit-content;
+	background-color: var(--surface-pane);
+	padding: var(--spacing-4) var(--spacing-5);
+
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--spacing-3);
+}
+
+.header-button {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-1);
+	flex-shrink: 0;
+	color: var(--primary-color);
+}
+
 .main-content {
 	padding: var(--spacing-4);
 }

@@ -1,11 +1,18 @@
 import { invoke } from "@tauri-apps/api/core";
 import IncrementalReadingSchedule from "../entities/incrementalReadingSchedule";
 import DueIncrementalReadingDto from "../dto/dueIncrementalReadingDto";
+import CellWithPendingExtractsDto from "../dto/cellWithPendingExtractsDto";
 
 export function getDueIncrementalReadings(): Promise<
 	DueIncrementalReadingDto[]
 > {
 	return invoke("get_due_incremental_readings");
+}
+
+export function getCellsWithPendingExtracts(): Promise<
+	CellWithPendingExtractsDto[]
+> {
+	return invoke("get_cells_with_pending_extracts");
 }
 
 export function getIncrementalReadingSchedule(

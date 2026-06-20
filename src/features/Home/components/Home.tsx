@@ -3,6 +3,7 @@ import useAppSelector from "../../../hooks/useAppSelector";
 import { selectRootFolder } from "../../../stores/fileSystem/fileSystemSelectors";
 import ReviewTree from "./ReviewTree";
 import ReadingQueue from "./ReadingQueue";
+import ExtractsQueue from "./ExtractsQueue";
 import styles from "./styles.module.css";
 import ReviewHeatmap from "./ReviewHeatmap";
 import HomeStatistics from "../../../api/cells/valueObjects/homeStatistics";
@@ -89,6 +90,7 @@ function Home({ onStudyClick, callApi }: Props) {
 			? homeStatistics.totalTime / homeStatistics.numberOfReviews
 			: 0;
 
+	// TODO: the queues not updating with each other
 	return (
 		<div className={styles.home}>
 			<div className={styles.box}>
@@ -121,6 +123,8 @@ function Home({ onStudyClick, callApi }: Props) {
 			</div>
 
 			<ReadingQueue callApi={callApi} />
+
+			<ExtractsQueue callApi={callApi} />
 
 			{homeStatistics && (
 				<>

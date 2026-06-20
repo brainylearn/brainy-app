@@ -205,6 +205,7 @@ pub async fn run() -> Result<(), String> {
             update_profile,
             // Incremental Reading
             get_due_incremental_readings,
+            get_cells_with_pending_extracts,
             get_incremental_reading_schedule,
             get_pending_extracts_count,
             get_pending_extracts_with_content,

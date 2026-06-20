@@ -13,6 +13,7 @@ use crate::{
     },
     common::api_error::ApiError,
     incremental_reading::{
+        dto::cell_with_pending_extracts_dto::CellWithPendingExtractsDto,
         dto::due_incremental_reading_dto::DueIncrementalReadingDto,
         dto::pending_extract_dto::PendingExtractDto,
         extracts::{
@@ -37,6 +38,19 @@ pub async fn get_incremental_reading_schedule(
         .resolve::<dyn IncrementalReadingScheduleRepository>()
         .await
         .get_by_cell_id(cell_id)
+        .await?;
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_cells_with_pending_extracts(
+    injector: State<'_, Arc<Injector>>,
+) -> Result<Vec<CellWithPendingExtractsDto>, ApiError> {
+    let scope = injector.start_scope();
+    let result = scope
+        .resolve::<dyn ExtractRepository>()
+        .await
+        .get_cells_with_pending_extracts()
         .await?;
     Ok(result)
 }

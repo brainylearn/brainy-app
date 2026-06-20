@@ -116,7 +116,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 						onClick={onClose}
 						aria-label="Close"
 						title="Close">
-						<Icon path={mdiClose} size={1.2} />
+						<Icon path={mdiClose} size={1} />
 					</button>
 				</div>
 
@@ -137,11 +137,17 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 
 					<div className={styles.card}>
 						<div className={styles.cardMeta}>
-							<Icon
-								path={getCellIcon("IncrementalReading")}
-								size={1}
-							/>
-							<span>{currentCell.title}</span>
+							<p className={styles.title}>
+								<Icon
+									path={getCellIcon("IncrementalReading")}
+									size={1}
+									className={styles.icon}
+								/>
+								<span>{currentCell.title}</span>
+							</p>
+							<span className={styles.cardMetaCount}>
+								Cell {cellIndex + 1} of {cells.length}
+							</span>
 						</div>
 						{isLoading ? (
 							<Spinner text="Loading..." />

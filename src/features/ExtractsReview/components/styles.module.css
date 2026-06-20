@@ -70,11 +70,36 @@
 			font-size: 1.4rem;
 			color: var(--text-muted);
 			display: flex;
-			gap: var(--spacing-2);
+			gap: var(--spacing-4);
 			align-items: center;
+			justify-content: space-between;
 
 			-webkit-user-select: none;
 			user-select: none;
+
+			.title {
+				display: flex;
+				gap: var(--spacing-1);
+				align-items: center;
+				margin-left: var(--spacing-2);
+				min-width: 0;
+
+				.icon {
+					flex-shrink: 0;
+				}
+
+				span {
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+					min-width: 0;
+				}
+			}
+
+			.card-meta-count {
+				flex-shrink: 0;
+				color: var(--text-secondary);
+			}
 		}
 
 		.editor {
