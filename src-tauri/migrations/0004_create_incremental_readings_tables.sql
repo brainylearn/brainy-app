@@ -32,11 +32,11 @@ END;
 -------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS extracts (
-    id                          TEXT        NOT NULL        PRIMARY KEY,
-    created_date                TEXT        NOT NULL        DEFAULT(datetime('now')),
-    modified_date               TEXT        NOT NULL        DEFAULT(datetime('now')),
-    cell_id                     TEXT        NOT NULL        REFERENCES cells(id) ON DELETE CASCADE,
-    status                      TEXT        NOT NULL        DEFAULT '"Pending"'
+    id                        TEXT        NOT NULL        PRIMARY KEY,
+    created_date              TEXT        NOT NULL        DEFAULT(datetime('now')),
+    modified_date             TEXT        NOT NULL        DEFAULT(datetime('now')),
+    cell_id                   TEXT        NOT NULL        REFERENCES cells(id) ON DELETE CASCADE,
+    status                    TEXT        NOT NULL        DEFAULT '"Pending"'
 );
 
 CREATE INDEX IF NOT EXISTS extracts_cell_id_index ON extracts(cell_id);
