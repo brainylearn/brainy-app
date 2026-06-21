@@ -86,7 +86,7 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
         Ok(())
     }
 
-    async fn get_due_ordered_by_priority(
+    async fn get_due_ordered_by_priority_then_extracts(
         &self,
         before: DateTime<Utc>,
     ) -> Result<Vec<DueIncrementalReadingDto>, RepositoryError> {
@@ -99,7 +99,8 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                 s.cell_id as "cell_id: _",
                 c.file_id as "file_id: _",
                 s.title,
-                s.priority as "priority: _"
+                s.priority as "priority: _",
+                s.has_extracts as "has_extracts: _"
             FROM incremental_reading_schedules s
             JOIN cells c ON c.id = s.cell_id
             WHERE s.next_reading_date < datetime($1)
@@ -111,6 +112,7 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
                     WHEN '"low"' THEN 2
                     ELSE 3
                 END,
+                s.has_extracts DESC,
                 s.next_reading_date"#,
             before
         )
@@ -280,6 +282,7 @@ pub mod tests {
         title: &str,
         next_reading_date: DateTime<Utc>,
         completed: bool,
+        has_extracts: bool,
     ) -> IncrementalReadingSchedule {
         IncrementalReadingSchedule::new_unchecked(
             Guid::new_v4(),
@@ -290,12 +293,13 @@ pub mod tests {
             title.into(),
             next_reading_date,
             completed,
-            false,
+            has_extracts,
         )
     }
 
     #[tokio::test]
-    pub async fn get_due_ordered_by_priority_mixed_schedules_returns_due_ordered_by_priority() {
+    pub async fn get_due_ordered_by_priority_then_extracts_mixed_schedules_returns_due_ordered_by_priority_then_extracts()
+     {
         // Arrange
 
         let injector = initialize_test_injector().await;
@@ -331,17 +335,20 @@ pub mod tests {
             )
         };
 
-        // Three due readings with different priorities (created out of order).
+        // Due readings with different priorities (created out of order), plus a
+        // normal-priority reading with extracts that should outrank the plain one.
         let due_normal = ir_cell(0);
-        let due_high = ir_cell(1);
-        let due_low = ir_cell(2);
+        let due_normal_with_extracts = ir_cell(1);
+        let due_high = ir_cell(2);
+        let due_low = ir_cell(3);
         // Excluded: scheduled in the future, completed, finished.
-        let future_cell = ir_cell(3);
-        let completed_cell = ir_cell(4);
-        let finished_cell = ir_cell(5);
+        let future_cell = ir_cell(4);
+        let completed_cell = ir_cell(5);
+        let finished_cell = ir_cell(6);
 
         for cell in [
             &due_normal,
+            &due_normal_with_extracts,
             &due_high,
             &due_low,
             &future_cell,
@@ -358,12 +365,22 @@ pub mod tests {
                 "normal",
                 past,
                 false,
+                false,
+            ),
+            schedule(
+                due_normal_with_extracts.id(),
+                IncrementalReadingPriority::Normal,
+                "normal-with-extracts",
+                past,
+                false,
+                true,
             ),
             schedule(
                 due_high.id(),
                 IncrementalReadingPriority::High,
                 "high",
                 past,
+                false,
                 false,
             ),
             schedule(
@@ -372,12 +389,14 @@ pub mod tests {
                 "low",
                 past,
                 false,
+                false,
             ),
             schedule(
                 future_cell.id(),
                 IncrementalReadingPriority::High,
                 "future",
                 future,
+                false,
                 false,
             ),
             schedule(
@@ -386,6 +405,7 @@ pub mod tests {
                 "completed",
                 past,
                 true,
+                false,
             ),
             schedule(
                 finished_cell.id(),
@@ -393,6 +413,7 @@ pub mod tests {
                 "finished",
                 past,
                 true,
+                false,
             ),
         ] {
             schedule_repository.create(&s).await.unwrap();
@@ -403,13 +424,16 @@ pub mod tests {
         // Act
 
         let actual = schedule_repository
-            .get_due_ordered_by_priority(now)
+            .get_due_ordered_by_priority_then_extracts(now)
             .await
             .unwrap();
 
         // Assert
 
         let titles: Vec<&str> = actual.iter().map(|r| r.title.as_str()).collect();
-        assert_eq!(vec!["high", "normal", "low"], titles);
+        assert_eq!(
+            vec!["high", "normal-with-extracts", "normal", "low"],
+            titles
+        );
     }
 }

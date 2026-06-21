@@ -5,4 +5,5 @@ export default interface DueIncrementalReadingDto {
 	fileId: string;
 	title: string;
 	priority: IncrementalReadingPriority;
+	hasExtracts: boolean;
 }

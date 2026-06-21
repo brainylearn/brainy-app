@@ -25,8 +25,9 @@ pub trait IncrementalReadingScheduleRepository: Send + Sync {
         modified_date: DateTime<Utc>,
     ) -> Result<u64, RepositoryError>;
     /// Returns the incremental readings whose `next_reading_date` is before `before`
-    /// and that are not yet completed/finished, ordered by priority (High → Low).
-    async fn get_due_ordered_by_priority(
+    /// and that are not yet completed/finished, ordered by priority (High → Low), then
+    /// by whether they have extracts (with extracts first) within the same priority.
+    async fn get_due_ordered_by_priority_then_extracts(
         &self,
         before: DateTime<Utc>,
     ) -> Result<Vec<DueIncrementalReadingDto>, RepositoryError>;

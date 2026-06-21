@@ -9,4 +9,5 @@ pub struct DueIncrementalReadingDto {
     pub file_id: Guid,
     pub title: String,
     pub priority: IncrementalReadingPriority,
+    pub has_extracts: bool,
 }

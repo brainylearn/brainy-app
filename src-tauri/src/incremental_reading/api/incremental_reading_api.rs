@@ -178,7 +178,7 @@ pub async fn get_due_incremental_readings(
     let result = scope
         .resolve::<dyn IncrementalReadingScheduleRepository>()
         .await
-        .get_due_ordered_by_priority(Utc::now())
+        .get_due_ordered_by_priority_then_extracts(Utc::now())
         .await?;
     Ok(result)
 }
