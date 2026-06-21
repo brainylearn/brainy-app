@@ -208,7 +208,7 @@ function AiChatWidgetInner() {
 	const handleTextAreaKeyDown = (
 		e: React.KeyboardEvent<HTMLTextAreaElement>,
 	) => {
-		if (e.key === "Enter" || e.key === "Escape") {
+		if ((e.key === "Enter" && !e.shiftKey) || e.key === "Escape") {
 			e.stopPropagation();
 			e.preventDefault();
 		}
