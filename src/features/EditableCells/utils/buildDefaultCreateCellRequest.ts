@@ -16,7 +16,6 @@ function buildDefaultCreateCellRequest(
 		index,
 	};
 
-	// TODO: keep updated and unit testing
 	switch (cellType) {
 		case "FlashCard":
 			request.content = JSON.stringify({
