@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use injector_derive::ScopeInjectable;
 
 use crate::{
@@ -170,6 +171,71 @@ impl ExtractRepository for SqliteExtractRepository {
             .await?;
 
         Ok(())
+    }
+
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Extract>, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let rows = sqlx::query_as!(
+            ExtractRow,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                modified_date as "modified_date: _",
+                cell_id as "cell_id: _",
+                status as "status: _"
+            FROM extracts
+            WHERE modified_date >= datetime($1)"#,
+            modified_date
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        Ok(rows.into_iter().map(Extract::from).collect())
+    }
+
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        extract: &Extract,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = extract.id();
+        let created_date = extract.created_date();
+        let cell_id = extract.cell_id();
+        let status = extract.status();
+
+        let result = sqlx::query!(
+            r#"INSERT INTO extracts(
+                id,
+                cell_id,
+                status,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, datetime($4), datetime($5))
+            ON CONFLICT(id) DO UPDATE SET
+                cell_id = $2,
+                status = $3,
+                modified_date = datetime($4),
+                created_date = datetime($5)
+            WHERE modified_date <= datetime($4)
+            "#,
+            id,
+            cell_id,
+            status,
+            modified_date,
+            created_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        Ok(result?.rows_affected())
     }
 }
 

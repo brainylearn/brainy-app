@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 
 use crate::{
     Guid,
@@ -26,4 +27,13 @@ pub trait ExtractRepository: Send + Sync {
     async fn create(&self, extract: &Extract) -> Result<(), RepositoryError>;
     async fn update(&self, extract: &Extract) -> Result<(), RepositoryError>;
     async fn delete_by_id(&self, id: Guid) -> Result<(), RepositoryError>;
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<Extract>, RepositoryError>;
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        extract: &Extract,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError>;
 }

@@ -15,6 +15,15 @@ pub trait IncrementalReadingScheduleRepository: Send + Sync {
     ) -> Result<Option<IncrementalReadingSchedule>, RepositoryError>;
     async fn create(&self, schedule: &IncrementalReadingSchedule) -> Result<(), RepositoryError>;
     async fn update(&self, schedule: &IncrementalReadingSchedule) -> Result<(), RepositoryError>;
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<IncrementalReadingSchedule>, RepositoryError>;
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        schedule: &IncrementalReadingSchedule,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError>;
     /// Returns the incremental readings whose `next_reading_date` is before `before`
     /// and that are not yet completed/finished, ordered by priority (High → Low).
     async fn get_due_ordered_by_priority(

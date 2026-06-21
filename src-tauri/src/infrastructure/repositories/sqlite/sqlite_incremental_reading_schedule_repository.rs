@@ -144,6 +144,94 @@ impl IncrementalReadingScheduleRepository for SqliteIncrementalReadingScheduleRe
 
         Ok(())
     }
+
+    async fn get_all_modified_on_or_after(
+        &self,
+        modified_date: DateTime<Utc>,
+    ) -> Result<Vec<IncrementalReadingSchedule>, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let rows = sqlx::query_as!(
+            IncrementalReadingScheduleRow,
+            r#"SELECT
+                id as "id: _",
+                created_date as "created_date: _",
+                modified_date as "modified_date: _",
+                cell_id as "cell_id: _",
+                priority as "priority: _",
+                title,
+                next_reading_date as "next_reading_date: _",
+                completed as "completed: _",
+                has_extracts as "has_extracts: _"
+            FROM incremental_reading_schedules
+            WHERE modified_date >= datetime($1)"#,
+            modified_date
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(IncrementalReadingSchedule::from)
+            .collect())
+    }
+
+    async fn upsert_with_modified_date_if_modified_before(
+        &self,
+        schedule: &IncrementalReadingSchedule,
+        modified_date: DateTime<Utc>,
+    ) -> Result<u64, RepositoryError> {
+        let mut tx = self.tx.lock().await;
+        let tx = tx.as_mut();
+
+        let id = schedule.id();
+        let created_date = schedule.created_date();
+        let cell_id = schedule.cell_id();
+        let priority = schedule.priority();
+        let title = schedule.title();
+        let next_reading_date = schedule.next_reading_date();
+        let completed = schedule.completed();
+        let has_extracts = schedule.has_extracts();
+
+        let result = sqlx::query!(
+            r#"INSERT INTO incremental_reading_schedules(
+                id,
+                cell_id,
+                priority,
+                title,
+                next_reading_date,
+                completed,
+                has_extracts,
+                modified_date,
+                created_date)
+            VALUES ($1, $2, $3, $4, datetime($5), $6, $7, datetime($8), datetime($9))
+            ON CONFLICT(id) DO UPDATE SET
+                cell_id = $2,
+                priority = $3,
+                title = $4,
+                next_reading_date = datetime($5),
+                completed = $6,
+                has_extracts = $7,
+                modified_date = datetime($8),
+                created_date = datetime($9)
+            WHERE modified_date <= datetime($8)
+            "#,
+            id,
+            cell_id,
+            priority,
+            title,
+            next_reading_date,
+            completed,
+            has_extracts,
+            modified_date,
+            created_date
+        )
+        .execute(&mut *tx)
+        .await;
+
+        Ok(result?.rows_affected())
+    }
 }
 
 #[cfg(test)]
@@ -297,7 +385,7 @@ pub mod tests {
                 IncrementalReadingPriority::High,
                 "completed",
                 past,
-                false,
+                true,
             ),
             schedule(
                 finished_cell.id(),

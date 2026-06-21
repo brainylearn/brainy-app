@@ -29,7 +29,9 @@ use crate::fsrs::entities::fsrs_profile::FsrsProfile;
 use crate::fsrs::repositories::fsrs_repository::FsrsRepository;
 use crate::generated_code;
 use crate::incremental_reading::{
+    extracts::entities::extract::Extract,
     extracts::repositories::extract_repository::ExtractRepository,
+    scheduling::entities::incremental_reading_schedule::IncrementalReadingSchedule,
     scheduling::repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
 };
 use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
@@ -126,8 +128,10 @@ use crate::{
             implementations::{
                 cell_strategy::DefaultCellStrategy,
                 deleted_entity_strategy::DefaultDeletedEntityStrategy,
-                file_strategy::DefaultFileStrategy, folder_strategy::DefaultFolderStrategy,
+                extract_strategy::DefaultExtractStrategy, file_strategy::DefaultFileStrategy,
+                folder_strategy::DefaultFolderStrategy,
                 fsrs_profile_strategy::DefaultFsrsProfileStrategy,
+                incremental_reading_schedule_strategy::DefaultIncrementalReadingScheduleStrategy,
                 repetition_strategy::DefaultRepetitionStrategy,
                 review_strategy::DefaultReviewStrategy,
             },
@@ -298,6 +302,19 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
         injector,
         dyn SyncEntityStrategy<Input = generated_code::DeletedEntity, Entity = DeletedEntity>,
         DefaultDeletedEntityStrategy
+    );
+    register_scope!(
+        injector,
+        dyn SyncEntityStrategy<
+                Input = generated_code::IncrementalReadingSchedule,
+                Entity = IncrementalReadingSchedule,
+            >,
+        DefaultIncrementalReadingScheduleStrategy
+    );
+    register_scope!(
+        injector,
+        dyn SyncEntityStrategy<Input = generated_code::Extract, Entity = Extract>,
+        DefaultExtractStrategy
     );
     register_scope!(injector, dyn Syncer, DefaultSyncer);
 
