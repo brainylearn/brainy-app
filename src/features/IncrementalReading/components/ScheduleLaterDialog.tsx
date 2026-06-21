@@ -51,7 +51,6 @@ interface Props {
 	onSchedule: (date: Date) => void;
 }
 
-// TODO: unit test
 export default function ScheduleLaterDialog({ onHide, onSchedule }: Props) {
 	const [selectedPreset, setSelectedPreset] = useState<Preset>("tomorrow");
 
