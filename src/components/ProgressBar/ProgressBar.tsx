@@ -6,9 +6,9 @@ interface Props {
 
 export default function ProgressBar({ value }: Props) {
 	return (
-		<div className={styles["progress-track"]}>
+		<div className={styles.progressTrack}>
 			<div
-				className={styles["progress-fill"]}
+				className={styles.progressFill}
 				style={{ width: `${value}%` }}
 			/>
 		</div>
