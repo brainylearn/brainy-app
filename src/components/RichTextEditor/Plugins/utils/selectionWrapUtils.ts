@@ -3,6 +3,7 @@ import {
 	$isElementNode,
 	$isParagraphNode,
 	$isTextNode,
+	ElementNode,
 	LexicalNode,
 	PointType,
 	RangeSelection,
@@ -22,53 +23,80 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 	createNode: (existingNode: T | undefined) => T,
 ): T {
 	skipWhitespace(selection);
+
+	// Resolve each extracted leaf to the existing node of type T that already
+	// wraps it (so it can be merged into the new wrapper) or, failing that, to
+	// the leaf itself. `extract()` splits text nodes at the selection
+	// boundaries. Resolved nodes are de-duplicated so the same existing wrapper
+	// is not processed (and removed) twice.
 	const allNodes: LexicalNode[] = [];
-	const existingNodesOfSameType = [];
+	const seenKeys = new Set<string>();
+	let existingNode: T | undefined;
 
 	for (const node of selection.extract()) {
-		let current = node.getParent();
-		let addedNode = false;
+		let wrapper: T | null = null;
+		let current: LexicalNode | null = node;
 
 		while (current !== null) {
 			if (isNode(current)) {
-				addedNode = true;
-				existingNodesOfSameType.push(current);
-				allNodes.push(current);
+				wrapper = current;
 				break;
 			}
 			current = current.getParent();
 		}
 
-		if (!addedNode) allNodes.push(node);
+		const resolved = wrapper ?? node;
+		if (seenKeys.has(resolved.getKey())) continue;
+		seenKeys.add(resolved.getKey());
+
+		if (wrapper !== null && existingNode === undefined)
+			existingNode = wrapper;
+		allNodes.push(resolved);
 	}
 
-	let newNode: T | null =
-		existingNodesOfSameType.length > 0
-			? createNode(existingNodesOfSameType[0])
-			: createNode(undefined);
-	allNodes[0].insertBefore(newNode);
+	// Only adjacent text nodes and inline element/decorator nodes are wrapped.
+	// Block element and decorator nodes (e.g. list items) act as boundaries: we
+	// step out of them, never move them, and start a fresh wrapper afterwards.
+	// Tracking the parent ensures each block gets its own wrapper. Inserting an
+	// inline node directly into a container that only accepts specific children
+	// (such as a list) would otherwise make Lexical's normalization transforms
+	// loop indefinitely.
+	let currentParent: ElementNode | null | undefined;
+	let newNode: T | undefined;
+	let lastNode: T | undefined;
 
-	let lastNode: T = newNode;
+	// The first created node copies its properties (e.g. an index or id) from an
+	// existing node of the same type; any further nodes created during the same
+	// call copy from the first so they share those properties.
+	let template = existingNode;
 
 	for (const node of allNodes) {
-		if (
-			!$isMarkNode(node) &&
-			!$isTextNode(node) &&
-			($isElementNode(node) || $isDecoratorNode(node)) &&
-			!node.isInline()
-		) {
-			// If the element type cannot be wrapped, stopping the last element
-			// before the current element, and recreating new node of the type
-			// we want later.
-			if (newNode !== null) lastNode = newNode;
-			newNode = null;
-
+		if (newNode?.isParentOf(node)) {
+			// Already moved inside the wrapper we just created.
 			continue;
 		}
 
-		if (newNode === null) {
-			newNode = createNode(lastNode);
+		const isWrappable =
+			$isMarkNode(node) ||
+			$isTextNode(node) ||
+			(($isElementNode(node) || $isDecoratorNode(node)) &&
+				node.isInline());
+
+		if (!isWrappable) {
+			newNode = undefined;
+			currentParent = undefined;
+			continue;
+		}
+
+		const parent = node.getParent();
+		if (!parent?.is(currentParent)) newNode = undefined;
+		currentParent = parent;
+
+		if (newNode === undefined) {
+			newNode = createNode(template);
+			template ??= newNode;
 			node.insertBefore(newNode);
+			lastNode = newNode;
 		}
 
 		if (isNode(node)) {
@@ -81,7 +109,7 @@ export function $wrapSelectionInNode<T extends MarkNode>(
 		}
 	}
 
-	return lastNode;
+	return lastNode ?? createNode(existingNode);
 }
 
 /**

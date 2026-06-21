@@ -214,6 +214,52 @@ describe("Cloze toggle", () => {
 		});
 	});
 
+	it("Should wrap each list item in its own cloze when selection spans multiple list items", () => {
+		// Arrange
+
+		const content = `
+            <ul>
+                <li>foo</li>
+                <li>bar</li>
+            </ul>`;
+		const editor = createEditor(content);
+
+		// Act
+
+		act(() => {
+			editor.update(
+				() => {
+					$setSelectionHelper({
+						firstTextPosition: [0, 0, 0],
+						firstTextOffset: 0,
+						lastTextPosition: [0, 1, 0],
+						lastTextOffset: 3,
+					});
+					editor.dispatchCommand(TOGGLE_CLOZE_NODE, undefined);
+				},
+				{ discrete: true },
+			);
+		});
+
+		// Assert
+
+		editor.read(() => {
+			const list = $getRoot().getFirstChildOrThrow() as ElementNode;
+			const items = list.getChildren();
+			expect(items).toHaveLength(2);
+
+			const firstItem = items[0] as ElementNode;
+			expect(firstItem.getChildren()).toHaveLength(1);
+			expect($isClozeNode(firstItem.getChildren()[0])).toBe(true);
+			expect(firstItem.getTextContent()).toBe("foo");
+
+			const secondItem = items[1] as ElementNode;
+			expect(secondItem.getChildren()).toHaveLength(1);
+			expect($isClozeNode(secondItem.getChildren()[0])).toBe(true);
+			expect(secondItem.getTextContent()).toBe("bar");
+		});
+	});
+
 	it("Should split cloze into three parts when toggling off a selection in the middle of a cloze", () => {
 		// Arrange
 
