@@ -40,11 +40,10 @@ vi.stubGlobal(
 
 vi.stubGlobal("alert", vi.fn());
 
-// KaTeX checks for a doctype and warns if missing (quirks mode).
-// Happy DOM doesn't set one by default, so add it here.
-if (!document.doctype) {
-	document.insertBefore(
-		document.implementation.createDocumentType("html", "", ""),
-		document.firstChild,
-	);
-}
+// KaTeX warns when document.compatMode isn't "CSS1Compat" (quirks mode).
+// Happy DOM reports "BackCompat" and inserting a doctype after parsing
+// doesn't flip it, so override the getter directly.
+Object.defineProperty(document, "compatMode", {
+	configurable: true,
+	get: () => "CSS1Compat",
+});
