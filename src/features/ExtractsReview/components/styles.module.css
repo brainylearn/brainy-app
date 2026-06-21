@@ -23,7 +23,7 @@
 	}
 
 	.close-button {
-		padding: var(--spacing-1);
+		padding: var(--spacing-1) var(--spacing-3);
 		color: var(--text-secondary);
 	}
 }
