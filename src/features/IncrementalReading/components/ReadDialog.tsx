@@ -69,9 +69,8 @@ export default function ReadDialog({
 
 	// TODO:
 	// 1. Test: sync support
-	// 2. Unit tests for the read dialog
-	// 3. Add convert extracts with AI
-	// 4. Selecting multiple elements on a list creates multiple extracts instead of just one!
+	// 2. Add convert extracts with AI
+	// 3. Selecting multiple elements on a list creates multiple extracts instead of just one!
 
 	return (
 		<>
