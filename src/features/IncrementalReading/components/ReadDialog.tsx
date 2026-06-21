@@ -70,7 +70,7 @@ export default function ReadDialog({
 	// TODO:
 	// 1. Test: sync support
 	// 2. Add convert extracts with AI
-	// 3. Selecting multiple elements on a list creates multiple extracts instead of just one!
+	// 3. Highlighting and selecting in lists makes the code stuck
 
 	return (
 		<>

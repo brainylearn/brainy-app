@@ -57,9 +57,9 @@ impl DefaultCellContentUpdater {
         cell: &Cell,
         ir: &IncrementalReading,
     ) -> Result<usize, CellContentUpdaterError> {
-        let found: Vec<String> = parse_highlights(&ir.content.clone().unwrap_or_default())
-            .into_iter()
-            .map(|h| h.id)
+        let found: Vec<Guid> = parse_highlights(&ir.content.clone().unwrap_or_default())
+            .into_keys()
+            .map(|id| id.parse::<Guid>().unwrap_or_else(|_| Guid::new_v4()))
             .collect();
 
         log::info!("Found {} extracts.", found.len());
@@ -67,19 +67,15 @@ impl DefaultCellContentUpdater {
         let existing = self.extract_repository.get_by_cell_id(cell.id()).await?;
 
         for highlight_id in &found {
-            let highlight_guid: Guid = highlight_id.parse().unwrap_or_else(|_| Guid::new_v4());
-            let already_exists = existing.iter().any(|e| e.id().to_string() == *highlight_id);
+            let already_exists = existing.iter().any(|e| e.id() == *highlight_id);
             if !already_exists {
-                let extract = Extract::new(highlight_guid, cell.id());
+                let extract = Extract::new(*highlight_id, cell.id());
                 self.extract_repository.create(&extract).await?;
             }
         }
 
         for existing_extract in &existing {
-            if !found
-                .iter()
-                .any(|id| *id == existing_extract.id().to_string())
-            {
+            if !found.iter().any(|id| *id == existing_extract.id()) {
                 self.extract_repository
                     .delete_by_id(existing_extract.id())
                     .await?;

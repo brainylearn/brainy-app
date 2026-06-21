@@ -33,6 +33,8 @@ use crate::incremental_reading::{
     extracts::repositories::extract_repository::ExtractRepository,
     scheduling::entities::incremental_reading_schedule::IncrementalReadingSchedule,
     scheduling::repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
+    services::implementations::default_pending_extracts_provider::DefaultPendingExtractsProvider,
+    services::pending_extracts_provider::PendingExtractsProvider,
 };
 use crate::infrastructure::clients::brainy_backend_http_client::BrainyBackendHttpClient;
 use crate::infrastructure::managers::sqlite::sqlite_database_connection_manager::SqliteDatabaseConnectionManager;
@@ -214,6 +216,11 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     );
     register_scope!(injector, dyn CellMover, DefaultCellMover);
     register_scope!(injector, dyn ReviewRegistrar, DefaultReviewRegistrar);
+    register_scope!(
+        injector,
+        dyn PendingExtractsProvider,
+        DefaultPendingExtractsProvider
+    );
 
     register_scope!(injector, dyn CellRepository, SqliteCellRepository);
     register_scope!(injector, dyn ExtractRepository, SqliteExtractRepository);

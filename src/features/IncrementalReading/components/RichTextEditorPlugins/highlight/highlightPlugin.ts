@@ -84,13 +84,13 @@ export function HighlightPlugin() {
 }
 
 function $wrapSelectionInHighlight(selection: RangeSelection): HighlightNode {
-	return $wrapSelectionInNode(selection, $isHighlightNode, () =>
-		$createHighlightNode(),
+	return $wrapSelectionInNode(selection, $isHighlightNode, existing =>
+		$createHighlightNode(existing?.id),
 	);
 }
 
 function $removeSelectionFromHighlight(selection: RangeSelection) {
-	$removeSelectionFromNode(selection, $isHighlightNode, () =>
-		$createHighlightNode(),
+	$removeSelectionFromNode(selection, $isHighlightNode, existing =>
+		$createHighlightNode(existing.id),
 	);
 }

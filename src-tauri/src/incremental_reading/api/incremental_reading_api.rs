@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use injector::injector::Injector;
@@ -9,7 +9,6 @@ use crate::{
     cells::{
         dto::create_cell_request_dto::CreateCellRequestDto, entities::cell::CellType,
         repositories::cell_repository::CellRepository, services::cell_creator::CellCreator,
-        value_objects::incremental_reading::IncrementalReading,
     },
     common::api_error::ApiError,
     incremental_reading::{
@@ -17,13 +16,13 @@ use crate::{
         dto::due_incremental_reading_dto::DueIncrementalReadingDto,
         dto::pending_extract_dto::PendingExtractDto,
         extracts::{
-            entities::extract::ExtractStatus, highlight_parser::parse_highlights,
-            repositories::extract_repository::ExtractRepository,
+            entities::extract::ExtractStatus, repositories::extract_repository::ExtractRepository,
         },
         scheduling::{
             entities::incremental_reading_schedule::IncrementalReadingSchedule,
             repositories::incremental_reading_schedule_repository::IncrementalReadingScheduleRepository,
         },
+        services::pending_extracts_provider::PendingExtractsProvider,
     },
     infrastructure::extensions::unit_of_work::UnitOfWorkExt,
 };
@@ -75,39 +74,11 @@ pub async fn get_pending_extracts_with_content(
     cell_id: Guid,
 ) -> Result<Vec<PendingExtractDto>, ApiError> {
     let scope = injector.start_scope();
-
-    let cell = scope
-        .resolve::<dyn CellRepository>()
+    let result = scope
+        .resolve::<dyn PendingExtractsProvider>()
         .await
-        .get_by_id(cell_id)
+        .get_with_content(cell_id)
         .await?;
-
-    let extracts = scope
-        .resolve::<dyn ExtractRepository>()
-        .await
-        .get_by_cell_id(cell_id)
-        .await?;
-
-    let ir: IncrementalReading =
-        serde_json::from_str(cell.content()).map_err(|e| ApiError::new(e.to_string()))?;
-
-    let highlights: HashMap<String, String> = parse_highlights(&ir.content.unwrap_or_default())
-        .into_iter()
-        .map(|h| (h.id, h.inner_html))
-        .collect();
-
-    let result = extracts
-        .into_iter()
-        .filter(|e| e.status() == &ExtractStatus::Pending)
-        .filter_map(|extract| {
-            let inner_html = highlights.get(&extract.id().to_string())?.clone();
-            Some(PendingExtractDto {
-                id: extract.id().to_string(),
-                inner_html,
-            })
-        })
-        .collect();
-
     Ok(result)
 }
 
