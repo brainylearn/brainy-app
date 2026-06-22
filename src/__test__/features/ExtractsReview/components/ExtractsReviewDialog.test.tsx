@@ -12,6 +12,7 @@ import { PendingExtractDto } from "../../../../api/incrementalReading/dto/pendin
 import { renderWithProviders } from "../../../test-utils/renderWithProviders";
 
 vi.mock(import("../../../../api/incrementalReading/api/extractsApi.ts"));
+vi.mock(import("../../../../api/aiIntegration/api/aiApi.ts"));
 vi.mock(import("../../../../utils/tauriUtils.ts"), () => ({
 	isAndroid: vi.fn(() => false),
 	isMobile: vi.fn(() => false),
