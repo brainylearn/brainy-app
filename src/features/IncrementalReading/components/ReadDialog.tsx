@@ -67,9 +67,6 @@ export default function ReadDialog({
 		onClose();
 	};
 
-	// TODO:
-	// 1. Test: sync support
-
 	return (
 		<>
 			<Dialog
