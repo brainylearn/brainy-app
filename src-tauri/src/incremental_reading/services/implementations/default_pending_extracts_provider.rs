@@ -169,7 +169,7 @@ mod tests {
 
         assert_eq!(1, result.len());
         assert_eq!(highlight_id.to_string(), result[0].id);
-        assert_eq!("some text", result[0].inner_html);
+        assert_eq!("<p>some text</p>", result[0].inner_html);
     }
 
     #[tokio::test]
@@ -263,6 +263,6 @@ mod tests {
         // Assert
 
         assert_eq!(1, result.len());
-        assert_eq!("first partsecond part", result[0].inner_html);
+        assert_eq!("<p>first part</p><p>second part</p>", result[0].inner_html);
     }
 }

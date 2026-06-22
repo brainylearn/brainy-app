@@ -39,7 +39,7 @@ mod tests {
         // Assert
 
         assert_eq!(1, actual.len());
-        assert_eq!("some text", actual["abc"]);
+        assert_eq!("<p>some text</p>", actual["abc"]);
     }
 
     #[test]
@@ -55,6 +55,6 @@ mod tests {
         // Assert
 
         assert_eq!(1, actual.len());
-        assert_eq!("first partsecond part", actual["abc"]);
+        assert_eq!("<p>first part</p><p>second part</p>", actual["abc"]);
     }
 }
