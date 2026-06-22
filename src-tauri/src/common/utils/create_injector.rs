@@ -66,10 +66,12 @@ use crate::{
         services::{
             ai_streamer::AiStreamer,
             ai_tool_call_acceptor::AiToolCallAcceptor,
+            cloze_suggester::ClozeSuggester,
             document_uploader::DocumentUploader,
             implementations::{
                 default_ai_streamer::DefaultAiStreamer,
                 default_ai_tool_call_acceptor::DefaultAiToolCallAcceptor,
+                default_cloze_suggester::DefaultClozeSuggester,
                 default_document_uploader::DefaultDocumentUploader,
             },
         },
@@ -336,6 +338,7 @@ pub async fn create_injector(app_data_directory: AppDataDirectory) -> Injector {
     register_scope!(injector, dyn AiClientProvider, DefaultAiClientProvider);
     register_scope!(injector, dyn AiStreamer, DefaultAiStreamer);
     register_scope!(injector, dyn AiToolCallAcceptor, DefaultAiToolCallAcceptor);
+    register_scope!(injector, dyn ClozeSuggester, DefaultClozeSuggester);
     register_scope!(injector, dyn DocumentUploader, DefaultDocumentUploader);
 
     // Auth

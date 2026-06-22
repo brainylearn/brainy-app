@@ -223,6 +223,7 @@ pub async fn run() -> Result<(), String> {
             rename_ai_chat,
             stop_ai_generation,
             stream_ai_response,
+            suggest_cloze_content,
             upload_document,
         ])
         .run(tauri::generate_context!())

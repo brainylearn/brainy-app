@@ -5,13 +5,18 @@
 	gap: var(--spacing-2);
 }
 
+:global(body.mobile) .read-dialog {
+	padding-top: var(--mobile-padding-top) !important;
+}
+
 .read-dialog {
-	padding: 0;
+	padding: 0 !important;
 	height: 95vh;
 	width: 800px;
 	max-width: 95vw;
 	display: flex;
 	flex-direction: column;
+	background-color: var(--surface-pane);
 	--sections-padding: var(--spacing-3) var(--spacing-4);
 
 	.header {
@@ -47,6 +52,7 @@
 	.read-dialog-body {
 		background-color: var(--surface-card);
 		flex: 1;
+		overflow-y: auto;
 
 		.rich-text-editor {
 			border: none;

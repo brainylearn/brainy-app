@@ -8,8 +8,20 @@ import {
 } from "../../../api/incrementalReading/api/extractsApi";
 import useApi from "../../../hooks/useApi";
 import { Icon } from "@mdi/react";
-import { mdiArrowRight, mdiClose } from "@mdi/js";
+import {
+	mdiArrowRight,
+	mdiClose,
+	mdiCreation,
+	mdiStopCircleOutline,
+} from "@mdi/js";
+import {
+	stopAiGeneration,
+	suggestClozeContent,
+} from "../../../api/aiIntegration/api/aiApi";
+import useAppSelector from "../../../hooks/useAppSelector";
+import { selectSettings } from "../../../stores/settings/settingsSelector";
 import Spinner from "../../../components/Spinner/Spinner";
+import Alert from "../../../components/Alert/Alert";
 import { PendingExtractDto } from "../../../api/incrementalReading/dto/pendingExtractDto";
 import RichTextEditor from "../../../components/RichTextEditor/RichTextEditor";
 import ProgressBar from "../../../components/ProgressBar/ProgressBar";
@@ -32,11 +44,27 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 	const [cellIndex, setCellIndex] = useState(0);
 	const [extracts, setExtracts] = useState<PendingExtractDto[]>([]);
 	const [extractIndex, setExtractIndex] = useState(0);
+	const isAiEnabled = useAppSelector(selectSettings)?.enableAi ?? false;
 	const { callApi, isSendingRequest: isLoading } = useApi();
+	const {
+		callApi: callSuggestApi,
+		isSendingRequest: isGenerating,
+		errorMessage: suggestionError,
+		clearErrorMessage: clearSuggestionError,
+	} = useApi();
 	const editorContentRef = useRef<string>("");
+	const [editorContent, setEditorContent] = useState("");
+	const [editorKey, setEditorKey] = useState(0);
+
+	const setEditorTo = useCallback((content: string) => {
+		editorContentRef.current = content;
+		setEditorContent(content);
+		setEditorKey(k => k + 1);
+	}, []);
 
 	const loadExtracts = useCallback(
 		async (idx: number) => {
+			await stopAiGeneration();
 			if (idx >= cells.length) {
 				onClose();
 				return;
@@ -48,13 +76,13 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 				if (pending.length === 0) {
 					setCellIndex(idx + 1);
 				} else {
-					editorContentRef.current = pending[0].innerHtml;
+					setEditorTo(pending[0].innerHtml);
 					setExtracts(pending);
 					setExtractIndex(0);
 				}
 			});
 		},
-		[cells, callApi, onClose],
+		[cells, callApi, onClose, setEditorTo],
 	);
 
 	useEffect(() => {
@@ -63,7 +91,7 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 
 	const advance = () => {
 		if (extractIndex + 1 < extracts.length) {
-			editorContentRef.current = extracts[extractIndex + 1].innerHtml;
+			setEditorTo(extracts[extractIndex + 1].innerHtml);
 			setExtractIndex(i => i + 1);
 		} else if (cellIndex + 1 < cells.length) {
 			setCellIndex(i => i + 1);
@@ -71,6 +99,18 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 			onClose();
 		}
 	};
+
+	const handleSuggest = async () => {
+		clearSuggestionError();
+		const suggestion = await callSuggestApi(() =>
+			suggestClozeContent(editorContentRef.current),
+		);
+		if (suggestion != null) {
+			setEditorTo(suggestion);
+		}
+	};
+
+	const handleStop = () => void stopAiGeneration();
 
 	const handleDismiss = async () => {
 		await callApi(() =>
@@ -152,19 +192,58 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 						{isLoading ? (
 							<Spinner text="Loading..." />
 						) : (
-							<RichTextEditor
-								eagerLoadRichTextEditor
-								content={currentExtract.innerHtml}
-								onChange={content => {
-									editorContentRef.current = content;
-								}}
-								extraNodes={[ClozeNode]}
-								additionalFloatingMenuButtons={
-									ClozeFloatingMenuButtons
-								}
-								plugins={[<ClozePlugin key={1} />]}
-								containerClassName={styles.editor}
-							/>
+							<>
+								<RichTextEditor
+									key={editorKey}
+									eagerLoadRichTextEditor
+									content={editorContent}
+									onChange={content => {
+										editorContentRef.current = content;
+									}}
+									extraNodes={[ClozeNode]}
+									additionalFloatingMenuButtons={
+										ClozeFloatingMenuButtons
+									}
+									plugins={[<ClozePlugin key={1} />]}
+									containerClassName={styles.editor}
+								/>
+								{isAiEnabled && (
+									<div className={styles.suggestRow}>
+										{isGenerating ? (
+											<button
+												className={`grey-button ${styles.suggestButton}`}
+												type="button"
+												onClick={handleStop}>
+												<Icon
+													path={mdiStopCircleOutline}
+													size={1}
+												/>
+												Stop
+											</button>
+										) : (
+											<button
+												className={`grey-button ${styles.suggestButton}`}
+												type="button"
+												onClick={() =>
+													void handleSuggest()
+												}>
+												<Icon
+													path={mdiCreation}
+													size={1}
+												/>
+												Suggest with AI
+											</button>
+										)}
+									</div>
+								)}
+								{suggestionError && (
+									<Alert
+										type="error"
+										onClose={clearSuggestionError}>
+										{suggestionError}
+									</Alert>
+								)}
+							</>
 						)}
 					</div>
 				</div>
@@ -174,13 +253,13 @@ export default function ExtractsReviewDialog({ cells, onClose }: Props) {
 						className="transparent"
 						type="button"
 						onClick={() => void handleDismiss()}
-						disabled={isLoading || !currentExtract}>
+						disabled={isLoading || isGenerating || !currentExtract}>
 						Dismiss
 					</button>
 					<button
 						className="primary"
 						type="submit"
-						disabled={isLoading || !currentExtract}>
+						disabled={isLoading || isGenerating || !currentExtract}>
 						Save &amp; next
 						<Icon path={mdiArrowRight} size={1} />
 					</button>

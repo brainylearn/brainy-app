@@ -44,7 +44,7 @@ export default function ExtractsQueue({
 			<div className={styles.box}>
 				<BoxHeader
 					icon={mdiCardsOutline}
-					title="Extracts"
+					title="Extracts queue"
 					action={
 						cells.length > 0
 							? {
