@@ -156,25 +156,30 @@ jobs:
         if: matrix.platform == 'windows-latest'
         run: npm run tauri:windows:build -- --arch x64,arm64
 
+      - name: install Microsoft Store CLI
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/microsoft/msstore-cli/releases/latest/download/MSStoreCLI-win-x64.zip" -OutFile "$env:RUNNER_TEMP\msstore-cli.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\msstore-cli.zip" -DestinationPath "$env:RUNNER_TEMP\msstore-cli" -Force
+          "$env:RUNNER_TEMP\msstore-cli" | Out-File -FilePath $env:GITHUB_PATH -Append
+
       - name: configure Microsoft Store CLI
         if: matrix.platform == 'windows-latest'
-        uses: microsoft/store-submission@v1
-        with:
-          command: configure
-          type: msix
-          seller-id: ${{ secrets.MS_STORE_SELLER_ID }}
-          product-id: ${{ secrets.MS_STORE_PRODUCT_ID }}
-          tenant-id: ${{ secrets.MS_STORE_TENANT_ID }}
-          client-id: ${{ secrets.MS_STORE_CLIENT_ID }}
-          client-secret: ${{ secrets.MS_STORE_CLIENT_SECRET }}
+        shell: pwsh
+        run: |
+          msstore reconfigure `
+            --tenantId ${{ secrets.MS_STORE_TENANT_ID }} `
+            --sellerId ${{ secrets.MS_STORE_SELLER_ID }} `
+            --clientId ${{ secrets.MS_STORE_CLIENT_ID }} `
+            --clientSecret ${{ secrets.MS_STORE_CLIENT_SECRET }}
 
       - name: publish MSIX to Microsoft Store
         if: matrix.platform == 'windows-latest'
-        uses: microsoft/store-submission@v1
-        with:
-          command: publish
-          product-id: ${{ secrets.MS_STORE_PRODUCT_ID }}
-          package-path: src-tauri/target/msix/*.msixbundle
+        shell: pwsh
+        run: |
+          $bundle = (Get-ChildItem -Path "src-tauri/target/msix/*.msixbundle" | Select-Object -First 1).FullName
+          msstore publish "$bundle" -id ${{ secrets.MS_STORE_PRODUCT_ID }}
 
   publish-tauri-android:
     needs: create-release
