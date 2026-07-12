@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	AutoFocusExtension,
 	ClickAfterLastBlockExtension,
@@ -11,6 +11,7 @@ import { HistoryExtension } from "@lexical/history";
 import { ListExtension } from "@lexical/list";
 import { TableExtension } from "@lexical/table";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { LexicalExtensionComposer } from "@lexical/react/LexicalExtensionComposer";
 import { RichTextExtension } from "@lexical/rich-text";
 import {
@@ -20,9 +21,10 @@ import {
 	$isElementNode,
 	configExtension,
 	defineExtension,
+	HISTORY_MERGE_TAG,
 	LexicalEditor,
 } from "lexical";
-import { Box, ScrollArea, Text, Typography } from "@mantine/core";
+import { Box, Text, Typography } from "@mantine/core";
 import { DragPlugin } from "./plugins/DragPlugin";
 import { SlashMenuPlugin } from "./plugins/SlashMenuPlugin";
 import { EquationNode } from "./plugins/EquationPlugin/EquationNode";
@@ -56,41 +58,103 @@ const blockTags = new Set([
 	"FIGURE",
 ]);
 
-function htmlToEditorState(html: string) {
-	return (editor: LexicalEditor) => {
-		const parser = new DOMParser();
-		const dom = parser.parseFromString(html, "text/html");
+// Top-level blocks converted per editor update. Book-sized documents are
+// split into chunks: the first chunk becomes the initial editor state so
+// content is visible immediately, the rest stream in during idle time
+// without blocking the main thread.
+const CONTENT_CHUNK_SIZE = 200;
 
-		// If the content has no block-level elements, wrap everything in a
-		// single <p> so Lexical doesn't create a separate paragraph per
-		// inline node (spans, links, etc.).
-		const hasBlock = Array.from(dom.body.children).some(el =>
-			blockTags.has(el.tagName),
-		);
-		if (!hasBlock && dom.body.childNodes.length > 0) {
-			const p = dom.createElement("p");
-			while (dom.body.firstChild) p.appendChild(dom.body.firstChild);
-			dom.body.appendChild(p);
+function htmlToChunks(html: string): Document[] {
+	const parser = new DOMParser();
+	const dom = parser.parseFromString(html, "text/html");
+
+	// If the content has no block-level elements, wrap everything in a
+	// single <p> so Lexical doesn't create a separate paragraph per
+	// inline node (spans, links, etc.).
+	const hasBlock = Array.from(dom.body.children).some(el =>
+		blockTags.has(el.tagName),
+	);
+	if (!hasBlock && dom.body.childNodes.length > 0) {
+		const p = dom.createElement("p");
+		while (dom.body.firstChild) p.appendChild(dom.body.firstChild);
+		dom.body.appendChild(p);
+	}
+
+	const chunks: Document[] = [];
+	while (dom.body.firstChild) {
+		const chunk = document.implementation.createHTMLDocument();
+		for (let i = 0; i < CONTENT_CHUNK_SIZE && dom.body.firstChild; i++) {
+			chunk.body.appendChild(chunk.adoptNode(dom.body.firstChild));
 		}
+		chunks.push(chunk);
+	}
+	return chunks;
+}
 
-		const nodes = $generateNodesFromDOM(editor, dom);
-		const root = $getRoot();
+function $appendChunk(editor: LexicalEditor, chunk: Document) {
+	const nodes = $generateNodesFromDOM(editor, chunk);
+	const root = $getRoot();
 
-		// Used to avoid the following error:
-		// Only element or decorator nodes can be inserted in to the root node.
-		nodes.forEach(node => {
-			if ($isElementNode(node) || $isDecoratorNode(node)) {
-				root.append(node);
-			} else {
-				const textContent = node.getTextContent().trim();
-				if (textContent !== "") {
-					const paragraph = $createParagraphNode();
-					paragraph.append(node);
-					root.append(paragraph);
-				}
+	// Used to avoid the following error:
+	// Only element or decorator nodes can be inserted in to the root node.
+	nodes.forEach(node => {
+		if ($isElementNode(node) || $isDecoratorNode(node)) {
+			root.append(node);
+		} else {
+			const textContent = node.getTextContent().trim();
+			if (textContent !== "") {
+				const paragraph = $createParagraphNode();
+				paragraph.append(node);
+				root.append(paragraph);
 			}
-		});
-	};
+		}
+	});
+}
+
+const scheduleIdle: (cb: () => void) => number =
+	typeof window.requestIdleCallback === "function"
+		? cb => window.requestIdleCallback(cb)
+		: cb => window.setTimeout(cb, 0);
+
+const cancelIdle: (handle: number) => void =
+	typeof window.cancelIdleCallback === "function"
+		? handle => window.cancelIdleCallback(handle)
+		: handle => window.clearTimeout(handle);
+
+interface StreamContentPluginProps {
+	chunks: Document[];
+	nextChunkRef: React.RefObject<number>;
+}
+
+// Appends the remaining chunks (the first one is loaded as the initial
+// editor state) one editor update at a time during idle periods. Updates
+// are tagged history-merge so undo can't remove streamed-in content.
+function StreamContentPlugin({
+	chunks,
+	nextChunkRef,
+}: StreamContentPluginProps) {
+	const [editor] = useLexicalComposerContext();
+
+	useEffect(() => {
+		let handle: number | null = null;
+
+		const appendNext = () => {
+			handle = null;
+			if (nextChunkRef.current >= chunks.length) return;
+			const chunk = chunks[nextChunkRef.current++];
+			editor.update(() => $appendChunk(editor, chunk), {
+				tag: HISTORY_MERGE_TAG,
+			});
+			handle = scheduleIdle(appendNext);
+		};
+
+		handle = scheduleIdle(appendNext);
+		return () => {
+			if (handle !== null) cancelIdle(handle);
+		};
+	}, [editor, chunks, nextChunkRef]);
+
+	return null;
 }
 
 interface EditorProps {
@@ -107,6 +171,14 @@ export default function Editor({
 	onHighlightCreated,
 }: EditorProps) {
 	const [anchorElem, setAnchorElem] = useState<HTMLElement | null>(null);
+
+	const contentChunks = useMemo(
+		() => (initialContent ? htmlToChunks(initialContent) : []),
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- only apply initialContent once, at editor creation
+		[],
+	);
+	// Index of the next chunk to stream in; chunk 0 is the initial state.
+	const nextChunkRef = useRef(1);
 
 	const editorExtension = useMemo(
 		() =>
@@ -140,9 +212,11 @@ export default function Editor({
 					ClozeHiddenNode,
 					ImageNode,
 				],
-				$initialEditorState: initialContent
-					? htmlToEditorState(initialContent)
-					: undefined,
+				$initialEditorState:
+					contentChunks.length > 0
+						? (editor: LexicalEditor) =>
+								$appendChunk(editor, contentChunks[0])
+						: undefined,
 			}),
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- only apply initialContent once, at editor creation
 		[],
@@ -154,8 +228,12 @@ export default function Editor({
 				extension={editorExtension}
 				contentEditable={null}>
 				<Box className={styles.anchor} ref={setAnchorElem}>
-					<ScrollArea h="100%">
+					{/* Native scrolling instead of Mantine ScrollArea: its
+					    resize-observed, table-layout viewport re-measures
+					    book-sized content while scrolling. */}
+					<Box h="100%" style={{ overflowY: "auto" }}>
 						<ContentEditable
+							spellCheck={false}
 							className={styles["content-editable"]}
 							aria-label="Rich text editor"
 							aria-placeholder="Type '/' for commands..."
@@ -165,7 +243,13 @@ export default function Editor({
 								</Text>
 							}
 						/>
-					</ScrollArea>
+					</Box>
+					{contentChunks.length > 1 ? (
+						<StreamContentPlugin
+							chunks={contentChunks}
+							nextChunkRef={nextChunkRef}
+						/>
+					) : null}
 					<SlashMenuPlugin />
 					<EquationPlugin />
 					<ImagePlugin />

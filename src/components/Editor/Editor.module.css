@@ -18,6 +18,15 @@
 	outline: none;
 }
 
+/* Skip layout and paint for offscreen blocks so book-length documents
+   stay responsive. `auto` remembers the real size once a block has been
+   rendered; 4em approximates an average paragraph before its first
+   render, keeping scrollbar geometry close to reality. */
+.content-editable > * {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 4em;
+}
+
 .inline-code {
 	display: inline-block;
 }
